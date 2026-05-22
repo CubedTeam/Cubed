@@ -185,7 +185,7 @@ int get_interpolated_height(float world_x, float world_z, float temp,
 */
 
 BiomeType determine_biome(const BiomeConditions& conditions) {
-    if (conditions.mountainous > 0.85) {
+    if (conditions.mountainous > 0.75) {
         return MOUNTAIN;
     }
     auto temp = conditions.temp;

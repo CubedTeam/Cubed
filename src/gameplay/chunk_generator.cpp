@@ -164,16 +164,16 @@ void ChunkGenerator::generate_heightmap() {
             amplitude = std::lerp(10, 40, t);
             */
             float t;
-            if (mountainous >= 0.8f) {
-                t = Math::smootherstep(0.80f, 0.85, mountainous);
+            if (mountainous >= 0.7f) {
+                t = Math::smootherstep(0.7f, 0.75, mountainous);
                 base_y = std::lerp(72, 88, t);
                 amplitude = std::lerp(28, 48, t);
-            } else if (mountainous >= 0.75f) {
-                t = Math::smootherstep(0.75f, 0.80f, mountainous);
+            } else if (mountainous >= 0.65f) {
+                t = Math::smootherstep(0.65f, 0.7f, mountainous);
                 base_y = std::lerp(68, 72, t);
                 amplitude = std::lerp(18, 28, t);
             } else {
-                t = Math::smootherstep(0.5, 0.75, mountainous);
+                t = Math::smootherstep(0.55, 0.65, mountainous);
                 base_y = std::lerp(60, 68, t);
                 amplitude = std::lerp(8, 18, t);
             }
