@@ -45,6 +45,7 @@ public:
     Chunk& chunk();
     Random& random();
     const std::array<BiomeType, 8>& neighbor_biome() const;
+    void generate_cave();
 
 private:
     static inline std::atomic<bool> is_init{false};
@@ -58,7 +59,6 @@ private:
     unsigned m_chunk_seed = 0;
 
     void make_biome_builder();
-    void generate_cave();
 };
 
 } // namespace Cubed

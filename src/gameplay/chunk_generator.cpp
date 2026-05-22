@@ -431,7 +431,6 @@ void ChunkGenerator::generate_terrain_blocks() {
     }
     m_chunk.blocks().assign(CHUNK_SIZE * CHUNK_SIZE * WORLD_SIZE_Y, 0);
     m_biome_builder->build_biome();
-    generate_cave();
 }
 
 void ChunkGenerator::blend_surface_blocks_borders(
