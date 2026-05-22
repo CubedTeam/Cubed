@@ -366,7 +366,8 @@ void ChunkGenerator::generate_terrain_blocks() {
 }
 
 void ChunkGenerator::blend_surface_blocks_borders(
-    const std::array<std::optional<std::vector<uint8_t>>, 4>& neighbor_block) {
+    const std::array<std::optional<std::vector<BlockType>>, 4>&
+        neighbor_block) {
     auto& m_blocks = m_chunk.blocks();
     auto& m_heightmap = m_chunk.heightmap();
 
@@ -374,8 +375,8 @@ void ChunkGenerator::blend_surface_blocks_borders(
 
     // Helper lambda: get top block type from a neighbor's block data at (nx,
     // nz)
-    auto get_top_block_from_neighbor = [&](const std::vector<uint8_t>& blocks,
-                                           int nx, int nz) -> uint8_t {
+    auto get_top_block_from_neighbor = [&](const std::vector<BlockType>& blocks,
+                                           int nx, int nz) -> BlockType {
         // Search from topmost y downwards for the first non-zero block
         for (int y = WORLD_HEIGHT - 1; y >= 0; --y) {
             int idx = Chunk::get_index(
@@ -392,7 +393,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
             // Get the current top block type of this column from m_blocks
-            uint8_t type_self = 0;
+            BlockType type_self = 0;
             int top_y = -1;
             top_y = m_heightmap[x][z];
             type_self = m_blocks[Chunk::get_index(x, top_y, z)];
@@ -401,7 +402,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 continue; // no block? skip
 
             // Weight map: type -> total weight
-            std::unordered_map<uint8_t, float> weights;
+            std::unordered_map<BlockType, float> weights;
             weights[type_self] = 1.0f; // self weight
 
             // --- Right neighbor (index 0) ---
@@ -410,7 +411,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t); // smoothstep
                 if (t > 0.0f) {
-                    uint8_t type_neighbor =
+                    BlockType type_neighbor =
                         get_top_block_from_neighbor(*neighbor_block[0], 0, z);
                     weights[type_neighbor] += t;
                 }
@@ -422,7 +423,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t);
                 if (t > 0.0f) {
-                    uint8_t type_neighbor = get_top_block_from_neighbor(
+                    BlockType type_neighbor = get_top_block_from_neighbor(
                         *neighbor_block[1], CHUNK_SIZE - 1, z);
                     weights[type_neighbor] += t;
                 }
@@ -434,7 +435,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t);
                 if (t > 0.0f) {
-                    uint8_t type_neighbor =
+                    BlockType type_neighbor =
                         get_top_block_from_neighbor(*neighbor_block[2], x, 0);
                     weights[type_neighbor] += t;
                 }
@@ -446,14 +447,14 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t);
                 if (t > 0.0f) {
-                    uint8_t type_neighbor = get_top_block_from_neighbor(
+                    BlockType type_neighbor = get_top_block_from_neighbor(
                         *neighbor_block[3], x, CHUNK_SIZE - 1);
                     weights[type_neighbor] += t;
                 }
             }
 
             // Find type with maximum total weight
-            uint8_t final_type = type_self;
+            BlockType final_type = type_self;
             float max_weight = weights[type_self];
             for (const auto& [type, w] : weights) {
                 if (w > max_weight) {

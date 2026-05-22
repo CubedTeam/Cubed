@@ -10,7 +10,7 @@
 namespace Cubed {
 
 struct ChunkRenderData {
-    std::array<const std::vector<uint8_t>*, 4> neighbor_block;
+    std::array<const std::vector<BlockType>*, 4> neighbor_block;
     Chunk* chunk;
 };
 
@@ -230,7 +230,7 @@ void World::init_chunks() {
     for (auto& [pos, chunks] : temp_neighbor) {
         chunks.gen_phase_five();
     }
-    std::array<std::optional<std::vector<uint8_t>>, 4> neighbor_block;
+    std::array<std::optional<std::vector<BlockType>>, 4> neighbor_block;
     for (auto& [pos, chunks] : m_chunks) {
         for (int i = 0; i < 4; i++) {
             auto neighbor_pos = pos + CHUNK_DIR[i];
@@ -456,7 +456,7 @@ void World::gen_chunks_internal() {
     for (auto& [pos, chunks] : temp_neighbor) {
         chunks.gen_phase_five();
     }
-    std::array<std::optional<std::vector<uint8_t>>, 4> neighbor_blocks_data;
+    std::array<std::optional<std::vector<BlockType>>, 4> neighbor_blocks_data;
     for (auto& [pos, chunks] : new_chunks) {
         {
             // std::lock_guard lk(m_chunks_mutex);
@@ -477,7 +477,7 @@ void World::gen_chunks_internal() {
     }
 
     m_chunk_gen_fraction = 0.6f;
-    std::array<const std::vector<uint8_t>*, 4> neighbor_block;
+    std::array<const std::vector<BlockType>*, 4> neighbor_block;
     for (auto& [pos, chunk] : new_chunks) {
         for (int i = 0; i < 4; i++) {
             auto it = new_chunks_neighbor.find(pos + CHUNK_DIR[i]);
@@ -784,7 +784,7 @@ void World::update(float delta_time) {
         for (auto& [pos, chunk] : m_chunks) {
             if (chunk.is_dirty()) {
                 // the curial fator influence
-                std::array<const std::vector<uint8_t>*, 4> neighbor_block;
+                std::array<const std::vector<BlockType>*, 4> neighbor_block;
                 for (int i = 0; i < 4; i++) {
                     auto it = m_chunks.find(pos + CHUNK_DIR[i]);
                     if (it != m_chunks.end()) {

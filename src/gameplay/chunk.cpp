@@ -51,7 +51,9 @@ BiomeType Chunk::get_biome() const { return m_biome.load(); }
 
 ChunkPos Chunk::get_chunk_pos() const { return m_chunk_pos; }
 
-const std::vector<uint8_t>& Chunk::get_chunk_blocks() const { return m_blocks; }
+const std::vector<BlockType>& Chunk::get_chunk_blocks() const {
+    return m_blocks;
+}
 
 HeightMapArray Chunk::get_heightmap() const {
     // Logger::info("Chunk pos {} {} in get_heightmap this {}", m_chunk_pos.x,
@@ -76,7 +78,7 @@ int Chunk::get_index(const glm::vec3& pos) {
 }
 
 void Chunk::gen_vertex_data(
-    const std::array<const std::vector<uint8_t>*, 4>& neighbor_block) {
+    const std::array<const std::vector<BlockType>*, 4>& neighbor_block) {
     if (m_is_on_gen_vertex_data) {
         return;
     }
@@ -116,7 +118,7 @@ void Chunk::gen_vertex_data(
                             World::chunk_pos(world_nx, world_nz);
 
                         auto is_cull =
-                            [&](const std::vector<uint8_t>* chunk_blocks) {
+                            [&](const std::vector<BlockType>* chunk_blocks) {
                                 if (chunk_blocks == nullptr) {
                                     return false;
                                 }
@@ -252,7 +254,8 @@ void Chunk::gen_phase_five() {
 }
 
 void Chunk::gen_phase_six(
-    const std::array<std::optional<std::vector<uint8_t>>, 4>& neighbor_block) {
+    const std::array<std::optional<std::vector<BlockType>>, 4>&
+        neighbor_block) {
     if (!m_generator) {
         Logger::error("ChunkGenerator is Nullptr");
         return;
@@ -308,7 +311,7 @@ BiomeType Chunk::biome() const { return m_biome; }
 void Chunk::biome(BiomeType b) { m_biome = b; }
 
 HeightMapArray& Chunk::heightmap() { return m_heightmap; }
-std::vector<uint8_t>& Chunk::blocks() { return m_blocks; }
+std::vector<BlockType>& Chunk::blocks() { return m_blocks; }
 World& Chunk::world() { return m_world; }
 unsigned Chunk::seed() const {
     if (m_seed == 0) {

@@ -10,6 +10,8 @@
 
 namespace Cubed {
 
+using BlockType = uint8_t;
+
 struct BlockTexture {
     std::string name;
     unsigned id;

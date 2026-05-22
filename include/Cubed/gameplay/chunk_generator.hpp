@@ -2,6 +2,7 @@
 
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/biome.hpp"
+#include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/builders/biome_builder.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 
@@ -36,7 +37,7 @@ public:
     void generate_terrain_blocks();
     // Adjust Block;
     void blend_surface_blocks_borders(
-        const std::array<std::optional<std::vector<uint8_t>>, 4>&
+        const std::array<std::optional<std::vector<BlockType>>, 4>&
             neighbor_block);
     // Generate Structure
     void generate_vegetation();
