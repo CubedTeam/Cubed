@@ -5,10 +5,12 @@
 #include "Cubed/gameplay/builders/mountain_builder.hpp"
 #include "Cubed/gameplay/builders/plain_builder.hpp"
 #include "Cubed/gameplay/builders/river_builder.hpp"
+#include "Cubed/gameplay/builders/snowy_plain_builder.hpp"
 #include "Cubed/gameplay/chunk.hpp"
 #include "Cubed/gameplay/tree.hpp"
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
+#include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/perlin_noise.hpp"
 namespace Cubed {
 
@@ -27,7 +29,8 @@ void ChunkGenerator::init() {
     std::random_device d;
     m_generator_seed = d();
     Logger::info("Chunk Generator Seed {}", m_generator_seed);
-    PerlinNoise::init(m_generator_seed);
+    PerlinNoise3D::init(m_generator_seed);
+    PerlinNoise2D::init(m_generator_seed);
     is_init = true;
 }
 
@@ -35,7 +38,7 @@ void ChunkGenerator::reload() {
     if (!is_seed_change) {
         return;
     }
-    PerlinNoise::reload(m_generator_seed);
+    PerlinNoise3D::reload(m_generator_seed);
     is_seed_change = false;
 }
 
@@ -54,11 +57,20 @@ void ChunkGenerator::assign_chunk_biome() {
     auto m_chunk_pos = m_chunk.chunk_pos();
     float x = static_cast<float>(m_chunk_pos.x);
     float z = static_cast<float>(m_chunk_pos.z);
-    float temp = PerlinNoise::noise(x * BIOME_NOISE_FREQUENCY, 0.0f,
-                                    z * BIOME_NOISE_FREQUENCY);
-    float humid = PerlinNoise::noise(x * BIOME_NOISE_FREQUENCY, 1.0f,
-                                     z * BIOME_NOISE_FREQUENCY);
-    auto biome = get_biome_from_noise(temp, humid);
+    float temp = PerlinNoise3D::noise(x * BIOME_NOISE_FREQUENCY, 0.0f,
+                                      z * BIOME_NOISE_FREQUENCY);
+    float humid = PerlinNoise3D::noise(x * BIOME_NOISE_FREQUENCY, 1.0f,
+                                       z * BIOME_NOISE_FREQUENCY);
+    float center_x = static_cast<float>(SIZE_X / 2) + x * CHUNK_SIZE + 0.5f;
+    float center_z = static_cast<float>(SIZE_Z / 2) + z * CHUNK_SIZE + 0.5f;
+    float mountainous =
+        PerlinNoise2D::noise(center_x * MOUNTAINOUS_NOISE_FREQUENCY,
+                             center_z * MOUNTAINOUS_NOISE_FREQUENCY);
+    auto& conditions = m_chunk.conditions();
+    conditions.mountainous = mountainous;
+    conditions.humid = humid;
+    conditions.temp = temp;
+    auto biome = determine_biome(conditions);
     m_chunk.biome(biome);
 }
 
@@ -86,6 +98,7 @@ void ChunkGenerator::resolve_biome_adjacency_conflict(
     }
 }
 
+/*
 void ChunkGenerator::generate_heightmap() {
 
     auto m_chunk_pos = m_chunk.chunk_pos();
@@ -111,6 +124,63 @@ void ChunkGenerator::generate_heightmap() {
                 return range.base_y + std::round(n * range.amplitude);
             };
             m_heightmap[x][z] = sample_height(m_biome);
+        }
+    }
+}
+*/
+
+void ChunkGenerator::generate_heightmap() {
+    auto chunk_pos = m_chunk.chunk_pos();
+    auto& heightmap = m_chunk.heightmap();
+
+    for (int x = 0; x < CHUNK_SIZE; ++x) {
+        for (int z = 0; z < CHUNK_SIZE; ++z) {
+            float world_x = static_cast<float>(x + chunk_pos.x * CHUNK_SIZE);
+            float world_z = static_cast<float>(z + chunk_pos.z * CHUNK_SIZE);
+
+            auto fbm_height = [](float x, float y, int octaves,
+                                 float lacunarity, float gain, float amplitude,
+                                 float frequency) -> float {
+                float value = 0.0f;
+                for (int i = 0; i < octaves; i++) {
+                    value += amplitude *
+                             PerlinNoise2D::noise(x * frequency, y * frequency);
+                    frequency *= lacunarity;
+                    amplitude *= gain;
+                }
+                return value;
+            };
+
+            int octaves = 4;
+            float lacunarity = 2.0f;
+            float gain = 0.5f;
+            float base_y = 64;
+            float amplitude = 40.0f;
+            float mountainous =
+                PerlinNoise2D::noise(world_x * MOUNTAINOUS_NOISE_FREQUENCY,
+                                     world_z * MOUNTAINOUS_NOISE_FREQUENCY);
+            /*
+            float t = Math::smootherstep(0.6, 0.7, mountainous);
+            base_y = std::lerp(64, 85, t);
+            amplitude = std::lerp(10, 40, t);
+            */
+            float t;
+            if (mountainous >= 0.7f) {
+                t = Math::smootherstep(0.7f, 0.75, mountainous);
+                base_y = std::lerp(70, 88, t);
+                amplitude = std::lerp(28, 48, t);
+            } else if (mountainous >= 0.65f) {
+                t = Math::smootherstep(0.65f, 0.7f, mountainous);
+                base_y = std::lerp(66, 70, t);
+                amplitude = std::lerp(18, 28, t);
+            } else {
+                t = Math::smootherstep(0.55, 0.65, mountainous);
+                base_y = std::lerp(58, 66, t);
+                amplitude = std::lerp(8, 18, t);
+            }
+            heightmap[x][z] =
+                base_y + fbm_height(world_x, world_z, octaves, lacunarity, gain,
+                                    amplitude, 0.005f);
         }
     }
 }
@@ -362,11 +432,11 @@ void ChunkGenerator::generate_terrain_blocks() {
     }
     m_chunk.blocks().assign(CHUNK_SIZE * CHUNK_SIZE * WORLD_SIZE_Y, 0);
     m_biome_builder->build_biome();
-    generate_cave();
 }
 
 void ChunkGenerator::blend_surface_blocks_borders(
-    const std::array<std::optional<std::vector<uint8_t>>, 4>& neighbor_block) {
+    const std::array<std::optional<std::vector<BlockType>>, 4>&
+        neighbor_block) {
     auto& m_blocks = m_chunk.blocks();
     auto& m_heightmap = m_chunk.heightmap();
 
@@ -374,12 +444,12 @@ void ChunkGenerator::blend_surface_blocks_borders(
 
     // Helper lambda: get top block type from a neighbor's block data at (nx,
     // nz)
-    auto get_top_block_from_neighbor = [&](const std::vector<uint8_t>& blocks,
-                                           int nx, int nz) -> uint8_t {
+    auto get_top_block_from_neighbor = [&](const std::vector<BlockType>& blocks,
+                                           int nx, int nz) -> BlockType {
         // Search from topmost y downwards for the first non-zero block
         for (int y = WORLD_HEIGHT - 1; y >= 0; --y) {
-            int idx = Chunk::get_index(
-                nx, y, nz); // linear index: y * area + z * size + x
+            int idx = Chunk::index(nx, y,
+                                   nz); // linear index: y * area + z * size + x
             if (idx >= 0 && idx < static_cast<int>(blocks.size()) &&
                 blocks[idx] != 0) {
                 return blocks[idx];
@@ -392,16 +462,16 @@ void ChunkGenerator::blend_surface_blocks_borders(
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
             // Get the current top block type of this column from m_blocks
-            uint8_t type_self = 0;
+            BlockType type_self = 0;
             int top_y = -1;
             top_y = m_heightmap[x][z];
-            type_self = m_blocks[Chunk::get_index(x, top_y, z)];
+            type_self = m_blocks[Chunk::index(x, top_y, z)];
 
             if (top_y == -1)
                 continue; // no block? skip
 
             // Weight map: type -> total weight
-            std::unordered_map<uint8_t, float> weights;
+            std::unordered_map<BlockType, float> weights;
             weights[type_self] = 1.0f; // self weight
 
             // --- Right neighbor (index 0) ---
@@ -410,7 +480,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t); // smoothstep
                 if (t > 0.0f) {
-                    uint8_t type_neighbor =
+                    BlockType type_neighbor =
                         get_top_block_from_neighbor(*neighbor_block[0], 0, z);
                     weights[type_neighbor] += t;
                 }
@@ -422,7 +492,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t);
                 if (t > 0.0f) {
-                    uint8_t type_neighbor = get_top_block_from_neighbor(
+                    BlockType type_neighbor = get_top_block_from_neighbor(
                         *neighbor_block[1], CHUNK_SIZE - 1, z);
                     weights[type_neighbor] += t;
                 }
@@ -434,7 +504,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t);
                 if (t > 0.0f) {
-                    uint8_t type_neighbor =
+                    BlockType type_neighbor =
                         get_top_block_from_neighbor(*neighbor_block[2], x, 0);
                     weights[type_neighbor] += t;
                 }
@@ -446,20 +516,24 @@ void ChunkGenerator::blend_surface_blocks_borders(
                 float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
                 t = t * t * (3.0f - 2.0f * t);
                 if (t > 0.0f) {
-                    uint8_t type_neighbor = get_top_block_from_neighbor(
+                    BlockType type_neighbor = get_top_block_from_neighbor(
                         *neighbor_block[3], x, CHUNK_SIZE - 1);
                     weights[type_neighbor] += t;
                 }
             }
 
             // Find type with maximum total weight
-            uint8_t final_type = type_self;
+            BlockType final_type = type_self;
             float max_weight = weights[type_self];
             for (const auto& [type, w] : weights) {
                 if (w > max_weight) {
                     max_weight = w;
                     final_type = type;
                 }
+            }
+
+            if (final_type == 0) {
+                return;
             }
 
             // Update the top block if the type changed
@@ -469,7 +543,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                     final_type = 2;
                 }
 
-                m_blocks[Chunk::get_index(x, top_y, z)] = final_type;
+                m_blocks[Chunk::index(x, top_y, z)] = final_type;
                 // bottom block
                 unsigned fill_type = 2;
                 if (final_type == 1) {
@@ -478,7 +552,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                     fill_type = 4;
                 }
                 for (int y = top_y - 5; y < top_y; y++) {
-                    m_blocks[Chunk::get_index(x, y, z)] = fill_type;
+                    m_blocks[Chunk::index(x, y, z)] = fill_type;
                 }
             }
         }
@@ -511,6 +585,9 @@ void ChunkGenerator::make_biome_builder() {
         break;
     case RIVER:
         m_biome_builder = std::make_unique<RiverBuilder>(*this);
+        break;
+    case SNOWY_PLAIN:
+        m_biome_builder = std::make_unique<SnowyPlainBuilder>(*this);
         break;
     case NONE:
         m_biome_builder = nullptr;
@@ -563,7 +640,7 @@ void ChunkGenerator::generate_cave() {
                             if (y == 0) {
                                 continue;
                             }
-                            blocks[Chunk::get_index(x, y, z)] = 0;
+                            blocks[Chunk::index(x, y, z)] = 0;
                         }
                     }
                 }

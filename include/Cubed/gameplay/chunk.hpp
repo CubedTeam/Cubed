@@ -7,7 +7,6 @@
 #include "Cubed/primitive_data.hpp"
 
 #include <atomic>
-#include <cstdint>
 
 namespace Cubed {
 
@@ -32,13 +31,16 @@ private:
     World& m_world;
     HeightMapArray m_heightmap;
     // the index is a array of block id
-    std::vector<uint8_t> m_blocks;
+    std::vector<BlockType> m_blocks;
     GLuint m_vbo = 0;
     std::vector<Vertex> m_vertexs_data;
 
     float frequency = 0.01f;
     float height = 80;
     unsigned m_seed = 0;
+
+    BiomeConditions m_conditions;
+
     void clear_dirty();
 
 public:
@@ -49,12 +51,21 @@ public:
     Chunk(Chunk&&) noexcept;
     Chunk& operator=(Chunk&&) noexcept;
 
+    static std::tuple<int, int, int> world_to_block(int world_x, int world_y,
+                                                    int world_z, int chunk_x,
+                                                    int chunk_z);
+    static std::tuple<int, int, int> world_to_block(const glm::ivec3& block_pos,
+                                                    ChunkPos chunk_pos);
+    static std::tuple<int, int, int> block_to_world(int x, int y, int z,
+                                                    int chunk_x, int chunk_z);
+    static std::tuple<int, int, int> block_to_world(const glm::ivec3& block_pos,
+                                                    ChunkPos chunk_pos);
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;
-    const std::vector<uint8_t>& get_chunk_blocks() const;
+    const std::vector<BlockType>& get_chunk_blocks() const;
     HeightMapArray get_heightmap() const;
-    static int get_index(int x, int y, int z);
-    static int get_index(const glm::vec3& pos);
+    static int index(int x, int y, int z);
+    static int index(const glm::vec3& pos);
     // Init Chunk
     // Determine biome from temperature and humidity noise
     void gen_phase_one();
@@ -69,8 +80,8 @@ public:
     // Generate terrain blocks from heightmap and biome
     void gen_phase_five();
     // Blend surface blocks at chunk borders with neighbors
-    void gen_phase_six(const std::array<std::optional<std::vector<uint8_t>>, 4>&
-                           neighbor_block);
+    void gen_phase_six(const std::array<std::optional<std::vector<BlockType>>,
+                                        4>& neighbor_block);
     // Generate biome-specific vegetation/structures
     void gen_phase_seven();
     // void gen_vertex_data();
@@ -79,7 +90,7 @@ public:
     //  2 : (0, 1)
     //  3 : (0, -1)
     void gen_vertex_data(
-        const std::array<const std::vector<uint8_t>*, 4>& neighbor_block);
+        const std::array<const std::vector<BlockType>*, 4>& neighbor_block);
     void upload_to_gpu();
 
     GLuint get_vbo() const;
@@ -97,9 +108,10 @@ public:
     BiomeType biome() const;
     void biome(BiomeType b);
     HeightMapArray& heightmap();
-    std::vector<uint8_t>& blocks();
+    std::vector<BlockType>& blocks();
     World& world();
     unsigned seed() const;
+    BiomeConditions& conditions();
 };
 
 } // namespace Cubed

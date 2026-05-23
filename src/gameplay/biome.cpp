@@ -1,11 +1,12 @@
 #include "Cubed/gameplay/biome.hpp"
 
 #include "Cubed/tools/cubed_assert.hpp"
-#include "Cubed/tools/log.hpp"
 
 #include <unordered_map>
 
 namespace Cubed {
+
+using enum BiomeType;
 
 static PlainParams plain{{BiomeType::PLAIN,
                           {0.0f, 0.5f},
@@ -59,6 +60,8 @@ std::string get_biome_str(BiomeType biome) {
     case RIVER:
         str = "River";
         break;
+    case SNOWY_PLAIN:
+        str = "Snowy Plain";
     case NONE:
         str = "Unknown";
         break;
@@ -84,27 +87,7 @@ Biome get_biome_from_noise(float temp, float humid) {
     return Biome::FOREST;
 }
 */
-BiomeType get_biome_from_noise(float temp, float humid) {
-    using enum BiomeType;
-    if (plain.temp.first <= temp && temp < plain.temp.second &&
-        plain.humid.first <= humid && humid < plain.humid.second) {
-        return PLAIN;
-    }
-    if (forest.temp.first <= temp && temp < forest.temp.second &&
-        forest.humid.first <= humid && humid < forest.humid.second) {
-        return FOREST;
-    }
-    if (desert.temp.first <= temp && temp < desert.temp.second &&
-        desert.humid.first <= humid && humid < desert.humid.second) {
-        return DESERT;
-    }
-    if (mountain.temp.first <= temp && temp <= mountain.temp.second &&
-        mountain.humid.first <= humid && humid <= mountain.humid.second) {
-        return MOUNTAIN;
-    }
-    Logger::warn("Invail Temp {} or Humid {}", temp, humid);
-    return PLAIN;
-}
+/*
 std::array<float, 3> get_noise_frequencies_for_biome(BiomeType biome) {
     using enum BiomeType;
     switch (biome) {
@@ -125,7 +108,8 @@ std::array<float, 3> get_noise_frequencies_for_biome(BiomeType biome) {
     Logger::warn("Unknown Biome");
     return {0.003f, 0.015f, 0.06f};
 }
-
+*/
+/*
 BiomeHeightRange get_biome_height_range(BiomeType biome) {
     using enum BiomeType;
     switch (biome) {
@@ -146,7 +130,7 @@ BiomeHeightRange get_biome_height_range(BiomeType biome) {
     Logger::warn("Unknown Biome");
     return {62, 4};
 }
-
+*/
 BiomeType safe_int_to_biome(int x) {
     using enum BiomeType;
     static const std::unordered_map<int, BiomeType> INT_TO_BIOME_MAP{
@@ -201,6 +185,30 @@ int get_interpolated_height(float world_x, float world_z, float temp,
     return static_cast<int>(h);
 }
 */
+
+BiomeType determine_biome(const BiomeConditions& conditions) {
+    if (conditions.mountainous > 0.75) {
+        return MOUNTAIN;
+    }
+    auto temp = conditions.temp;
+    auto humid = conditions.humid;
+    if (temp < 0.5) {
+        if (humid < 0.5) {
+            return SNOWY_PLAIN;
+        } else {
+            return PLAIN;
+        }
+    } else {
+        if (humid < 0.5) {
+            return DESERT;
+        } else {
+            return FOREST;
+        }
+    }
+
+    return PLAIN;
+}
+
 PlainParams& plain_params() { return plain; }
 ForestParams& forest_params() { return forest; }
 DesertParams& desert_params() { return desert; }

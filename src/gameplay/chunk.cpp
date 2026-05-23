@@ -24,7 +24,8 @@ Chunk::Chunk(Chunk&& other) noexcept
       m_chunk_pos(std::move(other.m_chunk_pos)), m_world(other.m_world),
       m_heightmap(std::move(other.m_heightmap)),
       m_blocks(std::move(other.m_blocks)), m_vbo(other.m_vbo),
-      m_vertexs_data(std::move(other.m_vertexs_data)), m_seed(other.m_seed) {
+      m_vertexs_data(std::move(other.m_vertexs_data)), m_seed(other.m_seed),
+      m_conditions(other.m_conditions) {
     other.m_vbo = 0;
 }
 
@@ -44,14 +45,46 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept {
     m_need_upload = other.m_need_upload.load();
     m_vertex_sum = other.m_vertex_sum.load();
     m_seed = other.m_seed;
+    m_conditions = other.m_conditions;
     return *this;
+}
+
+std::tuple<int, int, int> Chunk::world_to_block(int world_x, int world_y,
+                                                int world_z, int chunk_x,
+                                                int chunk_z) {
+    int x, y, z;
+    y = world_y;
+    x = world_x - chunk_x * CHUNK_SIZE;
+    z = world_z - chunk_z * CHUNK_SIZE;
+    return {x, y, z};
+}
+
+std::tuple<int, int, int> Chunk::world_to_block(const glm::ivec3& block_pos,
+                                                ChunkPos chunk_pos) {
+    return world_to_block(block_pos.x, block_pos.y, block_pos.z, chunk_pos.x,
+                          chunk_pos.z);
+}
+
+std::tuple<int, int, int> Chunk::block_to_world(int x, int y, int z,
+                                                int chunk_x, int chunk_z) {
+    int world_x = x + chunk_x * CHUNK_SIZE;
+    int world_z = z + chunk_z * CHUNK_SIZE;
+    int world_y = y;
+    return {world_x, world_y, world_z};
+}
+std::tuple<int, int, int> Chunk::block_to_world(const glm::ivec3& block_pos,
+                                                ChunkPos chunk_pos) {
+    return block_to_world(block_pos.x, block_pos.y, block_pos.z, chunk_pos.x,
+                          chunk_pos.z);
 }
 
 BiomeType Chunk::get_biome() const { return m_biome.load(); }
 
 ChunkPos Chunk::get_chunk_pos() const { return m_chunk_pos; }
 
-const std::vector<uint8_t>& Chunk::get_chunk_blocks() const { return m_blocks; }
+const std::vector<BlockType>& Chunk::get_chunk_blocks() const {
+    return m_blocks;
+}
 
 HeightMapArray Chunk::get_heightmap() const {
     // Logger::info("Chunk pos {} {} in get_heightmap this {}", m_chunk_pos.x,
@@ -59,7 +92,7 @@ HeightMapArray Chunk::get_heightmap() const {
     return m_heightmap;
 }
 
-int Chunk::get_index(int x, int y, int z) {
+int Chunk::index(int x, int y, int z) {
     ASSERT(!(x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
              z >= CHUNK_SIZE));
     if ((x * WORLD_SIZE_Y + y) * CHUNK_SIZE + z < 0 ||
@@ -71,12 +104,12 @@ int Chunk::get_index(int x, int y, int z) {
     return (x * WORLD_SIZE_Y + y) * CHUNK_SIZE + z;
 }
 
-int Chunk::get_index(const glm::vec3& pos) {
-    return Chunk::get_index(pos.x, pos.y, pos.z);
+int Chunk::index(const glm::vec3& pos) {
+    return Chunk::index(pos.x, pos.y, pos.z);
 }
 
 void Chunk::gen_vertex_data(
-    const std::array<const std::vector<uint8_t>*, 4>& neighbor_block) {
+    const std::array<const std::vector<BlockType>*, 4>& neighbor_block) {
     if (m_is_on_gen_vertex_data) {
         return;
     }
@@ -93,7 +126,7 @@ void Chunk::gen_vertex_data(
                 int world_x = x + m_chunk_pos.x * CHUNK_SIZE;
                 int world_z = z + m_chunk_pos.z * CHUNK_SIZE;
                 int world_y = y;
-                int cur_id = m_blocks[get_index(x, y, z)];
+                int cur_id = m_blocks[index(x, y, z)];
                 // air
                 if (cur_id == 0) {
                     continue;
@@ -116,7 +149,7 @@ void Chunk::gen_vertex_data(
                             World::chunk_pos(world_nx, world_nz);
 
                         auto is_cull =
-                            [&](const std::vector<uint8_t>* chunk_blocks) {
+                            [&](const std::vector<BlockType>* chunk_blocks) {
                                 if (chunk_blocks == nullptr) {
                                     return false;
                                 }
@@ -130,12 +163,12 @@ void Chunk::gen_vertex_data(
                                     return false;
                                 }
 
-                                int idx = Chunk::get_index(x, y, z);
+                                int idx = Chunk::index(x, y, z);
                                 // not init
                                 if (static_cast<size_t>(idx) >=
                                     chunk_blocks->size()) {
-                                    Logger::warn("not init");
-                                    return false;
+                                    // Logger::warn("not init");
+                                    return true;
                                 }
                                 auto id = (*chunk_blocks)[idx];
                                 if (is_in_transparent_map(id)) {
@@ -162,7 +195,7 @@ void Chunk::gen_vertex_data(
                         // neighbor_cull = m_world.is_block(glm::ivec3(world_x,
                         // world_y, world_z) + DIR[face]);
                     } else {
-                        auto id = m_blocks[get_index(nx, ny, nz)];
+                        auto id = m_blocks[index(nx, ny, nz)];
                         if (!is_in_transparent_map(id)) {
                             neighbor_cull = true;
                         } else {
@@ -222,7 +255,7 @@ void Chunk::gen_phase_two(const std::array<const Chunk*, 8>& adj_chunks) {
         Logger::error("ChunkGenerator is Nullptr");
         return;
     }
-    m_generator->resolve_biome_adjacency_conflict(adj_chunks);
+    // m_generator->resolve_biome_adjacency_conflict(adj_chunks);
 }
 
 void Chunk::gen_phase_three() {
@@ -240,7 +273,8 @@ void Chunk::gen_phase_four(
         Logger::error("ChunkGenerator is Nullptr");
         return;
     }
-    m_generator->blend_heightmap_boundaries(neighbor_heightmap, neighbor_biome);
+    // m_generator->blend_heightmap_boundaries(neighbor_heightmap,
+    // neighbor_biome);
 }
 
 void Chunk::gen_phase_five() {
@@ -252,12 +286,14 @@ void Chunk::gen_phase_five() {
 }
 
 void Chunk::gen_phase_six(
-    const std::array<std::optional<std::vector<uint8_t>>, 4>& neighbor_block) {
+    const std::array<std::optional<std::vector<BlockType>>, 4>&
+        neighbor_block) {
     if (!m_generator) {
         Logger::error("ChunkGenerator is Nullptr");
         return;
     }
-    // m_generator->blend_surface_blocks_borders(neighbor_block);
+    m_generator->blend_surface_blocks_borders(neighbor_block);
+    m_generator->generate_cave();
 }
 
 void Chunk::gen_phase_seven() {
@@ -308,7 +344,7 @@ BiomeType Chunk::biome() const { return m_biome; }
 void Chunk::biome(BiomeType b) { m_biome = b; }
 
 HeightMapArray& Chunk::heightmap() { return m_heightmap; }
-std::vector<uint8_t>& Chunk::blocks() { return m_blocks; }
+std::vector<BlockType>& Chunk::blocks() { return m_blocks; }
 World& Chunk::world() { return m_world; }
 unsigned Chunk::seed() const {
     if (m_seed == 0) {
@@ -316,4 +352,7 @@ unsigned Chunk::seed() const {
     }
     return m_seed;
 }
+
+BiomeConditions& Chunk::conditions() { return m_conditions; }
+
 } // namespace Cubed

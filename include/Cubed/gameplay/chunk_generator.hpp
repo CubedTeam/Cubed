@@ -2,6 +2,7 @@
 
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/biome.hpp"
+#include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/builders/biome_builder.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 
@@ -36,7 +37,7 @@ public:
     void generate_terrain_blocks();
     // Adjust Block;
     void blend_surface_blocks_borders(
-        const std::array<std::optional<std::vector<uint8_t>>, 4>&
+        const std::array<std::optional<std::vector<BlockType>>, 4>&
             neighbor_block);
     // Generate Structure
     void generate_vegetation();
@@ -44,6 +45,7 @@ public:
     Chunk& chunk();
     Random& random();
     const std::array<BiomeType, 8>& neighbor_biome() const;
+    void generate_cave();
 
 private:
     static inline std::atomic<bool> is_init{false};
@@ -57,7 +59,6 @@ private:
     unsigned m_chunk_seed = 0;
 
     void make_biome_builder();
-    void generate_cave();
 };
 
 } // namespace Cubed

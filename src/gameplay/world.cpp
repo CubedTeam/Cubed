@@ -10,7 +10,7 @@
 namespace Cubed {
 
 struct ChunkRenderData {
-    std::array<const std::vector<uint8_t>*, 4> neighbor_block;
+    std::array<const std::vector<BlockType>*, 4> neighbor_block;
     Chunk* chunk;
 };
 
@@ -86,6 +86,7 @@ void World::init_chunks() {
         std::this_thread::sleep_for(std::chrono::microseconds(200));
     }
 }
+
 /*
 void World::init_chunks() {
 
@@ -230,7 +231,7 @@ void World::init_chunks() {
     for (auto& [pos, chunks] : temp_neighbor) {
         chunks.gen_phase_five();
     }
-    std::array<std::optional<std::vector<uint8_t>>, 4> neighbor_block;
+    std::array<std::optional<std::vector<BlockType>>, 4> neighbor_block;
     for (auto& [pos, chunks] : m_chunks) {
         for (int i = 0; i < 4; i++) {
             auto neighbor_pos = pos + CHUNK_DIR[i];
@@ -332,6 +333,8 @@ ChunkPos World::chunk_pos(int world_x, int world_z) {
     return {chunk_x, chunk_z};
 }
 
+#pragma region ChunkGenerate
+
 void World::gen_chunks_internal() {
     m_chunk_gen_fraction = 0.0f;
     m_chunk_gen_finished = false;
@@ -344,35 +347,43 @@ void World::gen_chunks_internal() {
     sync_and_collect_missing_chunks(need_gen_chunks_pos, required_chunks);
 
     Logger::info("New Gen Chunks Sum: {}", need_gen_chunks_pos.size());
+
     if (need_gen_chunks_pos.empty()) {
         m_could_gen = true;
         m_chunk_gen_fraction = 1.0f;
         return;
     }
+
     m_chunk_gen_fraction = 0.1f;
+
     ChunkUpdateList new_chunks;
     for (auto& pos : need_gen_chunks_pos) {
         new_chunks.push_back({pos, Chunk(*this, pos)});
     }
 
     ConstChunkMap new_chunks_neighbor;
-    // affected neighbor
+    //  affected neighbor
     ChunkPtrUpdateList affected_neighbor;
     ChunkHashMap temp_neighbor;
+
     build_neighbor_context_for_new_chunks(
         new_chunks_neighbor, affected_neighbor, new_chunks, temp_neighbor);
-    Logger::info("Temp neighbor sum {}", temp_neighbor.size());
-    // build new chunk, but the neighbor in m_chunks also need to re-build
+
+    // Logger::info("Temp neighbor sum {}", temp_neighbor.size());
+    //  build new chunk, but the neighbor in m_chunks also need to re-build
 
     for (auto& [pos, chunk] : new_chunks) {
         chunk.gen_phase_one();
         m_cave_carcer.try_to_add_path(pos, chunk.seed());
     }
-    for (auto& [pos, chunk] : temp_neighbor) {
-        chunk.gen_phase_one();
-        m_cave_carcer.try_to_add_path(pos, chunk.seed());
-    }
+
+    // for (auto& [pos, chunk] : temp_neighbor) {
+    //     chunk.gen_phase_one();
+    //     m_cave_carcer.try_to_add_path(pos, chunk.seed());
+    // }
+
     m_chunk_gen_fraction = 0.2f;
+
     std::array<const Chunk*, 8> neighbor_chunks;
     for (auto& [pos, chunks] : new_chunks) {
         for (int i = 0; i < 8; i++) {
@@ -387,6 +398,8 @@ void World::gen_chunks_internal() {
         }
         chunks.gen_phase_two(neighbor_chunks);
     }
+
+    /*
     for (auto& [pos, chunks] : temp_neighbor) {
         for (int i = 0; i < 8; i++) {
             auto neighbor_pos = pos + CHUNK_DIR[i];
@@ -399,14 +412,20 @@ void World::gen_chunks_internal() {
         }
         chunks.gen_phase_two(neighbor_chunks);
     }
+    */
+
     m_chunk_gen_fraction = 0.3f;
+
     for (auto& [pos, chunks] : new_chunks) {
         chunks.gen_phase_three();
     }
-    for (auto& [pos, chunks] : temp_neighbor) {
-        chunks.gen_phase_three();
-    }
+    // for (auto& [pos, chunks] : temp_neighbor) {
+    //     chunks.gen_phase_three();
+    // }
+
     m_chunk_gen_fraction = 0.4f;
+
+    /*
     for (int i = 0; i < 4; i++) {
         for (auto& [pos, chunks] : temp_neighbor) {
             std::array<std::optional<HeightMapArray>, 8>
@@ -448,15 +467,20 @@ void World::gen_chunks_internal() {
             chunks.gen_phase_four(neighbor_chunk_heightmap, neighbor_biome);
         }
     }
+    */
 
     m_chunk_gen_fraction = 0.5f;
     for (auto& [pos, chunks] : new_chunks) {
         chunks.gen_phase_five();
     }
+
+    /*
     for (auto& [pos, chunks] : temp_neighbor) {
         chunks.gen_phase_five();
     }
-    std::array<std::optional<std::vector<uint8_t>>, 4> neighbor_blocks_data;
+    */
+
+    std::array<std::optional<std::vector<BlockType>>, 4> neighbor_blocks_data;
     for (auto& [pos, chunks] : new_chunks) {
         {
             // std::lock_guard lk(m_chunks_mutex);
@@ -472,12 +496,14 @@ void World::gen_chunks_internal() {
         }
         chunks.gen_phase_six(neighbor_blocks_data);
     }
+
     for (auto& [pos, chunks] : new_chunks) {
         chunks.gen_phase_seven();
     }
 
     m_chunk_gen_fraction = 0.6f;
-    std::array<const std::vector<uint8_t>*, 4> neighbor_block;
+
+    std::array<const std::vector<BlockType>*, 4> neighbor_block;
     for (auto& [pos, chunk] : new_chunks) {
         for (int i = 0; i < 4; i++) {
             auto it = new_chunks_neighbor.find(pos + CHUNK_DIR[i]);
@@ -489,10 +515,14 @@ void World::gen_chunks_internal() {
         }
         chunk.gen_vertex_data(neighbor_block);
     }
+
     m_chunk_gen_fraction = 0.7f;
+
     build_neighbor_context_for_affected_neighbors(affected_neighbor,
                                                   new_chunks_neighbor);
+
     m_chunk_gen_fraction = 0.8f;
+
     for (auto& [pos, chunk] : affected_neighbor) {
         for (int i = 0; i < 4; i++) {
             auto it = new_chunks_neighbor.find(pos + CHUNK_DIR[i]);
@@ -505,7 +535,9 @@ void World::gen_chunks_internal() {
         chunk->gen_vertex_data(neighbor_block);
         chunk->need_upload();
     }
+
     m_chunk_gen_fraction = 0.9f;
+
     {
         std::lock_guard lk(m_new_chunk_queue_mutex);
         for (auto& x : new_chunks) {
@@ -597,6 +629,8 @@ void World::build_neighbor_context_for_affected_neighbors(
     }
 }
 
+#pragma endregion
+
 void World::start_gen_thread() {
     m_gen_running = true;
     Logger::info("Gen Thread Started");
@@ -667,15 +701,12 @@ int World::get_block(const glm::ivec3& block_pos) const {
     }
 
     const auto& chunk_blocks = it->second.get_chunk_blocks();
-    int x, y, z;
-    y = block_pos.y;
-    x = block_pos.x - chunk_x * CHUNK_SIZE;
-    z = block_pos.z - chunk_z * CHUNK_SIZE;
+    auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
     if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
         z >= CHUNK_SIZE) {
         return 0;
     }
-    return chunk_blocks[Chunk::get_index(x, y, z)];
+    return chunk_blocks[Chunk::index(x, y, z)];
 }
 
 bool World::is_block(const glm::ivec3& block_pos) const {
@@ -687,15 +718,12 @@ bool World::is_block(const glm::ivec3& block_pos) const {
         return false;
     }
     const auto& chunk_blocks = it->second.get_chunk_blocks();
-    int x, y, z;
-    y = block_pos.y;
-    x = block_pos.x - chunk_x * CHUNK_SIZE;
-    z = block_pos.z - chunk_z * CHUNK_SIZE;
+    auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
     if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
         z >= CHUNK_SIZE) {
         return false;
     }
-    auto id = chunk_blocks[Chunk::get_index(x, y, z)];
+    auto id = chunk_blocks[Chunk::index(x, y, z)];
     if (id == 0) {
         return false;
     } else {
@@ -718,16 +746,14 @@ void World::set_block(const glm::ivec3& block_pos, unsigned id) {
         return;
     }
 
-    int x, y, z;
-    y = world_y;
-    x = world_x - chunk_x * CHUNK_SIZE;
-    z = world_z - chunk_z * CHUNK_SIZE;
+    auto [x, y, z] =
+        Chunk::world_to_block(world_x, world_y, world_z, chunk_x, chunk_z);
     if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
         z >= CHUNK_SIZE) {
         return;
     }
 
-    it->second.set_chunk_block(Chunk::get_index(x, y, z), id);
+    it->second.set_chunk_block(Chunk::index(x, y, z), id);
 
     static const glm::ivec3 NEIGHBOR_DIRS[] = {
         {1, 0, 0}, {-1, 0, 0}, {0, 0, -1}, {0, 0, 1}};
@@ -784,7 +810,7 @@ void World::update(float delta_time) {
         for (auto& [pos, chunk] : m_chunks) {
             if (chunk.is_dirty()) {
                 // the curial fator influence
-                std::array<const std::vector<uint8_t>*, 4> neighbor_block;
+                std::array<const std::vector<BlockType>*, 4> neighbor_block;
                 for (int i = 0; i < 4; i++) {
                     auto it = m_chunks.find(pos + CHUNK_DIR[i]);
                     if (it != m_chunks.end()) {
