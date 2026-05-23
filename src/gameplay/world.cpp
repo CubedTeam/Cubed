@@ -64,6 +64,7 @@ Player& World::get_player(const std::string& name) {
 
 void World::init_world() {
     m_cave_carcer.init(ChunkGenerator::seed());
+    m_river_worm.init(ChunkGenerator::seed());
     m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
     auto t1 = std::chrono::system_clock::now();
 
@@ -375,6 +376,7 @@ void World::gen_chunks_internal() {
     for (auto& [pos, chunk] : new_chunks) {
         chunk.gen_phase_one();
         m_cave_carcer.try_to_add_path(pos, chunk.seed());
+        m_river_worm.try_to_add_path(pos, chunk.seed());
     }
 
     // for (auto& [pos, chunk] : temp_neighbor) {
@@ -545,6 +547,7 @@ void World::gen_chunks_internal() {
         }
     }
     m_cave_carcer.cleanup_finished_caves();
+    m_river_worm.cleanup_finished_rivers();
     m_chunk_gen_fraction = 1.0f;
     m_chunk_gen_finished = true;
 }
@@ -860,6 +863,7 @@ void World::rebuild_world() {
     m_is_rebuilding = true;
     stop_gen_thread();
     m_cave_carcer.reload(ChunkGenerator::seed());
+    m_river_worm.reload(ChunkGenerator::seed());
     {
         std::scoped_lock lk(m_chunks_mutex, m_new_chunk_queue_mutex);
         m_chunks.clear();
@@ -882,5 +886,5 @@ void World::rendering_distance(int rendering_distance) {
 }
 
 CaveCarver& World::cave_carcer() { return m_cave_carcer; }
-
+RiverWorm& World::river_worm() { return m_river_worm; }
 } // namespace Cubed
