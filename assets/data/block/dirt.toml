@@ -1,5 +1,5 @@
-name = "dirt"
 id = 2
+is_cross_plane = false
 is_liquid = false
 is_passable = false
-is_cross_plane = false
+name = 'dirt'
