@@ -1,4 +1,5 @@
 import argparse
+import copy
 import sys
 from functools import singledispatch
 from pathlib import Path
@@ -34,8 +35,9 @@ def save_data(blocks: list[dict[str, Any]]):
     for block in blocks:
         block_path: Path = data_path / (block["name"] + ".toml")
         if not block_path.is_file():
-            logger.error(f"Block: {block_path} is not Exists or a File")
-            continue
+            logger.warning(
+                f"Block: {block_path} is not Exists and Will Create A New One"
+            )
         block_path.write_text(pytomlpp.dumps(block))
 
 
@@ -108,6 +110,37 @@ def _(name: str):
         logger.error(f"Block Name: {name} Not Find")
 
 
+def change_key(block: dict[str, Any], key: str, value: str):
+    if type(block[key]) is str:
+        block[key] = value
+    elif type(block[key]) is int:
+        try:
+            v = int(value)
+            block[key] = v
+        except ValueError:
+            logger.error("The Value Is Not A Int")
+            return False
+    elif type(block[key]) is bool:
+        if value.lower() == "true" or value.lower() == "t":
+            block[key] = True
+        elif value.lower() == "false" or value.lower() == "f":
+            block[key] = False
+        else:
+            logger.error("The Value Is Not A Bool")
+            return False
+    elif type(block[key]) is float:
+        try:
+            v = float(value)
+            block[key] = v
+        except ValueError:
+            logger.error("The Value Is Not A Float")
+            return False
+    else:
+        logger.error("Unkown Key Type")
+        return False
+    return True
+
+
 def handle_change(block: dict[str, Any]) -> dict[str, Any]:
     print("Please Input Block Key, Input exit or e to Exit")
     while True:
@@ -118,43 +151,19 @@ def handle_change(block: dict[str, Any]) -> dict[str, Any]:
             logger.error("The Key Is Not Exists!")
             continue
         value = input("Value: ")
-
-        if isinstance(block[key], str):
-            if value.lower() == "exit" or value.lower() == "e":
-                print(f"The Value Is {value}, Do You Want to Exit or Write (Y/N)")
-                ans = input()
-                if ans.lower() == "y":
-                    break
-                elif ans.lower() != "n":
-                    logger.error(f"Unknow {ans}")
-                    continue
-            block[key] = value
-        elif isinstance(block[key], int):
-            try:
-                v = int(value)
-                block[key] = v
-            except ValueError:
-                logger.error("The Value Is Not A Int")
-                continue
-        elif isinstance(block[key], bool):
-            if value.lower() == "true":
-                block[key] = True
-            elif value.lower() == "false":
-                block[key] = False
-            else:
-                logger.error("The Value Is Not A Bool")
-                continue
-        elif isinstance(block[key], float):
-            try:
-                v = float(value)
-                block[key] = v
-            except ValueError:
-                logger.error("The Value Is Not A Float")
-                continue
+        old_name = block[key]
+        if change_key(block, key, value):
+            print("Change Success")
+            if key == "name":
+                old_path: Path = data_path / (old_name + ".toml")
+                try:
+                    old_path.unlink()
+                except FileNotFoundError:
+                    logger.warning(
+                        f"Name Change But Old File {old_name}.toml is Not  Exists!"
+                    )
         else:
-            logger.error("Unkown Key Type")
-            continue
-        print("Change Success")
+            print("Change Fail")
         pprint(block)
     return block
 
@@ -229,16 +238,88 @@ def check_path():
 
     logger.info(f"Work Path {work_path.resolve()}")
     logger.info(f"Script Dir {sys.path[0]}")
-
+    data_exists = True
     if not data_path.exists():
         logger.error(f"Blocks Data Path {data_path} not Exists!")
+        data_exists = False
     else:
         logger.info(f"Blocks Data Path {data_path}")
-
+    texture_exists = True
     if not texture_path.exists():
         logger.error(f"Blocks Texture Path {texture_path} not Exists!")
+        texture_exists = False
     else:
         logger.info(f"Blocks Texture Path {texture_path}")
+    return data_exists and texture_exists
+
+
+def check_integrity():
+    find_error = False
+    errors = 0
+    if check_path():
+        blocks = collect_blocks()
+        template_path = data_path / "template.toml"
+        if not template_path.is_file():
+            logger.error("Template.toml is not Exists!")
+            find_error = True
+            errors += 1
+            return
+        template_block = pytomlpp.loads(template_path.read_text(encoding="utf-8"))
+        n = len(blocks)
+        for i in range(n):
+            if "id" not in blocks[i]:
+                logger.error(f"Id: {i} not Exists!")
+                find_error = True
+                errors += 1
+                continue
+            if blocks[i]["id"] != i:
+                logger.error(
+                    f"Id Error, Block {blocks[i].get('name', 'Unknow')} Id Should Be {i} Instead of {blocks[i]['id']}"
+                )
+                find_error = True
+                errors += 1
+            for key, value in template_block.items():
+                if key not in blocks[i]:
+                    logger.error(
+                        f"Key Error, Block {blocks[i].get('name', 'Unknow')} Key {key} not Exists!"
+                    )
+                    find_error = True
+                    errors += 1
+                    continue
+                if type(blocks[i][key]) is not type(value):
+                    logger.error(
+                        f"Value Type Error, Block {blocks[i].get(key, 'Unknow')} The Type Should Be {type(value)}, Instead of {type(blocks[i][key])}"
+                    )
+                    find_error = True
+                    errors += 1
+    if find_error:
+        logger.error(f"Find {errors} Errors")
+    else:
+        logger.info("No Error")
+
+
+def add_new_block():
+    blocks = collect_blocks()
+    template_path = data_path / "template.toml"
+    if not template_path.is_file():
+        logger.error("Template.toml is not Exists, Can't Create A New Block!")
+        return
+    template_block = pytomlpp.loads(template_path.read_text(encoding="utf-8"))
+    new_block = copy.deepcopy(template_block)
+    num = len(blocks)
+    logger.info(f"New Block Id is {num}")
+    new_block["id"] = num
+    for key in template_block:
+        if key == "id":
+            continue
+        nvalue = input(f"Input {key}: ")
+        if not change_key(new_block, key, nvalue):
+            logger.error(f"Add Key {key} Value {nvalue} Fail")
+            return
+    new_block_path: Path = data_path / (new_block["name"] + ".toml")
+    new_block_path.write_text(pytomlpp.dumps(new_block))
+    logger.info("Successfully Add New Block!")
+    pprint(new_block)
 
 
 def handle_args(args: argparse.Namespace):
@@ -269,6 +350,10 @@ def handle_args(args: argparse.Namespace):
                 change_data(id)
             except ValueError:
                 change_data(args.change)
+    if args.check:
+        check_integrity()
+    if args.new:
+        add_new_block()
 
 
 def init_parser(parser: argparse.ArgumentParser):
@@ -295,6 +380,10 @@ def init_parser(parser: argparse.ArgumentParser):
     parser.add_argument(
         "-c", "--change", nargs="?", const="EMPTY", help="Change Block Data"
     )
+    parser.add_argument(
+        "-C", "--check", action="store_true", help="Check The Block Data Integrity"
+    )
+    parser.add_argument("-n", "--new", action="store_true", help="Add A New Block")
 
 
 def main():
