@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/tree.hpp"
 
+#include <algorithm>
 #include <numeric>
 
 namespace Cubed {
@@ -52,6 +53,7 @@ void ForestBuilder::build_vegetation() {
             }
         }
     }
+    place_grass();
 }
 
 ChunkGenerator& ForestBuilder::get_chunk_generator() {

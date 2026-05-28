@@ -1,8 +1,5 @@
 #pragma once
-#include "Cubed/constants.hpp"
-#include "Cubed/tools/cubed_assert.hpp"
 
-#include <array>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <string>
@@ -40,16 +37,40 @@ struct LookBlock {
     glm::ivec3 normal;
 };
 
-constexpr std::array<std::string_view, MAX_BLOCK_NUM> BLOCK_REISTER{
-    "air",   "grass_block",      "dirt", "stone", "sand", "log", "leaf",
-    "water", "snowy_grass_block"};
+struct BlockData {
+    std::string name;
+    BlockType id = 0;
 
-const std::array<bool, MAX_BLOCK_NUM> TRANSPARENT_MAP{
-    true, false, false, false, false, false, true, false, false};
+    bool is_liquid = false;
 
-inline bool is_in_transparent_map(unsigned id) {
-    ASSERT_MSG(id < MAX_BLOCK_NUM, "ID is invaild");
-    return TRANSPARENT_MAP[id];
+    bool is_passable = false;
+    bool is_cross_plane = false;
+    bool is_transparent = false;
+    BlockData(BlockType b_id, std::string_view b_name, bool liquid,
+              bool passable, bool cross_plane, bool transparent)
+        : name(b_name), id(b_id), is_liquid(liquid), is_passable(passable),
+          is_cross_plane(cross_plane), is_transparent(transparent) {}
+};
+
+class BlockManager {
+
+public:
+    static const std::vector<BlockData>& datas();
+    static void init();
+    static unsigned sums();
+    static unsigned cross_plane_sum();
+    static const std::string& name_form_id(BlockType id);
+
+    static bool is_cross_plane(BlockType id);
+    static bool is_transparent(BlockType id);
+    static bool is_passable(BlockType id);
+    static BlockType cross_plane_index(BlockType id);
+
+private:
+    static void set_up_cross_plane_map();
+    static inline std::vector<BlockData> m_datas;
+    static inline bool is_init = false;
+    static inline std::unordered_map<BlockType, BlockType> m_cross_plane_map;
 };
 
 } // namespace Cubed

@@ -421,7 +421,7 @@ void Player::update_x_move() {
     for (int x = minx; x <= maxx; ++x) {
         for (int y = miny; y <= maxy; ++y) {
             for (int z = minz; z <= maxz; ++z) {
-                if (m_world.is_block(glm::vec3{x, y, z})) {
+                if (!m_world.can_pass_block(glm::vec3{x, y, z})) {
                     AABB block_box = {glm::vec3{static_cast<float>(x),
                                                 static_cast<float>(y),
                                                 static_cast<float>(z)},
@@ -455,7 +455,7 @@ void Player::update_y_move() {
     for (int x = minx; x <= maxx; ++x) {
         for (int y = miny; y <= maxy; ++y) {
             for (int z = minz; z <= maxz; ++z) {
-                if (m_world.is_block(glm::vec3{x, y, z})) {
+                if (!m_world.can_pass_block(glm::vec3{x, y, z})) {
                     AABB block_box = {glm::vec3{static_cast<float>(x),
                                                 static_cast<float>(y),
                                                 static_cast<float>(z)},
@@ -493,7 +493,7 @@ void Player::update_z_move() {
     for (int x = minx; x <= maxx; ++x) {
         for (int y = miny; y <= maxy; ++y) {
             for (int z = minz; z <= maxz; ++z) {
-                if (m_world.is_block(glm::vec3{x, y, z})) {
+                if (!m_world.can_pass_block(glm::vec3{x, y, z})) {
                     AABB block_box = {glm::vec3{static_cast<float>(x),
                                                 static_cast<float>(y),
                                                 static_cast<float>(z)},
@@ -526,13 +526,13 @@ void Player::update_scroll(double yoffset) {
     if (m_game_mode == CREATIVE) {
         if (yoffset < 0) {
             m_place_block += 1;
-            if (m_place_block >= MAX_BLOCK_NUM) {
+            if (m_place_block >= BlockManager::sums()) {
                 m_place_block = 1;
             }
         } else {
             m_place_block -= 1;
             if (m_place_block <= 0) {
-                m_place_block = MAX_BLOCK_NUM - 1;
+                m_place_block = BlockManager::sums() - 1;
             }
         }
     }

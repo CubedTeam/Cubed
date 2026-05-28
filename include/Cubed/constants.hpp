@@ -8,7 +8,6 @@ constexpr int WORLD_SIZE_Y = 256;
 constexpr int CHUNK_SIZE = 16;
 constexpr int SEA_LEVEL = 64;
 
-constexpr int MAX_BLOCK_NUM = 9;
 constexpr int MAX_UI_NUM = 1;
 constexpr int MAX_BLOCK_STATUS = 1;
 constexpr int MAX_BIOME_SUM = 4;
@@ -17,7 +16,7 @@ constexpr int MAX_CHARACTER = 128;
 constexpr int PRE_LOAD_DISTANCE = 24;
 
 constexpr int MAX_DISTANCE = 128;
-
+constexpr int CROSS_PLANE_DISTANCE = 8;
 constexpr float DEFAULT_FOV = 70.0f;
 constexpr float DEFAULT_MAX_WALK_SPEED = 4.5f;
 constexpr float DEFAULT_MAX_RUN_SPEED = 7.0f;
