@@ -331,8 +331,8 @@ void Chunk::gen_normal_vertices(
                                     return true;
                                 }
                                 auto id = (*chunk_blocks)[idx];
-                                // leaf and this is half transparent
-                                if (id == 6 || id == 0 || id == 9) {
+                                // transparent
+                                if (BlockManager::is_transparent(id)) {
                                     if (id == cur_id) {
                                         return true;
                                     } else {
@@ -357,9 +357,8 @@ void Chunk::gen_normal_vertices(
                         // world_y, world_z) + DIR[face]);
                     } else {
                         auto neighbor_id = m_blocks[index(nx, ny, nz)];
-                        // leaf and this is half transparent
-                        if (neighbor_id != 6 && neighbor_id != 0 &&
-                            neighbor_id != 9) {
+                        // transparent block
+                        if (!BlockManager::is_transparent(neighbor_id)) {
                             neighbor_culled = true;
                         } else {
                             if (neighbor_id == cur_id) {

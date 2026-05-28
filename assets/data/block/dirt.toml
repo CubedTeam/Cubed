@@ -2,4 +2,5 @@ id = 2
 is_cross_plane = false
 is_liquid = false
 is_passable = false
+is_transparent = false
 name = 'dirt'

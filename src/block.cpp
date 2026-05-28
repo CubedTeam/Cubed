@@ -60,6 +60,21 @@ bool BlockManager::is_cross_plane(BlockType id) {
     return m_datas[id].is_cross_plane;
 }
 
+bool BlockManager::is_transparent(BlockType id) {
+    if (id >= sums()) {
+        Logger::error("Id {}, is Over The Max Id", id, sums() - 1);
+        return m_datas[0].is_transparent;
+    }
+    return m_datas[id].is_transparent;
+}
+bool BlockManager::is_passable(BlockType id) {
+    if (id >= sums()) {
+        Logger::error("Id {}, is Over The Max Id", id, sums() - 1);
+        return m_datas[0].is_passable;
+    }
+    return m_datas[id].is_passable;
+}
+
 void BlockManager::init() {
     fs::path data_path{block_data_dir};
 
@@ -93,9 +108,9 @@ void BlockManager::init() {
         auto is_liquid = safe_get_value(block, "is_liquid", false);
         auto is_passable = safe_get_value(block, "is_passable", false);
         auto is_cross_plane = safe_get_value(block, "is_cross_plane", false);
-
+        auto is_transparent = safe_get_value(block, "is_transparent", false);
         m_datas.emplace_back(*id, *name, *is_liquid, *is_passable,
-                             *is_cross_plane);
+                             *is_cross_plane, *is_transparent);
     }
     std::sort(
         m_datas.begin(), m_datas.end(),

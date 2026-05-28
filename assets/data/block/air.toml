@@ -2,4 +2,5 @@ id = 0
 is_cross_plane = false
 is_liquid = false
 is_passable = true
+is_transparent = true
 name = 'air'
