@@ -15,14 +15,16 @@
 namespace Cubed {
 
 struct ChunkRenderSnapshot {
-    GLuint vbo;
-    size_t vertex_count;
+    GLuint normal_vbo;
+    size_t normal_vertices_count;
+    GLuint cross_vbo;
+    size_t cross_vertices_count;
     glm::vec3 center;
     glm::vec3 half_extents;
 };
 
 class Player;
-
+class TextureManager;
 class World {
 private:
     using ChunkPtrUpdateList = std::vector<std::pair<ChunkPos, Chunk*>>;
@@ -95,7 +97,8 @@ public:
     static ChunkPos chunk_pos(int world_x, int world_z);
 
     void need_gen();
-    void render(const glm::mat4& mvp_matrix);
+    void render(const glm::mat4& mvp_matrix,
+                const TextureManager& texture_manager);
 
     void set_block(const glm::ivec3& pos, unsigned id);
     void update(float delta_time);

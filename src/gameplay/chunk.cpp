@@ -12,38 +12,49 @@ Chunk::Chunk(World& world, ChunkPos chunk_pos)
     : m_chunk_pos(chunk_pos), m_world(world) {}
 
 Chunk::~Chunk() {
-    if (m_vbo != 0) {
-        m_world.push_delete_vbo(m_vbo);
+    if (m_normal_vbo != 0) {
+        m_world.push_delete_vbo(m_normal_vbo);
+    }
+    if (m_cross_plane_vbo != 0) {
+        m_world.push_delete_vbo(m_cross_plane_vbo);
     }
 }
 
 Chunk::Chunk(Chunk&& other) noexcept
     : m_dirty(other.is_dirty()), m_need_upload(other.m_need_upload.load()),
       m_is_on_gen_vertex_data(other.m_is_on_gen_vertex_data.load()),
-      m_vertex_sum(other.m_vertex_sum.load()), m_biome(other.m_biome.load()),
-      m_chunk_pos(std::move(other.m_chunk_pos)), m_world(other.m_world),
-      m_heightmap(std::move(other.m_heightmap)),
-      m_blocks(std::move(other.m_blocks)), m_vbo(other.m_vbo),
-      m_vertexs_data(std::move(other.m_vertexs_data)), m_seed(other.m_seed),
-      m_conditions(other.m_conditions) {
-    other.m_vbo = 0;
+      m_normal_vertices_sum(other.m_normal_vertices_sum.load()),
+      m_cross_vertices_sum(other.m_cross_vertices_sum.load()),
+      m_biome(other.m_biome.load()), m_chunk_pos(std::move(other.m_chunk_pos)),
+      m_world(other.m_world), m_heightmap(std::move(other.m_heightmap)),
+      m_blocks(std::move(other.m_blocks)), m_normal_vbo(other.m_normal_vbo),
+      m_cross_plane_vbo(other.m_cross_plane_vbo),
+      m_normal_vertices(std::move(other.m_normal_vertices)),
+      m_cross_plane_vertices(std::move(other.m_cross_plane_vertices)),
+      m_seed(other.m_seed), m_conditions(other.m_conditions) {
+    other.m_normal_vbo = 0;
+    other.m_cross_plane_vbo = 0;
 }
 
 Chunk& Chunk::operator=(Chunk&& other) noexcept {
     // Logger::info("other Chunk pos {} {} in Chunk& Chunk::operator=(Chunk&&
     // other) this {}", other.m_chunk_pos.x, other.m_chunk_pos.z,
     // static_cast<const void*>(&other));
-    m_vbo = other.m_vbo;
-    other.m_vbo = 0;
+    m_normal_vbo = other.m_normal_vbo;
+    other.m_normal_vbo = 0;
+    m_cross_plane_vbo = other.m_cross_plane_vbo;
+    other.m_cross_plane_vbo = 0;
     m_chunk_pos = std::move(other.m_chunk_pos);
     m_heightmap = std::move(other.m_heightmap);
     m_blocks = std::move(other.m_blocks);
     m_dirty = other.is_dirty();
-    m_vertexs_data = std::move(other.m_vertexs_data);
+    m_normal_vertices = std::move(other.m_normal_vertices);
+    m_cross_plane_vertices = std::move(other.m_cross_plane_vertices);
     m_biome = other.m_biome.load();
     m_is_on_gen_vertex_data = other.m_is_on_gen_vertex_data.load();
     m_need_upload = other.m_need_upload.load();
-    m_vertex_sum = other.m_vertex_sum.load();
+    m_normal_vertices_sum = other.m_normal_vertices_sum.load();
+    m_cross_vertices_sum = other.m_cross_vertices_sum.load();
     m_seed = other.m_seed;
     m_conditions = other.m_conditions;
     return *this;
@@ -115,131 +126,24 @@ void Chunk::gen_vertex_data(
     }
     m_is_on_gen_vertex_data = true;
     std::lock_guard lk(m_vertexs_data_mutex);
-    m_vertexs_data.clear();
-
-    static const glm::ivec3 DIR[6] = {{0, 0, 1},  {1, 0, 0}, {0, 0, -1},
-                                      {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}};
-
-    for (int x = 0; x < SIZE_X; x++) {
-        for (int y = 0; y < SIZE_Y; y++) {
-            for (int z = 0; z < SIZE_Z; z++) {
-                int world_x = x + m_chunk_pos.x * CHUNK_SIZE;
-                int world_z = z + m_chunk_pos.z * CHUNK_SIZE;
-                int world_y = y;
-                int cur_id = m_blocks[index(x, y, z)];
-                // air
-                if (cur_id == 0) {
-                    continue;
-                }
-
-                for (int face = 0; face < 6; face++) {
-                    int nx = x + DIR[face].x;
-                    int ny = y + DIR[face].y;
-                    int nz = z + DIR[face].z;
-                    bool neighbor_culled = false;
-
-                    if (nx < 0 || nx >= SIZE_X || ny < 0 || ny >= SIZE_Y ||
-                        nz < 0 || nz >= SIZE_Z) {
-
-                        int world_nx = world_x + DIR[face].x;
-                        int world_ny = world_y + DIR[face].y;
-                        int world_nz = world_z + DIR[face].z;
-
-                        auto [neighbor_x, neighbor_z] =
-                            World::chunk_pos(world_nx, world_nz);
-
-                        auto is_culled =
-                            [&](const std::vector<BlockType>* chunk_blocks) {
-                                if (chunk_blocks == nullptr) {
-                                    return true;
-                                }
-                                int x, y, z;
-                                y = world_ny;
-                                x = world_nx - neighbor_x * CHUNK_SIZE;
-                                z = world_nz - neighbor_z * CHUNK_SIZE;
-                                if (x < 0 || y < 0 || z < 0 ||
-                                    x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
-                                    z >= CHUNK_SIZE) {
-                                    return false;
-                                }
-
-                                int idx = Chunk::index(x, y, z);
-                                // not init
-                                if (static_cast<size_t>(idx) >=
-                                    chunk_blocks->size()) {
-                                    // Logger::warn("not init");
-                                    return true;
-                                }
-                                auto id = (*chunk_blocks)[idx];
-                                // leaf and this is half transparent
-                                if (id == 6 || id == 0) {
-                                    if (id == cur_id) {
-                                        return true;
-                                    } else {
-                                        return false;
-                                    }
-
-                                } else {
-                                    return true;
-                                }
-                            };
-
-                        if (m_chunk_pos.x + 1 == neighbor_x) {
-                            neighbor_culled = is_culled(neighbor_block[0]);
-                        } else if (m_chunk_pos.x - 1 == neighbor_x) {
-                            neighbor_culled = is_culled(neighbor_block[1]);
-                        } else if (m_chunk_pos.z + 1 == neighbor_z) {
-                            neighbor_culled = is_culled(neighbor_block[2]);
-                        } else if (m_chunk_pos.z - 1 == neighbor_z) {
-                            neighbor_culled = is_culled(neighbor_block[3]);
-                        }
-                        // neighbor_cull = m_world.is_block(glm::ivec3(world_x,
-                        // world_y, world_z) + DIR[face]);
-                    } else {
-                        auto neighbor_id = m_blocks[index(nx, ny, nz)];
-                        // leaf and this is half transparent
-                        if (neighbor_id != 6 && neighbor_id != 0) {
-                            neighbor_culled = true;
-                        } else {
-                            if (neighbor_id == cur_id) {
-                                neighbor_culled = true;
-                            } else {
-                                neighbor_culled = false;
-                            }
-                        }
-                    }
-
-                    if (neighbor_culled) {
-                        continue;
-                    }
-                    for (int i = 0; i < 6; i++) {
-                        Vertex vex = {
-                            VERTICES_POS[face][i][0] + (float)world_x * 1.0f,
-                            VERTICES_POS[face][i][1] + (float)world_y * 1.0f,
-                            VERTICES_POS[face][i][2] + (float)world_z * 1.0f,
-                            TEX_COORDS[face][i][0],
-                            TEX_COORDS[face][i][1],
-                            static_cast<float>(cur_id * 6 + face)
-
-                        };
-                        m_vertexs_data.emplace_back(vex);
-                    }
-                }
-            }
-        }
-    }
-    m_vertex_sum = m_vertexs_data.size();
+    gen_normal_vertices(neighbor_block);
+    gen_cross_plane_vertices();
     m_need_upload = true;
     m_is_on_gen_vertex_data = false;
 }
 
-GLuint Chunk::get_vbo() const { return m_vbo; }
+GLuint Chunk::get_normal_vbo() const { return m_normal_vbo; }
 
-size_t Chunk::get_vertex_sum() const {
-    if (m_vertex_sum == 0) {
-        Logger::warn("m_vertex_sum is 0");
+size_t Chunk::get_normal_vertices_sum() const {
+    if (m_normal_vertices_sum == 0) {
+        Logger::warn("m_normal_vertices_sum is 0");
     }
-    return m_vertex_sum.load();
+    return m_normal_vertices_sum.load();
+}
+
+GLuint Chunk::get_cross_vbo() const { return m_cross_plane_vbo; }
+size_t Chunk::get_cross_vertices_sum() const {
+    return m_cross_vertices_sum.load();
 }
 
 void Chunk::gen_phase_one() {
@@ -312,14 +216,25 @@ void Chunk::gen_phase_seven() {
 void Chunk::upload_to_gpu() {
 
     ASSERT(is_need_upload());
-    if (m_vbo == 0) {
-        glGenBuffers(1, &m_vbo);
+
+    if (m_normal_vbo == 0) {
+        glGenBuffers(1, &m_normal_vbo);
     }
+
     std::lock_guard lk(m_vertexs_data_mutex);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, m_vertexs_data.size() * sizeof(Vertex),
-                 m_vertexs_data.data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, m_normal_vbo);
+    glBufferData(GL_ARRAY_BUFFER, m_normal_vertices.size() * sizeof(Vertex),
+                 m_normal_vertices.data(), GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    if (m_cross_plane_vertices.size() != 0) {
+        if (m_cross_plane_vbo == 0) {
+            glGenBuffers(1, &m_cross_plane_vbo);
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, m_cross_plane_vbo);
+        glBufferData(GL_ARRAY_BUFFER,
+                     m_cross_plane_vertices.size() * sizeof(Vertex),
+                     m_cross_plane_vertices.data(), GL_DYNAMIC_DRAW);
+    }
     // after fininshed it, can use
     clear_dirty();
     m_need_upload = false;
@@ -357,5 +272,162 @@ unsigned Chunk::seed() const {
 }
 
 BiomeConditions& Chunk::conditions() { return m_conditions; }
+
+void Chunk::gen_normal_vertices(
+    const std::array<const std::vector<BlockType>*, 4>& neighbor_block) {
+    m_normal_vertices.clear();
+
+    static const glm::ivec3 DIR[6] = {{0, 0, 1},  {1, 0, 0}, {0, 0, -1},
+                                      {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}};
+
+    for (int x = 0; x < SIZE_X; x++) {
+        for (int y = 0; y < SIZE_Y; y++) {
+            for (int z = 0; z < SIZE_Z; z++) {
+                int world_x = x + m_chunk_pos.x * CHUNK_SIZE;
+                int world_z = z + m_chunk_pos.z * CHUNK_SIZE;
+                int world_y = y;
+                int cur_id = m_blocks[index(x, y, z)];
+                // air
+                if (cur_id == 0) {
+                    continue;
+                }
+
+                for (int face = 0; face < 6; face++) {
+                    int nx = x + DIR[face].x;
+                    int ny = y + DIR[face].y;
+                    int nz = z + DIR[face].z;
+                    bool neighbor_culled = false;
+
+                    if (nx < 0 || nx >= SIZE_X || ny < 0 || ny >= SIZE_Y ||
+                        nz < 0 || nz >= SIZE_Z) {
+
+                        int world_nx = world_x + DIR[face].x;
+                        int world_ny = world_y + DIR[face].y;
+                        int world_nz = world_z + DIR[face].z;
+
+                        auto [neighbor_x, neighbor_z] =
+                            World::chunk_pos(world_nx, world_nz);
+
+                        auto is_culled =
+                            [&](const std::vector<BlockType>* chunk_blocks) {
+                                if (chunk_blocks == nullptr) {
+                                    return true;
+                                }
+                                int x, y, z;
+                                y = world_ny;
+                                x = world_nx - neighbor_x * CHUNK_SIZE;
+                                z = world_nz - neighbor_z * CHUNK_SIZE;
+                                if (x < 0 || y < 0 || z < 0 ||
+                                    x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+                                    z >= CHUNK_SIZE) {
+                                    return false;
+                                }
+
+                                int idx = Chunk::index(x, y, z);
+                                // not init
+                                if (static_cast<size_t>(idx) >=
+                                    chunk_blocks->size()) {
+                                    // Logger::warn("not init");
+                                    return true;
+                                }
+                                auto id = (*chunk_blocks)[idx];
+                                // leaf and this is half transparent
+                                if (id == 6 || id == 0 || id == 9) {
+                                    if (id == cur_id) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+
+                                } else {
+                                    return true;
+                                }
+                            };
+
+                        if (m_chunk_pos.x + 1 == neighbor_x) {
+                            neighbor_culled = is_culled(neighbor_block[0]);
+                        } else if (m_chunk_pos.x - 1 == neighbor_x) {
+                            neighbor_culled = is_culled(neighbor_block[1]);
+                        } else if (m_chunk_pos.z + 1 == neighbor_z) {
+                            neighbor_culled = is_culled(neighbor_block[2]);
+                        } else if (m_chunk_pos.z - 1 == neighbor_z) {
+                            neighbor_culled = is_culled(neighbor_block[3]);
+                        }
+                        // neighbor_cull = m_world.is_block(glm::ivec3(world_x,
+                        // world_y, world_z) + DIR[face]);
+                    } else {
+                        auto neighbor_id = m_blocks[index(nx, ny, nz)];
+                        // leaf and this is half transparent
+                        if (neighbor_id != 6 && neighbor_id != 0 &&
+                            neighbor_id != 9) {
+                            neighbor_culled = true;
+                        } else {
+                            if (neighbor_id == cur_id) {
+                                neighbor_culled = true;
+                            } else {
+                                neighbor_culled = false;
+                            }
+                        }
+                    }
+
+                    if (neighbor_culled) {
+                        continue;
+                    }
+                    for (int i = 0; i < 6; i++) {
+                        Vertex vex = {
+                            VERTICES_POS[face][i][0] + (float)world_x * 1.0f,
+                            VERTICES_POS[face][i][1] + (float)world_y * 1.0f,
+                            VERTICES_POS[face][i][2] + (float)world_z * 1.0f,
+                            TEX_COORDS[face][i][0],
+                            TEX_COORDS[face][i][1],
+                            static_cast<float>(cur_id * 6 + face)
+
+                        };
+                        m_normal_vertices.emplace_back(vex);
+                    }
+                }
+            }
+        }
+    }
+    m_normal_vertices_sum = m_normal_vertices.size();
+}
+void Chunk::gen_cross_plane_vertices() {
+
+    m_cross_plane_vertices.clear();
+
+    for (int x = 0; x < SIZE_X; x++) {
+        for (int y = 0; y < SIZE_Y; y++) {
+            for (int z = 0; z < SIZE_Z; z++) {
+                int world_x = x + m_chunk_pos.x * CHUNK_SIZE;
+                int world_z = z + m_chunk_pos.z * CHUNK_SIZE;
+                int world_y = y;
+                int id = m_blocks[index(x, y, z)];
+
+                if (!BlockManager::is_cross_plane(id)) {
+                    continue;
+                }
+                for (int face = 0; face < 2; face++) {
+                    for (int i = 0; i < 6; i++) {
+                        Vertex vex = {CROSS_VERTICES_POS[face][i][0] +
+                                          (float)world_x * 1.0f,
+                                      CROSS_VERTICES_POS[face][i][1] +
+                                          (float)world_y * 1.0f,
+                                      CROSS_VERTICES_POS[face][i][2] +
+                                          (float)world_z * 1.0f,
+                                      CROSS_TEX_COORDS[face][i][0],
+                                      CROSS_TEX_COORDS[face][i][1],
+                                      static_cast<float>(
+                                          BlockManager::cross_plane_index(id))
+
+                        };
+                        m_cross_plane_vertices.emplace_back(vex);
+                    }
+                }
+            }
+        }
+    }
+    m_cross_vertices_sum = m_cross_plane_vertices.size();
+    // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
+}
 
 } // namespace Cubed

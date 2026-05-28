@@ -16,6 +16,7 @@ TextureManager::~TextureManager() { delet_texture(); }
 void TextureManager::delet_texture() {
     glDeleteTextures(1, &m_texture_array);
     glDeleteTextures(1, &m_block_status_array);
+    glDeleteTextures(1, &m_cross_plane_array);
     for (auto& id : m_item_textures) {
         glDeleteTextures(1, &id);
     }
@@ -28,6 +29,9 @@ GLuint TextureManager::get_block_status_array() const {
 
 GLuint TextureManager::get_texture_array() const { return m_texture_array; }
 
+GLuint TextureManager::get_cross_plane_array() const {
+    return m_cross_plane_array;
+}
 GLuint TextureManager::get_ui_array() const { return m_ui_array; }
 
 const std::vector<GLuint>& TextureManager::item_textures() const {
@@ -105,7 +109,15 @@ void TextureManager::load_block_item_texture(unsigned id) {
     Tools::delete_image_data(data);
 }
 
-void TextureManager::load_cross_plane_texture(unsigned id) {}
+void TextureManager::load_cross_plane_texture(unsigned id) {
+    std::string path =
+        "texture/block/" + BlockManager::name_form_id(id) + "/cross.png";
+    unsigned char* image_data = Tools::load_image_data(path);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_cross_plane_array);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0,
+                    BlockManager::cross_plane_index(id), 16, 16, 1, GL_RGBA,
+                    GL_UNSIGNED_BYTE, image_data);
+}
 
 void TextureManager::load_ui_texture(unsigned id) {
     ASSERT_MSG(id < MAX_UI_NUM, "Exceed the max ui sum limit");
@@ -120,10 +132,17 @@ void TextureManager::load_ui_texture(unsigned id) {
 }
 
 void TextureManager::init_block() {
+
     glGenTextures(1, &m_texture_array);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_array);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16,
                  BlockManager::sums() * 6, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 nullptr);
+
+    glGenTextures(1, &m_cross_plane_array);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_cross_plane_array);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16,
+                 BlockManager::cross_plane_sum(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  nullptr);
     for (unsigned i = 0; i < BlockManager::sums(); i++) {
         load_block_texture(i);
@@ -139,6 +158,17 @@ void TextureManager::init_block() {
         glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY,
                         static_cast<GLfloat>(m_aniso));
     }
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_cross_plane_array);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+    if (m_aniso >= 1) {
+        glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY,
+                        static_cast<GLfloat>(m_aniso));
+    }
+
     Logger::info("Block Texture Load Success");
 }
 void TextureManager::init_ui() {

@@ -21,7 +21,8 @@ private:
     std::atomic<bool> m_dirty{false};
     std::atomic<bool> m_need_upload{true};
     std::atomic<bool> m_is_on_gen_vertex_data{false};
-    std::atomic<size_t> m_vertex_sum = 0;
+    std::atomic<size_t> m_normal_vertices_sum = 0;
+    std::atomic<size_t> m_cross_vertices_sum = 0;
     std::atomic<BiomeType> m_biome = BiomeType::PLAIN;
     std::mutex m_vertexs_data_mutex;
 
@@ -32,9 +33,10 @@ private:
     HeightMapArray m_heightmap;
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
-    GLuint m_vbo = 0;
-    std::vector<Vertex> m_vertexs_data;
-
+    GLuint m_normal_vbo = 0;
+    GLuint m_cross_plane_vbo = 0;
+    std::vector<Vertex> m_normal_vertices;
+    std::vector<Vertex> m_cross_plane_vertices;
     float frequency = 0.01f;
     float height = 80;
     unsigned m_seed = 0;
@@ -42,6 +44,9 @@ private:
     BiomeConditions m_conditions;
 
     void clear_dirty();
+    void gen_normal_vertices(
+        const std::array<const std::vector<BlockType>*, 4>& neighbor_block);
+    void gen_cross_plane_vertices();
 
 public:
     Chunk(World& world, ChunkPos chunk_pos);
@@ -93,8 +98,10 @@ public:
         const std::array<const std::vector<BlockType>*, 4>& neighbor_block);
     void upload_to_gpu();
 
-    GLuint get_vbo() const;
-    size_t get_vertex_sum() const;
+    GLuint get_normal_vbo() const;
+    size_t get_normal_vertices_sum() const;
+    GLuint get_cross_vbo() const;
+    size_t get_cross_vertices_sum() const;
 
     bool is_dirty() const;
     void mark_dirty();

@@ -280,14 +280,13 @@ void Renderer::render_world() {
     m_proj_loc = shader.loc("proj_matrix");
     glActiveTexture(GL_TEXTURE0);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
     m_m_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
     m_v_mat = m_camera.get_camera_lookat();
     m_mv_mat = m_v_mat * m_m_mat;
     glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
     glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
     m_mvp_mat = m_p_mat * m_mv_mat;
-    m_world.render(m_mvp_mat);
+    m_world.render(m_mvp_mat, m_texture_manager);
 }
 
 void Renderer::render_dev_panel() {

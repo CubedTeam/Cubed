@@ -3,6 +3,7 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/player.hpp"
+#include "Cubed/texture_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
 #include "Cubed/tools/math_tools.hpp"
@@ -290,13 +291,16 @@ void World::init_chunks() {
     }
 }
 */
-void World::render(const glm::mat4& mvp_matrix) {
+void World::render(const glm::mat4& mvp_matrix,
+                   const TextureManager& texture_manager) {
     Math::extract_frustum_planes(mvp_matrix, m_planes);
     int rendered_sum = 0;
     for (const auto& snapshot : m_render_snapshots) {
 
         if (is_aabb_in_frustum(snapshot.center, snapshot.half_extents)) {
-            glBindBuffer(GL_ARRAY_BUFFER, snapshot.vbo);
+            glBindTexture(GL_TEXTURE_2D_ARRAY,
+                          texture_manager.get_texture_array());
+            glBindBuffer(GL_ARRAY_BUFFER, snapshot.normal_vbo);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                                   (void*)0);
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -308,8 +312,27 @@ void World::render(const glm::mat4& mvp_matrix) {
             glEnableVertexAttribArray(1);
             glEnableVertexAttribArray(2);
 
-            glDrawArrays(GL_TRIANGLES, 0, snapshot.vertex_count);
+            glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_vertices_count);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
+            if (snapshot.cross_vertices_count != 0) {
+                glBindTexture(GL_TEXTURE_2D_ARRAY,
+                              texture_manager.get_cross_plane_array());
+                glBindBuffer(GL_ARRAY_BUFFER, snapshot.cross_vbo);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                      (void*)0);
+                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                      (void*)offsetof(Vertex, s));
+                glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                      (void*)offsetof(Vertex, layer));
+
+                glEnableVertexAttribArray(0);
+                glEnableVertexAttribArray(1);
+                glEnableVertexAttribArray(2);
+
+                glDrawArrays(GL_TRIANGLES, 0, snapshot.cross_vertices_count);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+
             rendered_sum++;
         }
     }
@@ -841,7 +864,8 @@ void World::update(float delta_time) {
                     chunk.upload_to_gpu();
                 }
                 m_render_snapshots.push_back(
-                    {chunk.get_vbo(), chunk.get_vertex_sum(),
+                    {chunk.get_normal_vbo(), chunk.get_normal_vertices_sum(),
+                     chunk.get_cross_vbo(), chunk.get_cross_vertices_sum(),
                      glm::vec3(static_cast<float>(pos.x * CHUNK_SIZE) +
                                    static_cast<float>(CHUNK_SIZE / 2),
                                static_cast<float>(WORLD_SIZE_Y / 2),

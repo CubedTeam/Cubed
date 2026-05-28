@@ -58,13 +58,17 @@ public:
     static const std::vector<BlockData>& datas();
     static void init();
     static unsigned sums();
-    static const std::string& name_form_id(unsigned id);
+    static unsigned cross_plane_sum();
+    static const std::string& name_form_id(BlockType id);
 
-    static bool is_cross_plane(unsigned id);
+    static bool is_cross_plane(BlockType id);
+    static BlockType cross_plane_index(BlockType id);
 
 private:
+    static void set_up_cross_plane_map();
     static inline std::vector<BlockData> m_datas;
     static inline bool is_init = false;
+    static inline std::unordered_map<BlockType, BlockType> m_cross_plane_map;
 };
 
 } // namespace Cubed
