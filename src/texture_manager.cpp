@@ -117,6 +117,7 @@ void TextureManager::load_cross_plane_texture(unsigned id) {
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0,
                     BlockManager::cross_plane_index(id), 16, 16, 1, GL_RGBA,
                     GL_UNSIGNED_BYTE, image_data);
+    Tools::delete_image_data(image_data);
 }
 
 void TextureManager::load_ui_texture(unsigned id) {
