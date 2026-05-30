@@ -807,7 +807,7 @@ int World::get_block(const glm::ivec3& block_pos) const {
     return chunk_blocks[Chunk::index(x, y, z)];
 }
 
-bool World::is_block(const glm::ivec3& block_pos) const {
+bool World::is_solid(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = chunk_pos(block_pos.x, block_pos.z);
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
@@ -822,7 +822,7 @@ bool World::is_block(const glm::ivec3& block_pos) const {
         return false;
     }
     auto id = chunk_blocks[Chunk::index(x, y, z)];
-    if (id == 0) {
+    if (BlockManager::is_gas(id) || BlockManager::is_liquid(id)) {
         return false;
     } else {
         return true;

@@ -158,17 +158,18 @@ void Renderer::render() {
     render_sky();
     glBindVertexArray(m_vao[1]);
     render_world();
+    glBindVertexArray(m_vao[2]);
+    render_outline();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindVertexArray(m_vao[2]);
+    glBindVertexArray(m_vao[3]);
     render_underwater();
     glEnable(GL_DEPTH_TEST);
-    glBindVertexArray(m_vao[3]);
-    render_outline();
+
     glBindVertexArray(m_vao[4]);
     render_ui();
     glBindVertexArray(m_vao[5]);

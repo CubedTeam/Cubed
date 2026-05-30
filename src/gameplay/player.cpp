@@ -88,7 +88,7 @@ bool Player::ray_cast(const glm::vec3& start, const glm::vec3& front,
     float t = 0.0f;
     normal = glm::vec3(0.0f, 0.0f, 0.0f);
     while (t <= distance) {
-        if (m_world.is_block(glm::ivec3(ix, iy, iz))) {
+        if (m_world.is_solid(glm::ivec3(ix, iy, iz))) {
             block_pos = glm::ivec3(ix, iy, iz);
             return true;
         }
@@ -300,14 +300,14 @@ void Player::update_lookup_block() {
 
     if (m_look_block != std::nullopt) {
         if (Input::get_input_state().mouse_state.left) {
-            if (m_world.is_block(m_look_block->pos)) {
+            if (m_world.is_solid(m_look_block->pos)) {
                 m_world.set_block(m_look_block->pos, 0);
             }
             Input::get_input_state().mouse_state.left = false;
         }
         if (Input::get_input_state().mouse_state.right) {
             glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
-            if (!m_world.is_block(near_pos)) {
+            if (!m_world.is_solid(near_pos)) {
                 auto x = near_pos.x;
                 auto y = near_pos.y;
                 auto z = near_pos.z;
