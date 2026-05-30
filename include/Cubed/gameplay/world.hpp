@@ -19,6 +19,8 @@ struct ChunkRenderSnapshot {
     size_t normal_vertices_count;
     GLuint cross_vbo;
     size_t cross_vertices_count;
+    GLuint transparent_vbo;
+    size_t transparent_vertices_count;
     glm::vec3 center;
     glm::vec3 half_extents;
 };

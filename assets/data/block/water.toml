@@ -2,5 +2,5 @@ id = 7
 is_cross_plane = false
 is_liquid = true
 is_passable = false
-is_transparent = false
+is_transparent = true
 name = 'water'
