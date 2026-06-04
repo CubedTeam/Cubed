@@ -182,15 +182,19 @@ void Renderer::render_outline() {
     const auto& shader = get_shader("outline");
     shader.use();
 
-    m_mv_loc = shader.loc("mv_matrix");
-    m_proj_loc = shader.loc("proj_matrix");
-
     const auto& block_pos = m_world.get_look_block_pos("TestPlayer");
 
     if (block_pos != std::nullopt) {
+
+        m_mv_loc = shader.loc("mv_matrix");
+        m_proj_loc = shader.loc("proj_matrix");
+
         m_m_mat =
             glm::translate(glm::mat4(1.0f), glm::vec3(block_pos.value().pos));
+
+        m_v_mat = m_camera.get_camera_lookat();
         m_mv_mat = m_v_mat * m_m_mat;
+
         glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
         glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
 
