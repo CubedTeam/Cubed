@@ -4,7 +4,7 @@
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
-#include "Cubed/primitive_data.hpp"
+#include "Cubed/gameplay/vertex_data.hpp"
 
 #include <atomic>
 #include <mutex>
@@ -21,9 +21,6 @@ private:
     std::atomic<bool> m_dirty{false};
     std::atomic<bool> m_need_upload{true};
     std::atomic<bool> m_is_on_gen_vertex_data{false};
-    std::atomic<size_t> m_normal_vertices_sum = 0;
-    std::atomic<size_t> m_cross_vertices_sum = 0;
-    std::atomic<size_t> m_transparent_vertices_sum = 0;
     std::atomic<BiomeType> m_biome = BiomeType::PLAIN;
     std::mutex m_vertexs_data_mutex;
 
@@ -34,12 +31,13 @@ private:
     HeightMapArray m_heightmap;
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
-    GLuint m_normal_vbo = 0;
-    GLuint m_cross_plane_vbo = 0;
-    GLuint m_transparent_normal_vbo = 0;
-    std::vector<Vertex> m_normal_vertices;
-    std::vector<Vertex> m_cross_plane_vertices;
-    std::vector<Vertex> m_transparent_normal_vertices;
+
+    /*
+    0 - normal
+    1 - cross_plane
+    2 - transparent
+    */
+    std::vector<VertexData> m_vertex_data;
     float frequency = 0.01f;
     float height = 80;
     unsigned m_seed = 0;
