@@ -319,6 +319,58 @@ void World::render(const glm::mat4& mvp_matrix,
             rendered_sum++;
         }
     }
+    // cross_plane and normal discard
+
+    for (const auto& snapshot : m_render_snapshots) {
+        if (!is_aabb_in_frustum(snapshot.center, snapshot.half_extents)) {
+            continue;
+        }
+        glm::vec2 camera_pos_xz{camera_pos.x, camera_pos.z};
+        if (snapshot.cross_vertices_count != 0) {
+            glm::vec2 center_xz{snapshot.center.x, snapshot.center.z};
+            float dist2d = glm::distance(camera_pos_xz, center_xz);
+            if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
+                glBindTexture(GL_TEXTURE_2D_ARRAY,
+                              texture_manager.get_cross_plane_array());
+                glBindBuffer(GL_ARRAY_BUFFER, snapshot.cross_vbo);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                      (void*)0);
+                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                      (void*)offsetof(Vertex, s));
+                glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                      (void*)offsetof(Vertex, layer));
+
+                glEnableVertexAttribArray(0);
+                glEnableVertexAttribArray(1);
+                glEnableVertexAttribArray(2);
+
+                glDrawArrays(GL_TRIANGLES, 0, snapshot.cross_vertices_count);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+        }
+        if (snapshot.normal_discard_vertices_count != 0) {
+            glBindTexture(GL_TEXTURE_2D_ARRAY,
+                          texture_manager.get_texture_array());
+            glBindBuffer(GL_ARRAY_BUFFER, snapshot.normal_discard_vbo);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                  (void*)0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                  (void*)offsetof(Vertex, s));
+            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                  (void*)offsetof(Vertex, layer));
+
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glEnableVertexAttribArray(2);
+
+            glDrawArrays(GL_TRIANGLES, 0,
+                         snapshot.normal_discard_vertices_count);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+    }
+
+    // blend block
+
     glDepthMask(GL_FALSE);
 
     struct SortableSnapshot {
@@ -326,8 +378,7 @@ void World::render(const glm::mat4& mvp_matrix,
         float distance;
     };
 
-    std::vector<SortableSnapshot> cross_list;
-    std::vector<SortableSnapshot> transparent_list;
+    std::vector<SortableSnapshot> blend_list;
 
     for (const auto& snapshot : m_render_snapshots) {
 
@@ -336,51 +387,19 @@ void World::render(const glm::mat4& mvp_matrix,
         }
 
         float dist = glm::distance(camera_pos, snapshot.center);
-        glm::vec2 camera_pos_xz{camera_pos.x, camera_pos.z};
-        if (snapshot.cross_vertices_count != 0) {
-            glm::vec2 center_xz{snapshot.center.x, snapshot.center.z};
-            float dist2d = glm::distance(camera_pos_xz, center_xz);
-            if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
-                cross_list.push_back({&snapshot, dist});
-            }
-        }
-        if (snapshot.transparent_vertices_count != 0) {
-            transparent_list.push_back({&snapshot, dist});
+        if (snapshot.normal_blend_vertices_count != 0) {
+            blend_list.push_back({&snapshot, dist});
         }
     }
-    std::sort(transparent_list.begin(), transparent_list.end(),
-              [](const SortableSnapshot& a, const SortableSnapshot& b) {
-                  return a.distance > b.distance;
-              });
-    std::sort(cross_list.begin(), cross_list.end(),
+    std::sort(blend_list.begin(), blend_list.end(),
               [](const SortableSnapshot& a, const SortableSnapshot& b) {
                   return a.distance > b.distance;
               });
 
-    for (const auto& item : cross_list) {
-        const auto& snapshot = *item.snapshot;
-        glBindTexture(GL_TEXTURE_2D_ARRAY,
-                      texture_manager.get_cross_plane_array());
-        glBindBuffer(GL_ARRAY_BUFFER, snapshot.cross_vbo);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                              (void*)0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                              (void*)offsetof(Vertex, s));
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                              (void*)offsetof(Vertex, layer));
-
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glEnableVertexAttribArray(2);
-
-        glDrawArrays(GL_TRIANGLES, 0, snapshot.cross_vertices_count);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    for (const auto& item : transparent_list) {
+    for (const auto& item : blend_list) {
         const auto& snapshot = *item.snapshot;
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture_manager.get_texture_array());
-        glBindBuffer(GL_ARRAY_BUFFER, snapshot.transparent_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, snapshot.normal_blend_vbo);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                               (void*)0);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -392,7 +411,7 @@ void World::render(const glm::mat4& mvp_matrix,
         glEnableVertexAttribArray(1);
         glEnableVertexAttribArray(2);
 
-        glDrawArrays(GL_TRIANGLES, 0, snapshot.transparent_vertices_count);
+        glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_blend_vertices_count);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
@@ -966,8 +985,10 @@ void World::update(float delta_time) {
                 m_render_snapshots.push_back(
                     {chunk.get_normal_vbo(), chunk.get_normal_vertices_sum(),
                      chunk.get_cross_vbo(), chunk.get_cross_vertices_sum(),
-                     chunk.get_transparent_vbo(),
-                     chunk.get_transparent_vertices_sum(),
+                     chunk.get_normal_discard_vbo(),
+                     chunk.get_normal_discard_vertices_sum(),
+                     chunk.get_normal_blend_vbo(),
+                     chunk.get_normal_blend_vertices_sum(),
                      glm::vec3(static_cast<float>(pos.x * CHUNK_SIZE) +
                                    static_cast<float>(CHUNK_SIZE / 2),
                                static_cast<float>(WORLD_SIZE_Y / 2),

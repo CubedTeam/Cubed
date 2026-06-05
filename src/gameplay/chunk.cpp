@@ -10,7 +10,7 @@ namespace Cubed {
 
 Chunk::Chunk(World& world, ChunkPos chunk_pos)
     : m_chunk_pos(chunk_pos), m_world(world) {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < VERTEX_DATA_SUM; i++) {
         m_vertex_data.emplace_back(m_world);
     }
 }
@@ -115,8 +115,7 @@ void Chunk::gen_vertex_data(
         data.m_vertices.clear();
     }
 
-    gen_normal_vertices(neighbor_block);
-    gen_cross_plane_vertices();
+    gen_vertices(neighbor_block);
     for (auto& data : m_vertex_data) {
         data.update_sum();
     }
@@ -138,9 +137,14 @@ size_t Chunk::get_cross_vertices_sum() const {
     return m_vertex_data[1].m_sum.load();
 }
 
-GLuint Chunk::get_transparent_vbo() const { return m_vertex_data[2].m_vbo; }
-size_t Chunk::get_transparent_vertices_sum() const {
+GLuint Chunk::get_normal_discard_vbo() const { return m_vertex_data[2].m_vbo; }
+size_t Chunk::get_normal_discard_vertices_sum() const {
     return m_vertex_data[2].m_sum.load();
+}
+
+GLuint Chunk::get_normal_blend_vbo() const { return m_vertex_data[3].m_vbo; }
+size_t Chunk::get_normal_blend_vertices_sum() const {
+    return m_vertex_data[3].m_sum.load();
 }
 
 void Chunk::gen_phase_one() {
@@ -258,7 +262,7 @@ unsigned Chunk::seed() const {
 
 BiomeConditions& Chunk::conditions() { return m_conditions; }
 
-void Chunk::gen_normal_vertices(
+void Chunk::gen_vertices(
     const std::array<const std::vector<BlockType>*, 4>& neighbor_block) {
     static const glm::ivec3 DIR[6] = {{0, 0, 1},  {1, 0, 0}, {0, 0, -1},
                                       {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}};
@@ -355,6 +359,10 @@ void Chunk::gen_normal_vertices(
                     if (neighbor_culled) {
                         continue;
                     }
+                    if (BlockManager::is_cross_plane(cur_id)) {
+                        gen_cross_plane_vertices(world_x, world_y, world_z,
+                                                 cur_id);
+                    }
                     for (int i = 0; i < 6; i++) {
                         Vertex vex = {
                             VERTICES_POS[face][i][0] + (float)world_x * 1.0f,
@@ -366,7 +374,17 @@ void Chunk::gen_normal_vertices(
 
                         };
                         if (BlockManager::is_transparent(cur_id)) {
-                            m_vertex_data[2].m_vertices.emplace_back(vex);
+                            if (BlockManager::is_discard(cur_id)) {
+                                m_vertex_data[2].m_vertices.emplace_back(vex);
+                            } else if (BlockManager::is_blend(cur_id)) {
+                                m_vertex_data[3].m_vertices.emplace_back(vex);
+                            } else {
+                                Logger::warn("Id {} is transparent but not "
+                                             "discard or blend",
+                                             cur_id);
+                                m_vertex_data[3].m_vertices.emplace_back(vex);
+                            }
+
                         } else {
                             m_vertex_data[0].m_vertices.emplace_back(vex);
                         }
@@ -376,40 +394,30 @@ void Chunk::gen_normal_vertices(
         }
     }
 }
-void Chunk::gen_cross_plane_vertices() {
+void Chunk::gen_cross_plane_vertices(int world_x, int world_y, int world_z,
+                                     BlockType id) {
 
-    for (int x = 0; x < SIZE_X; x++) {
-        for (int y = 0; y < SIZE_Y; y++) {
-            for (int z = 0; z < SIZE_Z; z++) {
-                int world_x = x + m_chunk_pos.x * CHUNK_SIZE;
-                int world_z = z + m_chunk_pos.z * CHUNK_SIZE;
-                int world_y = y;
-                int id = m_blocks[index(x, y, z)];
+    if (!BlockManager::is_cross_plane(id)) {
+        Logger::warn("Block {} {} {} id {} is not cross plane", world_x,
+                     world_y, world_z, id);
+        return;
+    }
+    for (int face = 0; face < 2; face++) {
+        for (int i = 0; i < 6; i++) {
+            Vertex vex = {
+                CROSS_VERTICES_POS[face][i][0] + (float)world_x * 1.0f,
+                CROSS_VERTICES_POS[face][i][1] + (float)world_y * 1.0f,
+                CROSS_VERTICES_POS[face][i][2] + (float)world_z * 1.0f,
+                CROSS_TEX_COORDS[face][i][0],
+                CROSS_TEX_COORDS[face][i][1],
+                static_cast<float>(BlockManager::cross_plane_index(id))
 
-                if (!BlockManager::is_cross_plane(id)) {
-                    continue;
-                }
-                for (int face = 0; face < 2; face++) {
-                    for (int i = 0; i < 6; i++) {
-                        Vertex vex = {CROSS_VERTICES_POS[face][i][0] +
-                                          (float)world_x * 1.0f,
-                                      CROSS_VERTICES_POS[face][i][1] +
-                                          (float)world_y * 1.0f,
-                                      CROSS_VERTICES_POS[face][i][2] +
-                                          (float)world_z * 1.0f,
-                                      CROSS_TEX_COORDS[face][i][0],
-                                      CROSS_TEX_COORDS[face][i][1],
-                                      static_cast<float>(
-                                          BlockManager::cross_plane_index(id))
-
-                        };
-                        m_vertex_data[1].m_vertices.emplace_back(vex);
-                    }
-                }
-            }
+            };
+            m_vertex_data[1].m_vertices.emplace_back(vex);
         }
     }
-    // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
 }
+
+// Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
 
 } // namespace Cubed

@@ -17,7 +17,7 @@ private:
     static constexpr int SIZE_X = CHUNK_SIZE;
     static constexpr int SIZE_Y = WORLD_SIZE_Y;
     static constexpr int SIZE_Z = CHUNK_SIZE;
-
+    static constexpr int VERTEX_DATA_SUM = 4;
     std::atomic<bool> m_dirty{false};
     std::atomic<bool> m_need_upload{true};
     std::atomic<bool> m_is_on_gen_vertex_data{false};
@@ -35,7 +35,8 @@ private:
     /*
     0 - normal
     1 - cross_plane
-    2 - transparent
+    2 - normal_discard
+    3 - transparent and blend
     */
     std::vector<VertexData> m_vertex_data;
     float frequency = 0.01f;
@@ -45,9 +46,10 @@ private:
     BiomeConditions m_conditions;
 
     void clear_dirty();
-    void gen_normal_vertices(
+    void gen_vertices(
         const std::array<const std::vector<BlockType>*, 4>& neighbor_block);
-    void gen_cross_plane_vertices();
+    void gen_cross_plane_vertices(int world_x, int world_y, int world_z,
+                                  BlockType id);
 
 public:
     Chunk(World& world, ChunkPos chunk_pos);
@@ -105,8 +107,11 @@ public:
     GLuint get_cross_vbo() const;
     size_t get_cross_vertices_sum() const;
 
-    GLuint get_transparent_vbo() const;
-    size_t get_transparent_vertices_sum() const;
+    GLuint get_normal_discard_vbo() const;
+    size_t get_normal_discard_vertices_sum() const;
+
+    GLuint get_normal_blend_vbo() const;
+    size_t get_normal_blend_vertices_sum() const;
 
     bool is_dirty() const;
     void mark_dirty();
