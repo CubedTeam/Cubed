@@ -374,6 +374,13 @@ void Chunk::gen_vertices(
 
                         };
                         if (BlockManager::is_transparent(cur_id)) {
+                            if (BlockManager::is_discard(cur_id) &&
+                                BlockManager::is_blend(cur_id)) {
+                                Logger::warn(
+                                    "Block id {} is both discard and blend is "
+                                    "must only one can true !!!",
+                                    cur_id);
+                            }
                             if (BlockManager::is_discard(cur_id)) {
                                 m_vertex_data[2].m_vertices.emplace_back(vex);
                             } else if (BlockManager::is_blend(cur_id)) {
