@@ -67,10 +67,18 @@ private:
     glm::mat4 m_ui_proj;
     glm::mat4 m_ui_m_matrix;
     std::unordered_map<std::size_t, Shader> m_shaders;
+
+    /*
+    0 - quad vao
+    1 - sky vao
+    2 - outline vao
+    3 - ui vao
+    4 - text vao
+    */
     std::vector<GLuint> m_vao;
     std::vector<Vertex2D> m_ui;
 
-    void init_underwater();
+    void init_quad();
     void init_text();
 
     void render_outline();
