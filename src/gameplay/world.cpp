@@ -24,6 +24,13 @@ World::~World() {
         }
         m_pending_delete_vbo.clear();
     }
+    {
+        std::lock_guard lk(m_delete_vao_mutex);
+        for (auto x : m_pending_delete_vao) {
+            glDeleteVertexArrays(1, &x);
+        }
+        m_pending_delete_vao.clear();
+    }
 }
 
 bool World::can_move(const AABB& player_box) const { return true; }
@@ -790,6 +797,15 @@ void World::update(float delta_time) {
         }
         m_pending_delete_vbo.clear();
     }
+
+    {
+        std::lock_guard lk(m_delete_vao_mutex);
+        for (auto x : m_pending_delete_vao) {
+            glDeleteVertexArrays(1, &x);
+        }
+        m_pending_delete_vao.clear();
+    }
+
     {
         std::scoped_lock lk(m_chunks_mutex, m_new_chunk_queue_mutex);
         m_new_chunk.clear();
@@ -837,11 +853,11 @@ void World::update(float delta_time) {
                     chunk.upload_to_gpu();
                 }
                 m_render_snapshots.push_back(
-                    {chunk.get_normal_vbo(), chunk.get_normal_vertices_sum(),
-                     chunk.get_cross_vbo(), chunk.get_cross_vertices_sum(),
-                     chunk.get_normal_discard_vbo(),
+                    {chunk.get_normal_vao(), chunk.get_normal_vertices_sum(),
+                     chunk.get_cross_vao(), chunk.get_cross_vertices_sum(),
+                     chunk.get_normal_discard_vao(),
                      chunk.get_normal_discard_vertices_sum(),
-                     chunk.get_normal_blend_vbo(),
+                     chunk.get_normal_blend_vao(),
                      chunk.get_normal_blend_vertices_sum(),
                      glm::vec3(static_cast<float>(pos.x * CHUNK_SIZE) +
                                    static_cast<float>(CHUNK_SIZE / 2),
@@ -859,6 +875,11 @@ void World::update(float delta_time) {
 void World::push_delete_vbo(GLuint vbo) {
     std::lock_guard lk(m_delete_vbo_mutex);
     m_pending_delete_vbo.push_back(vbo);
+}
+
+void World::push_delete_vao(GLuint vao) {
+    std::lock_guard lk(m_delete_vao_mutex);
+    m_pending_delete_vao.push_back(vao);
 }
 
 void World::hot_reload() {

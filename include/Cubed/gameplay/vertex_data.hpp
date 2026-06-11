@@ -9,6 +9,7 @@ class World;
 struct VertexData {
     std::vector<Vertex> m_vertices;
     GLuint m_vbo = 0;
+    GLuint m_vao = 0;
     std::atomic<std::size_t> m_sum{0};
     World& m_world;
     VertexData(World& world);

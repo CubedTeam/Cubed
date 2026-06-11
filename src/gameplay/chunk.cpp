@@ -123,7 +123,7 @@ void Chunk::gen_vertex_data(
     m_is_on_gen_vertex_data = false;
 }
 
-GLuint Chunk::get_normal_vbo() const { return m_vertex_data[0].m_vbo; }
+GLuint Chunk::get_normal_vao() const { return m_vertex_data[0].m_vao; }
 
 size_t Chunk::get_normal_vertices_sum() const {
     if (m_vertex_data[0].m_sum == 0) {
@@ -132,17 +132,17 @@ size_t Chunk::get_normal_vertices_sum() const {
     return m_vertex_data[0].m_sum.load();
 }
 
-GLuint Chunk::get_cross_vbo() const { return m_vertex_data[1].m_vbo; }
+GLuint Chunk::get_cross_vao() const { return m_vertex_data[1].m_vao; }
 size_t Chunk::get_cross_vertices_sum() const {
     return m_vertex_data[1].m_sum.load();
 }
 
-GLuint Chunk::get_normal_discard_vbo() const { return m_vertex_data[2].m_vbo; }
+GLuint Chunk::get_normal_discard_vao() const { return m_vertex_data[2].m_vao; }
 size_t Chunk::get_normal_discard_vertices_sum() const {
     return m_vertex_data[2].m_sum.load();
 }
 
-GLuint Chunk::get_normal_blend_vbo() const { return m_vertex_data[3].m_vbo; }
+GLuint Chunk::get_normal_blend_vao() const { return m_vertex_data[3].m_vao; }
 size_t Chunk::get_normal_blend_vertices_sum() const {
     return m_vertex_data[3].m_sum.load();
 }
