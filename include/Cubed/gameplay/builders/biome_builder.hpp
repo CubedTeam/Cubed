@@ -13,5 +13,6 @@ public:
 protected:
     void build_bottom();
     void place_grass();
+    void ocean_water_build();
 };
 } // namespace Cubed

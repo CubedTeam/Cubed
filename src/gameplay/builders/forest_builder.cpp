@@ -32,6 +32,7 @@ void ForestBuilder::build_blocks() {
             m_blocks[Chunk::index(x, height, z)] = 1;
         }
     }
+    ocean_water_build();
 }
 
 void ForestBuilder::build_vegetation() {

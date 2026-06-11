@@ -27,6 +27,7 @@ void DesertBuilder::build_blocks() {
             }
         }
     }
+    ocean_water_build();
 }
 
 void DesertBuilder::build_vegetation() {}
