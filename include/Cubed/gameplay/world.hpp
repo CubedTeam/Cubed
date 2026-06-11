@@ -15,13 +15,13 @@
 namespace Cubed {
 
 struct ChunkRenderSnapshot {
-    GLuint normal_vbo;
+    GLuint normal_vao;
     size_t normal_vertices_count;
-    GLuint cross_vbo;
+    GLuint cross_vao;
     size_t cross_vertices_count;
-    GLuint normal_discard_vbo;
+    GLuint normal_discard_vao;
     size_t normal_discard_vertices_count;
-    GLuint normal_blend_vbo;
+    GLuint normal_blend_vao;
     size_t normal_blend_vertices_count;
     glm::vec3 center;
     glm::vec3 half_extents;
@@ -47,8 +47,10 @@ private:
     std::mutex m_gen_signal_mutex;
     std::mutex m_new_chunk_queue_mutex;
     std::mutex m_delete_vbo_mutex;
+    std::mutex m_delete_vao_mutex;
     std::mutex m_gen_player_pos_mutex;
     std::vector<GLuint> m_pending_delete_vbo;
+    std::vector<GLuint> m_pending_delete_vao;
     std::condition_variable m_gen_cv;
     std::atomic<bool> m_gen_running{false};
     std::atomic<bool> m_need_gen_chunk{false};
@@ -104,7 +106,7 @@ public:
     void update(float delta_time);
 
     void push_delete_vbo(GLuint vbo);
-
+    void push_delete_vao(GLuint vao);
     void hot_reload();
 
     void rebuild_world();

@@ -101,16 +101,16 @@ public:
         const std::array<const std::vector<BlockType>*, 4>& neighbor_block);
     void upload_to_gpu();
 
-    GLuint get_normal_vbo() const;
+    GLuint get_normal_vao() const;
     size_t get_normal_vertices_sum() const;
 
-    GLuint get_cross_vbo() const;
+    GLuint get_cross_vao() const;
     size_t get_cross_vertices_sum() const;
 
-    GLuint get_normal_discard_vbo() const;
+    GLuint get_normal_discard_vao() const;
     size_t get_normal_discard_vertices_sum() const;
 
-    GLuint get_normal_blend_vbo() const;
+    GLuint get_normal_blend_vao() const;
     size_t get_normal_blend_vertices_sum() const;
 
     bool is_dirty() const;

@@ -457,20 +457,10 @@ void Renderer::render_world() {
                                      m_planes)) {
             glBindTexture(GL_TEXTURE_2D_ARRAY,
                           m_texture_manager.get_texture_array());
-            glBindBuffer(GL_ARRAY_BUFFER, snapshot.normal_vbo);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)offsetof(Vertex, s));
-            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)offsetof(Vertex, layer));
 
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glEnableVertexAttribArray(2);
+            glBindVertexArray(snapshot.normal_vao);
 
             glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_vertices_count);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             rendered_sum++;
         }
@@ -489,40 +479,19 @@ void Renderer::render_world() {
             if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
                 glBindTexture(GL_TEXTURE_2D_ARRAY,
                               m_texture_manager.get_cross_plane_array());
-                glBindBuffer(GL_ARRAY_BUFFER, snapshot.cross_vbo);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                      (void*)0);
-                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                      (void*)offsetof(Vertex, s));
-                glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                      (void*)offsetof(Vertex, layer));
 
-                glEnableVertexAttribArray(0);
-                glEnableVertexAttribArray(1);
-                glEnableVertexAttribArray(2);
+                glBindVertexArray(snapshot.cross_vao);
 
                 glDrawArrays(GL_TRIANGLES, 0, snapshot.cross_vertices_count);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
             }
         }
         if (snapshot.normal_discard_vertices_count != 0) {
             glBindTexture(GL_TEXTURE_2D_ARRAY,
                           m_texture_manager.get_texture_array());
-            glBindBuffer(GL_ARRAY_BUFFER, snapshot.normal_discard_vbo);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)offsetof(Vertex, s));
-            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)offsetof(Vertex, layer));
-
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glEnableVertexAttribArray(2);
+            glBindVertexArray(snapshot.normal_discard_vao);
 
             glDrawArrays(GL_TRIANGLES, 0,
                          snapshot.normal_discard_vertices_count);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
 
@@ -562,20 +531,9 @@ void Renderer::render_world() {
         if (snapshot.normal_blend_vertices_count != 0) {
             glBindTexture(GL_TEXTURE_2D_ARRAY,
                           m_texture_manager.get_texture_array());
-            glBindBuffer(GL_ARRAY_BUFFER, snapshot.normal_blend_vbo);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)offsetof(Vertex, s));
-            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)offsetof(Vertex, layer));
-
-            glEnableVertexAttribArray(0);
-            glEnableVertexAttribArray(1);
-            glEnableVertexAttribArray(2);
+            glBindVertexArray(snapshot.normal_blend_vao);
 
             glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_blend_vertices_count);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
     }
     auto& composite_shader = get_shader("composite");
