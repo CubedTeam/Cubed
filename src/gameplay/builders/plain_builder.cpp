@@ -27,7 +27,6 @@ void PlainBuilder::build_blocks() {
             m_blocks[Chunk::index(x, height, z)] = 1;
         }
     }
-    ocean_water_build();
 }
 
 void PlainBuilder::build_vegetation() { place_grass(); }

@@ -23,7 +23,6 @@ void MountainBuilder::build_blocks() {
             }
         }
     }
-    ocean_water_build();
 }
 
 void MountainBuilder::build_vegetation() {}

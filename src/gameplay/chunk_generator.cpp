@@ -635,6 +635,8 @@ void ChunkGenerator::make_biome_builder() {
     }
 }
 
+void ChunkGenerator::ocean_build() { m_biome_builder->ocean_water_build(); }
+
 void ChunkGenerator::generate_cave() {
     auto& cave_carver = m_chunk.world().cave_carcer();
     auto& paths = cave_carver.paths();

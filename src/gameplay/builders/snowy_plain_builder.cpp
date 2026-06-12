@@ -27,7 +27,6 @@ void SnowyPlainBuilder::build_blocks() {
             m_blocks[Chunk::index(x, height, z)] = 8;
         }
     }
-    ocean_water_build();
 }
 
 void SnowyPlainBuilder::build_vegetation() {}

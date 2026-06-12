@@ -23,7 +23,6 @@ void OceanBuilder::build_blocks() {
             }
         }
     }
-    ocean_water_build();
 }
 
 void OceanBuilder::build_vegetation() {}
