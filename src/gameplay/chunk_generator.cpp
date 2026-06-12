@@ -594,11 +594,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                     fill_type = final_type;
                 }
                 for (int y = std::max(0, top_y - 5); y < top_y; y++) {
-                    if (fill_type == 7 && y > SEA_LEVEL) {
-                        m_blocks[Chunk::index(x, y, z)] = 0;
-                    } else {
-                        m_blocks[Chunk::index(x, y, z)] = fill_type;
-                    }
+                    m_blocks[Chunk::index(x, y, z)] = fill_type;
                 }
             }
         }
