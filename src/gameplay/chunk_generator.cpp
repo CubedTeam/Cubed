@@ -688,6 +688,10 @@ void ChunkGenerator::generate_cave() {
                             if (blocks[Chunk::index(x, y, z)] == 7) {
                                 continue;
                             }
+                            if (y < WORLD_SIZE_Y - 1 &&
+                                blocks[Chunk::index(x, y + 1, z)] == 7) {
+                                continue;
+                            }
                             blocks[Chunk::index(x, y, z)] = 0;
                         }
                     }
