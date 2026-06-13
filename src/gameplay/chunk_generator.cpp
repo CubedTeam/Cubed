@@ -725,11 +725,7 @@ void ChunkGenerator::generate_cave() {
     auto& blocks = m_chunk.blocks();
 
     for (auto& [id, path] : paths) {
-        if ((m_chunk.biome() == BiomeType::RIVER) ||
-            (m_chunk.biome() == BiomeType::OCEAN)) {
-            path.clear_chunk(chunk_pos);
-            continue;
-        }
+
         carve_worm(path.points(), chunk_pos, [&](int x, int y, int z) -> void {
             int idx = Chunk::index(x, y, z);
             if (blocks[idx] == 7)
