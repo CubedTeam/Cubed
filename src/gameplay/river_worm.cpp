@@ -5,11 +5,11 @@
 namespace Cubed {
 RiverWorm::RiverWorm() {}
 
-std::unordered_map<unsigned, RiverPath>& RiverWorm::paths() { return m_paths; }
+RiverWorm::RiverHashMap& RiverWorm::paths() { return m_paths; }
 
 void RiverWorm::init(unsigned world_seed) {
     m_seed = world_seed;
-    m_sum = 0;
+
     m_random.init(m_seed);
 }
 
@@ -20,15 +20,16 @@ void RiverWorm::reload(unsigned world_seed) {
 }
 
 void RiverWorm::add_path(const glm::vec3& pos, unsigned chunk_seed) {
-    m_paths.emplace(chunk_seed, RiverPath{m_seed, m_sum, pos});
-    m_sum++;
+    m_paths.emplace(chunk_seed, RiverPath{chunk_seed, m_seed, pos});
 }
 
 void RiverWorm::try_to_add_path(const ChunkPos& chunk_pos,
                                 unsigned chunk_seed) {
-    auto it = m_paths.find(chunk_seed);
-    if (it != m_paths.end()) {
-        return;
+    {
+        RiverHashMap::const_accessor acc;
+        if (m_paths.find(acc, chunk_seed)) {
+            return;
+        }
     }
     Random random{chunk_seed};
     if (random.random_bool(static_cast<double>(m_probability))) {
@@ -44,10 +45,17 @@ void RiverWorm::try_to_add_path(const ChunkPos& chunk_pos,
 }
 
 void RiverWorm::cleanup_finished_rivers() {
-    std::erase_if(m_paths,
-                  [](const auto& kv) { return kv.second.is_finished(); });
+    std::vector<unsigned> finished_keys;
+    for (const auto& pair : m_paths) {
+        if (pair.second.is_finished()) {
+            finished_keys.push_back(pair.first);
+        }
+    }
+    for (const auto& key : finished_keys) {
+        m_paths.erase(key);
+    }
 }
 
-int RiverWorm::river_sum() const { return m_sum; }
+int RiverWorm::river_sum() const { return m_paths.size(); }
 float& RiverWorm::river_probability() { return m_probability; }
 } // namespace Cubed

@@ -5,13 +5,16 @@
 #include "Cubed/tools/cubed_random.hpp"
 
 #include <glm/glm.hpp>
-#include <unordered_set>
+#include <tbb/concurrent_hash_map.h>
 
 namespace Cubed {
 class RiverPath {
+    using ChunkPosSet =
+        tbb::concurrent_hash_map<ChunkPos, bool, ChunkPos::TBBHash>;
 
 public:
-    RiverPath(unsigned int world_seed, int path_id, const glm::vec3& start_pos);
+    RiverPath(unsigned int chunk_seed, unsigned world_seed,
+              const glm::vec3& start_pos);
     const std::vector<PathPoint>& points() const;
     void clear_chunk(const ChunkPos& pos);
     bool is_finished() const;
@@ -32,12 +35,12 @@ private:
     static inline float m_radius_y_max = 8.0f;
     static inline float m_delta_angle_min = -3.0f;
     static inline float m_delta_angle_max = 3.0f;
-    static inline int m_step_min = 150;
+    static inline int m_step_min = 200;
     static inline int m_step_max = 400;
 
-    int m_path_id = 0;
     unsigned int m_seed = 0;
     float m_yaw = 0.0f;
+    float m_initial_yaw = 0.0f;
     float m_pitch = 0.0f;
     int m_step = 0;
     float m_step_len = 1.0f;
@@ -45,7 +48,7 @@ private:
     Random m_random;
 
     std::vector<PathPoint> m_points;
-    std::unordered_set<ChunkPos, ChunkPos::Hash> m_pending_chunks;
+    ChunkPosSet m_pending_chunks;
     void collect_path_points();
     void precompute_chunk_coverage();
 };
