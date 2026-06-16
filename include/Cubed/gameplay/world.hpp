@@ -40,6 +40,7 @@ private:
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
     using ChunkHashMap = std::unordered_map<ChunkPos, Chunk, ChunkPos::Hash>;
     glm::vec3 m_gen_player_pos{0.0f, 0.0f, 0.0f};
+    glm::vec3 m_sunlight_dir{1.0f, 2.0f, 1.0f};
     ChunkHashMap m_chunks;
     std::unordered_map<std::size_t, Player> m_players;
     std::vector<glm::vec4> m_planes;
@@ -125,6 +126,8 @@ public:
     RiverWorm& river_worm();
     std::vector<glm::vec4>& planes();
     std::vector<ChunkRenderSnapshot>& render_snapshots();
+
+    glm::vec3 sunlight_dir() const;
 };
 
 } // namespace Cubed

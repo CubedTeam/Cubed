@@ -439,8 +439,20 @@ void Renderer::render_world() {
     m_m_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
     m_v_mat = m_camera.get_camera_lookat();
     m_mv_mat = m_v_mat * m_m_mat;
+    m_norm_mat = glm::transpose(glm::inverse(m_mv_mat));
+    glm::vec3 light_dir_view =
+        glm::normalize(glm::mat3(m_v_mat) * m_world.sunlight_dir());
+
     glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
     glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
+    glUniformMatrix4fv(normal_block_shader.loc("norm_matrix"), 1, GL_FALSE,
+                       glm::value_ptr(m_norm_mat));
+    glUniform1f(normal_block_shader.loc("ambientStrength"), AMBIENT_STRENGTH);
+    glUniform3fv(normal_block_shader.loc("sunlightColor"), 1,
+                 glm::value_ptr(SUNLIGHT_COLOR));
+    glUniform3fv(normal_block_shader.loc("sunlightDir"), 1,
+                 glm::value_ptr(light_dir_view));
+
     m_mvp_mat = m_p_mat * m_mv_mat;
 
     auto& camera_pos = m_camera.get_camera_pos();

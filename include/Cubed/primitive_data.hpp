@@ -91,6 +91,51 @@ constexpr float TEX_COORDS[6][6][2] = {
      {0.0f, 1.0f}, // back left
      {0.0f, 0.0f}} // front left
 };
+
+constexpr float NORMALS[6][6][3] = {
+    // ===== front (z = +1) =====
+    {{0.0f, 0.0f, 1.0f},
+     {0.0f, 0.0f, 1.0f},
+     {0.0f, 0.0f, 1.0f},
+     {0.0f, 0.0f, 1.0f},
+     {0.0f, 0.0f, 1.0f},
+     {0.0f, 0.0f, 1.0f}},
+    // ===== right (x = +1) =====
+    {{1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f}},
+    // ===== back (z = -1) =====
+    {{0.0f, 0.0f, -1.0f},
+     {0.0f, 0.0f, -1.0f},
+     {0.0f, 0.0f, -1.0f},
+     {0.0f, 0.0f, -1.0f},
+     {0.0f, 0.0f, -1.0f},
+     {0.0f, 0.0f, -1.0f}},
+    // ===== left (x = -1) =====
+    {{-1.0f, 0.0f, 0.0f},
+     {-1.0f, 0.0f, 0.0f},
+     {-1.0f, 0.0f, 0.0f},
+     {-1.0f, 0.0f, 0.0f},
+     {-1.0f, 0.0f, 0.0f},
+     {-1.0f, 0.0f, 0.0f}},
+    // ===== top (y = +1) =====
+    {{0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f}},
+    // ===== bottom (y = -1) =====
+    {{0.0f, -1.0f, 0.0f},
+     {0.0f, -1.0f, 0.0f},
+     {0.0f, -1.0f, 0.0f},
+     {0.0f, -1.0f, 0.0f},
+     {0.0f, -1.0f, 0.0f},
+     {0.0f, -1.0f, 0.0f}}};
+
 #pragma endregion
 constexpr float CUBE_VER[24] = {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
                                 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0,
@@ -148,6 +193,24 @@ constexpr float CROSS_TEX_COORDS[2][6][2] = {
      {1.0f, 1.0f},  // bottom right
      {0.0f, 1.0f}}, // bottom left
 };
+
+constexpr float CROSS_NORMALS[2][6][3] = {
+    // ===== Plane 1: upward =====
+    {{0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f}},
+
+    // ===== Plane 2: upward =====
+    {{0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 1.0f, 0.0f}}};
+
 #pragma endregion
 
 constexpr float QUAD_VERTICES[] = {
@@ -156,10 +219,11 @@ constexpr float QUAD_VERTICES[] = {
 
     -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
 
-struct Vertex {
+struct Vertex3D {
     float x = 0.0f, y = 0.0f, z = 0.0f;
     float s = 0.0f, t = 0.0f;
     float layer = 0.0f;
+    float nx = 0.0f, ny = 0.0f, nz = 0.0f;
 };
 
 struct Vertex2D {

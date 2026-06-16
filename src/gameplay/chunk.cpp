@@ -366,13 +366,18 @@ void Chunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
                                                  cur_id);
                     }
                     for (int i = 0; i < 6; i++) {
-                        Vertex vex = {
+                        Vertex3D vex = {
                             VERTICES_POS[face][i][0] + (float)world_x * 1.0f,
                             VERTICES_POS[face][i][1] + (float)world_y * 1.0f,
                             VERTICES_POS[face][i][2] + (float)world_z * 1.0f,
                             TEX_COORDS[face][i][0],
                             TEX_COORDS[face][i][1],
-                            static_cast<float>(cur_id * 6 + face)
+
+                            static_cast<float>(cur_id * 6 + face),
+
+                            NORMALS[face][i][0],
+                            NORMALS[face][i][1],
+                            NORMALS[face][i][2]
 
                         };
                         if (BlockManager::is_transparent(cur_id)) {
@@ -413,13 +418,16 @@ void Chunk::gen_cross_plane_vertices(int world_x, int world_y, int world_z,
     }
     for (int face = 0; face < 2; face++) {
         for (int i = 0; i < 6; i++) {
-            Vertex vex = {
+            Vertex3D vex = {
                 CROSS_VERTICES_POS[face][i][0] + (float)world_x * 1.0f,
                 CROSS_VERTICES_POS[face][i][1] + (float)world_y * 1.0f,
                 CROSS_VERTICES_POS[face][i][2] + (float)world_z * 1.0f,
                 CROSS_TEX_COORDS[face][i][0],
                 CROSS_TEX_COORDS[face][i][1],
-                static_cast<float>(BlockManager::cross_plane_index(id))
+                static_cast<float>(BlockManager::cross_plane_index(id)),
+                CROSS_NORMALS[face][i][0],
+                CROSS_NORMALS[face][i][1],
+                CROSS_NORMALS[face][i][2]
 
             };
             m_vertex_data[1].m_vertices.emplace_back(vex);

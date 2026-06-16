@@ -30,6 +30,7 @@ public:
     void updata_framebuffer(int width, int height);
 
 private:
+    static constexpr glm::vec3 SUNLIGHT_COLOR{1.0f, 1.0f, 1.0f};
     const Camera& m_camera;
     DevPanel& m_dev_panel;
     const TextureManager& m_texture_manager;
@@ -43,7 +44,7 @@ private:
     float m_width = 0.0f;
     float m_height = 0.0f;
 
-    glm::mat4 m_p_mat, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat;
+    glm::mat4 m_p_mat, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat, m_norm_mat;
 
     GLuint m_mv_loc = 0;
     GLuint m_proj_loc = 0;

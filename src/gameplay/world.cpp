@@ -1006,4 +1006,6 @@ std::vector<glm::vec4>& World::planes() { return m_planes; }
 std::vector<ChunkRenderSnapshot>& World::render_snapshots() {
     return m_render_snapshots;
 };
+glm::vec3 World::sunlight_dir() const { return m_sunlight_dir; }
+
 } // namespace Cubed
