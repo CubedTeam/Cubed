@@ -267,21 +267,17 @@ void DevPanel::show_time_table_bar() {
     World& world = m_app.world();
     ImGui::Text("Game Tick %lld", world.game_tick());
     ImGui::Text("Day Tick %lld", world.day_tick());
-    ImGui::Text("Set Day Tick");
-    ImGui::SameLine();
-    if (ImGui::SliderInt("DayTick", &m_pre_set_day_tick, 0, DAY_TIME)) {
+    if (ImGui::SliderInt("SetDayTick", &m_pre_set_day_tick, 0, DAY_TIME)) {
     }
     ImGui::SameLine();
-    if (ImGui::Button("Save##DayTick")) {
+    if (ImGui::Button("Set##DayTick")) {
         world.day_tick(static_cast<TickType>(m_pre_set_day_tick));
     }
     ImGui::Text("MSPT %d", world.per_tick_time());
-    ImGui::Text("Set MSPT");
-    ImGui::SameLine();
     if (ImGui::SliderInt("SetMSPT", &m_pre_set_tick_speed, 0, 200)) {
     }
     ImGui::SameLine();
-    if (ImGui::Button("Save##MSPT")) {
+    if (ImGui::Button("Set##MSPT")) {
         world.per_tick_time(m_pre_set_tick_speed);
     }
 }
@@ -359,6 +355,10 @@ void DevPanel::show_settings_tab_item() {
                               static_cast<double>(m_config.mouse_sensitivity));
             m_player->hot_reload();
         }
+        if (ImGui::SliderFloat("AmbientStrength",
+                               &m_app.renderer().ambient_strength(), 0.0f,
+                               0.35f))
+            ;
         if (ImGui::SliderInt("Distance", &m_config.rendering_distance, 2,
                              128)) {
             Config::get().set("world.rendering_distance",

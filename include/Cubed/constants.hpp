@@ -27,8 +27,6 @@ constexpr int SIZE_X = CHUNK_SIZE;
 constexpr int SIZE_Y = WORLD_SIZE_Y;
 constexpr int SIZE_Z = CHUNK_SIZE;
 
-constexpr float AMBIENT_STRENGTH = 0.3f;
-
 constexpr ChunkPos CHUNK_DIR[]{{1, 0}, {-1, 0}, {0, 1},  {0, -1},
                                {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
 

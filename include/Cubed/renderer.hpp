@@ -28,6 +28,7 @@ public:
     void update_fov(float fov);
     void update_proj_matrix(float aspect, float width, float height);
     void updata_framebuffer(int width, int height);
+    float& ambient_strength();
 
 private:
     static constexpr glm::vec3 SUNLIGHT_COLOR{1.0f, 1.0f, 1.0f};
@@ -38,6 +39,9 @@ private:
     static constexpr float NEAR_PLANE = 0.1f;
     static constexpr float SUN_SIZE = 50.0f;
     static constexpr float MOON_SIZE = 50.0f;
+
+    float m_ambient_strength = 0.1f;
+
     const Camera& m_camera;
     DevPanel& m_dev_panel;
     const TextureManager& m_texture_manager;

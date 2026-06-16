@@ -192,8 +192,8 @@ void Renderer::init_text() {
 }
 
 void Renderer::render() {
+    glDisable(GL_FRAMEBUFFER_SRGB);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -202,12 +202,13 @@ void Renderer::render() {
     render_outline();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     render_underwater();
-
+    glDisable(GL_FRAMEBUFFER_SRGB);
     render_ui();
     render_text();
     render_dev_panel();
@@ -479,7 +480,7 @@ void Renderer::render_world() {
     glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
     glUniformMatrix4fv(normal_block_shader.loc("norm_matrix"), 1, GL_FALSE,
                        glm::value_ptr(m_norm_mat));
-    glUniform1f(normal_block_shader.loc("ambientStrength"), AMBIENT_STRENGTH);
+    glUniform1f(normal_block_shader.loc("ambientStrength"), m_ambient_strength);
     glUniform3fv(normal_block_shader.loc("sunlightColor"), 1,
                  glm::value_ptr(SUNLIGHT_COLOR));
     glUniform3fv(normal_block_shader.loc("sunlightDir"), 1,
@@ -614,5 +615,7 @@ void Renderer::render_dev_panel() {
     m_dev_panel.render();
     glEnable(GL_DEPTH_TEST);
 }
+
+float& Renderer::ambient_strength() { return m_ambient_strength; }
 
 } // namespace Cubed
