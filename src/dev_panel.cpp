@@ -265,8 +265,8 @@ void DevPanel::show_biome_table_bar() {
 
 void DevPanel::show_time_table_bar() {
     World& world = m_app.world();
-    ImGui::Text("Game Tick %lld", world.game_tick());
-    ImGui::Text("Day Tick %lld", world.day_tick());
+    ImGui::Text("Game Tick %llu", world.game_tick());
+    ImGui::Text("Day Tick %llu", world.day_tick());
     if (ImGui::SliderInt("SetDayTick", &m_pre_set_day_tick, 0, DAY_TIME)) {
     }
     ImGui::SameLine();
@@ -274,7 +274,7 @@ void DevPanel::show_time_table_bar() {
         world.day_tick(static_cast<TickType>(m_pre_set_day_tick));
     }
     ImGui::Text("MSPT %d", world.per_tick_time());
-    if (ImGui::SliderInt("SetMSPT", &m_pre_set_tick_speed, 0, 200)) {
+    if (ImGui::SliderInt("SetMSPT", &m_pre_set_tick_speed, 1, 200)) {
     }
     ImGui::SameLine();
     if (ImGui::Button("Set##MSPT")) {

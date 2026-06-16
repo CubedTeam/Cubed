@@ -1,6 +1,6 @@
 #pragma once
 
-using TickType = long long;
+using TickType = unsigned long long;
 
 constexpr int DEFAULT_PER_TICK_TIME = 50;
 
