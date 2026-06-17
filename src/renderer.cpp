@@ -470,8 +470,8 @@ void Renderer::updata_framebuffer(int width, int height) {
     glGenTextures(1, &m_depth_map_texture);
 
     glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, DEPTH_MAP_WIDTH,
-                 DEPTH_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, DEPTH_MAP_SIZE,
+                 DEPTH_MAP_SIZE, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -506,7 +506,7 @@ void Renderer::render_world() {
 
     glm::vec3 cam_pos = m_camera.get_camera_pos();
     glm::vec3 cam_fwd = m_camera.get_camera_front();
-    float half_extent = 256.0f;
+    float half_extent = 128.0f;
 
     glm::vec3 center = cam_pos + cam_fwd * (half_extent * 0.5f);
 
@@ -515,24 +515,27 @@ void Renderer::render_world() {
         fabs(sundir.y) > 0.99f ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
 
     glm::mat4 light_basis = glm::lookAt(glm::vec3(0.0f), sundir, up);
-    float texels_per_unit = DEPTH_MAP_WIDTH / (half_extent * 2.0f);
+    float texels_per_unit = DEPTH_MAP_SIZE / (half_extent * 2.0f);
     glm::vec3 ls_center = glm::vec3(light_basis * glm::vec4(center, 1.0f));
     ls_center.x = std::round(ls_center.x * texels_per_unit) / texels_per_unit;
     ls_center.y = std::round(ls_center.y * texels_per_unit) / texels_per_unit;
     glm::vec3 snapped_center =
         glm::vec3(glm::inverse(light_basis) * glm::vec4(ls_center, 1.0f));
 
-    float distance = 128.0f;
+    float distance = half_extent * 1.5f;
+    float near_plane = 1.0f;
+    float far_plane = distance + half_extent * 2.0f;
     glm::vec3 light_pos = snapped_center - sundir * distance;
     glm::mat4 light_view = glm::lookAt(light_pos, snapped_center, up);
-    glm::mat4 light_projection = glm::ortho(
-        -half_extent, half_extent, -half_extent, half_extent, 1.0f, 500.0f);
+    glm::mat4 light_projection =
+        glm::ortho(-half_extent, half_extent, -half_extent, half_extent,
+                   near_plane, far_plane);
 
     glm::mat4 light_space_matrix = light_projection * light_view;
     glUniformMatrix4fv(depth_shader.loc("lightSpaceMatrix"), 1, GL_FALSE,
                        glm::value_ptr(light_space_matrix));
 
-    glViewport(0, 0, DEPTH_MAP_WIDTH, DEPTH_MAP_WIDTH);
+    glViewport(0, 0, DEPTH_MAP_SIZE, DEPTH_MAP_SIZE);
     glCullFace(GL_FRONT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_depth_map_fbo);

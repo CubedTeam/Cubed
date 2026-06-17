@@ -37,16 +37,20 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir)
     }
     float currentDepth = projCoords.z;
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
-    float bias = 0.0002;
-    bias += max(0.005 * texelSize.x * (1.0 - dot(norm, lightDir)), 0.0);
-
-    float angle = random(gl_FragCoord.xyy) * 6.2831853; // 2*PI
+    float shadow = 0.0;
+    float bias =
+    max(
+        0.0003,
+        0.001 * (1.0 - dot(norm, lightDir))
+    );
+    vec3 seed = vert_pos * 37.0 + sin(vert_pos * 91.7) * 13.0;
+    float angle = random(seed) * 6.2831853;; // 2*PI
     float s = sin(angle), c = cos(angle);
     mat2 rot = mat2(c, -s, s, c);
 
-    float radius = 1.5;
+    float radius = 0.7;
 
-    float shadow = 0.0;
+    
     const int samples = 8;
     for (int i = 0; i < samples; ++i) {
         vec2 offset = rot * poissonDisk[i] * radius * texelSize;
@@ -54,7 +58,25 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir)
         shadow += (currentDepth - bias > pcfDepth ? 1.0 : 0.0);
     }
     shadow /= float(samples);
+    
+    /*
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            vec2 offset = vec2(x, y) * texelSize;
+            float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
+            shadow += (currentDepth - bias > pcfDepth ? 1.0 : 0.0);
+        }
+    }
+    shadow /= 9.0;
+    */
+    // pcf off
+    //float pcfDepth =
+    //texture(shadowMap, projCoords.xy).r;
 
+    //shadow =
+    //   currentDepth - bias > pcfDepth
+    //    ? 1.0
+    //    : 0.0;
     return shadow;
 }
 
