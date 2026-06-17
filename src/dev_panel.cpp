@@ -84,6 +84,7 @@ void DevPanel::render() {
         show_world_tab_item();
         show_player_tab_item();
         show_items_tab_item();
+        show_shader_tab_item();
         show_about_table_bar();
 
         ImGui::EndTabBar();
@@ -107,6 +108,7 @@ void DevPanel::show_about_table_bar() {
         ImGui::Text("FreeType");
         ImGui::Text("toml++");
         ImGui::Text("Dear ImGui");
+        ImGui::Text("Tbb");
         ImGui::Separator();
         ImGui::Text("Special Thanks");
         ImGui::Text("TANGERIME");
@@ -361,10 +363,7 @@ void DevPanel::show_settings_tab_item() {
                               static_cast<double>(m_config.mouse_sensitivity));
             m_player->hot_reload();
         }
-        if (ImGui::SliderFloat("AmbientStrength",
-                               &m_app.renderer().ambient_strength(), 0.0f,
-                               0.35f))
-            ;
+
         if (ImGui::SliderInt("Distance", &m_config.rendering_distance, 2,
                              128)) {
             Config::get().set("world.rendering_distance",
@@ -606,6 +605,27 @@ void DevPanel::show_items_tab_item() {
                 ImGui::SameLine();
             }
         }
+        ImGui::EndTabItem();
+    }
+}
+
+void DevPanel::show_shader_tab_item() {
+
+    static const char* shader_mode[] = {"Rotated Poisson Disk PCF",
+                                        "3x3 Square Grid PCF", "PCF off"};
+    static const char* cull_face_mode[] = {"Front", "Back"};
+    if (ImGui::BeginTabItem("shader")) {
+        ImGui::Checkbox("Shader", &m_app.renderer().shader_on());
+        if (ImGui::SliderFloat("AmbientStrength",
+                               &m_app.renderer().ambient_strength(), 0.0f,
+                               0.35f))
+            ;
+        ImGui::Checkbox("Discard Transparent",
+                        &m_app.renderer().discard_transparent());
+        ImGui::Combo("ShaderMode", &m_app.renderer().shadow_mode(), shader_mode,
+                     IM_ARRAYSIZE(shader_mode));
+        ImGui::Combo("LightCullFaceMode", &m_app.renderer().light_cull_face(),
+                     cull_face_mode, IM_ARRAYSIZE(cull_face_mode));
         ImGui::EndTabItem();
     }
 }

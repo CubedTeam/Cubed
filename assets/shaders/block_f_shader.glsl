@@ -12,6 +12,8 @@ layout (binding = 1) uniform sampler2DArray samp;
 uniform float ambientStrength;
 uniform vec3 sunlightColor;
 uniform vec3 sunlightDir;
+uniform bool shader_on;
+uniform int shadowMode;
 
 const vec2 poissonDisk[8] = vec2[](
     vec2( 0.1440,  0.7659), vec2(-0.5761,  0.4479),
@@ -43,50 +45,67 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir)
         0.0003,
         0.001 * (1.0 - dot(norm, lightDir))
     );
-    vec3 seed = vert_pos * 37.0 + sin(vert_pos * 91.7) * 13.0;
-    float angle = random(seed) * 6.2831853;; // 2*PI
-    float s = sin(angle), c = cos(angle);
-    mat2 rot = mat2(c, -s, s, c);
 
-    float radius = 0.7;
+    if (shadowMode == 0) {
+        vec3 seed = vert_pos * 37.0 + sin(vert_pos * 91.7) * 13.0;
+        float angle = random(seed) * 6.2831853;; // 2*PI
+        float s = sin(angle), c = cos(angle);
+        mat2 rot = mat2(c, -s, s, c);
 
-    
-    const int samples = 8;
-    for (int i = 0; i < samples; ++i) {
-        vec2 offset = rot * poissonDisk[i] * radius * texelSize;
-        float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
-        shadow += (currentDepth - bias > pcfDepth ? 1.0 : 0.0);
-    }
-    shadow /= float(samples);
-    
-    /*
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            vec2 offset = vec2(x, y) * texelSize;
+        float radius = 0.7;
+
+        
+        const int samples = 8;
+        for (int i = 0; i < samples; ++i) {
+            vec2 offset = rot * poissonDisk[i] * radius * texelSize;
             float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
             shadow += (currentDepth - bias > pcfDepth ? 1.0 : 0.0);
         }
-    }
-    shadow /= 9.0;
-    */
-    // pcf off
-    //float pcfDepth =
-    //texture(shadowMap, projCoords.xy).r;
+        shadow /= float(samples);
+    } else if (shadowMode == 1) {
+        for (int x = -1; x <= 1; ++x) {
+            for (int y = -1; y <= 1; ++y) {
+                vec2 offset = vec2(x, y) * texelSize;
+                float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
+                shadow += (currentDepth - bias > pcfDepth ? 1.0 : 0.0);
+            }
+        }
+        shadow /= 9.0;
+    } else if (shadowMode == 2) {
+        // pcf off
+        float pcfDepth =
+        texture(shadowMap, projCoords.xy).r;
 
-    //shadow =
-    //   currentDepth - bias > pcfDepth
-    //    ? 1.0
-    //    : 0.0;
+        shadow =
+        currentDepth - bias > pcfDepth
+            ? 1.0
+            : 0.0;
+    } else {
+        float pcfDepth =
+        texture(shadowMap, projCoords.xy).r;
+
+        shadow =
+        currentDepth - bias > pcfDepth
+            ? 1.0
+            : 0.0;
+    }
+
+   
     return shadow;
 }
 
 
 void main(void) {
     vec4 objectColor = texture(samp, vec3(tc, tex_layer));
-    
+
     if (objectColor.a < 0.8) {
         discard;
     }
+    if (!shader_on) {
+        color = objectColor;
+        return;
+    }
+   
 
     vec3 lightDir = normalize(-sunlightDir);
     

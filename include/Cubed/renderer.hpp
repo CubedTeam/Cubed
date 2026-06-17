@@ -30,6 +30,11 @@ public:
     void updata_framebuffer(int width, int height);
     float& ambient_strength();
 
+    bool& discard_transparent();
+    bool& shader_on();
+    int& shadow_mode();
+    int& light_cull_face();
+
 private:
     static constexpr glm::vec3 SUNLIGHT_COLOR{1.0f, 1.0f, 1.0f};
     static constexpr glm::vec3 SUN_COLOR{1.00f, 0.95f, 0.80f};
@@ -47,6 +52,10 @@ private:
     const TextureManager& m_texture_manager;
     World& m_world;
 
+    bool m_discard_tranparent = true;
+    bool m_shader_on = true;
+    int m_shadow_mode = 0;
+    int m_light_cull_face = 0;
     float m_aspect = 0.0f;
     float m_fov = DEFAULT_FOV;
 
