@@ -6,7 +6,7 @@
 #include "Cubed/tools/cubed_hash.hpp"
 
 #include <execution>
-
+#include <numbers>
 using namespace std::chrono;
 
 namespace Cubed {
