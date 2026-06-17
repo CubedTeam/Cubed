@@ -6,6 +6,7 @@
 #include "Cubed/tools/cubed_hash.hpp"
 
 #include <execution>
+#include <glm/gtc/constants.hpp>
 #include <numbers>
 using namespace std::chrono;
 
@@ -1047,7 +1048,7 @@ glm::vec3 World::sunlight_dir() const {
     glm::vec3 dir{cos(altitude) * cos(azimuth), sin(altitude),
                   cos(altitude) * sin(azimuth)};
 
-    return glm::normalize(dir);
+    return glm::normalize(-dir);
 }
 */
 

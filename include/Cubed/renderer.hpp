@@ -45,6 +45,7 @@ private:
     static constexpr float SUN_SIZE = 50.0f;
     static constexpr float MOON_SIZE = 50.0f;
     static constexpr float DEPTH_MAP_SIZE = 4096.0f;
+    static constexpr float ANGLE_STEP_DEG = 0.5f;
     float m_ambient_strength = 0.1f;
 
     const Camera& m_camera;
@@ -93,6 +94,12 @@ private:
     glm::mat4 m_ui_m_matrix;
     std::unordered_map<std::size_t, Shader> m_shaders;
 
+    glm::vec3 m_blend_from_sundir;
+    glm::vec3 m_blend_to_sundir;
+    float m_blend_t = 1.0f;
+    bool m_blend_initialized = false;
+    static constexpr float BLEND_DURATION = 0.15f;
+
     /*
     0 - quad vao
     1 - sky vao
@@ -114,6 +121,11 @@ private:
     void render_world();
     void render_underwater();
     void render_dev_panel();
+
+    glm::vec3 quantize_sun_direction(const glm::vec3& sundir,
+                                     float angle_step_deg) const;
+    glm::vec3 get_smoothed_shadow_sundir(const glm::vec3& raw_shadow_sundir,
+                                         float dt);
 };
 
 } // namespace Cubed

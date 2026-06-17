@@ -18,6 +18,7 @@
 #include <GLFW/glfw3.h>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
+
 namespace Cubed {
 
 Renderer::Renderer(const Camera& camera, World& world,
@@ -515,10 +516,14 @@ void Renderer::render_world() {
         glm::vec3 center = cam_pos + cam_fwd * (half_extent * 0.5f);
 
         glm::vec3 sundir = glm::normalize(m_world.sunlight_dir());
-        glm::vec3 up =
-            fabs(sundir.y) > 0.99f ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+        glm::vec3 raw_shadow_sundir =
+            quantize_sun_direction(sundir, ANGLE_STEP_DEG);
+        glm::vec3 shadow_sundir =
+            get_smoothed_shadow_sundir(raw_shadow_sundir, m_delta_time);
+        glm::vec3 up = fabs(shadow_sundir.y) > 0.99f ? glm::vec3(0, 0, 1)
+                                                     : glm::vec3(0, 1, 0);
 
-        glm::mat4 light_basis = glm::lookAt(glm::vec3(0.0f), sundir, up);
+        glm::mat4 light_basis = glm::lookAt(glm::vec3(0.0f), shadow_sundir, up);
         float texels_per_unit = DEPTH_MAP_SIZE / (half_extent * 2.0f);
         glm::vec3 ls_center = glm::vec3(light_basis * glm::vec4(center, 1.0f));
         ls_center.x =
@@ -531,7 +536,7 @@ void Renderer::render_world() {
         float distance = half_extent * 1.5f;
         float near_plane = 1.0f;
         float far_plane = distance + half_extent * 2.0f;
-        glm::vec3 light_pos = snapped_center - sundir * distance;
+        glm::vec3 light_pos = snapped_center - shadow_sundir * distance;
         glm::mat4 light_view = glm::lookAt(light_pos, snapped_center, up);
         glm::mat4 light_projection =
             glm::ortho(-half_extent, half_extent, -half_extent, half_extent,
@@ -755,6 +760,53 @@ void Renderer::render_dev_panel() {
     glDisable(GL_DEPTH_TEST);
     m_dev_panel.render();
     glEnable(GL_DEPTH_TEST);
+}
+
+glm::vec3 Renderer::quantize_sun_direction(const glm::vec3& sundir,
+                                           float angle_step_deg) const {
+    float elevation = std::asin(glm::clamp(sundir.y, -1.0f, 1.0f));
+    float azimuth = std::atan2(sundir.z, sundir.x);
+
+    float step = glm::radians(angle_step_deg);
+
+    float quantized_elevation = std::round(elevation / step) * step;
+    float quantized_azimuth = std::round(azimuth / step) * step;
+
+    glm::vec3 quantized_dir;
+    quantized_dir.x =
+        std::cos(quantized_elevation) * std::cos(quantized_azimuth);
+    quantized_dir.z =
+        std::cos(quantized_elevation) * std::sin(quantized_azimuth);
+    quantized_dir.y = std::sin(quantized_elevation);
+
+    return glm::normalize(quantized_dir);
+}
+
+glm::vec3
+Renderer::get_smoothed_shadow_sundir(const glm::vec3& raw_shadow_sundir,
+                                     float dt) {
+    if (!m_blend_initialized) {
+
+        m_blend_from_sundir = raw_shadow_sundir;
+        m_blend_to_sundir = raw_shadow_sundir;
+        m_blend_t = 1.0f;
+        m_blend_initialized = true;
+        return raw_shadow_sundir;
+    }
+
+    if (raw_shadow_sundir != m_blend_to_sundir) {
+        glm::vec3 current_displayed = glm::normalize(
+            Math::slerp(m_blend_from_sundir, m_blend_to_sundir, m_blend_t));
+
+        m_blend_from_sundir = current_displayed;
+        m_blend_to_sundir = raw_shadow_sundir;
+        m_blend_t = 0.0f;
+    }
+
+    m_blend_t = glm::min(m_blend_t + dt / BLEND_DURATION, 1.0f);
+
+    return glm::normalize(
+        Math::slerp(m_blend_from_sundir, m_blend_to_sundir, m_blend_t));
 }
 
 float& Renderer::ambient_strength() { return m_ambient_strength; }
