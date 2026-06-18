@@ -41,10 +41,16 @@ public:
     float& specular_strength();
 
 private:
-    static constexpr glm::vec3 SUNLIGHT_COLOR{1.0f, 1.0f, 1.0f};
     static constexpr glm::vec3 SUN_COLOR{1.00f, 0.95f, 0.80f};
     static constexpr glm::vec3 MOON_COLOR{0.75f, 0.80f, 1.00f};
     static constexpr glm::vec3 SKY_COLOR{0.529, 0.808, 0.922};
+
+    static constexpr glm::vec3 SUNSET_SUNLIGHT_COLOR{1.00f, 0.45f, 0.15f};
+    static constexpr glm::vec3 NOON_SUNLIGHT_COLOR{1.00f, 0.90f, 0.65f};
+    static constexpr glm::vec3 SUNSET_AMBIENT_COLOR{0.18f, 0.12f, 0.35f};
+    static constexpr glm::vec3 NOON_AMBIENT_COLOR{0.35f, 0.50f, 0.85f};
+    static constexpr glm::vec3 MOONLIGHT_COLOR{0.55f, 0.70f, 1.00f};
+    static constexpr glm::vec3 NIGHT_AMBIENT_COLOR{0.08f, 0.10f, 0.18f};
     static constexpr float FAR_PLANE = 1000.0f;
     static constexpr float NEAR_PLANE = 0.1f;
     static constexpr float SUN_SIZE = 50.0f;
@@ -99,8 +105,8 @@ private:
     glm::mat4 m_ui_m_matrix;
     std::unordered_map<std::size_t, Shader> m_shaders;
 
-    glm::vec3 m_blend_from_sundir;
-    glm::vec3 m_blend_to_sundir;
+    glm::vec3 m_blend_from_lightdir;
+    glm::vec3 m_blend_to_lightdir;
     float m_blend_t = 1.0f;
     bool m_blend_initialized = false;
     static constexpr float BLEND_DURATION = 0.15f;
@@ -111,6 +117,9 @@ private:
     int m_samples = 16;
 
     float m_specular_strength = 0.5f;
+
+    float moon_intensity = 0.3f;
+    float sun_intensity = 1.00f;
 
     /*
     0 - quad vao
@@ -136,8 +145,8 @@ private:
 
     glm::vec3 quantize_sun_direction(const glm::vec3& sundir,
                                      float angle_step_deg) const;
-    glm::vec3 get_smoothed_shadow_sundir(const glm::vec3& raw_shadow_sundir,
-                                         float dt);
+    glm::vec3 get_smoothed_shadow_lightdir(const glm::vec3& raw_shadow_sundir,
+                                           float dt);
 };
 
 } // namespace Cubed

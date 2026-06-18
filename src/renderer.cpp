@@ -499,7 +499,7 @@ void Renderer::updata_framebuffer(int width, int height) {
     m_width = width;
     m_height = height;
 }
-
+#pragma region render_world
 void Renderer::render_world() {
     // shader map
     glm::mat4 light_space_matrix;
@@ -507,6 +507,8 @@ void Renderer::render_world() {
     auto& camera_pos = m_camera.get_camera_pos();
     float texels_per_unit = 0.0f;
     glm::vec3 sundir = glm::normalize(m_world.sunlight_dir());
+    float sun_height = (-sundir).y;
+    glm::vec3 lightdir = sundir;
     if (m_shader_on) {
         const auto& depth_shader = get_shader("depth_shader");
         depth_shader.use();
@@ -517,14 +519,15 @@ void Renderer::render_world() {
 
         glm::vec3 center = cam_pos + cam_fwd * (half_extent * 0.5f);
 
-        glm::vec3 raw_shadow_sundir =
-            quantize_sun_direction(sundir, ANGLE_STEP_DEG);
-        glm::vec3 shadow_sundir =
-            get_smoothed_shadow_sundir(raw_shadow_sundir, m_delta_time);
-        glm::vec3 up = fabs(shadow_sundir.y) > 0.99f ? glm::vec3(0, 0, 1)
-                                                     : glm::vec3(0, 1, 0);
+        glm::vec3 raw_shadow_lightdir =
+            quantize_sun_direction(lightdir, ANGLE_STEP_DEG);
+        glm::vec3 shadow_lightdir =
+            get_smoothed_shadow_lightdir(raw_shadow_lightdir, m_delta_time);
+        glm::vec3 up = fabs(shadow_lightdir.y) > 0.99f ? glm::vec3(0, 0, 1)
+                                                       : glm::vec3(0, 1, 0);
 
-        glm::mat4 light_basis = glm::lookAt(glm::vec3(0.0f), shadow_sundir, up);
+        glm::mat4 light_basis =
+            glm::lookAt(glm::vec3(0.0f), shadow_lightdir, up);
         texels_per_unit = DEPTH_MAP_SIZE / (half_extent * 2.0f);
         glm::vec3 ls_center = glm::vec3(light_basis * glm::vec4(center, 1.0f));
         ls_center.x =
@@ -537,7 +540,7 @@ void Renderer::render_world() {
         float distance = half_extent * 1.5f;
         float near_plane = 1.0f;
         float far_plane = distance + half_extent * 2.0f;
-        glm::vec3 light_pos = snapped_center - shadow_sundir * distance;
+        glm::vec3 light_pos = snapped_center - shadow_lightdir * distance;
         glm::mat4 light_view = glm::lookAt(light_pos, snapped_center, up);
         glm::mat4 light_projection =
             glm::ortho(-half_extent, half_extent, -half_extent, half_extent,
@@ -618,17 +621,24 @@ void Renderer::render_world() {
     m_v_mat = m_camera.get_camera_lookat();
     m_mv_mat = m_v_mat * m_m_mat;
     m_norm_mat = glm::transpose(glm::inverse(m_mv_mat));
-    glm::vec3 light_dir_view =
-        glm::normalize(glm::mat3(m_v_mat) * m_world.sunlight_dir());
-
-    float sun_height = (-sundir).y;
-    float t = std::clamp(sun_height * 0.5f + 0.5f, 0.0f, 1.0f);
+    glm::vec3 light_dir_view = glm::normalize(glm::mat3(m_v_mat) * lightdir);
+    float daylight = glm::smoothstep(0.05f, 0.2f, sun_height);
 
     glm::vec3 sun_color =
-        mix(glm::vec3(1.00f, 0.45f, 0.15f), glm::vec3(1.00f, 0.90f, 0.65f), t);
+        mix(SUNSET_SUNLIGHT_COLOR, NOON_SUNLIGHT_COLOR, daylight);
 
     glm::vec3 ambient_color =
-        mix(glm::vec3(0.18f, 0.12f, 0.35f), glm::vec3(0.35f, 0.50f, 0.85f), t);
+        mix(SUNSET_AMBIENT_COLOR, NOON_AMBIENT_COLOR, daylight);
+
+    float day_factor = glm::smoothstep(-0.15f, 0.05f, sun_height);
+    float light_intensity =
+        glm::smoothstep(moon_intensity, sun_intensity, day_factor);
+    glm::vec3 directional_light_color =
+        glm::mix(MOON_COLOR, sun_color, day_factor) * light_intensity;
+    glm::vec3 finnal_ambient_color =
+        glm::mix(NIGHT_AMBIENT_COLOR, ambient_color, day_factor);
+
+    m_ambient_strength = glm::mix(0.45f, 0.25f, day_factor);
 
     glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
     glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
@@ -638,9 +648,9 @@ void Renderer::render_world() {
                        glm::value_ptr(light_space_matrix));
     glUniform1f(normal_block_shader.loc("ambientStrength"), m_ambient_strength);
     glUniform3fv(normal_block_shader.loc("sunlightColor"), 1,
-                 glm::value_ptr(sun_color));
+                 glm::value_ptr(directional_light_color));
     glUniform3fv(normal_block_shader.loc("ambientColor"), 1,
-                 glm::value_ptr(ambient_color));
+                 glm::value_ptr(finnal_ambient_color));
     glUniform3fv(normal_block_shader.loc("sunlightDir"), 1,
                  glm::value_ptr(light_dir_view));
     glUniform1i(normal_block_shader.loc("shadowMode"), m_shadow_mode);
@@ -777,17 +787,17 @@ void Renderer::render_world() {
     DebugCollector::get().report(
         "rendered_chunk", "Rendered Chunk: " + std::to_string(rendered_sum));
 }
-
+#pragma endregion
 void Renderer::render_dev_panel() {
     glDisable(GL_DEPTH_TEST);
     m_dev_panel.render();
     glEnable(GL_DEPTH_TEST);
 }
 
-glm::vec3 Renderer::quantize_sun_direction(const glm::vec3& sundir,
+glm::vec3 Renderer::quantize_sun_direction(const glm::vec3& lightdir,
                                            float angle_step_deg) const {
-    float elevation = std::asin(glm::clamp(sundir.y, -1.0f, 1.0f));
-    float azimuth = std::atan2(sundir.z, sundir.x);
+    float elevation = std::asin(glm::clamp(lightdir.y, -1.0f, 1.0f));
+    float azimuth = std::atan2(lightdir.z, lightdir.x);
 
     float step = glm::radians(angle_step_deg);
 
@@ -805,30 +815,30 @@ glm::vec3 Renderer::quantize_sun_direction(const glm::vec3& sundir,
 }
 
 glm::vec3
-Renderer::get_smoothed_shadow_sundir(const glm::vec3& raw_shadow_sundir,
-                                     float dt) {
+Renderer::get_smoothed_shadow_lightdir(const glm::vec3& raw_shadow_lightdir,
+                                       float dt) {
     if (!m_blend_initialized) {
 
-        m_blend_from_sundir = raw_shadow_sundir;
-        m_blend_to_sundir = raw_shadow_sundir;
+        m_blend_from_lightdir = raw_shadow_lightdir;
+        m_blend_to_lightdir = raw_shadow_lightdir;
         m_blend_t = 1.0f;
         m_blend_initialized = true;
-        return raw_shadow_sundir;
+        return raw_shadow_lightdir;
     }
 
-    if (raw_shadow_sundir != m_blend_to_sundir) {
+    if (raw_shadow_lightdir != m_blend_to_lightdir) {
         glm::vec3 current_displayed = glm::normalize(
-            Math::slerp(m_blend_from_sundir, m_blend_to_sundir, m_blend_t));
+            Math::slerp(m_blend_from_lightdir, m_blend_to_lightdir, m_blend_t));
 
-        m_blend_from_sundir = current_displayed;
-        m_blend_to_sundir = raw_shadow_sundir;
+        m_blend_from_lightdir = current_displayed;
+        m_blend_to_lightdir = raw_shadow_lightdir;
         m_blend_t = 0.0f;
     }
 
     m_blend_t = glm::min(m_blend_t + dt / BLEND_DURATION, 1.0f);
 
     return glm::normalize(
-        Math::slerp(m_blend_from_sundir, m_blend_to_sundir, m_blend_t));
+        Math::slerp(m_blend_from_lightdir, m_blend_to_lightdir, m_blend_t));
 }
 
 float& Renderer::ambient_strength() { return m_ambient_strength; }
