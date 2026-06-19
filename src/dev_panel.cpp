@@ -652,7 +652,11 @@ void DevPanel::show_shader_tab_item() {
         }
         ImGui::SliderFloat("Cloud Speed", &m_app.renderer().cloud_speed(), 1.0f,
                            100.0f);
-
+        ImGui::SliderFloat("Cloud Threshold Low",
+                           &m_app.renderer().cloud_threshold_low(), 0.0f, 1.0f);
+        ImGui::SliderFloat("Cloud Threshold High",
+                           &m_app.renderer().cloud_threshold_high(), 0.0f,
+                           1.0f);
         ImGui::EndTabItem();
     }
 }

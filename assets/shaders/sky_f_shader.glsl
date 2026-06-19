@@ -12,8 +12,13 @@ uniform vec3 sunDir;
 uniform vec3 sunColor;
 
 uniform float horizonSharpness;
+uniform float cloudWhiteMix;
+
+uniform float cloudThresholdLow; 
+uniform float cloudThresholdHigh;
 
 uniform float time;
+
 
 float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -63,13 +68,15 @@ void main(void) {
     if (dir.y > 0.0) {
         vec2 cloud_uv = dir.xz / (dir.y + 0.15) * 0.5 + vec2(time * 0.005, time * 0.002);
         float cloud_density = fbm(cloud_uv * 2.0);
-        cloud_density = smoothstep(0.5, 0.75, cloud_density);
+        float safeLow = cloudThresholdLow;
+        float safeHigh = max(cloudThresholdHigh, cloudThresholdLow + 0.001);
+        cloud_density = smoothstep(safeLow,safeHigh, cloud_density);
 
         
         float fade = smoothstep(0.0, 0.3, dir.y) * (1.0 - smoothstep(0.85, 1.0, dir.y));
         cloud_density *= fade;
 
-        vec3 cloud_color = mix(skyBottom, vec3(1.0), 0.7); 
+        vec3 cloud_color = mix(skyBottom, vec3(1.0), cloudWhiteMix); 
         sky = mix(sky, cloud_color, cloud_density * 0.6);
     }
 

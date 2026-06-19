@@ -40,6 +40,8 @@ public:
     int& samples();
     float& specular_strength();
     float& cloud_speed();
+    float& cloud_threshold_low();
+    float& cloud_threshold_high();
 
 private:
     struct ParallelLight {
@@ -134,6 +136,10 @@ private:
 
     float moon_intensity = 0.3f;
     float sun_intensity = 1.00f;
+
+    float m_cloud_threshold_low = 0.5f;
+    float m_cloud_threshold_high = 0.75f;
+
     ParallelLight m_parallel_light;
     /*
     0 - quad vao

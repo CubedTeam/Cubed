@@ -291,12 +291,16 @@ void Renderer::render_sky() {
 
     glm::vec3 sunset_horizon = {1.0f, 0.35f, 0.10f};
 
-    glm::vec3 night_zenith = {0.01f, 0.015f, 0.04f};
-    glm::vec3 night_horizon = {0.03f, 0.035f, 0.06f};
+    glm::vec3 night_zenith = {0.018f, 0.023f, 0.048f};
+    glm::vec3 night_horizon = {0.022f, 0.027f, 0.052f};
 
     constexpr float NIGHT_SHARPNESS = 0.35f;
     constexpr float SUNSET_SHARPNESS = 0.6f;
     constexpr float NOON_SHARPNESS = 0.35f;
+
+    constexpr float NIGHT_CLOUD_MIX = 0.3f;
+    constexpr float SUNSET_CLOUD_MIX = 0.4f;
+    constexpr float NOON_CLOUD_MIX = 0.7;
 
     glm::vec3 day_top = mix(sunset_zenith, zenith, m_parallel_light.day_light);
     glm::vec3 day_bottom =
@@ -311,6 +315,11 @@ void Renderer::render_sky() {
 
     float horizon_sharpness =
         glm::mix(NIGHT_SHARPNESS, day_sharpness, m_parallel_light.day_factor);
+
+    float day_cloud_mix =
+        glm::mix(SUNSET_CLOUD_MIX, NOON_CLOUD_MIX, m_parallel_light.day_light);
+    float cloud_white_mix =
+        glm::mix(NIGHT_CLOUD_MIX, day_cloud_mix, m_parallel_light.day_factor);
 
     m_cloud_time += m_delta_time * m_cloud_speed;
 
@@ -336,6 +345,9 @@ void Renderer::render_sky() {
                  glm::value_ptr(m_parallel_light.directional_light_color));
     glUniform1f(sky_shader.loc("horizonSharpness"), horizon_sharpness);
     glUniform1f(sky_shader.loc("time"), m_cloud_time);
+    glUniform1f(sky_shader.loc("cloudWhiteMix"), cloud_white_mix);
+    glUniform1f(sky_shader.loc("cloudThresholdLow"), m_cloud_threshold_low);
+    glUniform1f(sky_shader.loc("cloudThresholdHigh"), m_cloud_threshold_high);
     glBindVertexArray(m_vao[1]);
 
     glDisable(GL_DEPTH_TEST);
@@ -911,4 +923,6 @@ float& Renderer::max_radius() { return m_max_radius; }
 int& Renderer::samples() { return m_samples; }
 float& Renderer::specular_strength() { return m_specular_strength; }
 float& Renderer::cloud_speed() { return m_cloud_speed; }
+float& Renderer::cloud_threshold_low() { return m_cloud_threshold_low; }
+float& Renderer::cloud_threshold_high() { return m_cloud_threshold_high; }
 } // namespace Cubed
