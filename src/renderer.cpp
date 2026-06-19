@@ -805,6 +805,21 @@ void Renderer::render_world() {
 
     glUniformMatrix4fv(mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
     glUniformMatrix4fv(proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
+    glUniformMatrix4fv(accum_shader.loc("norm_matrix"), 1, GL_FALSE,
+                       glm::value_ptr(m_norm_mat));
+    glUniformMatrix4fv(accum_shader.loc("lightSpaceMatrix"), 1, GL_FALSE,
+                       glm::value_ptr(light_space_matrix));
+    glUniform1f(accum_shader.loc("ambientStrength"), m_ambient_strength);
+    glUniform3fv(accum_shader.loc("sunlightColor"), 1,
+                 glm::value_ptr(m_parallel_light.directional_light_color));
+    glUniform3fv(accum_shader.loc("ambientColor"), 1,
+                 glm::value_ptr(m_parallel_light.finnal_ambient_color));
+    glUniform3fv(accum_shader.loc("sunlightDir"), 1,
+                 glm::value_ptr(light_dir_view));
+    glUniform1i(accum_shader.loc("shader_on"), m_shader_on);
+    glUniform1f(accum_shader.loc("specularStrength"), m_specular_strength);
+    glUniform3fv(accum_shader.loc("cameraPos"), 1,
+                 glm::value_ptr(m_camera.get_camera_pos()));
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_oit_fbo);
 
