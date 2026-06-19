@@ -107,9 +107,6 @@ private:
 
     glm::mat4 m_p_mat, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat, m_norm_mat;
 
-    GLuint m_mv_loc = 0;
-    GLuint m_proj_loc = 0;
-
     GLuint m_sky_vbo = 0;
     GLuint m_text_vbo = 0;
     GLuint m_outline_indices_vbo = 0;

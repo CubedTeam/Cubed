@@ -211,7 +211,7 @@ void main() {
     // Normal perturbation
     vec3 N;
     if (enablePerturb) {
-        const float wave_speed_scale = 4.0;
+        const float wave_speed_scale = 40.0;
         vec2 waveUV1 = world_pos.xz * 8.0 + vec2(time * 0.05 * wave_speed_scale, time * 0.03 * wave_speed_scale);
         vec2 waveUV2 = world_pos.xz * 13.0 + vec2(-time * 0.04 * wave_speed_scale, time * 0.06 * wave_speed_scale);
 

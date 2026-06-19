@@ -264,17 +264,14 @@ void Renderer::render_outline() {
 
     if (block_pos != std::nullopt) {
 
-        m_mv_loc = shader.loc("mv_matrix");
-        m_proj_loc = shader.loc("proj_matrix");
-
         m_m_mat =
             glm::translate(glm::mat4(1.0f), glm::vec3(block_pos.value().pos));
 
         m_v_mat = m_camera.get_camera_lookat();
         m_mv_mat = m_v_mat * m_m_mat;
 
-        glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
-        glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
+        shader.set_loc("mv_matrix", m_mv_mat);
+        shader.set_loc("proj_matrix", m_p_mat);
 
         glBindVertexArray(m_vao[2]);
 
@@ -331,8 +328,6 @@ void Renderer::render_sky() {
     const auto& sky_shader = get_shader("sky");
 
     sky_shader.use();
-    m_mv_loc = sky_shader.loc("mv_matrix");
-    m_proj_loc = sky_shader.loc("proj_matrix");
 
     m_m_mat = glm::translate(glm::mat4(1.0f), m_camera.get_camera_pos() -
                                                   glm::vec3(0.5f, 0.5f, 0.5f));
@@ -340,23 +335,17 @@ void Renderer::render_sky() {
     m_mv_mat = m_v_mat * m_m_mat;
 
     m_sky_uniform.sun_dir_view = (-m_parallel_light.sundir);
-
-    glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
-    glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
-    glUniform3fv(sky_shader.loc("skyTop"), 1,
-                 glm::value_ptr(m_sky_uniform.sky_top));
-    glUniform3fv(sky_shader.loc("skyBottom"), 1,
-                 glm::value_ptr(m_sky_uniform.sky_bottom));
-    glUniform3fv(sky_shader.loc("sunDir"), 1,
-                 glm::value_ptr(m_sky_uniform.sun_dir_view));
-    glUniform3fv(sky_shader.loc("sunColor"), 1,
-                 glm::value_ptr(m_parallel_light.directional_light_color));
-    glUniform1f(sky_shader.loc("horizonSharpness"),
-                m_sky_uniform.horizon_sharpness);
-    glUniform1f(sky_shader.loc("time"), m_cloud_time);
-    glUniform1f(sky_shader.loc("cloudWhiteMix"), m_sky_uniform.cloud_white_mix);
-    glUniform1f(sky_shader.loc("cloudThresholdLow"), m_cloud_threshold_low);
-    glUniform1f(sky_shader.loc("cloudThresholdHigh"), m_cloud_threshold_high);
+    sky_shader.set_loc("mv_matrix", m_mv_mat);
+    sky_shader.set_loc("proj_matrix", m_p_mat);
+    sky_shader.set_loc("skyTop", m_sky_uniform.sky_top);
+    sky_shader.set_loc("skyBottom", m_sky_uniform.sky_bottom);
+    sky_shader.set_loc("sunDir", m_sky_uniform.sun_dir_view);
+    sky_shader.set_loc("sunColor", m_parallel_light.directional_light_color);
+    sky_shader.set_loc("horizonSharpness", m_sky_uniform.horizon_sharpness);
+    sky_shader.set_loc("time", m_cloud_time);
+    sky_shader.set_loc("cloudWhiteMix", m_sky_uniform.cloud_white_mix);
+    sky_shader.set_loc("cloudThresholdLow", m_cloud_threshold_low);
+    sky_shader.set_loc("cloudThresholdHigh", m_cloud_threshold_high);
     glBindVertexArray(m_vao[1]);
 
     glDisable(GL_DEPTH_TEST);
@@ -378,12 +367,9 @@ void Renderer::render_sky() {
                glm::scale(glm::mat4(1.0f), glm::vec3(SUN_SIZE)) *
                glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, -0.5f, 0.0f));
 
-    m_mv_loc = billboard.loc("mv_matrix");
-    m_proj_loc = billboard.loc("proj_matrix");
-
-    glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
-    glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
-    glUniform3fv(billboard.loc("color"), 1, glm::value_ptr(SUN_COLOR));
+    billboard.set_loc("mv_matrix", m_mv_mat);
+    billboard.set_loc("proj_matrix", m_p_mat);
+    billboard.set_loc("color", SUN_COLOR);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -393,9 +379,9 @@ void Renderer::render_sky() {
     m_mv_mat = glm::translate(glm::mat4(1.0f), moon_view_pos) *
                glm::scale(glm::mat4(1.0f), glm::vec3(MOON_SIZE)) *
                glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, -0.5f, 0.0f));
-    glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
-    glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
-    glUniform3fv(billboard.loc("color"), 1, glm::value_ptr(MOON_COLOR));
+    billboard.set_loc("mv_matrix", m_mv_mat);
+    billboard.set_loc("proj_matrix", m_p_mat);
+    billboard.set_loc("color", MOON_COLOR);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -415,9 +401,7 @@ void Renderer::render_text() {
 
     glDisable(GL_DEPTH_TEST);
 
-    m_proj_loc = shader.loc("projection");
-
-    glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_ui_proj));
+    shader.set_loc("projection", m_ui_proj);
 
     auto& texts = DebugCollector::get().all_texts();
     for (auto& t : texts) {
@@ -434,11 +418,9 @@ void Renderer::render_ui() {
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    m_mv_loc = shader.loc("m_matrix");
-    m_proj_loc = shader.loc("proj_matrix");
 
-    glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_ui_m_matrix));
-    glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_ui_proj));
+    shader.set_loc("mv_matrix", m_ui_m_matrix);
+    shader.set_loc("proj_matrix", m_ui_proj);
 
     glBindVertexArray(m_vao[3]);
 
@@ -457,11 +439,11 @@ void Renderer::render_underwater() {
 
     glBindVertexArray(m_vao[0]);
 
-    glUniform1i(shader.loc("u_sceneTexture"), 0);
-    glUniform1f(shader.loc("u_time"), glfwGetTime());
-    glUniform1i(shader.loc("u_underwater"), m_camera.is_under_water());
-    glUniform3f(shader.loc("u_waterColor"), 0.1f, 0.25f, 0.35f);
-    glUniform1f(shader.loc("u_fogDensity"), 0.08f);
+    shader.set_loc("u_sceneTexture", 0);
+    shader.set_loc("u_time", static_cast<float>(glfwGetTime()));
+    shader.set_loc("u_underwater", m_camera.is_under_water());
+    shader.set_loc("u_waterColor", glm::vec3(0.1f, 0.25f, 0.35f));
+    shader.set_loc("u_fogDensity", 0.08f);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_screen_texture);
@@ -650,10 +632,9 @@ void Renderer::render_world() {
                        near_plane, far_plane);
 
         light_space_matrix = light_projection * light_view;
-        glUniformMatrix4fv(depth_shader.loc("lightSpaceMatrix"), 1, GL_FALSE,
-                           glm::value_ptr(light_space_matrix));
-        glUniform1i(depth_shader.loc("is_discard_tranparent"),
-                    m_discard_tranparent);
+        depth_shader.set_loc("lightSpaceMatrix", light_space_matrix);
+        depth_shader.set_loc("is_discard_tranparent", m_discard_tranparent);
+
         glViewport(0, 0, DEPTH_MAP_SIZE, DEPTH_MAP_SIZE);
         if (m_light_cull_face == 0) {
             glCullFace(GL_FRONT);
@@ -713,9 +694,6 @@ void Renderer::render_world() {
     const auto& normal_block_shader = get_shader("normal_block");
     normal_block_shader.use();
 
-    m_mv_loc = normal_block_shader.loc("mv_matrix");
-    m_proj_loc = normal_block_shader.loc("proj_matrix");
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
     glActiveTexture(GL_TEXTURE1);
@@ -726,31 +704,27 @@ void Renderer::render_world() {
     m_norm_mat = glm::transpose(glm::inverse(m_mv_mat));
     glm::vec3 light_dir_view = glm::normalize(glm::mat3(m_v_mat) * lightdir);
 
-    glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
-    glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
-    glUniformMatrix4fv(normal_block_shader.loc("norm_matrix"), 1, GL_FALSE,
-                       glm::value_ptr(m_norm_mat));
-    glUniformMatrix4fv(normal_block_shader.loc("lightSpaceMatrix"), 1, GL_FALSE,
-                       glm::value_ptr(light_space_matrix));
-    glUniform1f(normal_block_shader.loc("ambientStrength"), m_ambient_strength);
-    glUniform3fv(normal_block_shader.loc("sunlightColor"), 1,
-                 glm::value_ptr(m_parallel_light.directional_light_color));
-    glUniform3fv(normal_block_shader.loc("ambientColor"), 1,
-                 glm::value_ptr(m_parallel_light.finnal_ambient_color));
-    glUniform3fv(normal_block_shader.loc("sunlightDir"), 1,
-                 glm::value_ptr(light_dir_view));
-    glUniform1i(normal_block_shader.loc("shadowMode"), m_shadow_mode);
-    glUniform1i(normal_block_shader.loc("shader_on"), m_shader_on);
-    glUniform1f(normal_block_shader.loc("texelsPerUnit"), texels_per_unit);
-    glUniform1f(normal_block_shader.loc("lightSizeUV"),
-                static_cast<GLfloat>(m_light_size_uv));
-    glUniform1f(normal_block_shader.loc("minRadius"), m_min_radius);
-    glUniform1f(normal_block_shader.loc("maxRadius"), m_max_radius);
-    glUniform1i(normal_block_shader.loc("samples"), m_samples);
-    glUniform1f(normal_block_shader.loc("specularStrength"),
-                m_specular_strength);
-    glUniform3fv(normal_block_shader.loc("cameraPos"), 1,
-                 glm::value_ptr(m_camera.get_camera_pos()));
+    normal_block_shader.set_loc("mv_matrix", m_mv_mat);
+    normal_block_shader.set_loc("proj_matrix", m_p_mat);
+    normal_block_shader.set_loc("norm_matrix", m_norm_mat);
+    normal_block_shader.set_loc("lightSpaceMatrix", light_space_matrix);
+    normal_block_shader.set_loc("ambientStrength", m_ambient_strength);
+    normal_block_shader.set_loc("sunlightColor",
+                                m_parallel_light.directional_light_color);
+    normal_block_shader.set_loc("ambientColor",
+                                m_parallel_light.finnal_ambient_color);
+    normal_block_shader.set_loc("sunlightDir", light_dir_view);
+    normal_block_shader.set_loc("shadowMode", m_shadow_mode);
+    normal_block_shader.set_loc("shader_on", m_shader_on);
+    normal_block_shader.set_loc("texelsPerUnit", texels_per_unit);
+    normal_block_shader.set_loc("lightSizeUV",
+                                static_cast<float>(m_light_size_uv));
+    normal_block_shader.set_loc("minRadius", m_min_radius);
+    normal_block_shader.set_loc("maxRadius", m_max_radius);
+    normal_block_shader.set_loc("samples", m_samples);
+    normal_block_shader.set_loc("specularStrength", m_specular_strength);
+    normal_block_shader.set_loc("cameraPos", m_camera.get_camera_pos());
+
     m_mvp_mat = m_p_mat * m_mv_mat;
 
     auto& m_planes = m_world.planes();
@@ -827,25 +801,19 @@ void Renderer::render_world() {
     glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 
     auto set_accum_loc = [&](const Shader& accum_shader) {
-        GLint mv_loc = accum_shader.loc("mv_matrix");
-        GLint proj_loc = accum_shader.loc("proj_matrix");
-        glUniformMatrix4fv(mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
-        glUniformMatrix4fv(proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
-        glUniformMatrix4fv(accum_shader.loc("norm_matrix"), 1, GL_FALSE,
-                           glm::value_ptr(m_norm_mat));
-        glUniformMatrix4fv(accum_shader.loc("lightSpaceMatrix"), 1, GL_FALSE,
-                           glm::value_ptr(light_space_matrix));
-        glUniform1f(accum_shader.loc("ambientStrength"), m_ambient_strength);
-        glUniform3fv(accum_shader.loc("sunlightColor"), 1,
-                     glm::value_ptr(m_parallel_light.directional_light_color));
-        glUniform3fv(accum_shader.loc("ambientColor"), 1,
-                     glm::value_ptr(m_parallel_light.finnal_ambient_color));
-        glUniform3fv(accum_shader.loc("sunlightDir"), 1,
-                     glm::value_ptr(light_dir_view));
-        glUniform1i(accum_shader.loc("shader_on"), m_shader_on);
-        glUniform1f(accum_shader.loc("specularStrength"), m_specular_strength);
-        glUniform3fv(accum_shader.loc("cameraPos"), 1,
-                     glm::value_ptr(m_camera.get_camera_pos()));
+        accum_shader.set_loc("mv_matrix", m_mv_mat);
+        accum_shader.set_loc("proj_matrix", m_p_mat);
+        accum_shader.set_loc("norm_matrix", m_norm_mat);
+        accum_shader.set_loc("lightSpaceMatrix", light_space_matrix);
+        accum_shader.set_loc("ambientStrength", m_ambient_strength);
+        accum_shader.set_loc("sunlightColor",
+                             m_parallel_light.directional_light_color);
+        accum_shader.set_loc("ambientColor",
+                             m_parallel_light.finnal_ambient_color);
+        accum_shader.set_loc("sunlightDir", light_dir_view);
+        accum_shader.set_loc("shader_on", m_shader_on);
+        accum_shader.set_loc("specularStrength", m_specular_strength);
+        accum_shader.set_loc("cameraPos", m_camera.get_camera_pos());
     };
 
     auto& accum_shader = get_shader("accum");
@@ -876,33 +844,27 @@ void Renderer::render_world() {
 
     set_accum_loc(water_shader);
 
-    glUniform1i(water_shader.loc("sceneColorTex"), 1);
-    glUniform1i(water_shader.loc("sceneDepthTex"), 2);
-    glUniformMatrix4fv(water_shader.loc("inv_proj_matrix"), 1, GL_FALSE,
-                       glm::value_ptr(glm::inverse(m_p_mat)));
-    glUniformMatrix4fv(water_shader.loc("inv_view_matrix"), 1, GL_FALSE,
-                       glm::value_ptr(glm::inverse(m_v_mat)));
+    water_shader.set_loc("sceneColorTex", 1);
+    water_shader.set_loc("sceneDepthTex", 2);
+    water_shader.set_loc("inv_proj_matrix", glm::inverse(m_p_mat));
+    water_shader.set_loc("inv_view_matrix", glm::inverse(m_v_mat));
+
     // sky loc
 
-    glUniform3fv(water_shader.loc("skyTop"), 1,
-                 glm::value_ptr(m_sky_uniform.sky_top));
-    glUniform3fv(water_shader.loc("skyBottom"), 1,
-                 glm::value_ptr(m_sky_uniform.sky_bottom));
-    glUniform3fv(water_shader.loc("sunDir"), 1,
-                 glm::value_ptr(m_sky_uniform.sun_dir_view));
-    glUniform3fv(water_shader.loc("sunColor"), 1,
-                 glm::value_ptr(m_parallel_light.directional_light_color));
-    glUniform1f(water_shader.loc("horizonSharpness"),
-                m_sky_uniform.horizon_sharpness);
-    glUniform1f(water_shader.loc("time"), m_cloud_time);
-    glUniform1f(water_shader.loc("cloudWhiteMix"),
-                m_sky_uniform.cloud_white_mix);
-    glUniform1f(water_shader.loc("cloudThresholdLow"), m_cloud_threshold_low);
-    glUniform1f(water_shader.loc("cloudThresholdHigh"), m_cloud_threshold_high);
-    glUniform1i(water_shader.loc("underwater"), m_camera.is_under_water());
-    glUniform1f(water_shader.loc("refractStrength"), m_refract_strength);
-    glUniform1i(water_shader.loc("enablePerturb"), m_water_perturb);
-    glUniform1i(water_shader.loc("enableDepthFade"), m_water_depth_fade);
+    water_shader.set_loc("skyTop", m_sky_uniform.sky_top);
+    water_shader.set_loc("skyBottom", m_sky_uniform.sky_bottom);
+    water_shader.set_loc("sunDir", m_sky_uniform.sun_dir_view);
+    water_shader.set_loc("sunColor", m_parallel_light.directional_light_color);
+    water_shader.set_loc("horizonSharpness", m_sky_uniform.horizon_sharpness);
+    water_shader.set_loc("time", glfwGetTime());
+    water_shader.set_loc("cloudWhiteMix", m_sky_uniform.cloud_white_mix);
+    water_shader.set_loc("cloudThresholdLow", m_cloud_threshold_low);
+    water_shader.set_loc("cloudThresholdHigh", m_cloud_threshold_high);
+    water_shader.set_loc("underwater", m_camera.is_under_water());
+    water_shader.set_loc("refractStrength", m_refract_strength);
+    water_shader.set_loc("enablePerturb", m_water_perturb);
+    water_shader.set_loc("enableDepthFade", m_water_depth_fade);
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_screen_texture);
     glActiveTexture(GL_TEXTURE2);
