@@ -1,7 +1,9 @@
 #include "Cubed/tools/math_tools.hpp"
 
 #include <algorithm>
+#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 namespace Cubed {
 
 namespace Math {
@@ -65,6 +67,39 @@ float deterministic_random(int x, int z, uint64_t seed) {
     h = h * 6364136223846793005ULL + (uint64_t)z;
     return (float)(h >> 40) / (float)(1 << 24);
 }
+
+glm::vec3 slerp(const glm::vec3& from, const glm::vec3& to, float t) {
+
+    float cos_theta = glm::clamp(glm::dot(from, to), -1.0f, 1.0f);
+
+    if (cos_theta > 0.9995f) {
+        return glm::normalize(glm::mix(from, to, t));
+    }
+
+    if (cos_theta < -0.9995f) {
+
+        glm::vec3 axis = (std::fabs(from.x) < 0.9f)
+                             ? glm::vec3(1.0f, 0.0f, 0.0f)
+                             : glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 ortho = glm::normalize(glm::cross(from, axis));
+
+        float angle = glm::pi<float>() * t;
+
+        glm::vec3 rotated =
+            from * std::cos(angle) + glm::cross(ortho, from) * std::sin(angle);
+
+        return glm::normalize(rotated);
+    }
+
+    float theta = std::acos(cos_theta);
+    float sin_theta = std::sin(theta);
+
+    float a = std::sin((1.0f - t) * theta) / sin_theta;
+    float b = std::sin(t * theta) / sin_theta;
+
+    return glm::normalize(a * from + b * to);
+}
+
 } // namespace Math
 
 } // namespace Cubed

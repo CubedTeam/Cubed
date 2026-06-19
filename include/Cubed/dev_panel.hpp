@@ -44,14 +44,20 @@ private:
     bool m_need_save_config = false;
     bool m_gen_thread_running = true;
     int m_theme = 0;
+    int m_pre_set_day_tick = 0;
+    int m_pre_set_tick_speed = 1;
+    bool m_tick_frezze = false;
+    int m_samples_idx = 1;
     void show_about_table_bar();
     void show_biome_table_bar();
+    void show_time_table_bar();
     void show_cave_table_bar();
     void show_river_table_bar();
     void show_settings_tab_item();
     void show_world_tab_item();
     void show_player_tab_item();
     void show_items_tab_item();
+    void show_shader_tab_item();
 
     void update_config_view();
     void update_player_profile();

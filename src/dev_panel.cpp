@@ -84,6 +84,7 @@ void DevPanel::render() {
         show_world_tab_item();
         show_player_tab_item();
         show_items_tab_item();
+        show_shader_tab_item();
         show_about_table_bar();
 
         ImGui::EndTabBar();
@@ -107,6 +108,7 @@ void DevPanel::show_about_table_bar() {
         ImGui::Text("FreeType");
         ImGui::Text("toml++");
         ImGui::Text("Dear ImGui");
+        ImGui::Text("Tbb");
         ImGui::Separator();
         ImGui::Text("Special Thanks");
         ImGui::Text("TANGERIME");
@@ -263,6 +265,31 @@ void DevPanel::show_biome_table_bar() {
     }
 }
 
+void DevPanel::show_time_table_bar() {
+    World& world = m_app.world();
+    ImGui::Text("Game Tick %llu", world.game_tick());
+    ImGui::SameLine();
+    ImGui::Text("Day Tick %llu", world.day_tick());
+    m_tick_frezze = !world.is_tick_running();
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Tick Frezze", &m_tick_frezze)) {
+        world.tick_running(!m_tick_frezze);
+    }
+    if (ImGui::SliderInt("SetDayTick", &m_pre_set_day_tick, 0, DAY_TIME)) {
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Set##DayTick")) {
+        world.day_tick(static_cast<TickType>(m_pre_set_day_tick));
+    }
+    ImGui::Text("MSPT %d", world.per_tick_time());
+    if (ImGui::SliderInt("SetMSPT", &m_pre_set_tick_speed, 1, 200)) {
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Set##MSPT")) {
+        world.per_tick_time(m_pre_set_tick_speed);
+    }
+}
+
 void DevPanel::show_cave_table_bar() {
     auto& cave_carcer = m_app.world().cave_carcer();
 
@@ -336,6 +363,7 @@ void DevPanel::show_settings_tab_item() {
                               static_cast<double>(m_config.mouse_sensitivity));
             m_player->hot_reload();
         }
+
         if (ImGui::SliderInt("Distance", &m_config.rendering_distance, 2,
                              128)) {
             Config::get().set("world.rendering_distance",
@@ -457,6 +485,10 @@ void DevPanel::show_world_tab_item() {
         ImGui::Text("Chunk Build Progress\n");
         ImGui::ProgressBar(m_app.world().chunk_gen_fraction());
         if (ImGui::BeginTabBar("World Settings")) {
+            if (ImGui::BeginTabItem("Time")) {
+                show_time_table_bar();
+                ImGui::EndTabItem();
+            }
             if (ImGui::BeginTabItem("Cave")) {
                 show_cave_table_bar();
                 ImGui::EndTabItem();
@@ -573,6 +605,58 @@ void DevPanel::show_items_tab_item() {
                 ImGui::SameLine();
             }
         }
+        ImGui::EndTabItem();
+    }
+}
+
+void DevPanel::show_shader_tab_item() {
+
+    static const char* shader_mode[] = {
+        "Rotated Poisson Disk PCF", "3x3 Square Grid PCF", "PCF off", "PCSS"};
+    static const char* cull_face_mode[] = {"Front", "Back"};
+    static const char* samples[] = {"8", "16", "32"};
+    if (ImGui::BeginTabItem("shader")) {
+        ImGui::Checkbox("Shader", &m_app.renderer().shader_on());
+        if (ImGui::SliderFloat("AmbientStrength",
+                               &m_app.renderer().ambient_strength(), 0.0f,
+                               0.35f))
+            ;
+        ImGui::SliderFloat("SpecularStrength",
+                           &m_app.renderer().specular_strength(), 0.0f, 2.0f);
+        ImGui::Checkbox("Discard Transparent",
+                        &m_app.renderer().discard_transparent());
+        ImGui::Combo("ShaderMode", &m_app.renderer().shadow_mode(), shader_mode,
+                     IM_ARRAYSIZE(shader_mode));
+        ImGui::Combo("LightCullFaceMode", &m_app.renderer().light_cull_face(),
+                     cull_face_mode, IM_ARRAYSIZE(cull_face_mode));
+        if (ImGui::Combo("samples", &m_samples_idx, samples,
+                         IM_ARRAYSIZE(samples))) {
+            if (m_samples_idx == 0) {
+                m_app.renderer().samples() = 8;
+            } else if (m_samples_idx == 1) {
+                m_app.renderer().samples() = 16;
+            } else if (m_samples_idx == 2) {
+                m_app.renderer().samples() = 32;
+            } else {
+                Logger::warn("Samples Index {} is invaild", m_samples_idx);
+                m_app.renderer().samples() = 16;
+            }
+        }
+        if (m_app.renderer().shadow_mode() == 3) {
+            ImGui::SliderInt("LightSizeUV", &m_app.renderer().light_size_uv(),
+                             0, 800);
+            ImGui::SliderFloat("MinRaduis", &m_app.renderer().min_radius(),
+                               0.0f, 20.0f);
+            ImGui::SliderFloat("MaxRadius", &m_app.renderer().max_radius(),
+                               0.0f, 100.0f);
+        }
+        ImGui::SliderFloat("Cloud Speed", &m_app.renderer().cloud_speed(), 1.0f,
+                           100.0f);
+        ImGui::SliderFloat("Cloud Threshold Low",
+                           &m_app.renderer().cloud_threshold_low(), 0.0f, 1.0f);
+        ImGui::SliderFloat("Cloud Threshold High",
+                           &m_app.renderer().cloud_threshold_high(), 0.0f,
+                           1.0f);
         ImGui::EndTabItem();
     }
 }

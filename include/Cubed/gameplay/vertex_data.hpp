@@ -7,7 +7,7 @@
 namespace Cubed {
 class World;
 struct VertexData {
-    std::vector<Vertex> m_vertices;
+    std::vector<Vertex3D> m_vertices;
     GLuint m_vbo = 0;
     GLuint m_vao = 0;
     std::atomic<std::size_t> m_sum{0};

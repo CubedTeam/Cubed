@@ -23,9 +23,9 @@ constexpr float DEFAULT_MAX_RUN_SPEED = 7.0f;
 constexpr float DEFAULT_ACCELERATION = 10.0f;
 constexpr float DEFAULT_DECELERATION = 15.0f;
 constexpr float DEFAULT_G = 22.5f;
-static constexpr int SIZE_X = CHUNK_SIZE;
-static constexpr int SIZE_Y = WORLD_SIZE_Y;
-static constexpr int SIZE_Z = CHUNK_SIZE;
+constexpr int SIZE_X = CHUNK_SIZE;
+constexpr int SIZE_Y = WORLD_SIZE_Y;
+constexpr int SIZE_Z = CHUNK_SIZE;
 
 constexpr ChunkPos CHUNK_DIR[]{{1, 0}, {-1, 0}, {0, 1},  {0, -1},
                                {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
