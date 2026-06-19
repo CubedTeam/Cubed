@@ -25,5 +25,6 @@ void main(void) {
     tc = texCoord;
     tex_layer = int(layer);
     v_depth = -view_pos.z;
+    normal = mat3(norm_matrix) * aNormal;
     gl_Position = proj_matrix * view_pos;
 }

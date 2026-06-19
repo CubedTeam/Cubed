@@ -32,6 +32,8 @@ public:
 
     bool& discard_transparent();
     bool& shader_on();
+    bool& water_perturb();
+    bool& water_depth_fade();
     int& shadow_mode();
     int& light_cull_face();
     int& light_size_uv();
@@ -42,6 +44,7 @@ public:
     float& cloud_speed();
     float& cloud_threshold_low();
     float& cloud_threshold_high();
+    float& refract_strength();
 
 private:
     struct ParallelLight {
@@ -53,6 +56,14 @@ private:
         glm::vec3 sun_color;
         glm::vec3 directional_light_color;
         glm::vec3 finnal_ambient_color;
+    };
+
+    struct SkyUniform {
+        glm::vec3 sky_top;
+        glm::vec3 sky_bottom;
+        glm::vec3 sun_dir_view;
+        float horizon_sharpness;
+        float cloud_white_mix;
     };
 
     static constexpr glm::vec3 SUN_COLOR{1.00f, 0.95f, 0.80f};
@@ -79,6 +90,8 @@ private:
 
     bool m_discard_tranparent = true;
     bool m_shader_on = true;
+    bool m_water_perturb = true;
+    bool m_water_depth_fade = true;
     int m_shadow_mode = 0;
     int m_light_cull_face = 0;
     float m_aspect = 0.0f;
@@ -140,7 +153,10 @@ private:
     float m_cloud_threshold_low = 0.5f;
     float m_cloud_threshold_high = 0.75f;
 
+    float m_refract_strength = 0.03f;
+
     ParallelLight m_parallel_light;
+    SkyUniform m_sky_uniform;
     /*
     0 - quad vao
     1 - sky vao

@@ -310,19 +310,20 @@ void Renderer::render_sky() {
     glm::vec3 day_bottom =
         mix(sunset_horizon, horizon, m_parallel_light.day_light);
 
-    glm::vec3 sky_top = mix(night_zenith, day_top, m_parallel_light.day_factor);
-    glm::vec3 sky_bottom =
+    m_sky_uniform.sky_top =
+        mix(night_zenith, day_top, m_parallel_light.day_factor);
+    m_sky_uniform.sky_bottom =
         mix(night_horizon, day_bottom, m_parallel_light.day_factor);
 
     float day_sharpness =
         glm::mix(SUNSET_SHARPNESS, NOON_SHARPNESS, m_parallel_light.day_light);
 
-    float horizon_sharpness =
+    m_sky_uniform.horizon_sharpness =
         glm::mix(NIGHT_SHARPNESS, day_sharpness, m_parallel_light.day_factor);
 
     float day_cloud_mix =
         glm::mix(SUNSET_CLOUD_MIX, NOON_CLOUD_MIX, m_parallel_light.day_light);
-    float cloud_white_mix =
+    m_sky_uniform.cloud_white_mix =
         glm::mix(NIGHT_CLOUD_MIX, day_cloud_mix, m_parallel_light.day_factor);
 
     m_cloud_time += m_delta_time * m_cloud_speed;
@@ -338,18 +339,22 @@ void Renderer::render_sky() {
     m_v_mat = m_camera.get_camera_lookat();
     m_mv_mat = m_v_mat * m_m_mat;
 
-    glm::vec3 sun_dir_view = (-m_parallel_light.sundir);
+    m_sky_uniform.sun_dir_view = (-m_parallel_light.sundir);
 
     glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_mv_mat));
     glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, glm::value_ptr(m_p_mat));
-    glUniform3fv(sky_shader.loc("skyTop"), 1, glm::value_ptr(sky_top));
-    glUniform3fv(sky_shader.loc("skyBottom"), 1, glm::value_ptr(sky_bottom));
-    glUniform3fv(sky_shader.loc("sunDir"), 1, glm::value_ptr(sun_dir_view));
+    glUniform3fv(sky_shader.loc("skyTop"), 1,
+                 glm::value_ptr(m_sky_uniform.sky_top));
+    glUniform3fv(sky_shader.loc("skyBottom"), 1,
+                 glm::value_ptr(m_sky_uniform.sky_bottom));
+    glUniform3fv(sky_shader.loc("sunDir"), 1,
+                 glm::value_ptr(m_sky_uniform.sun_dir_view));
     glUniform3fv(sky_shader.loc("sunColor"), 1,
                  glm::value_ptr(m_parallel_light.directional_light_color));
-    glUniform1f(sky_shader.loc("horizonSharpness"), horizon_sharpness);
+    glUniform1f(sky_shader.loc("horizonSharpness"),
+                m_sky_uniform.horizon_sharpness);
     glUniform1f(sky_shader.loc("time"), m_cloud_time);
-    glUniform1f(sky_shader.loc("cloudWhiteMix"), cloud_white_mix);
+    glUniform1f(sky_shader.loc("cloudWhiteMix"), m_sky_uniform.cloud_white_mix);
     glUniform1f(sky_shader.loc("cloudThresholdLow"), m_cloud_threshold_low);
     glUniform1f(sky_shader.loc("cloudThresholdHigh"), m_cloud_threshold_high);
     glBindVertexArray(m_vao[1]);
@@ -864,10 +869,44 @@ void Renderer::render_world() {
         }
     }
 
+    // use SSR
+
     auto& water_shader = get_shader("water");
     water_shader.use();
 
     set_accum_loc(water_shader);
+
+    glUniform1i(water_shader.loc("sceneColorTex"), 1);
+    glUniform1i(water_shader.loc("sceneDepthTex"), 2);
+    glUniformMatrix4fv(water_shader.loc("inv_proj_matrix"), 1, GL_FALSE,
+                       glm::value_ptr(glm::inverse(m_p_mat)));
+    glUniformMatrix4fv(water_shader.loc("inv_view_matrix"), 1, GL_FALSE,
+                       glm::value_ptr(glm::inverse(m_v_mat)));
+    // sky loc
+
+    glUniform3fv(water_shader.loc("skyTop"), 1,
+                 glm::value_ptr(m_sky_uniform.sky_top));
+    glUniform3fv(water_shader.loc("skyBottom"), 1,
+                 glm::value_ptr(m_sky_uniform.sky_bottom));
+    glUniform3fv(water_shader.loc("sunDir"), 1,
+                 glm::value_ptr(m_sky_uniform.sun_dir_view));
+    glUniform3fv(water_shader.loc("sunColor"), 1,
+                 glm::value_ptr(m_parallel_light.directional_light_color));
+    glUniform1f(water_shader.loc("horizonSharpness"),
+                m_sky_uniform.horizon_sharpness);
+    glUniform1f(water_shader.loc("time"), m_cloud_time);
+    glUniform1f(water_shader.loc("cloudWhiteMix"),
+                m_sky_uniform.cloud_white_mix);
+    glUniform1f(water_shader.loc("cloudThresholdLow"), m_cloud_threshold_low);
+    glUniform1f(water_shader.loc("cloudThresholdHigh"), m_cloud_threshold_high);
+    glUniform1i(water_shader.loc("underwater"), m_camera.is_under_water());
+    glUniform1f(water_shader.loc("refractStrength"), m_refract_strength);
+    glUniform1i(water_shader.loc("enablePerturb"), m_water_perturb);
+    glUniform1i(water_shader.loc("enableDepthFade"), m_water_depth_fade);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_screen_texture);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_depth_texture);
 
     glActiveTexture(GL_TEXTURE0);
     for (const auto& snapshot : m_render_snapshots) {
@@ -966,6 +1005,8 @@ Renderer::get_smoothed_shadow_lightdir(const glm::vec3& raw_shadow_lightdir,
 float& Renderer::ambient_strength() { return m_ambient_strength; }
 bool& Renderer::discard_transparent() { return m_discard_tranparent; }
 bool& Renderer::shader_on() { return m_shader_on; }
+bool& Renderer::water_perturb() { return m_water_perturb; }
+bool& Renderer::water_depth_fade() { return m_water_depth_fade; }
 int& Renderer::shadow_mode() { return m_shadow_mode; }
 int& Renderer::light_cull_face() { return m_light_cull_face; }
 int& Renderer::light_size_uv() { return m_light_size_uv; }
@@ -976,4 +1017,5 @@ float& Renderer::specular_strength() { return m_specular_strength; }
 float& Renderer::cloud_speed() { return m_cloud_speed; }
 float& Renderer::cloud_threshold_low() { return m_cloud_threshold_low; }
 float& Renderer::cloud_threshold_high() { return m_cloud_threshold_high; }
+float& Renderer::refract_strength() { return m_refract_strength; }
 } // namespace Cubed
