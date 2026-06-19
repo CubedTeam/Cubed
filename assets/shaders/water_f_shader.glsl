@@ -237,9 +237,9 @@ void main() {
     vec3 sceneViewPos = reconstructViewPos(screenUV, sceneDepthRaw);
     float waterDepth = vert_pos.z - sceneViewPos.z;  
     waterDepth = max(waterDepth, 0.0);  
-    // fully deep water
-    const float DEPTH_FADE_DISTANCE = 8.0;  
-    float depthFactor = underwater ? 0.0 : clamp(waterDepth / DEPTH_FADE_DISTANCE, 0.0, 1.0);
+
+    const float DEPTH_FADE_DISTANCE = 10; 
+    float depthFactor = clamp(waterDepth / DEPTH_FADE_DISTANCE, 0.0, 1.0);
 
     if (underwater) {
         reflectColor = vec3(0.0);
@@ -287,7 +287,7 @@ void main() {
 
     if (enableDepthFade) {
         vec3 shallowColor = vec3(0.4, 0.75, 0.7);   
-        vec3 deepColor = vec3(0.0, 0.08, 0.15);
+        vec3 deepColor = vec3(0.0, 0.015, 0.045); 
 
         vec3 waterTint = mix(shallowColor, deepColor, depthFactor);
 
