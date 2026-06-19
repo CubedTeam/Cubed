@@ -665,6 +665,8 @@ void DevPanel::show_shader_tab_item() {
         ImGui::SliderFloat("Underwater Fog Density",
                            &m_app.renderer().underwater_fog_density(), 0.0f,
                            1.0f);
+        ImGui::SliderFloat("Water Density", &m_app.renderer().water_density(),
+                           0.0f, 1.0f);
         ImGui::EndTabItem();
     }
 }

@@ -46,10 +46,11 @@ public:
     float& cloud_threshold_high();
     float& refract_strength();
     float& underwater_fog_density();
+    float& water_density();
 
 private:
     struct ParallelLight {
-        glm::vec3 sundir;
+        glm::vec3 sundir; // direction from sun to vertex
         glm::vec3 lightdir;
         float sun_height = 0.0f;
         float day_light = 0.0f;
@@ -57,6 +58,7 @@ private:
         glm::vec3 sun_color;
         glm::vec3 directional_light_color;
         glm::vec3 finnal_ambient_color;
+        glm::mat4 light_space_matrix;
     };
 
     struct SkyUniform {
@@ -116,7 +118,7 @@ private:
 
     GLuint m_fbo = 0;
     GLuint m_screen_texture = 0;
-    GLuint m_depth_texture = 0;
+    GLuint m_screen_depth_texture = 0;
 
     GLuint m_oit_fbo = 0;
     GLuint m_accum_texture = 0;
@@ -154,6 +156,8 @@ private:
     float m_refract_strength = 0.03f;
 
     float m_underwater_fog_density = 0.08f;
+
+    float m_water_density = 0.12f;
 
     ParallelLight m_parallel_light;
     SkyUniform m_sky_uniform;

@@ -37,7 +37,7 @@ Renderer::~Renderer() {
     glDeleteVertexArrays(NUM_VAO, m_vao.data());
     glDeleteFramebuffers(1, &m_fbo);
     glDeleteTextures(1, &m_screen_texture);
-    glDeleteTextures(1, &m_depth_texture);
+    glDeleteTextures(1, &m_screen_depth_texture);
 
     glDeleteFramebuffers(1, &m_oit_fbo);
     glDeleteTextures(1, &m_accum_texture);
@@ -444,10 +444,18 @@ void Renderer::render_underwater() {
     shader.set_loc("u_underwater", m_camera.is_under_water());
     shader.set_loc("u_waterColor", glm::vec3(0.1f, 0.25f, 0.35f));
     shader.set_loc("u_fogDensity", m_underwater_fog_density);
-
+    shader.set_loc("cameraPos", m_camera.get_camera_pos());
+    shader.set_loc("sunDir", -m_parallel_light.sundir);
+    shader.set_loc("waterDensity", m_water_density);
+    shader.set_loc("InverseViewProjection", glm::inverse(m_p_mat * m_v_mat));
+    shader.set_loc("sunColor", m_parallel_light.sun_color);
+    shader.set_loc("u_lightSpaceMatrix", m_parallel_light.light_space_matrix);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_screen_texture);
-
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_screen_depth_texture);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 }
@@ -483,7 +491,7 @@ void Renderer::updata_framebuffer(int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     glDeleteTextures(1, &m_screen_texture);
-    glDeleteTextures(1, &m_depth_texture);
+    glDeleteTextures(1, &m_screen_depth_texture);
 
     glGenTextures(1, &m_screen_texture);
     glBindTexture(GL_TEXTURE_2D, m_screen_texture);
@@ -495,14 +503,14 @@ void Renderer::updata_framebuffer(int width, int height) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                            m_screen_texture, 0);
 
-    glGenTextures(1, &m_depth_texture);
-    glBindTexture(GL_TEXTURE_2D, m_depth_texture);
+    glGenTextures(1, &m_screen_depth_texture);
+    glBindTexture(GL_TEXTURE_2D, m_screen_depth_texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0,
                  GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           m_depth_texture, 0);
+                           m_screen_depth_texture, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         Logger::error("FBO incomplete after resize!");
@@ -587,7 +595,7 @@ void Renderer::updata_framebuffer(int width, int height) {
 #pragma region render_world
 void Renderer::render_world() {
     // shader map
-    glm::mat4 light_space_matrix;
+    glm::mat4& light_space_matrix = m_parallel_light.light_space_matrix;
     auto& m_render_snapshots = m_world.render_snapshots();
     auto& camera_pos = m_camera.get_camera_pos();
     float texels_per_unit = 0.0f;
@@ -868,7 +876,7 @@ void Renderer::render_world() {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_screen_texture);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_depth_texture);
+    glBindTexture(GL_TEXTURE_2D, m_screen_depth_texture);
 
     glActiveTexture(GL_TEXTURE0);
     for (const auto& snapshot : m_render_snapshots) {
@@ -981,4 +989,5 @@ float& Renderer::cloud_threshold_low() { return m_cloud_threshold_low; }
 float& Renderer::cloud_threshold_high() { return m_cloud_threshold_high; }
 float& Renderer::refract_strength() { return m_refract_strength; }
 float& Renderer::underwater_fog_density() { return m_underwater_fog_density; }
+float& Renderer::water_density() { return m_water_density; }
 } // namespace Cubed
