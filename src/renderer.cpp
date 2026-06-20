@@ -419,7 +419,7 @@ void Renderer::render_ui() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    shader.set_loc("mv_matrix", m_ui_m_matrix);
+    shader.set_loc("m_matrix", m_ui_m_matrix);
     shader.set_loc("proj_matrix", m_ui_proj);
 
     glBindVertexArray(m_vao[3]);
@@ -719,7 +719,6 @@ void Renderer::render_world() {
     normal_block_shader.set_loc("sunlightDir", light_dir_view);
     normal_block_shader.set_loc("shadowMode", m_shadow_mode);
     normal_block_shader.set_loc("shader_on", m_shader_on);
-    normal_block_shader.set_loc("texelsPerUnit", texels_per_unit);
     normal_block_shader.set_loc("lightSizeUV",
                                 static_cast<float>(m_light_size_uv));
     normal_block_shader.set_loc("minRadius", m_min_radius);
