@@ -617,6 +617,10 @@ void DevPanel::show_shader_tab_item() {
     static const char* samples[] = {"8", "16", "32"};
     if (ImGui::BeginTabItem("shader")) {
         ImGui::Checkbox("Shader", &m_app.renderer().shader_on());
+        ImGui::SameLine();
+        ImGui::Checkbox("PBR", &m_app.renderer().pbr());
+        ImGui::SameLine();
+        ImGui::Checkbox("Flip Y", &m_app.renderer().flip_y());
         if (ImGui::SliderFloat("AmbientStrength",
                                &m_app.renderer().ambient_strength(), 0.0f,
                                0.35f))

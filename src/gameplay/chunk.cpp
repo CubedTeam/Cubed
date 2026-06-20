@@ -383,7 +383,10 @@ void Chunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
                             NORMALS[face][i][0],
                             NORMALS[face][i][1],
                             NORMALS[face][i][2],
-                            BlockManager::roughness(cur_id)
+                            BlockManager::roughness(cur_id),
+                            TANGENTS[face][i][0],
+                            TANGENTS[face][i][1],
+                            TANGENTS[face][i][2]
 
                         };
                         if (BlockManager::is_transparent(cur_id)) {
@@ -441,7 +444,10 @@ void Chunk::gen_cross_plane_vertices(int world_x, int world_y, int world_z,
                 CROSS_NORMALS[face][i][0],
                 CROSS_NORMALS[face][i][1],
                 CROSS_NORMALS[face][i][2],
-                BlockManager::roughness(id)
+                BlockManager::roughness(id),
+                CROSS_TANGENTS[face][i][0],
+                CROSS_TANGENTS[face][i][1],
+                CROSS_TANGENTS[face][i][2]
 
             };
             m_vertex_data[1].m_vertices.emplace_back(vex);

@@ -3,13 +3,15 @@
 in vec2 tc;
 in vec3 normal;
 in vec3 vert_pos;
+in vec3 tangent;
+in vec3 bitangent;
 in vec4 FragPosLightSpace;
 in float roughness;
 flat in int tex_layer;
 out vec4 color;
 layout (binding = 0) uniform sampler2D shadowMap;
 layout (binding = 1) uniform sampler2DArray samp;
-
+layout (binding = 2) uniform sampler2DArray normMap;
 uniform float ambientStrength;
 uniform vec3 sunlightColor;
 uniform vec3 ambientColor;
@@ -21,6 +23,8 @@ uniform float specularStrength;
 uniform float lightSizeUV; 
 uniform float minRadius;
 uniform float maxRadius;
+uniform bool enablePBR;
+uniform bool flipY;
 const vec2 poissonDisk32[32] = vec2[](
     vec2(-0.975402, -0.071138),
     vec2(-0.920347, -0.411420),
@@ -259,6 +263,16 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir)
     return shadow;
 }
 
+vec3 calcNewNormal() {
+    mat3 TBN = mat3(normalize(tangent), normalize(bitangent), normalize(normal));
+    vec3 retrievedNormal = texture(normMap, vec3(tc, tex_layer)).xyz;       
+    retrievedNormal = retrievedNormal * 2.0 - 1.0;
+    if (flipY) {
+        retrievedNormal.y = -retrievedNormal.y;
+    }
+    vec3 newNormal = TBN * retrievedNormal;
+    return normalize(newNormal);
+}
 
 void main(void) {
     vec4 objectColor = texture(samp, vec3(tc, tex_layer));
@@ -273,8 +287,13 @@ void main(void) {
    
 
     vec3 lightDir = normalize(-sunlightDir);
-    
-    vec3 norm = normalize(normal);
+    vec3 norm; 
+    if (enablePBR) {
+        norm = calcNewNormal();
+    } else {
+        norm = normalize(normal);
+    }
+
 
     vec3 V =
         normalize(cameraPos - vert_pos);
@@ -323,7 +342,9 @@ void main(void) {
 
     float shadow = ShadowCalculation(FragPosLightSpace, norm, lightDir);  
   
-    color = vec4((ambient + (1.0 - shadow) * (diffuse)) * objectColor.rgb + (1.0-shadow) * specular, objectColor.a);
-
-    //color = varyingColor;
+    color = vec4((ambient + (1.0 - shadow) * (diffuse)) * objectColor.rgb + (1.0-shadow) * specular * objectColor.rgb, objectColor.a);
+    //color = vec4(normal * 0.5 + 0.5, 1.0);
+    //color = vec4(tangent * 0.5 + 0.5, 1.0);;
+    //color = vec4(norm * 0.5 + 0.5, 1.0);
+    //color = vec4(calcNewNormal(), 1.0);
 }

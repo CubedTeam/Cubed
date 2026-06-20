@@ -7,6 +7,28 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
 
+namespace {
+constexpr int BLOCK_SIZE = 16;
+constexpr int BLOCK_NORMAL_SIZE = 128;
+constexpr int CROSS_PLANE_SIZE = 16;
+constexpr int BLOCK_ITEM_SIZE = 16;
+constexpr int UI_SIZE = 16;
+constexpr int BLOCK_STATUS_SIZE = 16;
+
+unsigned char* generate_flat_normal_map(int width = BLOCK_NORMAL_SIZE,
+                                        int height = BLOCK_NORMAL_SIZE) {
+    unsigned char* data = new unsigned char[width * height * 4];
+    for (int i = 0; i < width * height; i++) {
+        data[i * 4 + 0] = 128; // R -> X = 0
+        data[i * 4 + 1] = 128; // G -> Y = 0
+        data[i * 4 + 2] = 255; // B -> Z = 1
+        data[i * 4 + 3] = 255; // A
+    }
+    return data;
+}
+
+} // namespace
+
 namespace Cubed {
 
 TextureManager::TextureManager() {}
@@ -17,6 +39,7 @@ void TextureManager::delet_texture() {
     glDeleteTextures(1, &m_texture_array);
     glDeleteTextures(1, &m_block_status_array);
     glDeleteTextures(1, &m_cross_plane_array);
+    glDeleteBuffers(1, &m_pbr_texture_array);
     for (auto& id : m_item_textures) {
         glDeleteTextures(1, &id);
     }
@@ -34,6 +57,8 @@ GLuint TextureManager::get_cross_plane_array() const {
 }
 GLuint TextureManager::get_ui_array() const { return m_ui_array; }
 
+GLuint TextureManager::get_pbr_texture() const { return m_pbr_texture_array; }
+
 const std::vector<GLuint>& TextureManager::item_textures() const {
     return m_item_textures;
 }
@@ -45,8 +70,9 @@ void TextureManager::load_block_status(unsigned id) {
     unsigned char* image_data = nullptr;
     image_data = (Tools::load_image_data(path));
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_block_status_array);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id, 16, 16, 1, GL_RGBA,
-                    GL_UNSIGNED_BYTE, image_data);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id, BLOCK_STATUS_SIZE,
+                    BLOCK_STATUS_SIZE, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    image_data);
     Tools::delete_image_data(image_data);
 }
 
@@ -76,8 +102,9 @@ void TextureManager::load_block_texture(unsigned id) {
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_array);
     Tools::check_opengl_error();
     for (int i = 0; i < 6; i++) {
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id * 6 + i, 16, 16, 1,
-                        GL_RGBA, GL_UNSIGNED_BYTE, image_data[i]);
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id * 6 + i, BLOCK_SIZE,
+                        BLOCK_SIZE, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                        image_data[i]);
         Tools::check_opengl_error();
         Tools::delete_image_data(image_data[i]);
     }
@@ -94,8 +121,8 @@ void TextureManager::load_block_item_texture(unsigned id) {
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 16, 16, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, BLOCK_ITEM_SIZE, BLOCK_ITEM_SIZE,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
@@ -115,8 +142,8 @@ void TextureManager::load_cross_plane_texture(unsigned id) {
     unsigned char* image_data = Tools::load_image_data(path);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_cross_plane_array);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0,
-                    BlockManager::cross_plane_index(id), 16, 16, 1, GL_RGBA,
-                    GL_UNSIGNED_BYTE, image_data);
+                    BlockManager::cross_plane_index(id), CROSS_PLANE_SIZE,
+                    CROSS_PLANE_SIZE, 1, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     Tools::delete_image_data(image_data);
 }
 
@@ -127,27 +154,74 @@ void TextureManager::load_ui_texture(unsigned id) {
     unsigned char* image_data = nullptr;
     image_data = (Tools::load_image_data(path));
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_ui_array);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id, 16, 16, 1, GL_RGBA,
-                    GL_UNSIGNED_BYTE, image_data);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id, UI_SIZE, UI_SIZE, 1,
+                    GL_RGBA, GL_UNSIGNED_BYTE, image_data);
     Tools::delete_image_data(image_data);
+}
+
+void TextureManager::load_pbr_texture(unsigned id) {
+
+    if (id == 0) {
+        return;
+    }
+
+    if (BlockManager::is_cross_plane(id)) {
+
+        return;
+    }
+
+    std::string path = "normal/block/" + BlockManager::name_form_id(id);
+
+    unsigned char* image_data[6];
+
+    image_data[0] = (Tools::load_image_data(path + "/front_n.png", false));
+    image_data[1] = (Tools::load_image_data(path + "/right_n.png", false));
+    image_data[2] = (Tools::load_image_data(path + "/back_n.png", false));
+    image_data[3] = (Tools::load_image_data(path + "/left_n.png", false));
+    image_data[4] = (Tools::load_image_data(path + "/top_n.png", false));
+    image_data[5] = (Tools::load_image_data(path + "/base_n.png", false));
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_pbr_texture_array);
+    for (int i = 0; i < 6; i++) {
+        unsigned char* data = image_data[i];
+        bool is_fallback = false;
+        if (!data) {
+            is_fallback = true;
+            data = generate_flat_normal_map();
+        }
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id * 6 + i,
+                        BLOCK_NORMAL_SIZE, BLOCK_NORMAL_SIZE, 1, GL_RGBA,
+                        GL_UNSIGNED_BYTE, data);
+        if (is_fallback) {
+            delete[] data;
+        } else {
+            Tools::delete_image_data(image_data[i]);
+        }
+    }
 }
 
 void TextureManager::init_block() {
 
     glGenTextures(1, &m_texture_array);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_array);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16,
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, BLOCK_SIZE, BLOCK_SIZE,
                  BlockManager::sums() * 6, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  nullptr);
 
     glGenTextures(1, &m_cross_plane_array);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_cross_plane_array);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16,
-                 BlockManager::cross_plane_sum(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, CROSS_PLANE_SIZE,
+                 CROSS_PLANE_SIZE, BlockManager::cross_plane_sum(), 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, nullptr);
+    glGenTextures(1, &m_pbr_texture_array);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_pbr_texture_array);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, BLOCK_NORMAL_SIZE,
+                 BLOCK_NORMAL_SIZE, BlockManager::sums() * 6, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, nullptr);
     for (unsigned i = 0; i < BlockManager::sums(); i++) {
         load_block_texture(i);
         load_block_item_texture(i);
+        load_pbr_texture(i);
     }
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_array);
@@ -172,13 +246,25 @@ void TextureManager::init_block() {
                         static_cast<GLfloat>(m_aniso));
     }
 
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_pbr_texture_array);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+    if (m_aniso >= 1) {
+        glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY,
+                        static_cast<GLfloat>(m_aniso));
+    }
+
     Logger::info("Block Texture Load Success");
 }
 void TextureManager::init_ui() {
     glGenTextures(1, &m_ui_array);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_ui_array);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16, MAX_UI_NUM, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, UI_SIZE, UI_SIZE, MAX_UI_NUM,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     for (int i = 0; i < MAX_UI_NUM; i++) {
         load_ui_texture(i);
     }
@@ -190,8 +276,9 @@ void TextureManager::init_ui() {
 void TextureManager::init_block_status() {
     glGenTextures(1, &m_block_status_array);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_block_status_array);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16, MAX_BLOCK_STATUS, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, BLOCK_STATUS_SIZE,
+                 BLOCK_STATUS_SIZE, MAX_BLOCK_STATUS, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, nullptr);
     for (int i = 0; i < MAX_BLOCK_STATUS; i++) {
         load_block_status(i);
     }
