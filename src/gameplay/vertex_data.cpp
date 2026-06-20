@@ -53,12 +53,14 @@ void VertexData::upload() {
                           (void*)offsetof(Vertex3D, nx));
     glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex3D),
                           (void*)offsetof(Vertex3D, roughness));
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D),
+                          (void*)offsetof(Vertex3D, tx));
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
     glEnableVertexAttribArray(4);
-
+    glEnableVertexAttribArray(5);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

@@ -677,7 +677,7 @@ void Renderer::render_world() {
                 float dist2d = glm::distance(camera_pos_xz, center_xz);
                 if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
                     glBindTexture(GL_TEXTURE_2D_ARRAY,
-                                  m_texture_manager.get_texture_array());
+                                  m_texture_manager.get_cross_plane_array());
                     glBindVertexArray(snapshot.cross_vao);
 
                     glDrawArrays(GL_TRIANGLES, 0,
@@ -694,7 +694,6 @@ void Renderer::render_world() {
             }
         }
     }
-
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     glCullFace(GL_BACK);
@@ -702,16 +701,12 @@ void Renderer::render_world() {
     const auto& normal_block_shader = get_shader("normal_block");
     normal_block_shader.use();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
-    glActiveTexture(GL_TEXTURE1);
-
     m_m_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
     m_v_mat = m_camera.get_camera_lookat();
     m_mv_mat = m_v_mat * m_m_mat;
     m_norm_mat = glm::transpose(glm::inverse(m_mv_mat));
     glm::vec3 light_dir_view = glm::normalize(glm::mat3(m_v_mat) * lightdir);
-
+    normal_block_shader.set_loc("model_matrix", m_m_mat);
     normal_block_shader.set_loc("mv_matrix", m_mv_mat);
     normal_block_shader.set_loc("proj_matrix", m_p_mat);
     normal_block_shader.set_loc("norm_matrix", m_norm_mat);
@@ -732,7 +727,7 @@ void Renderer::render_world() {
     normal_block_shader.set_loc("samples", m_samples);
     normal_block_shader.set_loc("specularStrength", m_specular_strength);
     normal_block_shader.set_loc("cameraPos", m_camera.get_camera_pos());
-
+    normal_block_shader.set_loc("flipY", m_flip_y);
     m_mvp_mat = m_p_mat * m_mv_mat;
 
     auto& m_planes = m_world.planes();
@@ -741,12 +736,18 @@ void Renderer::render_world() {
 
     int rendered_sum = 0;
     glEnable(GL_DEPTH_TEST);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_pbr_texture());
+    normal_block_shader.set_loc("enablePBR", m_pbr);
     for (const auto& snapshot : m_render_snapshots) {
 
         if (Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
                                      m_planes)) {
-            glBindTexture(GL_TEXTURE_2D_ARRAY,
-                          m_texture_manager.get_texture_array());
 
             glBindVertexArray(snapshot.normal_vao);
 
@@ -755,8 +756,24 @@ void Renderer::render_world() {
             rendered_sum++;
         }
     }
-    // cross_plane and discard
+    // discard
+    for (const auto& snapshot : m_render_snapshots) {
+        if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
+                                      m_planes)) {
+            continue;
+        }
+        if (snapshot.normal_discard_vertices_count != 0) {
+            glBindVertexArray(snapshot.normal_discard_vao);
 
+            glDrawArrays(GL_TRIANGLES, 0,
+                         snapshot.normal_discard_vertices_count);
+        }
+    }
+    // cross_plane
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D_ARRAY,
+                  m_texture_manager.get_cross_plane_array());
+    normal_block_shader.set_loc("enablePBR", false);
     for (const auto& snapshot : m_render_snapshots) {
         if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
                                       m_planes)) {
@@ -767,21 +784,10 @@ void Renderer::render_world() {
             glm::vec2 center_xz{snapshot.center.x, snapshot.center.z};
             float dist2d = glm::distance(camera_pos_xz, center_xz);
             if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
-                glBindTexture(GL_TEXTURE_2D_ARRAY,
-                              m_texture_manager.get_cross_plane_array());
-
                 glBindVertexArray(snapshot.cross_vao);
 
                 glDrawArrays(GL_TRIANGLES, 0, snapshot.cross_vertices_count);
             }
-        }
-        if (snapshot.normal_discard_vertices_count != 0) {
-            glBindTexture(GL_TEXTURE_2D_ARRAY,
-                          m_texture_manager.get_texture_array());
-            glBindVertexArray(snapshot.normal_discard_vao);
-
-            glDrawArrays(GL_TRIANGLES, 0,
-                         snapshot.normal_discard_vertices_count);
         }
     }
 
@@ -830,6 +836,7 @@ void Renderer::render_world() {
     set_accum_loc(accum_shader);
 
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
     for (const auto& snapshot : m_render_snapshots) {
         if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
                                       m_planes)) {
@@ -837,8 +844,7 @@ void Renderer::render_world() {
         }
 
         if (snapshot.normal_blend_vertices_count != 0) {
-            glBindTexture(GL_TEXTURE_2D_ARRAY,
-                          m_texture_manager.get_texture_array());
+
             glBindVertexArray(snapshot.normal_blend_vao);
 
             glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_blend_vertices_count);
@@ -879,6 +885,7 @@ void Renderer::render_world() {
     glBindTexture(GL_TEXTURE_2D, m_screen_depth_texture);
 
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
     for (const auto& snapshot : m_render_snapshots) {
         if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
                                       m_planes)) {
@@ -886,8 +893,7 @@ void Renderer::render_world() {
         }
 
         if (snapshot.water_vertices_count != 0) {
-            glBindTexture(GL_TEXTURE_2D_ARRAY,
-                          m_texture_manager.get_texture_array());
+
             glBindVertexArray(snapshot.water_vao);
 
             glDrawArrays(GL_TRIANGLES, 0, snapshot.water_vertices_count);
@@ -896,9 +902,10 @@ void Renderer::render_world() {
 
     auto& composite_shader = get_shader("composite");
     glDisable(GL_BLEND);
+
     composite_shader.use();
-    glUniform1i(composite_shader.loc("u_accumTex"), 0);
-    glUniform1i(composite_shader.loc("u_revealTex"), 1);
+    composite_shader.set_loc("u_accumTex", 0);
+    composite_shader.set_loc("u_revealTex", 1);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glEnable(GL_BLEND);
@@ -977,6 +984,8 @@ bool& Renderer::discard_transparent() { return m_discard_tranparent; }
 bool& Renderer::shader_on() { return m_shader_on; }
 bool& Renderer::water_perturb() { return m_water_perturb; }
 bool& Renderer::water_depth_fade() { return m_water_depth_fade; }
+bool& Renderer::pbr() { return m_pbr; }
+bool& Renderer::flip_y() { return m_flip_y; }
 int& Renderer::shadow_mode() { return m_shadow_mode; }
 int& Renderer::light_cull_face() { return m_light_cull_face; }
 int& Renderer::light_size_uv() { return m_light_size_uv; }

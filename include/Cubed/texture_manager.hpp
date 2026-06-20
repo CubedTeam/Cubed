@@ -12,7 +12,9 @@ private:
     GLuint m_texture_array = 0;
     GLuint m_cross_plane_array = 0;
     GLuint m_ui_array = 0;
+    GLuint m_pbr_texture_array = 0;
     GLfloat m_max_aniso = 0.0f;
+
     int m_aniso = 1;
 
     std::vector<GLuint> m_item_textures;
@@ -22,6 +24,7 @@ private:
     void load_block_item_texture(unsigned id);
     void load_cross_plane_texture(unsigned id);
     void load_ui_texture(unsigned id);
+    void load_pbr_texture(unsigned id);
     void init_item();
     void init_block();
     void init_ui();
@@ -36,6 +39,7 @@ public:
     GLuint get_texture_array() const;
     GLuint get_cross_plane_array() const;
     GLuint get_ui_array() const;
+    GLuint get_pbr_texture() const;
     const std::vector<GLuint>& item_textures() const;
     // Must call after MapTable::init_map() and glfwMakeContextCurrent(window);
     void init_texture();

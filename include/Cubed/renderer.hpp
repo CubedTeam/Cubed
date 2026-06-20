@@ -34,6 +34,8 @@ public:
     bool& shader_on();
     bool& water_perturb();
     bool& water_depth_fade();
+    bool& pbr();
+    bool& flip_y();
     int& shadow_mode();
     int& light_cull_face();
     int& light_size_uv();
@@ -95,6 +97,8 @@ private:
     bool m_shader_on = true;
     bool m_water_perturb = true;
     bool m_water_depth_fade = true;
+    bool m_pbr = true;
+    bool m_flip_y = false;
     int m_shadow_mode = 0;
     int m_light_cull_face = 0;
     float m_aspect = 0.0f;

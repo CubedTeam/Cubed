@@ -7,6 +7,19 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
 
+namespace {
+unsigned char* generate_flat_normal_map(int width = 16, int height = 16) {
+    unsigned char* data = new unsigned char[width * height * 4];
+    for (int i = 0; i < width * height; i++) {
+        data[i * 4 + 0] = 128; // R -> X = 0
+        data[i * 4 + 1] = 128; // G -> Y = 0
+        data[i * 4 + 2] = 255; // B -> Z = 1
+        data[i * 4 + 3] = 255; // A
+    }
+    return data;
+}
+} // namespace
+
 namespace Cubed {
 
 TextureManager::TextureManager() {}
@@ -17,6 +30,7 @@ void TextureManager::delet_texture() {
     glDeleteTextures(1, &m_texture_array);
     glDeleteTextures(1, &m_block_status_array);
     glDeleteTextures(1, &m_cross_plane_array);
+    glDeleteBuffers(1, &m_pbr_texture_array);
     for (auto& id : m_item_textures) {
         glDeleteTextures(1, &id);
     }
@@ -33,6 +47,8 @@ GLuint TextureManager::get_cross_plane_array() const {
     return m_cross_plane_array;
 }
 GLuint TextureManager::get_ui_array() const { return m_ui_array; }
+
+GLuint TextureManager::get_pbr_texture() const { return m_pbr_texture_array; }
 
 const std::vector<GLuint>& TextureManager::item_textures() const {
     return m_item_textures;
@@ -132,6 +148,46 @@ void TextureManager::load_ui_texture(unsigned id) {
     Tools::delete_image_data(image_data);
 }
 
+void TextureManager::load_pbr_texture(unsigned id) {
+
+    if (id == 0) {
+        return;
+    }
+
+    if (BlockManager::is_cross_plane(id)) {
+
+        return;
+    }
+
+    std::string path = "normal/block/" + BlockManager::name_form_id(id);
+
+    unsigned char* image_data[6];
+
+    image_data[0] = (Tools::load_image_data(path + "/front_n.png", false));
+    image_data[1] = (Tools::load_image_data(path + "/right_n.png", false));
+    image_data[2] = (Tools::load_image_data(path + "/back_n.png", false));
+    image_data[3] = (Tools::load_image_data(path + "/left_n.png", false));
+    image_data[4] = (Tools::load_image_data(path + "/top_n.png", false));
+    image_data[5] = (Tools::load_image_data(path + "/base_n.png", false));
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_pbr_texture_array);
+    for (int i = 0; i < 6; i++) {
+        unsigned char* data = image_data[i];
+        bool is_fallback = false;
+        if (!data) {
+            is_fallback = true;
+            data = generate_flat_normal_map();
+        }
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, id * 6 + i, 16, 16, 1,
+                        GL_RGBA, GL_UNSIGNED_BYTE, data);
+        if (is_fallback) {
+            delete[] data;
+        } else {
+            Tools::delete_image_data(image_data[i]);
+        }
+    }
+}
+
 void TextureManager::init_block() {
 
     glGenTextures(1, &m_texture_array);
@@ -145,9 +201,15 @@ void TextureManager::init_block() {
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 16, 16,
                  BlockManager::cross_plane_sum(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  nullptr);
+    glGenTextures(1, &m_pbr_texture_array);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_pbr_texture_array);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, 16, 16,
+                 BlockManager::sums() * 6, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 nullptr);
     for (unsigned i = 0; i < BlockManager::sums(); i++) {
         load_block_texture(i);
         load_block_item_texture(i);
+        load_pbr_texture(i);
     }
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_array);
@@ -161,6 +223,18 @@ void TextureManager::init_block() {
     }
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_cross_plane_array);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+    if (m_aniso >= 1) {
+        glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY,
+                        static_cast<GLfloat>(m_aniso));
+    }
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_pbr_texture_array);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
                     GL_LINEAR_MIPMAP_LINEAR);

@@ -118,16 +118,29 @@ std::string read_shader_source(const std::string& file_path) {
     return content;
 }
 
-void delete_image_data(unsigned char* data) { SOIL_free_image_data(data); }
+void delete_image_data(unsigned char* data) {
+    if (data == nullptr) {
+        return;
+    }
+    SOIL_free_image_data(data);
+}
 
-unsigned char* load_image_data(const std::string& tex_image_path) {
+unsigned char* load_image_data(const std::string& tex_image_path,
+                               bool check_exist) {
     fs::path path = ASSETS_PATH + tex_image_path;
-    ASSERT_MSG(fs::is_regular_file(path), path.c_str());
+    if (check_exist) {
+        ASSERT_MSG(fs::is_regular_file(path), path.c_str());
+    }
     unsigned char* data = nullptr;
     int width, height, channels;
     data = SOIL_load_image(path.string().c_str(), &width, &height, &channels,
                            SOIL_LOAD_AUTO);
-    ASSERT_MSG(data, "Could not load texture" + path.string());
+    if (check_exist) {
+        if (!data) {
+            ASSERT_MSG(data, "Could not load texture" + path.string());
+            std::abort();
+        }
+    }
 
     return data;
 }
