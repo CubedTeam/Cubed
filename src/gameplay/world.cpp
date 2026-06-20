@@ -147,224 +147,31 @@ void World::gen_chunks_internal() {
     m_chunk_gen_fraction = 0.1f;
 
     ChunkPairVector new_chunks;
-    ChunkHashMap new_temp_chunks;
+    ChunkPairVector new_temp_chunks;
     for (auto& pos : need_gen_chunks_pos) {
         new_chunks.push_back({pos, Chunk(*this, pos)});
     }
     for (auto& pos : need_gen_temp_chunks_pos) {
-        new_temp_chunks.emplace(pos, Chunk(*this, pos));
+        new_temp_chunks.push_back({pos, Chunk(*this, pos)});
     }
     ConstChunkMap new_chunks_neighbor;
 
     build_neighbor_context_for_new_chunks(new_chunks_neighbor, new_chunks);
 
-    //  build new chunk, but the neighbor in m_chunks also need to re-build
-
-    std::for_each(std::execution::par, new_chunks.begin(), new_chunks.end(),
+    std::for_each(std::execution::par, new_temp_chunks.begin(),
+                  new_temp_chunks.end(),
                   [this](std::pair<ChunkPos, Chunk>& new_chunk) {
                       auto& [pos, chunk] = new_chunk;
-                      chunk.gen_phase_one();
+                      chunk.gen_chunk();
                       m_cave_carcer.try_to_add_path(pos, chunk.seed());
                       m_river_worm.try_to_add_path(pos, chunk.seed());
                   });
 
-    std::for_each(new_temp_chunks.begin(), new_temp_chunks.end(),
-                  [](std::pair<const ChunkPos, Chunk>& new_chunk) {
-                      auto& [pos, chunk] = new_chunk;
-                      chunk.gen_phase_one();
-                  });
-    // precompute path to ensure the continuity of the path
-    std::for_each(std::execution::par, temp_neighbor.begin(),
-                  temp_neighbor.end(),
-                  [this](std::pair<ChunkPos, Chunk>& new_chunk) {
-                      auto& [pos, chunk] = new_chunk;
-                      chunk.gen_phase_one();
-                      m_cave_carcer.try_to_add_path(pos, chunk.seed());
-                      m_river_worm.try_to_add_path(pos, chunk.seed());
-                  });
-
-    m_chunk_gen_fraction = 0.2f;
-
-    /*
-    std::array<const Chunk*, 8> neighbor_chunks;
-    for (auto& [pos, chunks] : new_chunks) {
-        for (int i = 0; i < 8; i++) {
-            auto neighbor_pos = pos + CHUNK_DIR[i];
-            auto it = new_chunks_neighbor.find(neighbor_pos);
-            if (it == new_chunks_neighbor.end()) {
-                neighbor_chunks[i] = nullptr;
-                // ASSERT_MSG(false, "Cant Find Neighbot");
-                continue;
-            }
-            neighbor_chunks[i] = it->second;
-        }
-        chunks.gen_phase_two(neighbor_chunks);
-    }
-    */
-
-    /*
-    for (auto& [pos, chunks] : temp_neighbor) {
-        for (int i = 0; i < 8; i++) {
-            auto neighbor_pos = pos + CHUNK_DIR[i];
-            auto it = new_chunks_neighbor.find(neighbor_pos);
-            if (it == new_chunks_neighbor.end()) {
-                neighbor_chunks[i] = nullptr;
-                continue;
-            }
-            neighbor_chunks[i] = it->second;
-        }
-        chunks.gen_phase_two(neighbor_chunks);
-    }
-    */
-
-    m_chunk_gen_fraction = 0.3f;
-
-    std::for_each(std::execution::par, new_chunks.begin(), new_chunks.end(),
-                  [](std::pair<ChunkPos, Chunk>& pair) {
-                      auto& [pos, chunks] = pair;
-                      chunks.gen_phase_three();
-                  });
-
-    for (auto& [pos, chunk] : new_temp_chunks) {
-        chunk.gen_phase_three();
-    }
-    // for (auto& [pos, chunks] : temp_neighbor) {
-    //     chunks.gen_phase_three();
-    // }
-
-    /*
-    for (int i = 0; i < 4; i++) {
-        for (auto& [pos, chunks] : temp_neighbor) {
-            std::array<std::optional<HeightMapArray>, 8>
-                neighbor_chunk_heightmap;
-            // std::lock_guard lk(m_chunks_mutex);
-            std::array<BiomeType, 8> neighbor_biome;
-            for (int i = 0; i < 8; i++) {
-                auto neighbor_pos = pos + CHUNK_DIR[i];
-                auto it = new_chunks_neighbor.find(neighbor_pos);
-                if (it == new_chunks_neighbor.end()) {
-                    neighbor_chunk_heightmap[i] = std::nullopt;
-                    neighbor_biome[i] = BiomeType::NONE;
-                    continue;
-                }
-                neighbor_chunk_heightmap[i] = it->second->get_heightmap();
-                neighbor_biome[i] = it->second->biome();
-            }
-
-            chunks.gen_phase_four(neighbor_chunk_heightmap, neighbor_biome);
-        }
-        for (auto& [pos, chunks] : new_chunks) {
-            std::array<std::optional<HeightMapArray>, 8>
-                neighbor_chunk_heightmap;
-            // std::lock_guard lk(m_chunks_mutex);
-            std::array<BiomeType, 8> neighbor_biome;
-            for (int i = 0; i < 8; i++) {
-                auto neighbor_pos = pos + CHUNK_DIR[i];
-                auto it = new_chunks_neighbor.find(neighbor_pos);
-                if (it == new_chunks_neighbor.end()) {
-                    neighbor_chunk_heightmap[i] = std::nullopt;
-                    neighbor_biome[i] = BiomeType::NONE;
-                    ASSERT_MSG(false, "Cant Find Neighbot");
-                    continue;
-                }
-                neighbor_chunk_heightmap[i] = it->second->get_heightmap();
-                neighbor_biome[i] = it->second->biome();
-            }
-
-            chunks.gen_phase_four(neighbor_chunk_heightmap, neighbor_biome);
-        }
-    }
-    */
-    m_chunk_gen_fraction = 0.4f;
-
-    for (auto& [pos, chunks] : new_chunks) {
-        chunks.gen_phase_five();
-    }
-    m_chunk_gen_fraction = 0.45f;
-    for (auto& [pos, chunk] : new_temp_chunks) {
-        chunk.gen_phase_five();
-    }
-    m_chunk_gen_fraction = 0.5f;
-    /*
-    for (auto& [pos, chunks] : temp_neighbor) {
-        chunks.gen_phase_five();
-    }
-    */
-
-    std::vector<std::pair<Chunk*, OptionalBlockVectorArray>>
-        new_chunks_surface_blend_data(new_chunks.size());
-    for (size_t idx = 0; idx < new_chunks.size(); idx++) {
-        auto& [pos, chunk] = new_chunks[idx];
-        new_chunks_surface_blend_data[idx].first = &chunk;
-        {
-            // std::lock_guard lk(m_chunks_mutex);
-            for (int i = 0; i < 4; i++) {
-                auto neighbor_pos = pos + CHUNK_DIR[i];
-                auto it = new_chunks_neighbor.find(neighbor_pos);
-                if (it == new_chunks_neighbor.end()) {
-                    auto it = new_temp_chunks.find(neighbor_pos);
-                    if (it == new_temp_chunks.end()) {
-                        new_chunks_surface_blend_data[idx].second[i] =
-                            std::nullopt;
-                        Logger::warn(
-                            "Can't find neighbor for chunk surface blend");
-                        continue;
-                    }
-                    new_chunks_surface_blend_data[idx].second[i] =
-                        it->second.get_chunk_blocks();
-                    continue;
-                }
-                new_chunks_surface_blend_data[idx].second[i] =
-                    it->second->get_chunk_blocks();
-            }
-        }
-    }
-
-    std::for_each(
-        std::execution::par, new_chunks_surface_blend_data.begin(),
-        new_chunks_surface_blend_data.end(),
-        [](std::pair<Chunk*, OptionalBlockVectorArray>& new_chunk_data) {
-            auto& [chunk, neighbor_data] = new_chunk_data;
-            chunk->gen_phase_six(neighbor_data);
-        });
-
-    m_chunk_gen_fraction = 0.55f;
     std::for_each(std::execution::par, new_chunks.begin(), new_chunks.end(),
                   [](std::pair<ChunkPos, Chunk>& new_chunk) {
                       auto& [pos, chunk] = new_chunk;
-                      chunk.gen_phase_seven();
+                      chunk.gen_chunk();
                   });
-
-    m_chunk_gen_fraction = 0.6f;
-
-    std::vector<std::pair<Chunk*, OptionalBlockVectorArray>>
-        new_chunk_vertices_data(new_chunks.size());
-    for (size_t idx = 0; idx < new_chunks.size(); idx++) {
-        auto& [pos, chunk] = new_chunks[idx];
-        new_chunk_vertices_data[idx].first = &chunk;
-        for (int i = 0; i < 4; i++) {
-            auto it = new_chunks_neighbor.find(pos + CHUNK_DIR[i]);
-            if (it != new_chunks_neighbor.end()) {
-                new_chunk_vertices_data[idx].second[i] =
-                    (it->second->get_chunk_blocks());
-            } else {
-                new_chunk_vertices_data[idx].second[i] = std::nullopt;
-            }
-        }
-    }
-
-    std::for_each(
-        std::execution::par, new_chunk_vertices_data.begin(),
-        new_chunk_vertices_data.end(),
-        [](std::pair<Chunk*, OptionalBlockVectorArray>& new_chunk_data) {
-            auto& [chunk, neighbor_data] = new_chunk_data;
-            chunk->gen_vertex_data(neighbor_data);
-        });
-
-    m_chunk_gen_fraction = 0.7f;
-
-    m_chunk_gen_fraction = 0.8f;
-    OptionalBlockVectorArray neighbor_block;
 
     m_chunk_gen_fraction = 0.9f;
 
@@ -412,10 +219,8 @@ void World::compute_required_chunks(
             if (dx * dx + dz * dz <= new_r2) {
                 int nx = chunk_x + dx;
                 int nz = chunk_z + dz;
-                auto it = required_chunks.find({nx, nz});
-                if (it == required_chunks.end()) {
-                    need_gen_temp_chunks_pos.push_back({nx, nz});
-                }
+
+                need_gen_temp_chunks_pos.push_back({nx, nz});
             }
         }
     }

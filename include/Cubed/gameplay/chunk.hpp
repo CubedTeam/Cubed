@@ -124,6 +124,8 @@ public:
     void need_upload();
 
     void set_chunk_block(int index, unsigned id);
+    // ensure thread safe!
+    void gen_chunk();
 
     ChunkPos chunk_pos() const;
     BiomeType biome() const;
