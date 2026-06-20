@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/chunk.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/river_worm.hpp"
+#include "Cubed/tools/thread_pool.hpp"
 
 #include <atomic>
 #include <condition_variable>
@@ -34,15 +35,22 @@ class Player;
 class TextureManager;
 class World {
 private:
+    struct PendingChunk {
+        Chunk chunk;
+        std::future<void> future;
+    };
+
     using OptionalBlockVectorArray =
         std::array<std::optional<std::vector<BlockType>>, 4>;
     using ChunkPtrUpdateList = std::vector<std::pair<ChunkPos, Chunk*>>;
     using ChunkPairVector = std::vector<std::pair<ChunkPos, Chunk>>;
+    using ChunkPairQueue = std::queue<std::pair<ChunkPos, Chunk>>;
     using ConstChunkMap =
         std::unordered_map<ChunkPos, const Chunk*, ChunkPos::Hash>;
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
     using ChunkHashMap = std::unordered_map<ChunkPos, Chunk, ChunkPos::Hash>;
-
+    using PendingChunkHashMap =
+        std::unordered_map<ChunkPos, PendingChunk, ChunkPos::Hash>;
     glm::vec3 m_gen_player_pos{0.0f, 0.0f, 0.0f};
     ChunkHashMap m_chunks;
     std::unordered_map<std::size_t, Player> m_players;
@@ -50,7 +58,7 @@ private:
 
     std::thread m_gen_thread;
     std::thread m_server_thread;
-
+    std::unique_ptr<ThreadPool> m_gen_thread_pool;
     std::stop_source m_server_stop_source;
 
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
@@ -59,7 +67,7 @@ private:
 
     mutable std::mutex m_chunks_mutex;
     std::mutex m_gen_signal_mutex;
-    std::mutex m_new_chunk_queue_mutex;
+    std::mutex m_new_chunk_mutex;
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
     std::mutex m_gen_player_pos_mutex;
@@ -79,8 +87,9 @@ private:
 
     std::vector<ChunkPos> m_dirty_queue;
     std::vector<ChunkRenderSnapshot> m_render_snapshots;
-    std::vector<std::pair<ChunkPos, Chunk>> m_new_chunk;
-    std::vector<std::pair<ChunkPos, Chunk>> m_new_chunk_queue;
+    std::vector<std::pair<ChunkPos, Chunk>> m_new_finished_chunk;
+    // Can only be used in the gen thread
+    PendingChunkHashMap new_chunks;
 
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
@@ -88,15 +97,13 @@ private:
 
     void gen_chunks_internal();
     void sync_player_pos(glm::vec3& player_pos);
-    void
-    compute_required_chunks(ChunkPosSet& required_chunks,
-                            ChunkPairVector& temp_neighbor,
-                            std::vector<ChunkPos>& need_gen_temp_chunks_pos);
+    void compute_required_chunks(ChunkPosSet& required_chunks,
+                                 ChunkPairVector& temp_neighbor);
     void sync_and_collect_missing_chunks(std::vector<ChunkPos>&,
                                          const ChunkPosSet&);
-    void
-    build_neighbor_context_for_new_chunks(ConstChunkMap& new_chunks_neighbor,
-                                          const ChunkPairVector& new_chunks);
+
+    void submit_new_chunks();
+    void poll_finished_chunks();
 
 public:
     World();

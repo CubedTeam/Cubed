@@ -456,6 +456,9 @@ void Chunk::gen_cross_plane_vertices(int world_x, int world_y, int world_z,
 }
 
 void Chunk::gen_chunk() {
+    if (m_gening.exchange(true))
+        return;
+    m_gening = true;
     if (m_blocks.size() != 0) {
         Logger::warn(
             "Request Generator Chunk {} {} ,but the Blocks size is Not 0",
@@ -485,8 +488,9 @@ void Chunk::gen_chunk() {
         neightbor_blocks[i] = neighbor[i].get_chunk_blocks();
     }
     gen_vertex_data(neightbor_blocks);
+    m_gen_finish = true;
 }
-
+bool Chunk::is_gen_finish() const { return m_gen_finish.load(); }
 // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
 
 } // namespace Cubed

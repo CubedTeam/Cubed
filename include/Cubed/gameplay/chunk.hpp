@@ -23,6 +23,8 @@ private:
     std::atomic<bool> m_dirty{false};
     std::atomic<bool> m_need_upload{true};
     std::atomic<bool> m_is_on_gen_vertex_data{false};
+    std::atomic<bool> m_gening{false};
+    std::atomic<bool> m_gen_finish{false};
     std::atomic<BiomeType> m_biome = BiomeType::PLAIN;
     std::mutex m_vertexs_data_mutex;
 
@@ -127,6 +129,7 @@ public:
     // ensure thread safe!
     void gen_chunk();
 
+    bool is_gen_finish() const;
     ChunkPos chunk_pos() const;
     BiomeType biome() const;
     void biome(BiomeType b);

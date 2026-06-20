@@ -5,11 +5,10 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
 
-#include <execution>
 #include <glm/gtc/constants.hpp>
 #include <numbers>
 using namespace std::chrono;
-
+using namespace std::chrono_literals;
 namespace Cubed {
 
 struct ChunkRenderData {
@@ -77,10 +76,14 @@ void World::init_world() {
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
     m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
+    int max_thread = std::thread::hardware_concurrency();
+    int used_thread = std::max(max_thread - 3, 1);
+    Logger::info("Max Support Thread is {}, use {} threads to gen", max_thread,
+                 used_thread);
+    m_gen_thread_pool = std::make_unique<ThreadPool>(used_thread);
+
     auto t1 = std::chrono::system_clock::now();
 
-    Logger::info("Max Support Thread is {}",
-                 std::thread::hardware_concurrency());
     // init players
     m_players.emplace(HASH::str("TestPlayer"), Player(*this, "TestPlayer"));
 
@@ -122,13 +125,19 @@ ChunkPos World::chunk_pos(int world_x, int world_z) {
 #pragma region ChunkGenerate
 
 void World::gen_chunks_internal() {
+    // Logger::info("gen_chunks_internal");
     m_chunk_gen_fraction = 0.0f;
     m_chunk_gen_finished = false;
+    /*
+    if (!new_chunks.empty()) {
+        submit_new_chunks();
+        return;
+    }*/
+
     ChunkPosSet required_chunks;
     ChunkPairVector temp_neighbor;
-    std::vector<ChunkPos> need_gen_temp_chunks_pos;
-    compute_required_chunks(required_chunks, temp_neighbor,
-                            need_gen_temp_chunks_pos);
+
+    compute_required_chunks(required_chunks, temp_neighbor);
 
     ASSERT_MSG(!required_chunks.empty(), "required chunks is empty!!");
 
@@ -145,45 +154,27 @@ void World::gen_chunks_internal() {
     }
 
     m_chunk_gen_fraction = 0.1f;
-
-    ChunkPairVector new_chunks;
-    ChunkPairVector new_temp_chunks;
     for (auto& pos : need_gen_chunks_pos) {
-        new_chunks.push_back({pos, Chunk(*this, pos)});
+        new_chunks.emplace(pos, Chunk(*this, pos));
     }
-    for (auto& pos : need_gen_temp_chunks_pos) {
-        new_temp_chunks.push_back({pos, Chunk(*this, pos)});
-    }
-    ConstChunkMap new_chunks_neighbor;
-
-    build_neighbor_context_for_new_chunks(new_chunks_neighbor, new_chunks);
-
-    std::for_each(std::execution::par, new_temp_chunks.begin(),
-                  new_temp_chunks.end(),
-                  [this](std::pair<ChunkPos, Chunk>& new_chunk) {
-                      auto& [pos, chunk] = new_chunk;
-                      chunk.gen_phase_one();
-                      m_cave_carcer.try_to_add_path(pos, chunk.seed());
-                      m_river_worm.try_to_add_path(pos, chunk.seed());
-                  });
-
-    std::for_each(std::execution::par, new_chunks.begin(), new_chunks.end(),
-                  [](std::pair<ChunkPos, Chunk>& new_chunk) {
-                      auto& [pos, chunk] = new_chunk;
-                      chunk.gen_chunk();
-                  });
-
+    auto t1 = system_clock::now();
+    parallel_do(*m_gen_thread_pool, temp_neighbor.begin(), temp_neighbor.end(),
+                m_gen_thread_pool->thread_sum(),
+                [this](std::pair<ChunkPos, Chunk>& new_chunk) {
+                    auto& [pos, chunk] = new_chunk;
+                    chunk.gen_phase_one();
+                    m_cave_carcer.try_to_add_path(pos, chunk.seed());
+                    m_river_worm.try_to_add_path(pos, chunk.seed());
+                });
+    auto t2 = system_clock::now();
+    Logger::info("Temp Neighbor Add Path Consum {}",
+                 duration_cast<milliseconds>(t2 - t1));
     m_chunk_gen_fraction = 0.9f;
 
-    {
-        std::lock_guard lk(m_new_chunk_queue_mutex);
-        for (auto& x : new_chunks) {
-            m_new_chunk_queue.emplace_back(std::move(x));
-        }
-    }
     m_cave_carcer.cleanup_finished_caves();
     m_river_worm.cleanup_finished_rivers();
     m_chunk_gen_fraction = 1.0f;
+    submit_new_chunks();
     m_chunk_gen_finished = true;
 }
 
@@ -192,9 +183,8 @@ void World::sync_player_pos(glm::vec3& player_pos) {
     player_pos = m_gen_player_pos;
 }
 
-void World::compute_required_chunks(
-    ChunkPosSet& required_chunks, ChunkPairVector& temp_neighbor,
-    std::vector<ChunkPos>& need_gen_temp_chunks_pos) {
+void World::compute_required_chunks(ChunkPosSet& required_chunks,
+                                    ChunkPairVector& temp_neighbor) {
     glm::vec3 player_pos;
     sync_player_pos(player_pos);
 
@@ -209,18 +199,6 @@ void World::compute_required_chunks(
         for (int dz = -radius; dz <= radius; ++dz) {
             if (dx * dx + dz * dz <= r2) {
                 required_chunks.emplace(chunk_x + dx, chunk_z + dz);
-            }
-        }
-    }
-    int new_radius = radius + 1;
-    int new_r2 = new_radius * new_radius;
-    for (int dx = -new_radius; dx <= new_radius; ++dx) {
-        for (int dz = -new_radius; dz <= new_radius; ++dz) {
-            if (dx * dx + dz * dz <= new_r2) {
-                int nx = chunk_x + dx;
-                int nz = chunk_z + dz;
-
-                need_gen_temp_chunks_pos.push_back({nx, nz});
             }
         }
     }
@@ -261,22 +239,34 @@ void World::sync_and_collect_missing_chunks(
     }
 }
 
-void World::build_neighbor_context_for_new_chunks(
-    ConstChunkMap& new_chunks_neighbor, const ChunkPairVector& new_chunks) {
-    {
-        std::lock_guard lk(m_chunks_mutex);
-        for (auto& [pos, chunk] : new_chunks) {
-            for (auto& dir : CHUNK_DIR) {
-                auto it = m_chunks.find(pos + dir);
-                if (it != m_chunks.end()) {
-                    new_chunks_neighbor.insert({it->first, &(it->second)});
-                }
-            }
+void World::submit_new_chunks() {
+    std::lock_guard lock(m_new_chunk_mutex);
+    for (auto& [pos, task] : new_chunks) {
+        if (!task.future.valid()) {
+            task.future = m_gen_thread_pool->enqueue(
+                [&task]() { task.chunk.gen_chunk(); });
         }
     }
-    for (auto& [pos, chunk] : new_chunks) {
-        new_chunks_neighbor.insert({pos, &chunk});
-    }
+}
+
+void World::poll_finished_chunks() {
+    m_new_finished_chunk.clear();
+    std::lock_guard lock(m_new_chunk_mutex);
+    std::erase_if(
+        new_chunks, [&](std::pair<const ChunkPos, PendingChunk>& pair) {
+            auto& pending = pair.second;
+            if (!pending.future.valid()) {
+                return false;
+            }
+            if (pending.future.wait_for(0ms) != std::future_status::ready) {
+                return false;
+            }
+            pending.future.get();
+
+            m_new_finished_chunk.emplace_back(pair.first,
+                                              std::move(pending.chunk));
+            return true;
+        });
 }
 
 #pragma endregion
@@ -336,10 +326,12 @@ void World::serever_run(std::stop_token stoken) {
 }
 
 void World::need_gen() {
+
     if (!m_could_gen) {
         Logger::warn("It is generating or consuming new chunks");
         return;
     }
+
     m_could_gen = false;
     {
         std::lock_guard lk(m_gen_player_pos_mutex);
@@ -347,6 +339,7 @@ void World::need_gen() {
     }
 
     m_need_gen_chunk = true;
+
     m_gen_cv.notify_one();
 }
 
@@ -414,16 +407,16 @@ BlockType World::get_block_tpye(const glm::ivec3& block_pos) const {
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
     if (it == m_chunks.end()) {
-        Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
-                      block_pos.z);
+        // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
+        //               block_pos.z);
         return 0;
     }
     const auto& chunk_blocks = it->second.get_chunk_blocks();
     auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
     if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
         z >= CHUNK_SIZE) {
-        Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
-                      block_pos.z);
+        // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
+        //               block_pos.z);
         return 0;
     }
     return chunk_blocks[Chunk::index(x, y, z)];
@@ -487,16 +480,9 @@ void World::update(float delta_time) {
         m_pending_delete_vao.clear();
     }
 
-    {
-        std::scoped_lock lk(m_chunks_mutex, m_new_chunk_queue_mutex);
-        m_new_chunk.clear();
-        for (auto& x : m_new_chunk_queue) {
-            m_new_chunk.emplace_back(std::move(x));
-        }
-        m_new_chunk_queue.clear();
-    }
+    poll_finished_chunks();
 
-    for (auto& x : m_new_chunk) {
+    for (auto& x : m_new_finished_chunk) {
         x.second.upload_to_gpu();
     }
 
@@ -505,7 +491,7 @@ void World::update(float delta_time) {
         std::lock_guard lk(m_chunks_mutex);
         bool consumed = false;
 
-        for (auto& x : m_new_chunk) {
+        for (auto& x : m_new_finished_chunk) {
             m_chunks.insert_or_assign(x.first, std::move(x.second));
             consumed = true;
         }
@@ -580,9 +566,9 @@ void World::rebuild_world() {
     m_cave_carcer.reload(ChunkGenerator::seed());
     m_river_worm.reload(ChunkGenerator::seed());
     {
-        std::scoped_lock lk(m_chunks_mutex, m_new_chunk_queue_mutex);
+        std::scoped_lock lk(m_chunks_mutex);
         m_chunks.clear();
-        m_new_chunk_queue.clear();
+        m_new_finished_chunk.clear();
     }
     m_could_gen = true;
     ChunkGenerator::reload();
@@ -592,20 +578,6 @@ void World::rebuild_world() {
     m_is_rebuilding = false;
 }
 
-float World::chunk_gen_fraction() const { return m_chunk_gen_fraction.load(); }
-
-int World::rendering_distance() const { return m_rendering_distance.load(); }
-
-void World::rendering_distance(int rendering_distance) {
-    m_rendering_distance = rendering_distance;
-}
-
-CaveCarver& World::cave_carcer() { return m_cave_carcer; }
-RiverWorm& World::river_worm() { return m_river_worm; }
-std::vector<glm::vec4>& World::planes() { return m_planes; }
-std::vector<ChunkRenderSnapshot>& World::render_snapshots() {
-    return m_render_snapshots;
-};
 /*
 glm::vec3 World::sunlight_dir() const {
     float t = static_cast<float>(m_day_tick) / DAY_TIME;
@@ -639,6 +611,21 @@ glm::vec3 World::sunlight_dir() const {
 
     return glm::normalize(-dir);
 }
+
+float World::chunk_gen_fraction() const { return m_chunk_gen_fraction.load(); }
+
+int World::rendering_distance() const { return m_rendering_distance.load(); }
+
+void World::rendering_distance(int rendering_distance) {
+    m_rendering_distance = rendering_distance;
+}
+
+CaveCarver& World::cave_carcer() { return m_cave_carcer; }
+RiverWorm& World::river_worm() { return m_river_worm; }
+std::vector<glm::vec4>& World::planes() { return m_planes; }
+std::vector<ChunkRenderSnapshot>& World::render_snapshots() {
+    return m_render_snapshots;
+};
 
 TickType World::game_tick() const { return m_game_ticks.load(); }
 TickType World::day_tick() const { return m_day_tick.load(); }
