@@ -84,7 +84,7 @@ private:
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_rendering_distance{24};
     std::atomic<float> m_chunk_gen_fraction{0.0f};
-    std::atomic<int> m_pool_threads{1};
+    std::atomic<int> m_pool_threads{0};
     std::atomic<int> m_max_threads{1};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::RANDOM};
@@ -146,6 +146,8 @@ public:
     void start_server_thread();
     void stop_gen_thread();
     void stop_server_thread();
+    void stop_thread_pool();
+    void start_thread_pool();
     void serever_run(std::stop_token stoken);
 
     CaveCarver& cave_carcer();

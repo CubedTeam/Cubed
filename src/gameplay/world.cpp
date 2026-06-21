@@ -23,11 +23,7 @@ World::~World() {
     stop_gen_thread();
     stop_server_thread();
     wait_all_chunk_tasks();
-    auto pool_ptr = m_gen_thread_pool.load();
-    if (pool_ptr) {
-        pool_ptr->stop();
-    }
-    m_gen_thread_pool.store(nullptr);
+    stop_thread_pool();
 
     m_chunks.clear();
     {
@@ -90,8 +86,7 @@ void World::init_world() {
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
     m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
-    int max_thread = std::thread::hardware_concurrency();
-    change_pool_threads(max_thread - RESERVED_THREADS);
+    start_thread_pool();
 
     auto t1 = std::chrono::system_clock::now();
 
@@ -139,11 +134,6 @@ void World::gen_chunks_internal() {
     // Logger::info("gen_chunks_internal");
     m_chunk_gen_fraction = 0.0f;
     m_chunk_gen_finished = false;
-    /*
-    if (!new_chunks.empty()) {
-        submit_new_chunks();
-        return;
-    }*/
 
     ChunkPosSet required_chunks;
     ChunkPairVector temp_neighbor;
@@ -363,6 +353,24 @@ void World::stop_server_thread() {
     m_server_stop_source.request_stop();
     if (m_server_thread.joinable()) {
         m_server_thread.join();
+    }
+}
+
+void World::stop_thread_pool() {
+    auto pool_ptr = m_gen_thread_pool.load();
+    if (pool_ptr) {
+        pool_ptr->stop();
+    }
+    m_gen_thread_pool.store(nullptr);
+    Logger::info("Thread Pool Stopped");
+}
+
+void World::start_thread_pool() {
+    int max_thread = std::thread::hardware_concurrency();
+    if (m_pool_threads == 0) {
+        change_pool_threads(max_thread - RESERVED_THREADS);
+    } else {
+        change_pool_threads(m_pool_threads);
     }
 }
 
@@ -616,6 +624,7 @@ void World::rebuild_world() {
     }
     m_is_rebuilding = true;
     stop_gen_thread();
+    stop_thread_pool();
     m_cave_carcer.reload(ChunkGenerator::seed());
     m_river_worm.reload(ChunkGenerator::seed());
     {
@@ -625,6 +634,7 @@ void World::rebuild_world() {
     }
     m_could_gen = true;
     ChunkGenerator::reload();
+    start_thread_pool();
     start_gen_thread();
     need_gen();
 
