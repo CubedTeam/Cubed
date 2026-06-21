@@ -819,7 +819,6 @@ void Renderer::render_world() {
         accum_shader.set_loc("mv_matrix", m_mv_mat);
         accum_shader.set_loc("proj_matrix", m_p_mat);
         accum_shader.set_loc("norm_matrix", m_norm_mat);
-        accum_shader.set_loc("lightSpaceMatrix", light_space_matrix);
         accum_shader.set_loc("ambientStrength", m_ambient_strength);
         accum_shader.set_loc("sunlightColor",
                              m_parallel_light.directional_light_color);
@@ -828,14 +827,13 @@ void Renderer::render_world() {
         accum_shader.set_loc("sunlightDir", light_dir_view);
         accum_shader.set_loc("shader_on", m_shader_on);
         accum_shader.set_loc("specularStrength", m_specular_strength);
-        accum_shader.set_loc("cameraPos", m_camera.get_camera_pos());
     };
 
     auto& accum_shader = get_shader("accum");
     accum_shader.use();
 
     set_accum_loc(accum_shader);
-
+    accum_shader.set_loc("cameraPos", m_camera.get_camera_pos());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
     for (const auto& snapshot : m_render_snapshots) {
