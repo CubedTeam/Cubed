@@ -9,6 +9,7 @@
 #include <numbers>
 using namespace std::chrono;
 using namespace std::chrono_literals;
+
 namespace Cubed {
 
 struct ChunkRenderData {
@@ -115,7 +116,7 @@ void World::init_chunks() {
     }
 }
 
-ChunkPos World::chunk_pos(int world_x, int world_z) {
+ChunkPos World::get_chunk_pos(int world_x, int world_z) {
     int chunk_x, chunk_z;
     if (world_x < 0) {
         chunk_x = (world_x + 1) / CHUNK_SIZE - 1;
@@ -209,7 +210,7 @@ void World::compute_required_chunks(ChunkPosSet& required_chunks,
 
     int x = std::floor(player_pos.x);
     int z = std::floor(player_pos.z);
-    auto [chunk_x, chunk_z] = chunk_pos(x, z);
+    auto [chunk_x, chunk_z] = get_chunk_pos(x, z);
     int radius = m_rendering_distance;
     int r2 = radius * radius;
     required_chunks.reserve(radius * radius);
@@ -255,16 +256,49 @@ void World::sync_and_collect_missing_chunks(
 }
 
 void World::submit_new_chunks() {
+    using enum ChunkLoadStyle;
     std::lock_guard lock(m_new_chunk_mutex);
     auto pool_ptr = m_gen_thread_pool.load();
     if (!pool_ptr) {
         return;
     }
-    for (auto& [pos, task] : new_chunks) {
-        if (!task.future.valid()) {
-            task.future =
-                pool_ptr->enqueue([&task]() { task.chunk.gen_chunk(); });
+    switch (m_chunk_load_style) {
+    case RANDOM:
+        for (auto& [pos, task] : new_chunks) {
+            if (!task.future.valid()) {
+                task.future =
+                    pool_ptr->enqueue([&task]() { task.chunk.gen_chunk(); });
+            }
         }
+        break;
+    case CENTER: {
+        std::vector<std::pair<ChunkPos, PendingChunk*>> tasks;
+        for (auto& [pos, task] : new_chunks) {
+            if (!task.future.valid()) {
+                tasks.emplace_back(pos, &task);
+            }
+        }
+        glm::vec3 player_pos;
+        sync_player_pos(player_pos);
+        auto dist2 = [player_pos](ChunkPos chunk_pos) {
+            ChunkPos player_chunk_pos =
+                get_chunk_pos(player_pos.x, player_pos.z);
+            float dx = player_chunk_pos.x - chunk_pos.x;
+            float dz = player_chunk_pos.z - chunk_pos.z;
+            return dx * dx + dz * dz;
+        };
+
+        std::sort(tasks.begin(), tasks.end(),
+                  [&dist2](const auto& a, const auto& b) {
+                      return dist2(a.first) < dist2(b.first);
+                  });
+        for (auto& [pos, task] : tasks) {
+            if (!task->future.valid()) {
+                task->future =
+                    pool_ptr->enqueue([task]() { task->chunk.gen_chunk(); });
+            }
+        }
+    }
     }
 }
 
@@ -363,7 +397,7 @@ void World::need_gen() {
 }
 
 int World::get_block(const glm::ivec3& block_pos) const {
-    auto [chunk_x, chunk_z] = chunk_pos(block_pos.x, block_pos.z);
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
@@ -381,7 +415,7 @@ int World::get_block(const glm::ivec3& block_pos) const {
 }
 
 bool World::is_solid(const glm::ivec3& block_pos) const {
-    auto [chunk_x, chunk_z] = chunk_pos(block_pos.x, block_pos.z);
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
@@ -403,7 +437,7 @@ bool World::is_solid(const glm::ivec3& block_pos) const {
 }
 
 bool World::can_pass_block(const glm::ivec3& block_pos) const {
-    auto [chunk_x, chunk_z] = chunk_pos(block_pos.x, block_pos.z);
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
@@ -421,7 +455,7 @@ bool World::can_pass_block(const glm::ivec3& block_pos) const {
 }
 
 BlockType World::get_block_tpye(const glm::ivec3& block_pos) const {
-    auto [chunk_x, chunk_z] = chunk_pos(block_pos.x, block_pos.z);
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
@@ -448,7 +482,7 @@ void World::set_block(const glm::ivec3& block_pos, unsigned id) {
     world_y = block_pos.y;
     world_z = block_pos.z;
 
-    auto [chunk_x, chunk_z] = chunk_pos(world_x, world_z);
+    auto [chunk_x, chunk_z] = get_chunk_pos(world_x, world_z);
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
@@ -471,7 +505,7 @@ void World::set_block(const glm::ivec3& block_pos, unsigned id) {
     for (const auto& dir : NEIGHBOR_DIRS) {
         glm::ivec3 neighbor = block_pos + dir;
 
-        auto [cx, cz] = chunk_pos(neighbor.x, neighbor.z);
+        auto [cx, cz] = get_chunk_pos(neighbor.x, neighbor.z);
         auto it = m_chunks.find({cx, cz});
         if (it != m_chunks.end()) {
             it->second.mark_dirty();
@@ -670,4 +704,25 @@ void World::change_pool_threads(int threads) {
     m_gen_thread_pool.store(std::make_shared<ThreadPool>(used_thread));
     m_pool_threads = used_thread;
 }
+int World::chunk_load_style() const {
+    return std::to_underlying(m_chunk_load_style.load());
+}
+void World::set_chunk_load_style(int id) {
+    using enum ChunkLoadStyle;
+    using std::to_underlying;
+    switch (m_chunk_load_style.load()) {
+    case RANDOM:
+        if (id == to_underlying(RANDOM)) {
+            m_chunk_load_style = RANDOM;
+            return;
+        }
+    case CENTER:
+        if (id == to_underlying(CENTER)) {
+            m_chunk_load_style = CENTER;
+            return;
+        }
+    }
+    Logger::error("Can,t Find Chunk Load Style Id {}, Nothing Will Do", id);
+}
+
 } // namespace Cubed

@@ -299,7 +299,7 @@ void Chunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
                         int world_nz = world_z + DIR[face].z;
 
                         auto [neighbor_x, neighbor_z] =
-                            World::chunk_pos(world_nx, world_nz);
+                            World::get_chunk_pos(world_nx, world_nz);
 
                         auto is_culled =
                             [&](const std::optional<std::vector<BlockType>>&

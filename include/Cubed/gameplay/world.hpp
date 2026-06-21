@@ -35,6 +35,8 @@ class Player;
 class TextureManager;
 class World {
 private:
+    enum class ChunkLoadStyle { RANDOM, CENTER };
+
     struct PendingChunk {
         Chunk chunk;
         std::future<void> future;
@@ -85,7 +87,7 @@ private:
     std::atomic<int> m_pool_threads{1};
     std::atomic<int> m_max_threads{1};
     std::atomic<TickType> m_game_ticks{0};
-
+    std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::RANDOM};
     std::vector<ChunkPos> m_dirty_queue;
     std::vector<ChunkRenderSnapshot> m_render_snapshots;
     std::vector<std::pair<ChunkPos, Chunk>> m_new_finished_chunk;
@@ -124,7 +126,7 @@ public:
     bool is_solid(const glm::ivec3& block_pos) const;
     bool can_pass_block(const glm::ivec3& block_pos) const;
     BlockType get_block_tpye(const glm::ivec3& block_pos) const;
-    static ChunkPos chunk_pos(int world_x, int world_z);
+    static ChunkPos get_chunk_pos(int world_x, int world_z);
 
     void need_gen();
 
@@ -163,6 +165,8 @@ public:
     int pool_threads() const;
     int max_threads() const;
     void change_pool_threads(int threads);
+    int chunk_load_style() const;
+    void set_chunk_load_style(int id);
 };
 
 } // namespace Cubed

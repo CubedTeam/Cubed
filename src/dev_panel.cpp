@@ -480,6 +480,12 @@ void DevPanel::show_world_tab_item() {
                 "threads minus reserved threads), \nit may cause stuttering.");
         }
 
+        static const char* chunk_load_style[] = {"Random", "Center"};
+        m_chunk_style = m_app.world().chunk_load_style();
+        if (ImGui::Combo("ChunkLoadStyle", &m_chunk_style, chunk_load_style,
+                         IM_ARRAYSIZE(chunk_load_style))) {
+            m_app.world().set_chunk_load_style(m_chunk_style);
+        }
         if (ImGui::Button("Rebuild World")) {
             m_app.world().rebuild_world();
         }
