@@ -101,8 +101,7 @@ private:
 
     void gen_chunks_internal();
     void sync_player_pos(glm::vec3& player_pos);
-    void compute_required_chunks(ChunkPosSet& required_chunks,
-                                 ChunkPairVector& temp_neighbor);
+    void compute_required_chunks(ChunkPosSet& required_chunks);
     void sync_and_collect_missing_chunks(std::vector<ChunkPos>&,
                                          const ChunkPosSet&);
 

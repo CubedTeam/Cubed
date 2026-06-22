@@ -2,7 +2,9 @@
 
 #include "Cubed/app.hpp"
 #include "Cubed/config.hpp"
+#include "Cubed/gameplay/cave_path.hpp"
 #include "Cubed/gameplay/player.hpp"
+#include "Cubed/gameplay/river.path.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <imgui.h>
@@ -33,8 +35,8 @@ constexpr int AMPLITUDE_MAX = 80;
 constexpr float TREE_FREQ_MIM = 0.001f;
 constexpr float TREE_FREQ_MAX = 0.3f;
 
-constexpr float PATH_PROBABILITY_MIN = 0.005f;
-constexpr float PATH_PROBABILITY_MAX = 0.1f;
+// constexpr float PATH_PROBABILITY_MIN = 0.005f;
+// constexpr float PATH_PROBABILITY_MAX = 0.1f;
 constexpr float RADIUS_XZ_MIN = 1.0f;
 constexpr float RADIUS_XZ_MAX = 50.0f;
 constexpr float RADIUS_Y_MIN = 1.0f;
@@ -291,11 +293,11 @@ void DevPanel::show_time_table_bar() {
 }
 
 void DevPanel::show_cave_table_bar() {
-    auto& cave_carcer = m_app.world().cave_carcer();
+    // auto& cave_carcer = m_app.world().cave_carcer();
 
-    ImGui::Text("Total Cave Sum %d", cave_carcer.cave_sum());
-    ImGui::SliderFloat("Cave Probability", &cave_carcer.cave_probability(),
-                       PATH_PROBABILITY_MIN, PATH_PROBABILITY_MAX);
+    // ImGui::Text("Total Cave Sum %d", cave_carcer.cave_sum());
+    // ImGui::SliderFloat("Cave Probability", &cave_carcer.cave_probability(),
+    //                   PATH_PROBABILITY_MIN, PATH_PROBABILITY_MAX);
     ImGui::SliderFloat("Radius XZ Min", &CavePath::radius_xz_min(),
                        RADIUS_XZ_MIN, RADIUS_XZ_MAX);
     ImGui::SliderFloat("Radius XZ Max", &CavePath::radius_xz_max(),
@@ -315,11 +317,11 @@ void DevPanel::show_cave_table_bar() {
 }
 
 void DevPanel::show_river_table_bar() {
-    auto& river_wrom = m_app.world().river_worm();
+    // auto& river_wrom = m_app.world().river_worm();
 
-    ImGui::Text("Total River Sum %d", river_wrom.river_sum());
-    ImGui::SliderFloat("River Probability", &river_wrom.river_probability(),
-                       PATH_PROBABILITY_MIN, PATH_PROBABILITY_MAX);
+    // ImGui::Text("Total River Sum %d", river_wrom.river_sum());
+    // ImGui::SliderFloat("River Probability", &river_wrom.river_probability(),
+    //                   PATH_PROBABILITY_MIN, PATH_PROBABILITY_MAX);
     ImGui::SliderFloat("Radius XZ Min##river", &RiverPath::radius_xz_min(),
                        RADIUS_XZ_MIN, RADIUS_XZ_MAX);
     ImGui::SliderFloat("Radius XZ Max##river", &RiverPath::radius_xz_max(),

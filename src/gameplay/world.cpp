@@ -137,9 +137,7 @@ void World::gen_chunks_internal() {
     m_chunk_gen_finished = false;
 
     ChunkPosSet required_chunks;
-    ChunkPairVector temp_neighbor;
-
-    compute_required_chunks(required_chunks, temp_neighbor);
+    compute_required_chunks(required_chunks);
 
     ASSERT_MSG(!required_chunks.empty(), "required chunks is empty!!");
 
@@ -148,7 +146,7 @@ void World::gen_chunks_internal() {
     sync_and_collect_missing_chunks(need_gen_chunks_pos, required_chunks);
 
     Logger::info("New Gen Chunks Sum: {}", need_gen_chunks_pos.size());
-    Logger::info("Temp Chunks sum {}", temp_neighbor.size());
+
     if (need_gen_chunks_pos.empty()) {
         m_could_gen = true;
         m_chunk_gen_fraction = 1.0f;
@@ -159,6 +157,7 @@ void World::gen_chunks_internal() {
     for (auto& pos : need_gen_chunks_pos) {
         new_chunks.emplace(pos, Chunk(*this, pos));
     }
+    /*
     auto t1 = system_clock::now();
     {
         std::scoped_lock lock{m_cave_carcer.path_mutex(),
@@ -182,6 +181,7 @@ void World::gen_chunks_internal() {
     auto t2 = system_clock::now();
     Logger::info("Temp Neighbor Add Path Consum {}",
                  duration_cast<milliseconds>(t2 - t1));
+                 */
     m_chunk_gen_fraction = 0.9f;
 
     m_chunk_gen_fraction = 1.0f;
@@ -194,8 +194,7 @@ void World::sync_player_pos(glm::vec3& player_pos) {
     player_pos = m_gen_player_pos;
 }
 
-void World::compute_required_chunks(ChunkPosSet& required_chunks,
-                                    ChunkPairVector& temp_neighbor) {
+void World::compute_required_chunks(ChunkPosSet& required_chunks) {
     glm::vec3 player_pos;
     sync_player_pos(player_pos);
 
@@ -210,17 +209,6 @@ void World::compute_required_chunks(ChunkPosSet& required_chunks,
         for (int dz = -radius; dz <= radius; ++dz) {
             if (dx * dx + dz * dz <= r2) {
                 required_chunks.emplace(chunk_x + dx, chunk_z + dz);
-            }
-        }
-    }
-    int max_path_len = std::max(CavePath::step_max(), RiverPath::step_max());
-    radius = max_path_len / 2;
-    r2 = radius * radius;
-    for (int dx = -radius; dx <= radius; ++dx) {
-        for (int dz = -radius; dz <= radius; ++dz) {
-            if (dx * dx + dz * dz <= r2) {
-                ChunkPos pos{chunk_x + dx, chunk_z + dz};
-                temp_neighbor.emplace_back(pos, Chunk(*this, pos));
             }
         }
     }
