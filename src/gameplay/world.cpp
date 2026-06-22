@@ -719,18 +719,14 @@ int World::chunk_load_style() const {
 }
 void World::set_chunk_load_style(int id) {
     using enum ChunkLoadStyle;
-    using std::to_underlying;
-    switch (m_chunk_load_style.load()) {
-    case RANDOM:
-        if (id == to_underlying(RANDOM)) {
-            m_chunk_load_style = RANDOM;
-            return;
-        }
-    case CENTER:
-        if (id == to_underlying(CENTER)) {
-            m_chunk_load_style = CENTER;
-            return;
-        }
+
+    switch (id) {
+    case std::to_underlying(RANDOM):
+        m_chunk_load_style = RANDOM;
+        return;
+    case std::to_underlying(CENTER):
+        m_chunk_load_style = CENTER;
+        return;
     }
     Logger::error("Can,t Find Chunk Load Style Id {}, Nothing Will Do", id);
 }
