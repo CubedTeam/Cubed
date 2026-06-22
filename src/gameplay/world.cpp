@@ -133,7 +133,6 @@ ChunkPos World::get_chunk_pos(int world_x, int world_z) {
 
 void World::gen_chunks_internal() {
     // Logger::info("gen_chunks_internal");
-    m_chunk_gen_fraction = 0.0f;
     m_chunk_gen_finished = false;
 
     ChunkPosSet required_chunks;
@@ -149,42 +148,14 @@ void World::gen_chunks_internal() {
 
     if (need_gen_chunks_pos.empty()) {
         m_could_gen = true;
-        m_chunk_gen_fraction = 1.0f;
+
         return;
     }
 
-    m_chunk_gen_fraction = 0.1f;
     for (auto& pos : need_gen_chunks_pos) {
         new_chunks.emplace(pos, Chunk(*this, pos));
     }
-    /*
-    auto t1 = system_clock::now();
-    {
-        std::scoped_lock lock{m_cave_carcer.path_mutex(),
-                              m_river_worm.paths_mutex()};
-        auto pool_ptr = m_gen_thread_pool.load();
-        if (!pool_ptr) {
-            return;
-        }
-        parallel_do(*pool_ptr, temp_neighbor.begin(), temp_neighbor.end(),
-                    pool_ptr->thread_sum(),
-                    [this](std::pair<ChunkPos, Chunk>& new_chunk) {
-                        auto& [pos, chunk] = new_chunk;
-                        chunk.gen_phase_one();
-                        m_cave_carcer.try_to_add_path(pos, chunk.seed());
-                        m_river_worm.try_to_add_path(pos, chunk.seed());
-                    });
-        // m_cave_carcer.cleanup_finished_caves();
-        // m_river_worm.cleanup_finished_rivers();
-    }
 
-    auto t2 = system_clock::now();
-    Logger::info("Temp Neighbor Add Path Consum {}",
-                 duration_cast<milliseconds>(t2 - t1));
-                 */
-    m_chunk_gen_fraction = 0.9f;
-
-    m_chunk_gen_fraction = 1.0f;
     submit_new_chunks();
     m_chunk_gen_finished = true;
 }
@@ -663,8 +634,6 @@ glm::vec3 World::sunlight_dir() const {
 
     return glm::normalize(-dir);
 }
-
-float World::chunk_gen_fraction() const { return m_chunk_gen_fraction.load(); }
 
 int World::rendering_distance() const { return m_rendering_distance.load(); }
 

@@ -521,14 +521,15 @@ void DevPanel::show_world_tab_item() {
                 m_app.world().stop_gen_thread();
             }
         }
-        ImGui::Text("Chunk Build Progress\n");
-        ImGui::ProgressBar(m_app.world().chunk_gen_fraction());
+        // ImGui::Text("Chunk Build Progress\n");
+        // ImGui::ProgressBar(m_app.world().chunk_gen_fraction());
         show_chunk_table_bar();
         if (ImGui::BeginTabBar("World Settings")) {
             if (ImGui::BeginTabItem("Time")) {
                 show_time_table_bar();
                 ImGui::EndTabItem();
             }
+            /*
             if (ImGui::BeginTabItem("Cave")) {
                 show_cave_table_bar();
                 ImGui::EndTabItem();
@@ -536,7 +537,7 @@ void DevPanel::show_world_tab_item() {
             if (ImGui::BeginTabItem("River")) {
                 show_river_table_bar();
                 ImGui::EndTabItem();
-            }
+            }*/
             if (ImGui::BeginTabItem("Biome")) {
                 show_biome_table_bar();
                 ImGui::EndTabItem();

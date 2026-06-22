@@ -84,7 +84,6 @@ private:
     std::atomic<bool> m_could_gen{true};
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_rendering_distance{24};
-    std::atomic<float> m_chunk_gen_fraction{0.0f};
     std::atomic<int> m_pool_threads{0};
     std::atomic<int> m_max_threads{1};
     std::atomic<TickType> m_game_ticks{0};
@@ -139,7 +138,6 @@ public:
 
     void rebuild_world();
 
-    float chunk_gen_fraction() const;
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     void start_gen_thread();
