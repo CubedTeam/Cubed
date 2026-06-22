@@ -39,7 +39,7 @@ void TextureManager::delet_texture() {
     glDeleteTextures(1, &m_texture_array);
     glDeleteTextures(1, &m_block_status_array);
     glDeleteTextures(1, &m_cross_plane_array);
-    glDeleteBuffers(1, &m_normal_texture_array);
+    glDeleteTextures(1, &m_normal_texture_array);
     for (auto& id : m_item_textures) {
         glDeleteTextures(1, &id);
     }
