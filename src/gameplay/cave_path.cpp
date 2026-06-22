@@ -79,7 +79,9 @@ void CavePath::precompute_chunk_coverage() {
     }
 }
 
-void CavePath::clear_chunk(const ChunkPos& pos) { m_pending_chunks.erase(pos); }
+void CavePath::clear_chunk(const ChunkPos& pos) {
+    // m_pending_chunks.erase(pos);
+}
 const std::vector<PathPoint>& CavePath::points() const { return m_points; }
 bool CavePath::is_finished() const { return m_pending_chunks.empty(); }
 

@@ -24,7 +24,7 @@ Chunk::Chunk(Chunk&& other) noexcept
       m_world(other.m_world), m_heightmap(std::move(other.m_heightmap)),
       m_blocks(std::move(other.m_blocks)),
       m_vertex_data(std::move(other.m_vertex_data)), m_seed(other.m_seed),
-      m_conditions(other.m_conditions) {}
+      m_conditions(other.m_conditions), m_info(std::move(other.m_info)) {}
 
 Chunk& Chunk::operator=(Chunk&& other) noexcept {
     // Logger::info("other Chunk pos {} {} in Chunk& Chunk::operator=(Chunk&&
@@ -41,6 +41,7 @@ Chunk& Chunk::operator=(Chunk&& other) noexcept {
     m_need_upload = other.m_need_upload.load();
     m_seed = other.m_seed;
     m_conditions = other.m_conditions;
+    m_info = std::move(other.m_info);
     return *this;
 }
 
@@ -269,6 +270,13 @@ unsigned Chunk::seed() const {
 
 BiomeConditions& Chunk::conditions() { return m_conditions; }
 
+ChunkInfo Chunk::get_info() const {
+    if (m_gening) {
+        return ChunkInfo{};
+    }
+    return m_info;
+}
+
 void Chunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
     static const glm::ivec3 DIR[6] = {{0, 0, 1},  {1, 0, 0}, {0, 0, -1},
                                       {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}};
@@ -488,6 +496,11 @@ void Chunk::gen_chunk() {
         neightbor_blocks[i] = neighbor[i].get_chunk_blocks();
     }
     gen_vertex_data(neightbor_blocks);
+
+    // collect chunk info for debugging
+    m_info.biome = m_biome;
+    m_info.pos = m_chunk_pos;
+    m_info.seed = m_seed;
 }
 // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
 

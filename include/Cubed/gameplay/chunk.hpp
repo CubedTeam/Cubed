@@ -10,6 +10,12 @@
 #include <mutex>
 namespace Cubed {
 
+struct ChunkInfo {
+    ChunkPos pos{0, 0};
+    unsigned seed{0};
+    BiomeType biome{BiomeType::NONE};
+};
+
 class World;
 // if want to use, do init_chunk(), gen_vertex_data() and
 class Chunk {
@@ -50,7 +56,7 @@ private:
     unsigned m_seed = 0;
 
     BiomeConditions m_conditions;
-
+    ChunkInfo m_info;
     void clear_dirty();
     void gen_vertices(const OptionalBlockVectorArray& neighbor_block);
     void gen_cross_plane_vertices(int world_x, int world_y, int world_z,
@@ -138,6 +144,7 @@ public:
     World& world();
     unsigned seed() const;
     BiomeConditions& conditions();
+    ChunkInfo get_info() const;
 };
 
 } // namespace Cubed

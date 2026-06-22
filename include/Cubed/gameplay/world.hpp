@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -67,7 +68,7 @@ private:
 
     std::atomic<TickType> m_day_tick = 6000;
 
-    mutable std::mutex m_chunks_mutex;
+    mutable std::shared_mutex m_chunks_mutex;
     std::mutex m_gen_signal_mutex;
     std::mutex m_new_chunk_mutex;
     std::mutex m_delete_vbo_mutex;
@@ -118,7 +119,7 @@ public:
 
     const std::optional<LookBlock>&
     get_look_block_pos(const std::string& name) const;
-    const Chunk* get_chunk(const ChunkPos& pos) const;
+    // const Chunk* get_chunk(const ChunkPos& pos) const;
 
     Player& get_player(const std::string& name);
     void init_world();
@@ -169,6 +170,7 @@ public:
     void change_pool_threads(int threads);
     int chunk_load_style() const;
     void set_chunk_load_style(int id);
+    ChunkInfo get_chunk_info(const glm::vec3& world_pos) const;
 };
 
 } // namespace Cubed

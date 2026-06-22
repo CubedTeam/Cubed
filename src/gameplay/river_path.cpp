@@ -82,7 +82,7 @@ void RiverPath::precompute_chunk_coverage() {
 }
 
 void RiverPath::clear_chunk(const ChunkPos& pos) {
-    m_pending_chunks.erase(pos);
+    // m_pending_chunks.erase(pos);
 }
 const std::vector<PathPoint>& RiverPath::points() const { return m_points; }
 bool RiverPath::is_finished() const { return m_pending_chunks.empty(); }

@@ -63,7 +63,7 @@ World::get_look_block_pos(const std::string& name) const {
 
     return it->second.get_look_block_pos();
 }
-
+/*
 const Chunk* World::get_chunk(const ChunkPos& pos) const {
     std::lock_guard lk(m_chunks_mutex);
     auto it = m_chunks.find(pos);
@@ -71,7 +71,7 @@ const Chunk* World::get_chunk(const ChunkPos& pos) const {
         return nullptr;
     }
     return &it->second;
-}
+}*/
 
 Player& World::get_player(const std::string& name) {
     auto it = m_players.find(HASH::str(name));
@@ -175,8 +175,8 @@ void World::gen_chunks_internal() {
                         m_cave_carcer.try_to_add_path(pos, chunk.seed());
                         m_river_worm.try_to_add_path(pos, chunk.seed());
                     });
-        m_cave_carcer.cleanup_finished_caves();
-        m_river_worm.cleanup_finished_rivers();
+        // m_cave_carcer.cleanup_finished_caves();
+        // m_river_worm.cleanup_finished_rivers();
     }
 
     auto t2 = system_clock::now();
@@ -407,7 +407,7 @@ void World::need_gen() {
 
 int World::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
-    std::lock_guard lk(m_chunks_mutex);
+    std::shared_lock lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
     if (it == m_chunks.end()) {
@@ -425,7 +425,7 @@ int World::get_block(const glm::ivec3& block_pos) const {
 
 bool World::is_solid(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
-    std::lock_guard lk(m_chunks_mutex);
+    std::shared_lock lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
     if (it == m_chunks.end()) {
@@ -447,7 +447,7 @@ bool World::is_solid(const glm::ivec3& block_pos) const {
 
 bool World::can_pass_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
-    std::lock_guard lk(m_chunks_mutex);
+    std::shared_lock lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
     if (it == m_chunks.end()) {
@@ -465,7 +465,7 @@ bool World::can_pass_block(const glm::ivec3& block_pos) const {
 
 BlockType World::get_block_tpye(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
-    std::lock_guard lk(m_chunks_mutex);
+    std::shared_lock lk(m_chunks_mutex);
     auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
 
     if (it == m_chunks.end()) {
@@ -629,7 +629,7 @@ void World::rebuild_world() {
     m_cave_carcer.reload(ChunkGenerator::seed());
     m_river_worm.reload(ChunkGenerator::seed());
     {
-        std::scoped_lock lk(m_chunks_mutex);
+        std::lock_guard lk(m_chunks_mutex);
         m_chunks.clear();
         m_new_finished_chunk.clear();
     }
@@ -730,6 +730,17 @@ void World::set_chunk_load_style(int id) {
         return;
     }
     Logger::error("Can,t Find Chunk Load Style Id {}, Nothing Will Do", id);
+}
+
+ChunkInfo World::get_chunk_info(const glm::vec3& world_pos) const {
+    ChunkPos pos = get_chunk_pos(world_pos.x, world_pos.z);
+
+    std::shared_lock lock(m_chunks_mutex);
+    auto it = m_chunks.find(pos);
+    if (it == m_chunks.end()) {
+        return ChunkInfo{};
+    }
+    return it->second.get_info();
 }
 
 } // namespace Cubed
