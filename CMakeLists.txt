@@ -147,6 +147,7 @@ add_executable(${PROJECT_NAME}
     src/gameplay/client_chunk.cpp
     src/gameplay/server_player.cpp
     src/gameplay/client_player.cpp
+    src/gameplay/session.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
