@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "common/chunk_pos.proto";
+import "common/error.proto";
+import "common/player_info.proto";
+import "common/vector3.proto";
+import "player/player.proto";
+import "auth/auth.proto";
+import "system/ping.proto";
+import "system/pong.proto";
+import "world/chunk_data.proto";

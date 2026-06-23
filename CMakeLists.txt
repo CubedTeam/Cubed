@@ -158,6 +158,7 @@ protobuf_generate(
     TARGET ${PROJECT_NAME}           
     LANGUAGE cpp         
     PROTOS ${PROTO_FILES}
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/proto
 )
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building with AddressSanitizer enabled for target: ${PROJECT_NAME}")
@@ -190,7 +191,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
-
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     ASIO_STANDALONE
     ASIO_NO_DEPRECATED

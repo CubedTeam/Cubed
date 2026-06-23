@@ -1,6 +1,8 @@
 #include "Cubed/gameplay/server_world.hpp"
 
 #include "Cubed/config.hpp"
+#include "Cubed/gameplay/packet.hpp"
+#include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
@@ -357,17 +359,14 @@ void ServerWorld::sync_player_pos(const std::string& name, float x, float y,
     it->second.update_pos(x, y, z);
 }
 
-void ServerWorld::handle_player_request(const PlayerRequest& request) {
-    if (request.join()) {
-        player_join(request.name());
-    }
-    if (request.exit()) {
-        player_exit(request.name());
-    }
-    if (request.chunk_send()) {
-        m_request_gen_name = request.name();
-        need_gen();
-    }
+void ServerWorld::handle_player_login(const std::string& name,
+                                      std::shared_ptr<Session> session) {
+    player_join(name);
+    m_player_session.emplace(name, session);
+    LoginRsp rsp;
+    rsp.set_success(true);
+    rsp.set_uuid(name);
+    session->send(make_packet(name));
 }
 
 void ServerWorld::player_join(const std::string& name) {

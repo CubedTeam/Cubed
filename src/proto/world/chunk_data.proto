@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "common/chunk_pos.proto"
+import "common/chunk_pos.proto";
 
 message ChunkData {
     ChunkPos pos = 1;

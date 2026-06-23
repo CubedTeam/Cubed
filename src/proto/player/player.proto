@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "common/vector3.proto"
+import "common/vector3.proto";
 
 message PlayerPos {
     string uuid = 1;

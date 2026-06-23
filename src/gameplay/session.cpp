@@ -3,8 +3,6 @@
 #include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/uuid.hpp"
-#include "proto/player_pos.pb.h"
-#include "proto/player_request.pb.h"
 using asio::ip::tcp;
 
 namespace Cubed {
@@ -61,20 +59,8 @@ asio::awaitable<void> Session::read_loop() {
             }
 
             if (cmd_id == 1001) {
-                PlayerRequest player_request;
-                if (player_request.ParseFromArray(body_data.data(),
-                                                  body_data.size())) {
-                }
             }
             if (cmd_id == 1002) {
-                PlayerPos player_pos;
-                if (player_pos.ParseFromArray(body_data.data(),
-                                              body_data.size())) {
-                    m_server_world.sync_player_pos(
-                        player_pos.name(), player_pos.x(), player_pos.y(),
-                        player_pos.z());
-                } else {
-                }
             }
         }
     } catch (const asio::system_error& e) {

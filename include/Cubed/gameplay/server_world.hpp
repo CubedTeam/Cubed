@@ -7,15 +7,16 @@
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_player.hpp"
 #include "Cubed/tools/thread_pool.hpp"
-#include "proto/player_request.pb.h"
 
 #include <future>
 #include <shared_mutex>
+#include <tbb/concurrent_hash_map.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 namespace Cubed {
+class Session;
 class ServerWorld {
 public:
     ServerWorld();
@@ -64,7 +65,8 @@ public:
     void set_block(const glm::ivec3& block_pos, unsigned id);
 
     void sync_player_pos(const std::string& name, float x, float y, float z);
-    void handle_player_request(const PlayerRequest& request);
+    void handle_player_login(const std::string& player_name,
+                             std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const std::string& name) const;
 
 private:
@@ -118,6 +120,9 @@ private:
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::RANDOM};
 
     std::optional<std::string> m_request_gen_name = std::nullopt;
+
+    tbb::concurrent_hash_map<std::string, std::shared_ptr<Session>>
+        m_player_session;
 
     void init_chunks();
 
