@@ -246,7 +246,7 @@ size_t Chunk::get_water_vertices_sum() const {
 }
 
 void Chunk::gen_phase_one() {
-    m_generator = std::make_unique<ChunkGenerator>(*this);
+    // m_generator = std::make_unique<ChunkGenerator>(*this);
     if (!m_generator) {
         Logger::error("ChunkGenerator is Nullptr");
         return;

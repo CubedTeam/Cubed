@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Cubed/constants.hpp"
+
 #include <functional>
 
 namespace Cubed {
@@ -34,5 +36,23 @@ struct ChunkPos {
         return *this;
     };
 };
+constexpr ChunkPos CHUNK_DIR[]{{1, 0}, {-1, 0}, {0, 1},  {0, -1},
+                               {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
+inline ChunkPos get_chunk_pos(int world_x, int world_z) {
+    int chunk_x, chunk_z;
+    if (world_x < 0) {
+        chunk_x = (world_x + 1) / CHUNK_SIZE - 1;
+    }
+    if (world_x >= 0) {
+        chunk_x = world_x / CHUNK_SIZE;
+    }
+    if (world_z < 0) {
+        chunk_z = (world_z + 1) / CHUNK_SIZE - 1;
+    }
+    if (world_z >= 0) {
+        chunk_z = world_z / CHUNK_SIZE;
+    }
+    return {chunk_x, chunk_z};
+}
 
 } // namespace Cubed

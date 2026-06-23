@@ -28,7 +28,8 @@ if (UNIX AND NOT APPLE)
     find_package(glfw3 REQUIRED)   
 endif()
 
-add_library(glad STATIC third_party/glad/src/glad.c)
+add_library(glad STATIC third_party/glad/src/glad.c
+    src/gameplay/network_client.cpp)
 target_include_directories(glad PUBLIC third_party/glad/include)
 
 include(FetchContent)
@@ -139,6 +140,13 @@ add_executable(${PROJECT_NAME}
     src/block.cpp
     src/gameplay/vertex_data.cpp
     src/gameplay/builders/ocean_builder.cpp
+    src/gameplay/network_server.cpp
+    src/gameplay/server_world.cpp
+    src/gameplay/client_world.cpp
+    src/gameplay/server_chunk.cpp
+    src/gameplay/client_chunk.cpp
+    src/gameplay/server_player.cpp
+    src/gameplay/client_player.cpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

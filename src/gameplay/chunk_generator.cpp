@@ -10,8 +10,8 @@
 #include "Cubed/gameplay/cave_path.hpp"
 #include "Cubed/gameplay/chunk.hpp"
 #include "Cubed/gameplay/river.path.hpp"
+#include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/gameplay/tree.hpp"
-#include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
 #include "Cubed/tools/math_tools.hpp"
@@ -99,7 +99,7 @@ void carve_worm(const std::vector<PathPoint>& points, const ChunkPos& chunk_pos,
 using enum BiomeType;
 
 constexpr int BLEND_RADIUS = 8;
-ChunkGenerator::ChunkGenerator(Chunk& chunk) : m_chunk(chunk) {
+ChunkGenerator::ChunkGenerator(ServerChunk& chunk) : m_chunk(chunk) {
     ASSERT_MSG(is_init, "ChunksGenerator is not init");
     ChunkPos pos = m_chunk.get_chunk_pos();
     unsigned seed = HASH::chunk_seed_hash(pos.x, pos.z, m_generator_seed);
@@ -157,7 +157,7 @@ void ChunkGenerator::assign_chunk_biome() {
 }
 
 void ChunkGenerator::resolve_biome_adjacency_conflict(
-    const std::array<const Chunk*, 8>& adj_chunks) {
+    const std::array<const ServerChunk*, 8>& adj_chunks) {
     auto m_biome = m_chunk.biome();
     for (int i = 0; i < 8; i++) {
         auto& chunk = adj_chunks[i];
@@ -799,7 +799,7 @@ void ChunkGenerator::generate_river() {
     }
 }
 
-Chunk& ChunkGenerator::chunk() { return m_chunk; }
+ServerChunk& ChunkGenerator::chunk() { return m_chunk; }
 
 Random& ChunkGenerator::random() { return m_random; }
 const std::array<BiomeType, 8>& ChunkGenerator::neighbor_biome() const {
