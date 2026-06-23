@@ -19,6 +19,8 @@ if(MSVC)
 endif()
 
 find_package(OpenGL REQUIRED)
+find_package(Protobuf REQUIRED)
+
 
 if (UNIX AND NOT APPLE)
     find_package(Freetype REQUIRED)
@@ -28,8 +30,7 @@ if (UNIX AND NOT APPLE)
     find_package(glfw3 REQUIRED)   
 endif()
 
-add_library(glad STATIC third_party/glad/src/glad.c
-    src/gameplay/network_client.cpp)
+add_library(glad STATIC third_party/glad/src/glad.c)
 target_include_directories(glad PUBLIC third_party/glad/include)
 
 include(FetchContent)
@@ -99,7 +100,7 @@ FetchContent_MakeAvailable(tomlplusplus)
 
 add_subdirectory(third_party/imgui)
 
-set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -148,8 +149,18 @@ add_executable(${PROJECT_NAME}
     src/gameplay/server_player.cpp
     src/gameplay/client_player.cpp
     src/gameplay/session.cpp
+    src/gameplay/network_client.cpp
 )
-
+set(PROTO_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/chunk_data.proto
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/player_pos.proto
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/player_request.proto
+)
+protobuf_generate(
+    TARGET ${PROJECT_NAME}           
+    LANGUAGE cpp         
+    PROTOS ${PROTO_SOURCES}
+)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building with AddressSanitizer enabled for target: ${PROJECT_NAME}")
 
@@ -175,10 +186,13 @@ else()
     )
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/third_party/asio/include
 )
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     ASIO_STANDALONE
     ASIO_NO_DEPRECATED
@@ -194,6 +208,7 @@ target_link_libraries(${PROJECT_NAME}
         tomlplusplus::tomlplusplus
         imgui
         tbb
+        protobuf::libprotobuf
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

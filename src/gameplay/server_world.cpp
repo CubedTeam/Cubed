@@ -83,12 +83,16 @@ void ServerWorld::gen_chunks_internal() {
 
     submit_new_chunks();
     m_chunk_gen_finished = true;
+    m_request_gen_name = std::nullopt;
 }
 
 void ServerWorld::compute_required_chunks(ChunkPosSet& required_chunks) {
     glm::vec3 player_pos;
-    // sync_player_pos(player_pos);
-    ASSERT_MSG(false, "Player Pos");
+    if (m_request_gen_name == std::nullopt) {
+        player_pos = glm::vec3{0.0f};
+    } else {
+        player_pos = get_player_pos(m_request_gen_name.value());
+    }
     int x = std::floor(player_pos.x);
     int z = std::floor(player_pos.z);
     auto [chunk_x, chunk_z] = get_chunk_pos(x, z);
@@ -147,7 +151,11 @@ void ServerWorld::submit_new_chunks() {
             }
         }
         glm::vec3 player_pos;
-        sync_player_pos(player_pos);
+        if (m_request_gen_name == std::nullopt) {
+            player_pos = glm::vec3{0.0f};
+        } else {
+            player_pos = get_player_pos(m_request_gen_name.value());
+        }
         auto dist2 = [player_pos](ChunkPos chunk_pos) {
             ChunkPos player_chunk_pos =
                 get_chunk_pos(player_pos.x, player_pos.z);
@@ -338,6 +346,48 @@ void ServerWorld::rebuild_world() {
 }
 
 void ServerWorld::update() { poll_finished_chunks(); }
+
+void ServerWorld::sync_player_pos(const std::string& name, float x, float y,
+                                  float z) {
+    auto it = m_players.find(name);
+    if (it == m_players.end()) {
+        Logger::warn("Player {} is not in this Server", it->first);
+        return;
+    }
+    it->second.update_pos(x, y, z);
+}
+
+void ServerWorld::handle_player_request(const PlayerRequest& request) {
+    if (request.join()) {
+        player_join(request.name());
+    }
+    if (request.exit()) {
+        player_exit(request.name());
+    }
+    if (request.chunk_send()) {
+        m_request_gen_name = request.name();
+        need_gen();
+    }
+}
+
+void ServerWorld::player_join(const std::string& name) {
+    m_players.emplace(name, name);
+}
+void ServerWorld::player_exit(const std::string& name) {
+    auto it = m_players.find(name);
+    if (it == m_players.end()) {
+        Logger::error("Player {} isn't in Server", it->first);
+    }
+    m_players.erase(it);
+}
+
+glm::vec3 ServerWorld::get_player_pos(const std::string& name) const {
+    auto it = m_players.find(name);
+    if (it == m_players.end()) {
+        return glm::vec3{0.0f};
+    }
+    return it->second.get_pos();
+}
 
 int ServerWorld::rendering_distance() const {
     return m_rendering_distance.load();

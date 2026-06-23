@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message PlayerRequest {
+    string name = 1;
+    bool join = 2;
+    bool exit = 3;
+    bool chunk_send = 4;
+}

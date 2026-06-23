@@ -7,18 +7,21 @@
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_player.hpp"
 #include "Cubed/tools/thread_pool.hpp"
+#include "proto/player_request.pb.h"
 
 #include <future>
 #include <shared_mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 namespace Cubed {
 class ServerWorld {
 public:
     ServerWorld();
     ~ServerWorld();
-    void player_join();
+    void player_join(const std::string& name);
+    void player_exit(const std::string& name);
     void init_world();
     void need_gen();
     void update();
@@ -60,6 +63,10 @@ public:
 
     void set_block(const glm::ivec3& block_pos, unsigned id);
 
+    void sync_player_pos(const std::string& name, float x, float y, float z);
+    void handle_player_request(const PlayerRequest& request);
+    glm::vec3 get_player_pos(const std::string& name) const;
+
 private:
     enum class ChunkLoadStyle { RANDOM, CENTER };
     struct PendingChunk {
@@ -68,7 +75,7 @@ private:
     };
     using ChunkHashMap =
         std::unordered_map<ChunkPos, ServerChunk, ChunkPos::Hash>;
-    using PlayerHashMap = std::unordered_map<std::size_t, ServerPlayer>;
+    using PlayerHashMap = std::unordered_map<std::string, ServerPlayer>;
     using PendingChunkHashMap =
         std::unordered_map<ChunkPos, PendingChunk, ChunkPos::Hash>;
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
@@ -110,6 +117,8 @@ private:
 
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::RANDOM};
 
+    std::optional<std::string> m_request_gen_name = std::nullopt;
+
     void init_chunks();
 
     void gen_chunks_internal();
@@ -120,7 +129,5 @@ private:
     void submit_new_chunks();
     void poll_finished_chunks();
     void wait_all_chunk_tasks();
-
-    void sync_player_pos(glm::vec3& pos);
 };
 } // namespace Cubed

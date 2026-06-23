@@ -1,26 +1,41 @@
 #include "Cubed/gameplay/session.hpp"
 
+#include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/uuid.hpp"
+#include "proto/player_pos.pb.h"
+#include "proto/player_request.pb.h"
 using asio::ip::tcp;
 
 namespace Cubed {
-Session::Session(tcp::socket socket)
-    : m_socket(std::move(socket)), m_uuid(generate_uuid()) {}
+Session::Session(tcp::socket socket, ServerWorld& server_world)
+    : m_socket(std::move(socket)), m_uuid(generate_uuid()),
+      m_server_world(server_world) {}
 
 Session::~Session() {}
 
 void Session::start() {
     auto self = shared_from_this();
     asio::co_spawn(
-        m_socket.get_executor(),
-        [self]() -> asio::awaitable<void> { co_await self->read(); },
+        m_strand,
+        [self]() -> asio::awaitable<void> { co_await self->read_loop(); },
         asio::detached);
+}
+
+void Session::send(std::shared_ptr<std::vector<uint8_t>> packet) {
+    asio::post(m_strand, [self = shared_from_this(),
+                          packet = std::move(packet)]() mutable {
+        bool idle = self->m_write_queue.empty();
+        self->m_write_queue.emplace_back(std::move(packet));
+        if (idle) {
+            self->do_write();
+        }
+    });
 }
 
 const std::string& Session::uuid() const { return m_uuid; }
 
-asio::awaitable<void> Session::read() {
+asio::awaitable<void> Session::read_loop() {
     try {
         while (true) {
             std::array<char, HEADER_LEN> header;
@@ -46,6 +61,20 @@ asio::awaitable<void> Session::read() {
             }
 
             if (cmd_id == 1001) {
+                PlayerRequest player_request;
+                if (player_request.ParseFromArray(body_data.data(),
+                                                  body_data.size())) {
+                }
+            }
+            if (cmd_id == 1002) {
+                PlayerPos player_pos;
+                if (player_pos.ParseFromArray(body_data.data(),
+                                              body_data.size())) {
+                    m_server_world.sync_player_pos(
+                        player_pos.name(), player_pos.x(), player_pos.y(),
+                        player_pos.z());
+                } else {
+                }
             }
         }
     } catch (const asio::system_error& e) {
@@ -53,7 +82,39 @@ asio::awaitable<void> Session::read() {
         close();
     } catch (...) {
         Logger::error("Unknow Error");
+        close();
     }
+    co_return;
+}
+
+void Session::do_write() {
+
+    auto self = shared_from_this();
+    asio::async_write(
+        m_socket, asio::buffer(*(m_write_queue.front())),
+        asio::bind_executor(m_strand, [self](std::error_code ec, size_t) {
+            if (ec) {
+                Logger::warn("Write Ec {}", ec.message());
+                self->close();
+                return;
+            }
+            self->m_write_queue.pop_front();
+            if (!self->m_write_queue.empty()) {
+                self->do_write();
+            }
+        }));
+}
+
+void Session::close() {
+    if (m_closed.exchange(true)) {
+        return;
+    }
+
+    std::error_code ec;
+
+    m_socket.shutdown(tcp::socket::shutdown_both, ec);
+
+    m_socket.close(ec);
 }
 
 } // namespace Cubed
