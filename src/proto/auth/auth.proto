@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message LoginReq {
+    string name = 1;
+}
+
+message LoginRsp {
+    bool success = 1;
+    string uuid = 2;
+}
+

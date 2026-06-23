@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "common/chunk_pos.proto"
+
+message ChunkData {
+    ChunkPos pos = 1;
+    uint32 chunk_seed = 2;
+    repeated uint32 chunk_blocks = 3 [packed=true];
+    repeated uint32 neighbor_blocks_1 = 4 [packed=true];
+    repeated uint32 neighbor_blocks_2 = 5 [packed=true];
+    repeated uint32 neighbor_blocks_3 = 6 [packed=true];
+    repeated uint32 neighbor_blocks_4 = 7 [packed=true];
+}

@@ -151,15 +151,13 @@ add_executable(${PROJECT_NAME}
     src/gameplay/session.cpp
     src/gameplay/network_client.cpp
 )
-set(PROTO_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/chunk_data.proto
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/player_pos.proto
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/player_request.proto
+file(GLOB_RECURSE PROTO_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/*.proto
 )
 protobuf_generate(
     TARGET ${PROJECT_NAME}           
     LANGUAGE cpp         
-    PROTOS ${PROTO_SOURCES}
+    PROTOS ${PROTO_FILES}
 )
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building with AddressSanitizer enabled for target: ${PROJECT_NAME}")
