@@ -5,10 +5,69 @@
 
 #include <filesystem>
 #include <fstream>
+#include <unordered_set>
 
 namespace Cubed {
 
 namespace fs = std::filesystem;
+
+namespace {
+
+bool is_include(const std::string& line) {
+
+    std::string_view sv(line);
+
+    auto first = sv.find_first_not_of(" \t");
+
+    return first != std::string::npos && sv.substr(first, 8) == "#include";
+}
+
+std::string parse_include(const std::string& line) {
+    auto pos = line.find("#include");
+    auto start = line.find_first_of("<\"", pos);
+    auto end = line.find_first_of(">\"", start + 1);
+
+    if (start == std::string::npos || end == std::string::npos) {
+        Logger::error("Invalid include: {}", line);
+        return {};
+    }
+    return line.substr(start + 1, end - start - 1);
+}
+
+void load_shader(std::string& source, const fs::path& file,
+                 std::unordered_set<fs::path>& included) {
+    if (!fs::is_regular_file(file)) {
+        Logger::error("File {} don't Exist!", file.string());
+        return;
+    }
+    auto canon = fs::canonical(file);
+    if (!included.insert(canon).second) {
+        return;
+    }
+    std::ifstream in(file);
+    if (!in.is_open()) {
+        Logger::error("Can't open {}", file.string());
+        return;
+    }
+    std::string line;
+    while (std::getline(in, line)) {
+        if (is_include(line)) {
+
+            auto include_file = file.parent_path() / parse_include(line);
+            source += "// begin include ";
+            source += include_file.string();
+            source += "\n";
+            load_shader(source, include_file, included);
+            source += "// end include ";
+            source += include_file.string();
+            source += "\n";
+        } else {
+            source.append(line + "\n");
+        }
+    }
+}
+
+} // namespace
 
 namespace Tools {
 
@@ -102,19 +161,9 @@ bool check_opengl_error() {
 
 std::string read_shader_source(const std::string& file_path) {
     std::string content;
-    std::ifstream file_stream(file_path, std::ios::in);
-
-    if (!file_stream.is_open()) {
-        Logger::error("{} not exist", file_path);
-    }
-
-    std::string line = "";
-    while (!file_stream.eof()) {
-
-        getline(file_stream, line);
-        content.append(line + "\n");
-    }
-    file_stream.close();
+    fs::path path(file_path);
+    std::unordered_set<fs::path> included;
+    load_shader(content, path, included);
     return content;
 }
 

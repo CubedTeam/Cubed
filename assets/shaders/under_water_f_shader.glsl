@@ -19,33 +19,7 @@ uniform vec3 sunDir;
 uniform vec3 sunColor;
 uniform float waterDensity;
 
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);   
-
-    return mix(
-        mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-        mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
-        f.y
-    );
-}
-
-float fbm(vec2 p) {
-    float value = 0.0;
-    float amp = 0.5;
-    float freq = 1.0;
-    for (int i = 0; i < 4; ++i) {
-        value += amp * noise(p * freq);
-        freq *= 2.0;
-        amp *= 0.5;
-    }
-    return value;
-}
+#include "noise.glsl"
 
 float getCausticValue(float x, float y, float z) {
     float w = 8.0;      
