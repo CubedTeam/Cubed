@@ -41,7 +41,7 @@ asio::awaitable<void> NetworkServer::listen() {
 
     try {
         tcp::acceptor acceptor(m_io, tcp::endpoint(tcp::v4(), m_port));
-        while (true) {
+        while (!m_stopped) {
             tcp::socket socket =
                 co_await acceptor.async_accept(asio::use_awaitable);
 
