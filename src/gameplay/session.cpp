@@ -98,6 +98,9 @@ asio::awaitable<void> Session::read_loop() {
         }
 
         close();
+    } catch (const std::exception& e) {
+        Logger::error("Session Error {}", e.what());
+        close();
     } catch (...) {
         Logger::error("Unknow Error");
         close();
