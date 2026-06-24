@@ -1,30 +1,48 @@
 #pragma once
-#include "packet.pb.h"
+#include "packet.pb.h" // IWYU pragma: keep
 
 #include <netinet/in.h>
 #include <type_traits>
+#include <utility>
 namespace Cubed {
 constexpr int HEADER_LEN = 8;
 using Packet = std::shared_ptr<std::vector<uint8_t>>;
+
+enum class PacketEnum {
+    LOGIN_REQ = 1001,
+    LOGIN_RSP = 1002,
+    PLAYER_INFO = 2001,
+    PLAYER_POS = 2002,
+    CHUNK_DATA_REQ = 3001,
+    CHUNK_DATA_RSP = 3002,
+    PING = 9001,
+    PONG = 9002
+
+};
+
 template <typename> struct always_false : std::false_type {}; // NOLINT
 template <typename T> constexpr uint16_t get_packet_id() {
-
+    using enum PacketEnum;
     using std::is_same_v;
+
     using U = std::decay_t<T>;
+    constexpr auto& to_num = std::to_underlying<PacketEnum>;
     if constexpr (is_same_v<U, LoginReq>) {
-        return 1001;
+        return to_num(LOGIN_REQ);
     } else if constexpr (is_same_v<U, LoginRsp>) {
-        return 1002;
+        return to_num(LOGIN_RSP);
     } else if constexpr (is_same_v<U, PlayerInfo>) {
-        return 2001;
+        return to_num(PLAYER_INFO);
     } else if constexpr (is_same_v<U, PlayerPos>) {
-        return 2002;
-    } else if constexpr (is_same_v<U, ChunkData>) {
-        return 3001;
+        return to_num(PLAYER_POS);
+    } else if constexpr (is_same_v<U, ChunkDataReq>) {
+        return to_num(CHUNK_DATA_REQ);
+    } else if constexpr (is_same_v<U, ChunkDataRsp>) {
+        return to_num(CHUNK_DATA_RSP);
     } else if constexpr (is_same_v<U, Ping>) {
-        return 9001;
+        return to_num(PING);
     } else if (is_same_v<U, Pong>) {
-        return 9002;
+        return to_num(PONG);
     } else {
         static_assert(always_false<U>::value, "Unkonw Type");
     }

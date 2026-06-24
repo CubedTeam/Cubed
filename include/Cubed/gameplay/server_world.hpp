@@ -11,6 +11,7 @@
 #include <future>
 #include <shared_mutex>
 #include <tbb/concurrent_hash_map.h>
+#include <tbb/concurrent_unordered_map.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -21,10 +22,10 @@ class ServerWorld {
 public:
     ServerWorld();
     ~ServerWorld();
-    void player_join(const std::string& name);
+    void player_join(std::string_view name, std::string_view uuid);
     void player_exit(const std::string& name);
     void init_world();
-    void need_gen();
+    void need_gen(std::optional<std::string> uuid);
     void update();
     void hot_reload();
 
@@ -64,10 +65,12 @@ public:
 
     void set_block(const glm::ivec3& block_pos, unsigned id);
 
-    void sync_player_pos(const std::string& name, float x, float y, float z);
+    void sync_player_pos(const std::string& uuid, float x, float y, float z);
     void handle_player_login(const std::string& player_name,
                              std::shared_ptr<Session> session);
-    glm::vec3 get_player_pos(const std::string& name) const;
+    glm::vec3 get_player_pos(const std::string& uuid) const;
+
+    void handle_chunk_req(const std::string& uuid, ChunkPos pos);
 
 private:
     enum class ChunkLoadStyle { RANDOM, CENTER };
@@ -77,10 +80,15 @@ private:
     };
     using ChunkHashMap =
         std::unordered_map<ChunkPos, ServerChunk, ChunkPos::Hash>;
-    using PlayerHashMap = std::unordered_map<std::string, ServerPlayer>;
+    using PlayerHashMap =
+        tbb::concurrent_unordered_map<std::string, ServerPlayer>;
     using PendingChunkHashMap =
         std::unordered_map<ChunkPos, PendingChunk, ChunkPos::Hash>;
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
+    using PlayerSessionMap =
+        tbb::concurrent_hash_map<std::string, std::shared_ptr<Session>>;
+    using session_acc = PlayerSessionMap::accessor;
+    using session_cacc = PlayerSessionMap::const_accessor;
     PlayerHashMap m_players;
     ChunkHashMap m_chunks;
     // Can only be used in the gen thread
@@ -90,10 +98,8 @@ private:
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
 
-    std::thread m_gen_thread;
-    std::thread m_server_thread;
-
-    std::stop_source m_server_stop_source;
+    std::jthread m_gen_thread;
+    std::jthread m_server_thread;
 
     std::atomic<bool> m_chunk_gen_finished{false};
     std::atomic<bool> m_could_gen{true};
@@ -101,7 +107,6 @@ private:
     std::atomic<bool> m_need_gen_chunk{false};
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_rendering_distance{24};
-
     std::atomic<int> m_pool_threads{0};
     std::atomic<int> m_max_threads{1};
 
@@ -112,26 +117,27 @@ private:
 
     std::shared_mutex m_chunks_mutex;
     std::shared_mutex m_new_chunk_mutex;
-    std::mutex m_gen_signal_mutex;
+    std::mutex m_need_gen_queue_mutex;
     std::condition_variable m_gen_cv;
+
+    std::deque<std::string> m_need_gen_queue;
 
     std::atomic<std::shared_ptr<ThreadPool>> m_gen_thread_pool;
 
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::RANDOM};
 
-    std::optional<std::string> m_request_gen_name = std::nullopt;
-
-    tbb::concurrent_hash_map<std::string, std::shared_ptr<Session>>
-        m_player_session;
-
+    // key = uuid
+    PlayerSessionMap m_player_session;
+    tbb::concurrent_hash_map<std::string, std::string> m_uuid_to_name;
     void init_chunks();
 
-    void gen_chunks_internal();
+    void gen_chunks_internal(std::optional<std::string> uuid);
 
-    void compute_required_chunks(ChunkPosSet& required_chunks);
+    void compute_required_chunks(ChunkPosSet& required_chunks,
+                                 const std::optional<std::string>& uuid);
     void sync_and_collect_missing_chunks(std::vector<ChunkPos>&,
                                          const ChunkPosSet&);
-    void submit_new_chunks();
+    void submit_new_chunks(const std::optional<std::string>& uuid);
     void poll_finished_chunks();
     void wait_all_chunk_tasks();
 };

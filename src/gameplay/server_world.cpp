@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/uuid.hpp"
 
 #include <utility>
 using namespace std::chrono;
@@ -58,12 +59,12 @@ void ServerWorld::init_chunks() {
     }
 }
 
-void ServerWorld::gen_chunks_internal() {
+void ServerWorld::gen_chunks_internal(std::optional<std::string> uuid) {
     // Logger::info("gen_chunks_internal");
     m_chunk_gen_finished = false;
 
     ChunkPosSet required_chunks;
-    compute_required_chunks(required_chunks);
+    compute_required_chunks(required_chunks, uuid);
 
     ASSERT_MSG(!required_chunks.empty(), "required chunks is empty!!");
 
@@ -83,17 +84,17 @@ void ServerWorld::gen_chunks_internal() {
         new_chunks.emplace(pos, ServerChunk(*this, pos));
     }
 
-    submit_new_chunks();
+    submit_new_chunks(uuid);
     m_chunk_gen_finished = true;
-    m_request_gen_name = std::nullopt;
 }
 
-void ServerWorld::compute_required_chunks(ChunkPosSet& required_chunks) {
+void ServerWorld::compute_required_chunks(
+    ChunkPosSet& required_chunks, const std::optional<std::string>& uuid) {
     glm::vec3 player_pos;
-    if (m_request_gen_name == std::nullopt) {
+    if (uuid == std::nullopt) {
         player_pos = glm::vec3{0.0f};
     } else {
-        player_pos = get_player_pos(m_request_gen_name.value());
+        player_pos = get_player_pos(uuid.value());
     }
     int x = std::floor(player_pos.x);
     int z = std::floor(player_pos.z);
@@ -129,7 +130,7 @@ void ServerWorld::sync_and_collect_missing_chunks(
         }
     }
 }
-void ServerWorld::submit_new_chunks() {
+void ServerWorld::submit_new_chunks(const std::optional<std::string>& uuid) {
     using enum ChunkLoadStyle;
     std::lock_guard lock(m_new_chunk_mutex);
     auto pool_ptr = m_gen_thread_pool.load();
@@ -153,10 +154,10 @@ void ServerWorld::submit_new_chunks() {
             }
         }
         glm::vec3 player_pos;
-        if (m_request_gen_name == std::nullopt) {
+        if (uuid == std::nullopt) {
             player_pos = glm::vec3{0.0f};
         } else {
-            player_pos = get_player_pos(m_request_gen_name.value());
+            player_pos = get_player_pos(uuid.value());
         }
         auto dist2 = [player_pos](ChunkPos chunk_pos) {
             ChunkPos player_chunk_pos =
@@ -203,27 +204,35 @@ void ServerWorld::poll_finished_chunks() {
 void ServerWorld::start_gen_thread() {
     m_gen_running = true;
     Logger::info("Gen Thread Started");
-    m_gen_thread = std::thread([this]() {
-        while (m_gen_running) {
-            std::unique_lock<std::mutex> lk(m_gen_signal_mutex);
+    m_gen_thread = std::jthread([this](std::stop_token token) {
+        while (!token.stop_requested()) {
+            std::unique_lock<std::mutex> lk(m_need_gen_queue_mutex);
 
-            m_gen_cv.wait(lk, [this]() {
-                return m_need_gen_chunk.load() || !m_gen_running;
+            m_gen_cv.wait(lk, [this](std::stop_token token) {
+                return m_need_gen_chunk.load() || !m_gen_running ||
+                       !m_need_gen_queue.empty() || token.stop_requested();
             });
             if (!m_gen_running) {
                 break;
             }
+            if (token.stop_requested()) {
+                break;
+            }
             m_need_gen_chunk = false;
+            std::optional<std::string> uuid{std::nullopt};
+            if (!m_need_gen_queue.empty()) {
+                uuid = m_need_gen_queue.front();
+                m_need_gen_queue.pop_front();
+            }
             lk.unlock();
-
-            gen_chunks_internal();
+            gen_chunks_internal(uuid);
         }
     });
 }
 
 void ServerWorld::start_server_thread() {
-    m_server_thread = std::thread(
-        [this]() { serever_run(m_server_stop_source.get_token()); });
+    m_server_thread =
+        std::jthread([this](std::stop_token token) { serever_run(token); });
 }
 
 void ServerWorld::start_thread_pool() {
@@ -238,6 +247,7 @@ void ServerWorld::start_thread_pool() {
 void ServerWorld::stop_gen_thread() {
     m_gen_running = false;
     m_gen_cv.notify_all();
+    m_gen_thread.request_stop();
     if (m_gen_thread.joinable()) {
         m_gen_thread.join();
     }
@@ -245,7 +255,7 @@ void ServerWorld::stop_gen_thread() {
 }
 
 void ServerWorld::stop_server_thread() {
-    m_server_stop_source.request_stop();
+    m_server_thread.request_stop();
     if (m_server_thread.joinable()) {
         m_server_thread.join();
     }
@@ -273,19 +283,21 @@ void ServerWorld::serever_run(std::stop_token stoken) {
     Logger::info("Server Thread Stopped!");
 }
 
-void ServerWorld::need_gen() {
+void ServerWorld::need_gen(std::optional<std::string> uuid) {
 
-    if (!m_could_gen) {
-        Logger::warn("It is generating or consuming new chunks");
-        return;
-    }
+    // if (!m_could_gen) {
+    //     Logger::warn("It is generating or consuming new chunks");
+    //     return;
+    // }
 
     m_could_gen = false;
-    {
-        // std::lock_guard lk(m_gen_player_pos_mutex);
-        // m_gen_player_pos = get_player("TestPlayer").get_player_pos();
-        ASSERT_MSG(false, "Player Pos Handle");
+
+    if (uuid) {
+        std::lock_guard lock(m_need_gen_queue_mutex);
+        m_need_gen_queue.push_back(*uuid);
     }
+
+    // m_gen_player_pos = get_player("TestPlayer").get_player_pos();
 
     m_need_gen_chunk = true;
 
@@ -321,7 +333,7 @@ void ServerWorld::hot_reload() {
     auto& config = Config::get();
     int dist = config.get<int>("world.rendering_distance");
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
-    need_gen();
+    need_gen(std::nullopt);
 }
 
 void ServerWorld::rebuild_world() {
@@ -342,16 +354,16 @@ void ServerWorld::rebuild_world() {
     ChunkGenerator::reload();
     start_thread_pool();
     start_gen_thread();
-    need_gen();
+    need_gen(std::nullopt);
 
     m_is_rebuilding = false;
 }
 
 void ServerWorld::update() { poll_finished_chunks(); }
 
-void ServerWorld::sync_player_pos(const std::string& name, float x, float y,
+void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
                                   float z) {
-    auto it = m_players.find(name);
+    auto it = m_players.find(uuid);
     if (it == m_players.end()) {
         Logger::warn("Player {} is not in this Server", it->first);
         return;
@@ -361,31 +373,87 @@ void ServerWorld::sync_player_pos(const std::string& name, float x, float y,
 
 void ServerWorld::handle_player_login(const std::string& name,
                                       std::shared_ptr<Session> session) {
-    player_join(name);
-    m_player_session.emplace(name, session);
+    std::string uuid = generate_uuid();
+    player_join(name, uuid);
+    m_player_session.emplace(uuid, session);
+    m_uuid_to_name.emplace(uuid, name);
     LoginRsp rsp;
     rsp.set_success(true);
-    rsp.set_uuid(name);
+    rsp.set_uuid(uuid);
     session->send(make_packet(name));
 }
 
-void ServerWorld::player_join(const std::string& name) {
-    m_players.emplace(name, name);
+void ServerWorld::player_join(std::string_view name, std::string_view uuid) {
+    Logger::info("Player {} (uuid {}) join the world", name, uuid);
+    m_players.emplace(std::piecewise_construct,
+                      std::forward_as_tuple(std::string(uuid)),
+                      std::forward_as_tuple(name, uuid, *this));
 }
+
 void ServerWorld::player_exit(const std::string& name) {
     auto it = m_players.find(name);
     if (it == m_players.end()) {
         Logger::error("Player {} isn't in Server", it->first);
     }
-    m_players.erase(it);
+    m_players.unsafe_erase(it);
 }
 
-glm::vec3 ServerWorld::get_player_pos(const std::string& name) const {
-    auto it = m_players.find(name);
+glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
+    auto it = m_players.find(uuid);
     if (it == m_players.end()) {
+        Logger::error("Can't find player uuid {}", uuid);
         return glm::vec3{0.0f};
     }
     return it->second.get_pos();
+}
+
+void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
+    ChunkDataRsp rsq;
+    auto* rsq_pos = rsq.mutable_pos();
+    rsq_pos->set_x(pos.x);
+    rsq_pos->set_z(pos.z);
+    {
+        std::shared_lock lock(m_chunks_mutex);
+        auto it = m_chunks.find(pos);
+        if (it == m_chunks.end()) {
+            return;
+        }
+        rsq.set_chunk_seed(it->second.seed());
+        auto* blocks = rsq.mutable_chunk_blocks();
+        auto& chunk_blocks = it->second.get_chunk_blocks();
+        blocks->Assign(chunk_blocks.begin(), chunk_blocks.end());
+        auto& neighbor_blocks = it->second.get_neightbor_blocks();
+        auto assign = [](auto* nb,
+                         const std::optional<std::vector<BlockType>>& blocks) {
+            if (!blocks) {
+                return;
+            }
+            if (!nb) {
+                return;
+            }
+            nb->Assign(blocks->begin(), blocks->end());
+        };
+        auto* nb1 = rsq.mutable_neighbor_blocks_1();
+        auto* nb2 = rsq.mutable_neighbor_blocks_2();
+        auto* nb3 = rsq.mutable_neighbor_blocks_3();
+        auto* nb4 = rsq.mutable_neighbor_blocks_4();
+        assign(nb1, neighbor_blocks[1]);
+        assign(nb2, neighbor_blocks[2]);
+        assign(nb3, neighbor_blocks[3]);
+        assign(nb4, neighbor_blocks[4]);
+    }
+    std::shared_ptr<Session> s;
+    {
+        session_cacc cacc;
+        if (m_player_session.find(cacc, uuid)) {
+            s = cacc->second;
+        }
+    }
+    if (!s) {
+        Logger::error("Player {} session not exist", uuid);
+        return;
+    }
+    s->send(make_packet(rsq));
 }
 
 int ServerWorld::rendering_distance() const {

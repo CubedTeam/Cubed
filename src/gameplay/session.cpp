@@ -52,15 +52,33 @@ asio::awaitable<void> Session::read_loop() {
                 throw std::runtime_error("invalid packet length");
             }
             uint32_t body_len = total_len - HEADER_LEN;
-            std::vector<char> body_data(body_len);
+            std::vector<uint8_t> body_data(body_len);
             if (body_len > 0) {
                 co_await asio::async_read(m_socket, asio::buffer(body_data),
                                           asio::use_awaitable);
             }
-
-            if (cmd_id == 1001) {
+            constexpr auto& to_num = std::to_underlying<PacketEnum>;
+            if (cmd_id == to_num(PacketEnum::LOGIN_REQ)) {
+                LoginReq req;
+                if (req.ParseFromArray(body_data.data(), body_data.size())) {
+                    m_server_world.handle_player_login(req.name(),
+                                                       shared_from_this());
+                }
             }
-            if (cmd_id == 1002) {
+            if (cmd_id == to_num(PacketEnum::PLAYER_POS)) {
+                PlayerPos pos;
+                if (pos.ParseFromArray(body_data.data(), body_data.size())) {
+                    m_server_world.sync_player_pos(pos.uuid(), pos.pos().x(),
+                                                   pos.pos().y(),
+                                                   pos.pos().z());
+                }
+            }
+            if (cmd_id == to_num(PacketEnum::CHUNK_DATA_REQ)) {
+                ChunkDataReq req;
+                if (req.ParseFromArray(body_data.data(), body_data.size())) {
+                    m_server_world.handle_chunk_req(
+                        req.uuid(), ChunkPos(req.pos().x(), req.pos().z()));
+                }
             }
         }
     } catch (const asio::system_error& e) {

@@ -156,11 +156,10 @@ void ServerChunk::gen_chunk() {
     gen_phase_two();
     gen_phase_three();
 
-    OptionalBlockVectorArray neightbor_blocks;
     for (int i = 0; i < 4; i++) {
-        neightbor_blocks[i] = neighbor[i].get_chunk_blocks();
+        m_neightbor_blocks[i] = neighbor[i].get_chunk_blocks();
     }
-    gen_phase_four(neightbor_blocks);
+    gen_phase_four(m_neightbor_blocks);
     gen_phase_five();
 }
 // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
@@ -168,6 +167,10 @@ void ServerChunk::gen_chunk() {
 bool ServerChunk::is_temp_chunk() const { return m_temp_chunk.load(); }
 
 bool& ServerChunk::has_cave() { return m_has_cave; }
+
+const OptionalBlockVectorArray& ServerChunk::get_neightbor_blocks() const {
+    return m_neightbor_blocks;
+}
 
 void ServerChunk::set_chunk_block(int index, unsigned id) {
     m_blocks[index] = id;

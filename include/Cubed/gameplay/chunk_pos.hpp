@@ -55,4 +55,10 @@ inline ChunkPos get_chunk_pos(int world_x, int world_z) {
     return {chunk_x, chunk_z};
 }
 
+inline float distance2(const ChunkPos& a, const ChunkPos& b) {
+    float dx = static_cast<float>(a.x) - b.x;
+    float dz = static_cast<float>(a.z) - b.z;
+    return dx * dx + dz * dz;
+}
+
 } // namespace Cubed

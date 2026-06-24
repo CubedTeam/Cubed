@@ -2,7 +2,12 @@ syntax = "proto3";
 
 import "common/chunk_pos.proto";
 
-message ChunkData {
+message ChunkDataReq {
+    string uuid = 1;
+    ChunkPos pos = 2;
+}
+
+message ChunkDataRsp {
     ChunkPos pos = 1;
     uint32 chunk_seed = 2;
     repeated uint32 chunk_blocks = 3 [packed=true];

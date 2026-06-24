@@ -48,7 +48,7 @@ public:
     unsigned seed() const;
     BiomeConditions& conditions();
     bool& has_cave();
-
+    const OptionalBlockVectorArray& get_neightbor_blocks() const;
     static int index(int x, int y, int z);
     static int index(const glm::vec3& pos);
 
@@ -69,7 +69,7 @@ private:
     HeightMapArray m_heightmap;
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
-
+    OptionalBlockVectorArray m_neightbor_blocks;
     float frequency = 0.01f;
     float height = 80;
     unsigned m_seed = 0;
