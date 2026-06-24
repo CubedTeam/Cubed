@@ -15,6 +15,7 @@ void ServerPlayer::update_pos(float x, float y, float z) {
     float dist = distance2(chunk_pos, m_last_chunk_pos);
     if (dist > 2) {
         m_world.need_gen(m_uuid);
+        m_last_chunk_pos = chunk_pos;
     }
 }
 } // namespace Cubed

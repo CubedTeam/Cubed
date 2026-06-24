@@ -58,7 +58,9 @@ asio::awaitable<void> NetworkServer::listen() {
             Logger::error("accept error {}", e.what());
         }
     } catch (...) {
-        Logger::error("Network Server: Unkown Error");
+        if (!m_stopped) {
+            Logger::error("Network Server: Unknown Error");
+        }
     }
 
     co_return;
