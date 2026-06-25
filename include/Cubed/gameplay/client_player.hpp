@@ -8,18 +8,20 @@
 
 #include <glm/glm.hpp>
 #include <optional>
+#include <shared_mutex>
 namespace Cubed {
 enum class Gait { WALK = 0, RUN };
 class ClientWorld;
 class ClientPlayer {
 public:
-    ClientPlayer(ClientWorld& world, const std::string& name);
+    ClientPlayer(ClientWorld& world, std::string_view name);
     ~ClientPlayer();
     AABB get_aabb() const;
     const glm::vec3& get_front() const;
     const Gait& get_gait() const;
     const std::optional<LookBlock>& get_look_block_pos() const;
-    const glm::vec3& get_player_pos() const;
+    // thread safe
+    glm::vec3 get_player_pos() const;
     const MoveState& get_move_state() const;
 
     void change_mode(GameMode mode);
@@ -48,6 +50,7 @@ public:
 
     void set_uuid(std::string_view uuid);
     const std::string& get_uuid() const;
+    const std::string& get_name() const;
 
 private:
     using enum GameMode;
@@ -94,6 +97,9 @@ private:
     std::string m_name{};
     std::string m_uuid;
     ClientWorld& m_world;
+
+    std::shared_mutex m_player_pos_mutex;
+
     bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
                   glm::ivec3& block_pos, glm::vec3& normal,
                   float distance = 4.0f);
@@ -101,8 +107,8 @@ private:
     void update_direction();
     void update_lookup_block();
     void update_move(float delta_time);
-    void update_x_move();
-    void update_y_move();
-    void update_z_move();
+    void update_x_move(glm::vec3& player_pos);
+    void update_y_move(glm::vec3& player_pos);
+    void update_z_move(glm::vec3& player_pos);
 };
 } // namespace Cubed

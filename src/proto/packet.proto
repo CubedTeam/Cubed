@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-import "common/chunk_pos.proto";
 import "common/error.proto";
 import "common/player_info.proto";
 import "common/vector3.proto";

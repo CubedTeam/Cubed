@@ -4,6 +4,8 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
 #include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/network_client.hpp"
 
 #include <deque>
 #include <tbb/concurrent_unordered_map.h>
@@ -11,7 +13,8 @@ namespace Cubed {
 
 class ClientWorld {
 public:
-    ClientWorld();
+    ClientWorld(std::string_view player_name,
+                std::shared_ptr<NetworkClient> client);
     ~ClientWorld();
     void init();
     void update(float delta_time);
@@ -32,16 +35,23 @@ public:
 
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
-    void start_client_thread();
+    void start_client_thread(std::string_view uuid);
     void stop_client_thread();
-
     std::vector<glm::vec4>& planes();
     std::vector<ChunkRenderSnapshot>& render_snapshots();
     glm::vec3 sunlight_dir() const;
+    void receive_chunk(const ChunkDataRsp& data);
+    template <typename Fn>
+    void register_timer(std::string_view id, TickType threshold, Fn&& f) {
+        m_timers.emplace(std::piecewise_construct,
+                         std::forward_as_tuple(std::string(id)),
+                         std::forward_as_tuple(threshold, std::forward<Fn>(f)));
+    }
 
 private:
     using ChunkHashMap =
         tbb::concurrent_unordered_map<ChunkPos, ClientChunk, ChunkPos::Hash>;
+    using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
     ClientPlayer m_player;
     ChunkHashMap m_chunks;
     std::vector<glm::vec4> m_planes;
@@ -50,10 +60,23 @@ private:
     mutable std::shared_mutex m_chunks_mutex;
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
+    std::mutex m_pending_queue_mutex;
+    std::deque<ClientChunk> m_pending_queue;
 
     std::vector<GLuint> m_pending_delete_vbo;
     std::vector<GLuint> m_pending_delete_vao;
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<ChunkRenderSnapshot> m_render_snapshots;
+    tbb::concurrent_unordered_map<std::string, Timer> m_timers;
+    std::atomic<bool> m_game_running{false};
+    std::atomic<int> m_rendering_distance{24};
+    std::shared_ptr<NetworkClient> m_client;
+    void client_run(std::stop_token token);
+
+    void set_player_pos();
+
+    void report_player_pos();
+
+    void request_chunk();
 };
 } // namespace Cubed

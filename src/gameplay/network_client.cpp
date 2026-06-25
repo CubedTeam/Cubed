@@ -1,9 +1,10 @@
 #include "Cubed/gameplay/network_client.hpp"
 
+#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/tools/log.hpp"
-
 namespace Cubed {
-NetworkClient::NetworkClient() : m_socket(m_io) {}
+NetworkClient::NetworkClient(ClientWorld& world)
+    : m_socket(m_io), m_world(world) {}
 
 NetworkClient::~NetworkClient() { close(); }
 
@@ -58,6 +59,20 @@ asio::awaitable<void> NetworkClient::read_loop() {
             constexpr auto& to_num = std::to_underlying<PacketEnum>;
             switch (cmd_id) {
             case to_num(PacketEnum::LOGIN_RSP): {
+                LoginRsp rsp;
+                if (rsp.ParseFromArray(body_data.data(), body_data.size())) {
+                    if (rsp.success()) {
+                        m_world.start_client_thread(rsp.uuid());
+                    } else {
+                        Logger::error("Connected Server Fail");
+                    }
+                }
+            }
+            case to_num(PacketEnum::CHUNK_DATA_RSP): {
+                ChunkDataRsp rsp;
+                if (rsp.ParseFromArray(body_data.data(), body_data.size())) {
+                    m_world.receive_chunk(rsp);
+                }
             }
             }
         }

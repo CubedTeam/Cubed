@@ -19,8 +19,10 @@ ServerWorld::~ServerWorld() {
     stop_server_thread();
     wait_all_chunk_tasks();
     stop_thread_pool();
-
-    m_chunks.clear();
+    {
+        std::lock_guard lock(m_chunks_mutex);
+        m_chunks.clear();
+    }
 }
 
 void ServerWorld::wait_all_chunk_tasks() {

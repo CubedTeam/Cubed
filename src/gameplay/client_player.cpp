@@ -5,8 +5,8 @@
 #include "Cubed/gameplay/client_world.hpp"
 
 namespace Cubed {
-ClientPlayer::ClientPlayer(ClientWorld& world, const std::string& name)
-    : m_world(world) {}
+ClientPlayer::ClientPlayer(ClientWorld& world, std::string_view name)
+    : m_name(name), m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
 
 AABB ClientPlayer::get_aabb() const {
@@ -28,7 +28,11 @@ const Gait& ClientPlayer::get_gait() const { return m_gait; }
 const std::optional<LookBlock>& ClientPlayer::get_look_block_pos() const {
     return m_look_block;
 }
-const glm::vec3& ClientPlayer::get_player_pos() const { return m_player_pos; }
+glm::vec3 ClientPlayer::get_player_pos() const {
+
+    std::shared_lock lock(m_player_pos_mutex);
+    return m_player_pos;
+}
 
 const MoveState& ClientPlayer::get_move_state() const { return m_move_state; }
 
@@ -305,6 +309,14 @@ void ClientPlayer::update_move(float delta_time) {
     if (delta_time > 1.0f) {
         return;
     }
+    // ensure the thread safe
+    glm::vec3 player_pos;
+
+    {
+        std::shared_lock lock(m_player_pos_mutex);
+        player_pos = m_player_pos;
+    }
+
     if (m_game_mode != SPECTATOR) {
         if (m_gait == Gait::RUN) {
             m_max_speed = m_max_run_speed;
@@ -366,19 +378,24 @@ void ClientPlayer::update_move(float delta_time) {
 
     move_distance.y = m_y_speed * delta_time;
     // y
-    update_y_move();
+    update_y_move(player_pos);
     // x
-    update_x_move();
+    update_x_move(player_pos);
 
-    update_z_move();
+    update_z_move(player_pos);
 
-    if (m_player_pos.y < -15.0f) {
+    if (player_pos.y < -15.0f) {
         Logger::warn("y is tow low");
-        m_player_pos += glm::vec3(1.0f, 100.0f, 1.0f);
+        player_pos += glm::vec3(1.0f, 100.0f, 1.0f);
+    }
+
+    {
+        std::lock_guard lock(m_player_pos_mutex);
+        m_player_pos = player_pos;
     }
 }
 
-void ClientPlayer::update_x_move() {
+void ClientPlayer::update_x_move(glm::vec3& m_player_pos) {
     m_player_pos.x += move_distance.x;
     if (m_game_mode == SPECTATOR) {
         return;
@@ -412,7 +429,7 @@ void ClientPlayer::update_x_move() {
     }
 }
 
-void ClientPlayer::update_y_move() {
+void ClientPlayer::update_y_move(glm::vec3& m_player_pos) {
     m_player_pos.y += move_distance.y;
     if (m_game_mode == SPECTATOR) {
         return;
@@ -450,7 +467,7 @@ void ClientPlayer::update_y_move() {
     }
 }
 
-void ClientPlayer::update_z_move() {
+void ClientPlayer::update_z_move(glm::vec3& m_player_pos) {
     m_player_pos.z += move_distance.z;
     if (m_game_mode == SPECTATOR) {
         return;
@@ -522,4 +539,9 @@ unsigned ClientPlayer::place_block() const { return m_place_block; };
 Gait& ClientPlayer::gait() { return m_gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
 const ClientWorld& ClientPlayer::get_world() const { return m_world; }
+
+void ClientPlayer::set_uuid(std::string_view uuid) { m_uuid = uuid; }
+const std::string& ClientPlayer::get_uuid() const { return m_uuid; }
+const std::string& ClientPlayer::get_name() const { return m_name; }
+
 } // namespace Cubed

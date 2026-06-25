@@ -4,11 +4,11 @@ import "common/chunk_pos.proto";
 
 message ChunkDataReq {
     string uuid = 1;
-    ChunkPos pos = 2;
+    ChunkPosNet pos = 2;
 }
 
 message ChunkDataRsp {
-    ChunkPos pos = 1;
+    ChunkPosNet pos = 1;
     uint32 chunk_seed = 2;
     int32 biome_type = 3;
     repeated uint32 chunk_blocks = 4 [packed=true];

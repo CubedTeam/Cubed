@@ -516,6 +516,7 @@ void ClientChunk::receive_chunk(const ChunkDataRsp& data) {
     }
 
     gen_vertex_data(neighbor);
+    mark_dirty();
 }
 
 } // namespace Cubed

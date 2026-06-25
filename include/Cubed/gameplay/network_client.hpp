@@ -7,9 +7,10 @@
 #include <thread>
 namespace Cubed {
 using asio::ip::tcp;
+class ClientWorld;
 class NetworkClient : std::enable_shared_from_this<NetworkClient> {
 public:
-    NetworkClient();
+    NetworkClient(ClientWorld& world);
     ~NetworkClient();
     void close();
     asio::awaitable<void> connect(std::string ip, int port);
@@ -29,7 +30,7 @@ private:
     std::atomic<bool> m_closed{false};
 
     // ClientWorld is managed by App
-    // ClientWorld& m_world;
+    ClientWorld& m_world;
 
     void do_write();
 };
