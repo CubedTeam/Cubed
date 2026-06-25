@@ -5,8 +5,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 
 namespace Cubed {
-ClientPlayer::ClientPlayer(ClientWorld& world, std::string_view name)
-    : m_name(name), m_world(world) {}
+ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
 
 AABB ClientPlayer::get_aabb() const {
@@ -543,5 +542,5 @@ const ClientWorld& ClientPlayer::get_world() const { return m_world; }
 void ClientPlayer::set_uuid(std::string_view uuid) { m_uuid = uuid; }
 const std::string& ClientPlayer::get_uuid() const { return m_uuid; }
 const std::string& ClientPlayer::get_name() const { return m_name; }
-
+void ClientPlayer::init(std::string_view name) { m_name = name; }
 } // namespace Cubed

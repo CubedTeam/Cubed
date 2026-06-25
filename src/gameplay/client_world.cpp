@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/client_world.hpp"
 
+#include "Cubed/config.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 using namespace std::chrono;
@@ -13,9 +14,7 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld(std::string_view player_name,
-                         std::shared_ptr<NetworkClient> client)
-    : m_player(*this, player_name), m_client(client) {}
+ClientWorld::ClientWorld() : m_player(*this) {}
 
 ClientWorld::~ClientWorld() {
     stop_client_thread();
@@ -186,9 +185,11 @@ void ClientWorld::receive_block_change(const BlockChangeRsp& rsp) {
     set_block(pos, rsp.block());
 }
 
-void ClientWorld::init() {
+void ClientWorld::init(std::string_view player_name,
+                       std::shared_ptr<NetworkClient> client) {
     m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
-
+    m_player.init(player_name);
+    m_client = client;
     // timer
     register_timer("player_pos", 2, [this]() { report_player_pos(); });
 
@@ -217,6 +218,12 @@ void ClientWorld::stop_client_thread() {
         m_client_thread.join();
     }
     m_game_running = false;
+}
+
+void ClientWorld::hot_reload() {
+    auto& config = Config::get();
+    int dist = config.get<int>("world.rendering_distance");
+    m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
 }
 
 void ClientWorld::client_run(std::stop_token stoken) {

@@ -46,7 +46,7 @@ asio::awaitable<void> NetworkServer::listen() {
                 co_await acceptor.async_accept(asio::use_awaitable);
 
             std::shared_ptr<Session> s =
-                std::make_shared<Session>(std::move(socket), m_world);
+                std::make_shared<Session>(std::move(socket), m_world, m_io);
             {
                 std::lock_guard lock(m_session_mutex);
                 m_session.emplace(s->uuid(), s);
@@ -83,5 +83,5 @@ void NetworkServer::start_server() {
 }
 
 int NetworkServer::port() const { return m_port; }
-
+ServerWorld& NetworkServer::server_world() { return m_world; }
 } // namespace Cubed

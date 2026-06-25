@@ -8,8 +8,8 @@
 #include "Cubed/gameplay/builders/river_builder.hpp"
 #include "Cubed/gameplay/builders/snowy_plain_builder.hpp"
 #include "Cubed/gameplay/cave_path.hpp"
-#include "Cubed/gameplay/chunk.hpp"
 #include "Cubed/gameplay/river.path.hpp"
+#include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/gameplay/tree.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -555,7 +555,8 @@ void ChunkGenerator::blend_surface_blocks_borders(
                                            int nx, int nz) -> BlockType {
         // Search from topmost y downwards for the first non-zero block
         for (int y = WORLD_HEIGHT - 1; y >= 0; --y) {
-            int idx = Chunk::index(nx, y,
+            int idx =
+                ServerChunk::index(nx, y,
                                    nz); // linear index: y * area + z * size + x
             if (idx >= 0 && idx < static_cast<int>(blocks.size())) {
                 BlockType neighbor_type = blocks[idx];
@@ -574,7 +575,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
             BlockType type_self = 0;
             int top_y = -1;
             top_y = m_heightmap[x][z];
-            type_self = m_blocks[Chunk::index(x, top_y, z)];
+            type_self = m_blocks[ServerChunk::index(x, top_y, z)];
 
             if (top_y == -1)
                 continue; // no block? skip
@@ -665,7 +666,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
             if (final_type != type_self) {
                 // top block
                 BlockType new_surface = final_type;
-                m_blocks[Chunk::index(x, top_y, z)] = new_surface;
+                m_blocks[ServerChunk::index(x, top_y, z)] = new_surface;
                 // bottom block
                 unsigned fill_type = 2;
                 if (final_type == 1 || final_type == 8) {
@@ -674,7 +675,7 @@ void ChunkGenerator::blend_surface_blocks_borders(
                     fill_type = final_type;
                 }
                 for (int y = std::max(0, top_y - 5); y < top_y; y++) {
-                    m_blocks[Chunk::index(x, y, z)] = fill_type;
+                    m_blocks[ServerChunk::index(x, y, z)] = fill_type;
                 }
             }
         }
@@ -741,12 +742,12 @@ void ChunkGenerator::generate_cave() {
 
             carve_worm(path.points(), chunk_pos,
                        [&](int x, int y, int z) -> void {
-                           int idx = Chunk::index(x, y, z);
+                           int idx = ServerChunk::index(x, y, z);
                            m_chunk.has_cave() = true;
                            if (blocks[idx] == 7)
                                return;
                            if (y < WORLD_SIZE_Y - 1 &&
-                               blocks[Chunk::index(x, y + 1, z)] == 7)
+                               blocks[ServerChunk::index(x, y + 1, z)] == 7)
                                return;
                            blocks[idx] = 0;
                        });
@@ -780,7 +781,7 @@ void ChunkGenerator::generate_river() {
 
             carve_worm(path.points(), chunk_pos,
                        [&](int x, int y, int z) -> void {
-                           int idx = Chunk::index(x, y, z);
+                           int idx = ServerChunk::index(x, y, z);
                            if (y > SEA_LEVEL) {
                                blocks[idx] = 0;
                                return;

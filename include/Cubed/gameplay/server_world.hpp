@@ -115,9 +115,9 @@ private:
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
 
-    std::shared_mutex m_chunks_mutex;
+    mutable std::shared_mutex m_chunks_mutex;
     std::shared_mutex m_new_chunk_mutex;
-    std::shared_mutex m_player_mutex;
+    mutable std::shared_mutex m_player_mutex;
     std::mutex m_need_gen_queue_mutex;
     std::condition_variable_any m_gen_cv;
 

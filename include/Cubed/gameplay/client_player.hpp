@@ -14,7 +14,7 @@ enum class Gait { WALK = 0, RUN };
 class ClientWorld;
 class ClientPlayer {
 public:
-    ClientPlayer(ClientWorld& world, std::string_view name);
+    ClientPlayer(ClientWorld& world);
     ~ClientPlayer();
     AABB get_aabb() const;
     const glm::vec3& get_front() const;
@@ -51,6 +51,8 @@ public:
     void set_uuid(std::string_view uuid);
     const std::string& get_uuid() const;
     const std::string& get_name() const;
+
+    void init(std::string_view name);
 
 private:
     using enum GameMode;
@@ -98,7 +100,7 @@ private:
     std::string m_uuid;
     ClientWorld& m_world;
 
-    std::shared_mutex m_player_pos_mutex;
+    mutable std::shared_mutex m_player_pos_mutex;
 
     bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
                   glm::ivec3& block_pos, glm::vec3& normal,

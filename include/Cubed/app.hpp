@@ -1,8 +1,10 @@
 #pragma once
+#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/network_server.hpp"
+#include "Cubed/gameplay/server_world.hpp"
 #define GLFW_INCLUDE_NONE
 #include "Cubed/camera.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/gameplay/world.hpp"
 #include "Cubed/renderer.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/window.hpp"
@@ -36,14 +38,19 @@ public:
     Renderer& renderer();
     TextureManager& texture_manager();
     Window& window();
-    World& world();
+    ClientWorld& client_world();
+    ServerWorld& server_world();
 
 private:
     Camera m_camera;
     TextureManager m_texture_manager;
-    World m_world;
+    NetworkServer m_server;
+    std::shared_ptr<NetworkClient> m_client;
+    ClientWorld m_client_world;
+
     DevPanel m_dev_panel{*this};
-    Renderer m_renderer{m_camera, m_world, m_texture_manager, m_dev_panel};
+    Renderer m_renderer{m_camera, m_client_world, m_texture_manager,
+                        m_dev_panel};
 
     Window m_window{m_renderer};
 

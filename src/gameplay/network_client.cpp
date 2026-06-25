@@ -4,7 +4,7 @@
 #include "Cubed/tools/log.hpp"
 namespace Cubed {
 NetworkClient::NetworkClient(ClientWorld& world)
-    : m_socket(m_io), m_world(world) {}
+    : m_socket(m_io), m_strand(asio::make_strand(m_io)), m_world(world) {}
 
 NetworkClient::~NetworkClient() { close(); }
 

@@ -6,9 +6,10 @@
 using asio::ip::tcp;
 
 namespace Cubed {
-Session::Session(tcp::socket socket, ServerWorld& server_world)
-    : m_socket(std::move(socket)), m_uuid(generate_uuid()),
-      m_server_world(server_world) {}
+Session::Session(tcp::socket socket, ServerWorld& server_world,
+                 asio::io_context& io)
+    : m_socket(std::move(socket)), m_strand(asio::make_strand(io)),
+      m_uuid(generate_uuid()), m_server_world(server_world) {}
 
 Session::~Session() {}
 

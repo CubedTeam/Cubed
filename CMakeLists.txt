@@ -20,7 +20,7 @@ endif()
 
 find_package(OpenGL REQUIRED)
 find_package(Protobuf REQUIRED)
-
+find_package(absl REQUIRED)
 
 if (UNIX AND NOT APPLE)
     find_package(Freetype REQUIRED)
@@ -110,11 +110,8 @@ add_executable(${PROJECT_NAME}
     src/config.cpp
     src/dev_panel.cpp
     src/gameplay/biome.cpp
-    src/gameplay/chunk.cpp
     src/gameplay/chunk_generator.cpp
-    src/gameplay/player.cpp
     src/gameplay/tree.cpp
-    src/gameplay/world.cpp
     src/input.cpp
     src/map_table.cpp
     src/renderer.cpp
@@ -208,6 +205,8 @@ target_link_libraries(${PROJECT_NAME}
         imgui
         tbb
         protobuf::libprotobuf
+        absl::log
+        absl::check
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

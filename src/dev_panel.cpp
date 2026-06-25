@@ -3,7 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/cave_path.hpp"
-#include "Cubed/gameplay/player.hpp"
+#include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/river.path.hpp"
 #include "Cubed/tools/log.hpp"
 
@@ -59,7 +59,7 @@ static int filter_unsigned(ImGuiInputTextCallbackData* data) {
 DevPanel::DevPanel(App& app) : m_app(app) {}
 
 void DevPanel::init() {
-    m_player = &m_app.world().get_player("TestPlayer");
+    m_player = &m_app.client_world().get_player();
     update_config_view();
     update_player_profile();
 }
@@ -269,7 +269,7 @@ void DevPanel::show_biome_table_bar() {
 }
 
 void DevPanel::show_time_table_bar() {
-    World& world = m_app.world();
+    ServerWorld& world = m_app.server_world();
     ImGui::Text("Game Tick %llu", world.game_tick());
     ImGui::SameLine();
     ImGui::Text("Day Tick %llu", world.day_tick());
@@ -342,17 +342,17 @@ void DevPanel::show_river_table_bar() {
 }
 
 void DevPanel::show_chunk_table_bar() {
-    auto& world = m_app.world();
-    auto& player = world.get_player("TestPlayer");
-    auto info = world.get_chunk_info(player.get_player_pos());
+    /*
+   auto& world = m_app.client_world();
+   auto& player = world.get_player();
 
-    ImGui::Text("Chunk X: %d Z: %d Info", info.pos.x, info.pos.z);
-    ImGui::Text("Seed: %u", info.seed);
-    ImGui::Text("%s", ("Biome " + get_biome_str(info.biome)).c_str());
-    ImGui::Text("First Random %u", info.first_random);
-    ImGui::Text("%s",
-                std::format("Has Cave Start {}", info.has_cave_start).c_str());
-    ImGui::Text("%s", std::format("Has Cave {}", info.has_cave).c_str());
+   ImGui::Text("Chunk X: %d Z: %d Info", info.pos.x, info.pos.z);
+   ImGui::Text("Seed: %u", info.seed);
+   ImGui::Text("%s", ("Biome " + get_biome_str(info.biome)).c_str());
+   ImGui::Text("First Random %u", info.first_random);
+   ImGui::Text("%s",
+               std::format("Has Cave Start {}", info.has_cave_start).c_str());
+   ImGui::Text("%s", std::format("Has Cave {}", info.has_cave).c_str());*/
 }
 
 void DevPanel::show_settings_tab_item() {
@@ -385,7 +385,7 @@ void DevPanel::show_settings_tab_item() {
                              128)) {
             Config::get().set("world.rendering_distance",
                               m_config.rendering_distance);
-            m_app.world().hot_reload();
+            m_app.client_world().hot_reload();
         }
         if (ImGui::Checkbox("Fullscreen", &m_config.fullscreen)) {
             Config::get().set("window.fullscreen", m_config.fullscreen);
@@ -467,7 +467,7 @@ void DevPanel::show_world_tab_item() {
                     std::strtoul(perlin_noise_input_buffer, nullptr, 10)));
                 m_text_editing.perlin_seed = false;
                 m_player->set_player_pos({0.0f, 255.0f, 0.0f});
-                m_app.world().rebuild_world();
+                m_app.server_world().rebuild_world();
             }
         }
         if (!m_text_editing.perlin_seed) {
@@ -476,21 +476,22 @@ void DevPanel::show_world_tab_item() {
                 m_text_editing.perlin_seed = true;
             }
         }
-        static int rendering_distance = m_app.world().rendering_distance();
+        static int rendering_distance =
+            m_app.client_world().rendering_distance();
         if (ImGui::SliderInt("Render Distance", &rendering_distance, 2, 128)) {
-            m_app.world().rendering_distance(rendering_distance);
+            m_app.client_world().rendering_distance(rendering_distance);
         }
         ImGui::Text(
             "Pool Threads %d  Max Support Threads %d  Reserved Threads %d",
-            m_app.world().pool_threads(), m_app.world().max_threads(),
-            RESERVED_THREADS);
+            m_app.server_world().pool_threads(),
+            m_app.server_world().max_threads(), RESERVED_THREADS);
         ImGui::SliderInt("Set Pool Threads", &m_threads, 1,
-                         m_app.world().max_threads());
+                         m_app.server_world().max_threads());
         ImGui::SameLine();
         if (ImGui::Button("Set")) {
-            m_app.world().change_pool_threads(m_threads);
+            m_app.server_world().change_pool_threads(m_threads);
         }
-        if (m_threads > m_app.world().max_threads() - RESERVED_THREADS) {
+        if (m_threads > m_app.server_world().max_threads() - RESERVED_THREADS) {
             ImGui::TextColored(
                 ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
                 "Waring: When the threads in the thread pool exceed \n(maximum "
@@ -498,17 +499,18 @@ void DevPanel::show_world_tab_item() {
         }
 
         static const char* chunk_load_style[] = {"Random", "Center"};
-        m_chunk_style = m_app.world().chunk_load_style();
+        m_chunk_style = m_app.server_world().chunk_load_style();
         if (ImGui::Combo("ChunkLoadStyle", &m_chunk_style, chunk_load_style,
                          IM_ARRAYSIZE(chunk_load_style))) {
-            m_app.world().set_chunk_load_style(m_chunk_style);
+            m_app.server_world().set_chunk_load_style(m_chunk_style);
         }
         if (ImGui::Button("Rebuild World")) {
-            m_app.world().rebuild_world();
+            m_app.server_world().rebuild_world();
         }
         ImGui::SameLine();
         if (ImGui::Button("Request Chunk Build")) {
-            m_app.world().need_gen();
+            Logger::warn("This Request Chunk Build button is not finish");
+            m_app.server_world().need_gen(std::nullopt);
         }
         ImGui::SameLine();
         if (ImGui::Button("Spawn Point")) {
@@ -517,9 +519,9 @@ void DevPanel::show_world_tab_item() {
         ImGui::SameLine();
         if (ImGui::Checkbox("Gen Thread", &m_gen_thread_running)) {
             if (m_gen_thread_running) {
-                m_app.world().start_gen_thread();
+                m_app.server_world().start_gen_thread();
             } else {
-                m_app.world().stop_gen_thread();
+                m_app.server_world().stop_gen_thread();
             }
         }
         // ImGui::Text("Chunk Build Progress\n");

@@ -4,8 +4,8 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/gameplay/player.hpp"
-#include "Cubed/gameplay/world.hpp"
+#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -21,7 +21,7 @@
 
 namespace Cubed {
 
-Renderer::Renderer(const Camera& camera, World& world,
+Renderer::Renderer(const Camera& camera, ClientWorld& world,
                    const TextureManager& texture_manager, DevPanel& dev_panel)
     : m_camera(camera), m_dev_panel(dev_panel),
       m_texture_manager(texture_manager), m_world(world) {}

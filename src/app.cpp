@@ -2,7 +2,6 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
-#include "Cubed/gameplay/player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
@@ -58,10 +57,18 @@ void App::init() {
     // MapTable::init_map();
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");
-    m_world.init_world();
+
+    m_server.start_server();
+
+    m_client = std::make_shared<NetworkClient>(m_client_world);
+
+    m_client->start("127.0.0.1", 25530);
+    // init will send packet
+    m_client_world.init("test", m_client);
+
     Logger::info("World Init Success");
 
-    m_camera.camera_init(&m_world.get_player("TestPlayer"));
+    m_camera.camera_init(&m_client_world.get_player());
     m_dev_panel.init();
 }
 
@@ -111,7 +118,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
         break;
     }
 
-    app->m_world.get_player("TestPlayer").update_player_move_state(key, action);
+    app->m_client_world.get_player().update_player_move_state(key, action);
 }
 
 void App::mouse_button_callback(GLFWwindow* window, int button, int action,
@@ -180,7 +187,7 @@ void App::mouse_scroll_callback(GLFWwindow* window, double xoffset,
         ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
         return;
     }
-    auto& player = app->m_world.get_player("TestPlayer");
+    auto& player = app->m_client_world.get_player();
     player.update_scroll(yoffset);
 }
 
@@ -244,9 +251,9 @@ void App::update() {
             std::format("RSS: {}mb", Tools::get_current_rss() / (1024 * 1024)));
     }
     m_texture_manager.update();
-    m_world.update(delta_time);
+    m_client_world.update(delta_time);
     m_camera.update_move_camera();
-    const auto& player = m_world.get_player("TestPlayer");
+    const auto& player = m_client_world.get_player();
     if (player_gait != player.get_gait()) {
         player_gait = player.get_gait();
         float fov = static_cast<float>(Config::get().get<double>("player.fov"));
@@ -288,6 +295,7 @@ DevPanel& App::dev_panel() { return m_dev_panel; }
 Renderer& App::renderer() { return m_renderer; }
 TextureManager& App::texture_manager() { return m_texture_manager; }
 Window& App::window() { return m_window; }
-World& App::world() { return m_world; }
+ClientWorld& App::client_world() { return m_client_world; }
+ServerWorld& App::server_world() { return m_server.server_world(); }
 
 } // namespace Cubed

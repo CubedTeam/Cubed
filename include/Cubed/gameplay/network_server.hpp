@@ -16,8 +16,7 @@ public:
     void start_server();
 
     int port() const;
-
-    std::unordered_map<std::string, std::shared_ptr<Session>> m_session;
+    ServerWorld& server_world();
 
 private:
     asio::io_context m_io;
@@ -26,6 +25,7 @@ private:
     std::atomic<bool> m_stopped{false};
     ServerWorld m_world;
     std::mutex m_session_mutex;
+    std::unordered_map<std::string, std::shared_ptr<Session>> m_session;
     asio::awaitable<void> listen();
     void net_run();
 };

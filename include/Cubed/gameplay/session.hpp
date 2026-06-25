@@ -13,7 +13,8 @@ class ServerWorld;
 class Session : public std::enable_shared_from_this<Session> {
 
 public:
-    Session(tcp::socket socket, ServerWorld& server_world);
+    Session(tcp::socket socket, ServerWorld& server_world,
+            asio::io_context& io);
     ~Session();
     void start();
     void send(Packet packet);

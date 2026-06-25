@@ -5,7 +5,7 @@
 namespace Cubed {
 
 class App;
-class Player;
+class ClientPlayer;
 class DevPanel {
     struct ConfigView {
         float fov = 70.0f;
@@ -38,7 +38,7 @@ public:
 private:
     App& m_app;
     ConfigView m_config;
-    Player* m_player;
+    ClientPlayer* m_player;
     PlayerProfile m_player_profile;
     TextEditing m_text_editing;
     bool m_need_save_config = false;

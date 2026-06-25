@@ -11,13 +11,13 @@ namespace Cubed {
 
 class Camera;
 class TextureManager;
-class World;
+class ClientWorld;
 class DevPanel;
 class Renderer {
 public:
     constexpr static int NUM_VAO = 7;
 
-    Renderer(const Camera& camera, World& world,
+    Renderer(const Camera& camera, ClientWorld& world,
              const TextureManager& texture_manager, DevPanel& dev_panel);
     ~Renderer();
     void hot_reload();
@@ -91,7 +91,7 @@ private:
     const Camera& m_camera;
     DevPanel& m_dev_panel;
     const TextureManager& m_texture_manager;
-    World& m_world;
+    ClientWorld& m_world;
 
     bool m_discard_tranparent = true;
     bool m_shader_on = true;

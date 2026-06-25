@@ -1,9 +1,9 @@
 #include "Cubed/gameplay/vertex_data.hpp"
 
-#include "Cubed/gameplay/world.hpp"
+#include "Cubed/gameplay/client_world.hpp"
 
 namespace Cubed {
-VertexData::VertexData(World& world) : m_world(world) {}
+VertexData::VertexData(ClientWorld& world) : m_world(world) {}
 VertexData::~VertexData() {
     if (m_vbo != 0) {
         m_world.push_delete_vbo(m_vbo);

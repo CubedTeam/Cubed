@@ -1,5 +1,4 @@
 #include "Cubed/gameplay/chunk.hpp"
-
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"

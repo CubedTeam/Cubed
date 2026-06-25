@@ -12,10 +12,10 @@ namespace Cubed {
 
 class ClientWorld {
 public:
-    ClientWorld(std::string_view player_name,
-                std::shared_ptr<NetworkClient> client);
+    ClientWorld();
     ~ClientWorld();
-    void init();
+    void init(std::string_view player_name,
+              std::shared_ptr<NetworkClient> client);
     void update(float delta_time);
     const std::optional<LookBlock>&
     get_look_block_pos(const std::string& name) const;
@@ -36,6 +36,9 @@ public:
     void rendering_distance(int rendering_distance);
     void start_client_thread(std::string_view uuid);
     void stop_client_thread();
+
+    void hot_reload();
+
     std::vector<glm::vec4>& planes();
     std::vector<ChunkRenderSnapshot>& render_snapshots();
     glm::vec3 sunlight_dir() const;

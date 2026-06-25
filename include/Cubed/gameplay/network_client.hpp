@@ -13,7 +13,7 @@ public:
     NetworkClient(ClientWorld& world);
     ~NetworkClient();
     void close();
-    asio::awaitable<void> connect(std::string ip, int port);
+
     void send(Packet packet);
     void start(std::string ip, int port = 25530);
 
@@ -26,7 +26,9 @@ private:
     std::vector<char> m_read_buffer;
     std::deque<Packet> m_write_queue;
     asio::strand<asio::io_context::executor_type> m_strand;
+    asio::awaitable<void> connect(std::string ip, int port);
     asio::awaitable<void> read_loop();
+
     std::atomic<bool> m_closed{false};
 
     // ClientWorld is managed by App

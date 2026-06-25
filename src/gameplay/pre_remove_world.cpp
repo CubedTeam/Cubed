@@ -1,7 +1,6 @@
-#include "Cubed/gameplay/world.hpp"
-
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/player.hpp"
+#include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
 
