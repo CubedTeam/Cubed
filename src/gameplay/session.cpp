@@ -58,10 +58,10 @@ asio::awaitable<void> Session::read_loop() {
                 co_await asio::async_read(m_socket, asio::buffer(body_data),
                                           asio::use_awaitable);
             }
-            Logger::info("Session: Receive cmd {}", cmd_id);
             constexpr auto& to_num = std::to_underlying<PacketEnum>;
             if (cmd_id == to_num(PacketEnum::LOGIN_REQ)) {
                 LoginReq req;
+                Logger::info("Session: Receive Login req");
                 if (req.ParseFromArray(body_data.data(), body_data.size())) {
                     m_server_world.handle_player_login(req.name(),
                                                        shared_from_this());
@@ -77,6 +77,7 @@ asio::awaitable<void> Session::read_loop() {
             }
             if (cmd_id == to_num(PacketEnum::CHUNK_DATA_REQ)) {
                 ChunkDataReq req;
+                Logger::info("Session: Receive Chunk Data req");
                 if (req.ParseFromArray(body_data.data(), body_data.size())) {
                     m_server_world.handle_chunk_req(
                         req.uuid(), ChunkPos(req.pos().x(), req.pos().z()));
@@ -84,6 +85,7 @@ asio::awaitable<void> Session::read_loop() {
             }
             if (cmd_id == to_num(PacketEnum::BLOCK_CHANGE_REQ)) {
                 BlockChangeReq req;
+                Logger::info("Session: Receive Block Change req");
                 if (req.ParseFromArray(body_data.data(), body_data.size())) {
                     m_server_world.handle_block_change(req);
                 }

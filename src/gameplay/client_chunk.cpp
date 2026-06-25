@@ -96,7 +96,11 @@ inline int choose_buf(BlockType id) {
 }
 
 } // namespace
-ClientChunk::ClientChunk(ClientWorld& world) : m_world(world) {}
+ClientChunk::ClientChunk(ClientWorld& world) : m_world(world) {
+    for (int i = 0; i < VERTEX_DATA_SUM; i++) {
+        m_vertex_data.emplace_back(m_world);
+    }
+}
 ClientChunk::~ClientChunk() {}
 
 ClientChunk::ClientChunk(ClientChunk&& other) noexcept
@@ -110,7 +114,9 @@ ClientChunk& ClientChunk::operator=(ClientChunk&& other) noexcept {
     // Logger::info("other Chunk pos {} {} in Chunk& Chunk::operator=(Chunk&&
     // other) this {}", other.m_chunk_pos.x, other.m_chunk_pos.z,
     // static_cast<const void*>(&other));
-
+    if (this == &other) {
+        return *this;
+    }
     m_chunk_pos = std::move(other.m_chunk_pos);
     m_blocks = std::move(other.m_blocks);
     m_dirty = other.is_dirty();
@@ -498,6 +504,11 @@ void ClientChunk::gen_cross_plane_vertices(int world_x, int world_y,
 void ClientChunk::receive_chunk(const ChunkDataRsp& data) {
     OptionalBlockVectorArray neighbor;
 
+    m_chunk_pos.x = data.pos().x();
+    m_chunk_pos.z = data.pos().z();
+    m_seed = data.chunk_seed();
+    m_biome = get_biome_from_id(data.biome_type());
+
     for (int i = 0; i < 4; i++) {
         neighbor[i] = std::nullopt;
     }
@@ -506,41 +517,28 @@ void ClientChunk::receive_chunk(const ChunkDataRsp& data) {
         Logger::error("Bad Chunk, size {}", data.chunk_blocks_size());
         return;
     }
-
     m_blocks.reserve(BLOCK_SIZE);
 
     for (const auto& b : data.chunk_blocks()) {
         m_blocks.push_back(static_cast<BlockType>(b));
     }
     // temp neighbor block data
-    if (data.neighbor_blocks_1_size() == BLOCK_SIZE) {
-        neighbor[0] = std::vector<BlockType>();
-        neighbor[0]->reserve(BLOCK_SIZE);
-        for (const auto& b : data.chunk_blocks()) {
-            neighbor[0]->push_back(static_cast<BlockType>(b));
+    auto load_neighbor = [&](int idx, const auto& blocks) {
+        if (blocks.size() != BLOCK_SIZE)
+            return;
+
+        neighbor[idx].emplace();
+        neighbor[idx]->reserve(BLOCK_SIZE);
+
+        for (auto b : blocks) {
+            neighbor[idx]->push_back(static_cast<BlockType>(b));
         }
-    }
-    if (data.neighbor_blocks_2_size() == BLOCK_SIZE) {
-        neighbor[1] = std::vector<BlockType>();
-        neighbor[1]->reserve(BLOCK_SIZE);
-        for (const auto& b : data.chunk_blocks()) {
-            neighbor[1]->push_back(static_cast<BlockType>(b));
-        }
-    }
-    if (data.neighbor_blocks_3_size() == BLOCK_SIZE) {
-        neighbor[2] = std::vector<BlockType>();
-        neighbor[2]->reserve(BLOCK_SIZE);
-        for (const auto& b : data.chunk_blocks()) {
-            neighbor[2]->push_back(static_cast<BlockType>(b));
-        }
-    }
-    if (data.neighbor_blocks_3_size() == BLOCK_SIZE) {
-        neighbor[3] = std::vector<BlockType>();
-        neighbor[3]->reserve(BLOCK_SIZE);
-        for (const auto& b : data.chunk_blocks()) {
-            neighbor[3]->push_back(static_cast<BlockType>(b));
-        }
-    }
+    };
+
+    load_neighbor(0, data.neighbor_blocks_1());
+    load_neighbor(1, data.neighbor_blocks_2());
+    load_neighbor(2, data.neighbor_blocks_3());
+    load_neighbor(3, data.neighbor_blocks_4());
 
     gen_vertex_data(neighbor);
     mark_dirty();

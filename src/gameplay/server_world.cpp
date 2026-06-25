@@ -477,10 +477,10 @@ void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
         auto* nb2 = rsq.mutable_neighbor_blocks_2();
         auto* nb3 = rsq.mutable_neighbor_blocks_3();
         auto* nb4 = rsq.mutable_neighbor_blocks_4();
-        assign(nb1, neighbor_blocks[1]);
-        assign(nb2, neighbor_blocks[2]);
-        assign(nb3, neighbor_blocks[3]);
-        assign(nb4, neighbor_blocks[4]);
+        assign(nb1, neighbor_blocks[0]);
+        assign(nb2, neighbor_blocks[1]);
+        assign(nb3, neighbor_blocks[2]);
+        assign(nb4, neighbor_blocks[3]);
     }
     std::shared_ptr<Session> s;
     {
@@ -494,6 +494,7 @@ void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
         Logger::error("Player {} session not exist", uuid);
         return;
     }
+
     s->send(make_packet(rsq));
 }
 

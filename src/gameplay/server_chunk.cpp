@@ -8,21 +8,29 @@ ServerChunk::ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
     : m_temp_chunk(temp_chunk), m_chunk_pos(chunk_pos), m_world(world) {}
 
 ServerChunk::ServerChunk(ServerChunk&& other) noexcept
-    : m_biome(other.m_biome.load()), m_chunk_pos(std::move(other.m_chunk_pos)),
+    : m_gening(other.m_gening.load()), m_has_cave(other.m_has_cave),
+      m_biome(other.m_biome.load()), m_chunk_pos(std::move(other.m_chunk_pos)),
       m_world(other.m_world), m_heightmap(std::move(other.m_heightmap)),
-      m_blocks(std::move(other.m_blocks)), m_seed(other.m_seed),
-      m_conditions(other.m_conditions) {}
+      m_blocks(std::move(other.m_blocks)),
+      m_neightbor_blocks(std::move(other.m_neightbor_blocks)),
+      m_seed(other.m_seed), m_conditions(other.m_conditions) {}
 
 ServerChunk& ServerChunk::operator=(ServerChunk&& other) noexcept {
     // Logger::info("other Chunk pos {} {} in Chunk& Chunk::operator=(Chunk&&
     // other) this {}", other.m_chunk_pos.x, other.m_chunk_pos.z,
     // static_cast<const void*>(&other));
+    if (this == &other) {
+        return *this;
+    }
     m_chunk_pos = std::move(other.m_chunk_pos);
     m_heightmap = std::move(other.m_heightmap);
     m_blocks = std::move(other.m_blocks);
     m_biome = other.m_biome.load();
     m_seed = other.m_seed;
     m_conditions = other.m_conditions;
+    m_neightbor_blocks = std::move(other.m_neightbor_blocks);
+    m_has_cave = other.m_has_cave;
+    m_gening = other.m_gening.load();
     return *this;
 }
 

@@ -64,11 +64,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 co_await asio::async_read(m_socket, asio::buffer(body_data),
                                           asio::use_awaitable);
             }
-            Logger::info("Client: Receive cmd {}", cmd_id);
+
             constexpr auto& to_num = std::to_underlying<PacketEnum>;
             switch (cmd_id) {
             case to_num(PacketEnum::LOGIN_RSP): {
                 LoginRsp rsp;
+                Logger::info("Client: Receive Login rsp");
                 if (rsp.ParseFromArray(body_data.data(), body_data.size())) {
                     if (rsp.success()) {
                         m_world.start_client_thread(rsp.uuid());
@@ -79,16 +80,24 @@ asio::awaitable<void> NetworkClient::read_loop() {
             } break;
             case to_num(PacketEnum::CHUNK_DATA_RSP): {
                 ChunkDataRsp rsp;
+                Logger::info("Client: Receive Chunk Data rsp");
                 if (rsp.ParseFromArray(body_data.data(), body_data.size())) {
                     m_world.receive_chunk(rsp);
                 }
             } break;
             case to_num(PacketEnum::BLOCK_CHANGE_RSP): {
                 BlockChangeRsp rsp;
+                Logger::info("Client: Receive Block Change rsp");
                 if (rsp.ParseFromArray(body_data.data(), body_data.size())) {
                     m_world.receive_block_change(rsp);
                 }
             } break;
+            case to_num(PacketEnum::UPDATE_TIME): {
+                UpdateTime rsp;
+                if (rsp.ParseFromArray(body_data.data(), body_data.size())) {
+                    m_world.receive_time(rsp);
+                }
+            }
             }
         }
     } catch (const asio::system_error& e) {

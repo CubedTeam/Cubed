@@ -80,7 +80,7 @@ DesertParams& desert_params();
 MountainParams& mountain_params();
 RiverParams& river_params();
 
-inline BiomeType get_biome(int id) {
+inline BiomeType get_biome_from_id(int id) {
     using enum BiomeType;
     auto to = std::to_underlying<BiomeType>;
     if (id == to(PLAIN)) {

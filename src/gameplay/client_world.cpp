@@ -197,7 +197,7 @@ void ClientWorld::init(std::string_view player_name,
     m_client = client;
     // timer
     register_timer("player_pos", 2, [this]() { report_player_pos(); });
-
+    // register_timer("chunk_request", 20, [this]() { request_chunk(); });
     LoginReq req;
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
@@ -219,6 +219,7 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
         m_game_running = true;
         client_run(token);
     });
+    request_chunk();
 }
 
 void ClientWorld::stop_client_thread() {
@@ -317,6 +318,7 @@ void ClientWorld::receive_chunk(const ChunkDataRsp& data) {
     {
         std::lock_guard lock(m_pending_queue_mutex);
         m_pending_queue.emplace_back(std::move(chunk));
+        Logger::info("ClientWorld Add a new pending chunk");
     }
 }
 
@@ -341,8 +343,10 @@ void ClientWorld::update(float delta_time) {
     {
         std::lock_guard lock(m_pending_queue_mutex);
         for (auto& c : m_pending_queue) {
+            // Logger::info("{} {}", c.get_chunk_pos().x, c.get_chunk_pos().z);
             new_chunks.emplace_back(std::move(c));
         }
+        m_pending_queue.clear();
     }
     for (auto& c : new_chunks) {
         c.upload_to_gpu();

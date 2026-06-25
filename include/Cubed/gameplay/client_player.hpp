@@ -16,7 +16,7 @@ class ClientPlayer {
 public:
     ClientPlayer(ClientWorld& world);
     ~ClientPlayer();
-    AABB get_aabb() const;
+    AABB get_aabb(const glm::vec3& pos) const;
     const glm::vec3& get_front() const;
     const Gait& get_gait() const;
     const std::optional<LookBlock>& get_look_block_pos() const;

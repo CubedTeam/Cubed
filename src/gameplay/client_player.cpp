@@ -8,15 +8,13 @@ namespace Cubed {
 ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
 
-AABB ClientPlayer::get_aabb() const {
+AABB ClientPlayer::get_aabb(const glm::vec3& pos) const {
     float half_width = m_size.x / 2.0f;
     float half_depth = m_size.z / 2.0f;
 
-    glm::vec3 min{m_player_pos.x - half_width, m_player_pos.y,
-                  m_player_pos.z - half_depth};
+    glm::vec3 min{pos.x - half_width, pos.y, pos.z - half_depth};
 
-    glm::vec3 max{m_player_pos.x + half_width, m_player_pos.y + m_size.y,
-                  m_player_pos.z + half_depth};
+    glm::vec3 max{pos.x + half_width, pos.y + m_size.y, pos.z + half_depth};
 
     return AABB{min, max};
 }
@@ -293,7 +291,7 @@ void ClientPlayer::update_lookup_block() {
                                   glm::vec3{static_cast<float>(x + 1),
                                             static_cast<float>(y + 1),
                                             static_cast<float>(z + 1)}};
-                AABB player_box = get_aabb();
+                AABB player_box = get_aabb(get_player_pos());
                 if (!player_box.intersects(block_box)) {
                     m_world.report_block_change(near_pos, m_place_block);
                 }
@@ -394,12 +392,12 @@ void ClientPlayer::update_move(float delta_time) {
     }
 }
 
-void ClientPlayer::update_x_move(glm::vec3& m_player_pos) {
-    m_player_pos.x += move_distance.x;
+void ClientPlayer::update_x_move(glm::vec3& player_pos) {
+    player_pos.x += move_distance.x;
     if (m_game_mode == SPECTATOR) {
         return;
     }
-    AABB player_box = get_aabb();
+    AABB player_box = get_aabb(player_pos);
     int minx = std::floor(player_box.min.x);
     int maxx = std::floor(player_box.max.x);
     int miny = std::floor(player_box.min.y);
@@ -419,7 +417,7 @@ void ClientPlayer::update_x_move(glm::vec3& m_player_pos) {
                                                 static_cast<float>(z + 1)}};
                     if (player_box.intersects(block_box)) {
                         m_gait = Gait::WALK;
-                        m_player_pos.x -= move_distance.x;
+                        player_pos.x -= move_distance.x;
                         return;
                     }
                 }
@@ -428,12 +426,12 @@ void ClientPlayer::update_x_move(glm::vec3& m_player_pos) {
     }
 }
 
-void ClientPlayer::update_y_move(glm::vec3& m_player_pos) {
-    m_player_pos.y += move_distance.y;
+void ClientPlayer::update_y_move(glm::vec3& player_pos) {
+    player_pos.y += move_distance.y;
     if (m_game_mode == SPECTATOR) {
         return;
     }
-    AABB player_box = get_aabb();
+    AABB player_box = get_aabb(player_pos);
     int minx = std::floor(player_box.min.x);
     int maxx = std::floor(player_box.max.x);
     int miny = std::floor(player_box.min.y);
@@ -452,7 +450,7 @@ void ClientPlayer::update_y_move(glm::vec3& m_player_pos) {
                                                 static_cast<float>(y + 1),
                                                 static_cast<float>(z + 1)}};
                     if (player_box.intersects(block_box)) {
-                        m_player_pos.y -= move_distance.y;
+                        player_pos.y -= move_distance.y;
                         m_y_speed = 0.0f;
                         if (move_distance.y < 0) {
                             can_up = true;
@@ -466,12 +464,12 @@ void ClientPlayer::update_y_move(glm::vec3& m_player_pos) {
     }
 }
 
-void ClientPlayer::update_z_move(glm::vec3& m_player_pos) {
-    m_player_pos.z += move_distance.z;
+void ClientPlayer::update_z_move(glm::vec3& player_pos) {
+    player_pos.z += move_distance.z;
     if (m_game_mode == SPECTATOR) {
         return;
     }
-    AABB player_box = get_aabb();
+    AABB player_box = get_aabb(player_pos);
     int minx = std::floor(player_box.min.x);
     int maxx = std::floor(player_box.max.x);
     int miny = std::floor(player_box.min.y);
@@ -491,7 +489,7 @@ void ClientPlayer::update_z_move(glm::vec3& m_player_pos) {
                                                 static_cast<float>(z + 1)}};
                     if (player_box.intersects(block_box)) {
                         m_gait = Gait::WALK;
-                        m_player_pos.z -= move_distance.z;
+                        player_pos.z -= move_distance.z;
                         return;
                     }
                 }
