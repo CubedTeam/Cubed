@@ -4,7 +4,7 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/uuid.hpp"
 using asio::ip::tcp;
-
+using namespace google::protobuf;
 namespace Cubed {
 Session::Session(tcp::socket socket, ServerWorld& server_world,
                  asio::io_context& io)
@@ -55,41 +55,42 @@ asio::awaitable<void> Session::read_loop() {
             }
             constexpr auto& to_num = std::to_underlying<PacketEnum>;
             auto cmd_id = header.cmd;
+            Arena arena;
             if (cmd_id == to_num(PacketEnum::LOGIN_REQ)) {
-                LoginReq req;
+                auto* req = Arena::Create<LoginReq>(&arena);
                 Logger::info("Session: Receive Login req");
-                if (decode_packet(req, body_data, header)) {
-                    m_server_world.handle_player_login(req.name(),
+                if (decode_packet(*req, body_data, header)) {
+                    m_server_world.handle_player_login(req->name(),
                                                        shared_from_this());
                 }
             }
             if (cmd_id == to_num(PacketEnum::PLAYER_POS)) {
-                PlayerPos pos;
-                if (decode_packet(pos, body_data, header)) {
-                    m_server_world.sync_player_pos(pos.uuid(), pos.pos().x(),
-                                                   pos.pos().y(),
-                                                   pos.pos().z());
+                auto* pos = Arena::Create<PlayerPos>(&arena);
+                if (decode_packet(*pos, body_data, header)) {
+                    m_server_world.sync_player_pos(pos->uuid(), pos->pos().x(),
+                                                   pos->pos().y(),
+                                                   pos->pos().z());
                 }
             }
             if (cmd_id == to_num(PacketEnum::CHUNK_DATA_REQ)) {
-                ChunkDataReq req;
+                auto* req = Arena::Create<ChunkDataReq>(&arena);
                 // Logger::info("Session: Receive Chunk Data req");
-                if (decode_packet(req, body_data, header)) {
+                if (decode_packet(*req, body_data, header)) {
                     m_server_world.handle_chunk_req(
-                        req.uuid(), ChunkPos(req.pos().x(), req.pos().z()));
+                        req->uuid(), ChunkPos(req->pos().x(), req->pos().z()));
                 }
             }
             if (cmd_id == to_num(PacketEnum::BLOCK_CHANGE_REQ)) {
-                BlockChangeReq req;
+                auto* req = Arena::Create<BlockChangeReq>(&arena);
                 Logger::info("Session: Receive Block Change req");
-                if (decode_packet(req, body_data, header)) {
-                    m_server_world.handle_block_change(req);
+                if (decode_packet(*req, body_data, header)) {
+                    m_server_world.handle_block_change(*req);
                 }
             }
             if (cmd_id == to_num(PacketEnum::LOGOUT_REQ)) {
-                LogoutReq req;
-                if (decode_packet(req, body_data, header)) {
-                    m_server_world.handle_player_exit(req.uuid());
+                auto* req = Arena::Create<LogoutReq>(&arena);
+                if (decode_packet(*req, body_data, header)) {
+                    m_server_world.handle_player_exit(req->uuid());
                 }
             }
         }

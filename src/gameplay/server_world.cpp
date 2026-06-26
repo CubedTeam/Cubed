@@ -10,6 +10,7 @@
 #include <utility>
 using namespace std::chrono;
 using namespace std::chrono_literals;
+using namespace google::protobuf;
 
 namespace Cubed {
 ServerWorld::ServerWorld() {}
@@ -36,12 +37,14 @@ void ServerWorld::wait_all_chunk_tasks() {
 }
 
 void ServerWorld::send_time() {
-    UpdateTime rsp;
-    rsp.set_day_tick(m_day_tick);
-    rsp.set_game_tick(m_game_ticks);
+    Arena arena;
+    auto* rsp = Arena::Create<UpdateTime>(&arena);
+
+    rsp->set_day_tick(m_day_tick);
+    rsp->set_game_tick(m_game_ticks);
 
     for (auto& [uuid, player] : m_players) {
-        player.get_session()->send(make_packet(rsp));
+        player.get_session()->send(make_packet(*rsp));
     }
 }
 
@@ -439,14 +442,15 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
     }
 
     for (auto& session : other) {
-        PlayerInfoRsp rsp;
-        rsp.set_uuid(uuid);
-        rsp.set_name(name);
-        auto* pos = rsp.mutable_pos();
+        Arena arena;
+        auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
+        rsp->set_uuid(uuid);
+        rsp->set_name(name);
+        auto* pos = rsp->mutable_pos();
         pos->set_x(x);
         pos->set_y(y);
         pos->set_z(z);
-        session->send(make_packet(rsp));
+        session->send(make_packet(*rsp));
     }
 }
 
@@ -461,10 +465,11 @@ void ServerWorld::handle_player_login(const std::string& name,
             std::forward_as_tuple(name, uuid, *this, session, m_game_ticks));
     }
     m_uuid_to_name.emplace(uuid, name);
-    LoginRsp rsp;
-    rsp.set_success(true);
-    rsp.set_uuid(uuid);
-    session->send(make_packet(rsp));
+    Arena arena;
+    auto* rsp = Arena::Create<LoginRsp>(&arena);
+    rsp->set_success(true);
+    rsp->set_uuid(uuid);
+    session->send(make_packet(*rsp));
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {
@@ -491,9 +496,10 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     }
 
     for (auto& s : sessions) {
-        LogoutRsp rsp;
-        rsp.set_uuid(uuid);
-        s->send(make_packet(rsp));
+        Arena arena;
+        auto* rsp = Arena::Create<LogoutRsp>(&arena);
+        rsp->set_uuid(uuid);
+        s->send(make_packet(*rsp));
     }
 }
 
@@ -508,8 +514,10 @@ glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
 }
 
 void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
-    ChunkDataRsp rsq;
-    auto* rsq_pos = rsq.mutable_pos();
+
+    Arena arean;
+    ChunkDataRsp* rsp = Arena::Create<ChunkDataRsp>(&arean);
+    auto* rsq_pos = rsp->mutable_pos();
     rsq_pos->set_x(pos.x);
     rsq_pos->set_z(pos.z);
     {
@@ -518,9 +526,9 @@ void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
         if (it == m_chunks.end()) {
             return;
         }
-        rsq.set_chunk_seed(it->second.seed());
-        rsq.set_biome_type(std::to_underlying(it->second.biome()));
-        auto* blocks = rsq.mutable_chunk_blocks();
+        rsp->set_chunk_seed(it->second.seed());
+        rsp->set_biome_type(std::to_underlying(it->second.biome()));
+        auto* blocks = rsp->mutable_chunk_blocks();
         auto& chunk_blocks = it->second.get_chunk_blocks();
         blocks->Assign(chunk_blocks.begin(), chunk_blocks.end());
         auto& neighbor_blocks = it->second.get_neightbor_blocks();
@@ -534,10 +542,10 @@ void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
             }
             nb->Assign(blocks->begin(), blocks->end());
         };
-        auto* nb1 = rsq.mutable_neighbor_blocks_1();
-        auto* nb2 = rsq.mutable_neighbor_blocks_2();
-        auto* nb3 = rsq.mutable_neighbor_blocks_3();
-        auto* nb4 = rsq.mutable_neighbor_blocks_4();
+        auto* nb1 = rsp->mutable_neighbor_blocks_1();
+        auto* nb2 = rsp->mutable_neighbor_blocks_2();
+        auto* nb3 = rsp->mutable_neighbor_blocks_3();
+        auto* nb4 = rsp->mutable_neighbor_blocks_4();
         assign(nb1, neighbor_blocks[0]);
         assign(nb2, neighbor_blocks[1]);
         assign(nb3, neighbor_blocks[2]);
@@ -557,7 +565,7 @@ void ServerWorld::handle_chunk_req(const std::string& uuid, ChunkPos pos) {
         return;
     }
 
-    s->send(make_packet(rsq));
+    s->send(make_packet(*rsp));
 }
 
 void ServerWorld::handle_block_change(const BlockChangeReq& req) {
@@ -567,18 +575,20 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     if (!set_block(glm::ivec3(x, y, z), req.block())) {
         return;
     }
-    BlockChangeRsp rsp;
-    auto* pos = rsp.mutable_pos();
+
+    Arena arena;
+    BlockChangeRsp* rsp = Arena::Create<BlockChangeRsp>(&arena);
+    auto* pos = rsp->mutable_pos();
     pos->set_x(x);
     pos->set_y(y);
     pos->set_z(z);
-    rsp.set_block(req.block());
+    rsp->set_block(req.block());
     {
         std::shared_lock lock(m_player_mutex);
         for (auto& [uuid, player] : m_players) {
             auto session = player.get_session();
             if (session) {
-                session->send(make_packet(rsp));
+                session->send(make_packet(*rsp));
             }
         }
     }

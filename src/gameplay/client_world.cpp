@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/packet.hpp"
 using namespace std::chrono;
 using namespace std::chrono_literals;
+using namespace google::protobuf;
 namespace Cubed {
 
 namespace {
@@ -170,14 +171,15 @@ void ClientWorld::push_delete_vao(GLuint vao) {
 
 void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
-    BlockChangeReq req;
-    req.set_uuid(m_player.get_uuid());
-    req.set_block(id);
-    auto* p = req.mutable_pos();
+    Arena arena;
+    auto* req = Arena::Create<BlockChangeReq>(&arena);
+    req->set_uuid(m_player.get_uuid());
+    req->set_block(id);
+    auto* p = req->mutable_pos();
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
-    m_client->send(make_packet(req));
+    m_client->send(make_packet(*req));
 }
 
 void ClientWorld::receive_block_change(const BlockChangeRsp& rsp) {
@@ -254,7 +256,11 @@ void ClientWorld::stop_client_thread() {
     }
     m_game_running = false;
 }
-void ClientWorld::start_thread_pool() { change_pool_threads(1); }
+void ClientWorld::start_thread_pool() {
+    int max_threads = std::thread::hardware_concurrency();
+    int threads = std::min<size_t>(max_threads, 4);
+    change_pool_threads(threads);
+}
 void ClientWorld::stop_thread_pool() {
     auto pool_ptr = m_thread_pool.load();
     if (pool_ptr) {
@@ -301,14 +307,15 @@ void ClientWorld::report_player_pos() {
     if (!m_client) {
         return;
     }
-    PlayerPos pos;
-    pos.set_uuid(m_player.get_uuid());
+    Arena arena;
+    auto* pos = Arena::Create<PlayerPos>(&arena);
+    pos->set_uuid(m_player.get_uuid());
     glm::vec3 player_pos = m_player.get_player_pos();
-    auto* v3 = pos.mutable_pos();
+    auto* v3 = pos->mutable_pos();
     v3->set_x(player_pos.x);
     v3->set_y(player_pos.y);
     v3->set_z(player_pos.z);
-    m_client->send(make_packet(pos));
+    m_client->send(make_packet(*pos));
 }
 
 void ClientWorld::request_chunk() {
@@ -379,18 +386,19 @@ void ClientWorld::request_chunk() {
     }
     }
     auto uuid = m_player.get_uuid();
-    ChunkDataReq req;
+    Arena arena;
+    auto* req = Arena::Create<ChunkDataReq>(&arena);
     for (const auto& pos : need_send_pos) {
-        req.set_uuid(uuid);
-        auto* p = req.mutable_pos();
+        req->set_uuid(uuid);
+        auto* p = req->mutable_pos();
         p->set_x(pos.x);
         p->set_z(pos.z);
-        m_client->send(make_packet(req));
+        m_client->send(make_packet(*req));
     }
     m_requesting_chunk = false;
 }
 
-void ClientWorld::receive_chunk(const ChunkDataRsp& data) {
+void ClientWorld::receive_chunk(ChunkDataRsp data) {
 
     {
         std::lock_guard lock(m_chunks_mutex);
@@ -418,9 +426,10 @@ void ClientWorld::receive_chunk(const ChunkDataRsp& data) {
 }
 
 void ClientWorld::exit() {
-    LogoutReq req;
-    req.set_uuid(m_player.get_uuid());
-    m_client->send(make_packet(req));
+    Arena arena;
+    auto* req = Arena::Create<LogoutReq>(&arena);
+    req->set_uuid(m_player.get_uuid());
+    m_client->send(make_packet(*req));
 }
 
 void ClientWorld::update(float delta_time) {

@@ -61,7 +61,7 @@ public:
     const std::vector<ChunkRenderSnapshot>& render_snapshots() const;
     const std::vector<RenderPlayerData>& render_player_data() const;
     glm::vec3 sunlight_dir() const;
-    void receive_chunk(const ChunkDataRsp& data);
+    void receive_chunk(ChunkDataRsp data);
     void exit();
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
