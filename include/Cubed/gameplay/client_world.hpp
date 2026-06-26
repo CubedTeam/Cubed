@@ -64,9 +64,10 @@ private:
     mutable std::shared_mutex m_chunks_mutex;
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
-    std::mutex m_pending_queue_mutex;
-    std::deque<ClientChunk> m_pending_queue;
-
+    std::mutex m_pending_upload_queue_mutex;
+    std::mutex m_pending_chunk_data_queue_mutex;
+    std::deque<ClientChunk> m_pending_upload_queue;
+    std::deque<ChunkDataRsp> m_pending_chunk_data_queue;
     std::vector<GLuint> m_pending_delete_vbo;
     std::vector<GLuint> m_pending_delete_vao;
     std::deque<ChunkPos> m_dirty_queue;

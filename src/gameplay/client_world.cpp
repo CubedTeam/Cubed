@@ -241,6 +241,24 @@ void ClientWorld::client_run(std::stop_token stoken) {
         for (auto& x : m_timers) {
             x.second.update();
         }
+        // vertex data will genrator in  client thread instead of net thread;
+        std::vector<ChunkDataRsp> temp_data;
+        {
+            std::lock_guard lock(m_pending_chunk_data_queue_mutex);
+            for (auto& x : m_pending_chunk_data_queue) {
+                temp_data.emplace_back(std::move(x));
+            }
+            m_pending_chunk_data_queue.clear();
+        }
+        for (auto& x : temp_data) {
+            ClientChunk chunk{*this};
+            chunk.receive_chunk(x);
+            {
+                std::lock_guard lock(m_pending_upload_queue_mutex);
+                m_pending_upload_queue.emplace_back(std::move(chunk));
+            }
+        }
+
         std::this_thread::sleep_for(milliseconds(DEFAULT_PER_TICK_TIME));
     }
 }
@@ -317,11 +335,20 @@ void ClientWorld::request_chunk() {
 }
 
 void ClientWorld::receive_chunk(const ChunkDataRsp& data) {
-    ClientChunk chunk{*this};
-    chunk.receive_chunk(data);
+
     {
-        std::lock_guard lock(m_pending_queue_mutex);
-        m_pending_queue.emplace_back(std::move(chunk));
+        std::lock_guard lock(m_chunks_mutex);
+        ChunkPos pos{data.pos().x(), data.pos().z()};
+        if (m_chunks.find(pos) != m_chunks.end()) {
+            Logger::warn("Chunk {} {} has already in client world", pos.x,
+                         pos.z);
+            return;
+        }
+    }
+
+    {
+        std::lock_guard lock(m_pending_chunk_data_queue_mutex);
+        m_pending_chunk_data_queue.emplace_back(std::move(data));
     }
 }
 
@@ -344,12 +371,12 @@ void ClientWorld::update(float delta_time) {
     }
     std::vector<ClientChunk> new_chunks;
     {
-        std::lock_guard lock(m_pending_queue_mutex);
-        for (auto& c : m_pending_queue) {
+        std::lock_guard lock(m_pending_upload_queue_mutex);
+        for (auto& c : m_pending_upload_queue) {
             // Logger::info("{} {}", c.get_chunk_pos().x, c.get_chunk_pos().z);
             new_chunks.emplace_back(std::move(c));
         }
-        m_pending_queue.clear();
+        m_pending_upload_queue.clear();
     }
     for (auto& c : new_chunks) {
         c.upload_to_gpu();
