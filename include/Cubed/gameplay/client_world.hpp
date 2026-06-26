@@ -53,9 +53,11 @@ public:
     }
 
 private:
+    enum class ChunkLoadStyle { RANDOM, CENTER };
     using ChunkHashMap =
         tbb::concurrent_unordered_map<ChunkPos, ClientChunk, ChunkPos::Hash>;
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
+    using ChunkPosVector = std::vector<ChunkPos>;
     ClientPlayer m_player;
     ChunkHashMap m_chunks;
     std::vector<glm::vec4> m_planes;
@@ -79,6 +81,7 @@ private:
     std::atomic<TickType> m_day_tick{6000};
     std::atomic<bool> m_requesting_chunk{false};
     std::shared_ptr<NetworkClient> m_client;
+    ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
     void client_run(std::stop_token token);
 
     void set_player_pos();

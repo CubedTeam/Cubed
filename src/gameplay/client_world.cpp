@@ -301,7 +301,7 @@ void ClientWorld::request_chunk() {
         }
     }
 
-    ChunkPosSet need_send_pos;
+    ChunkPosVector need_send_pos;
     {
         std::lock_guard lk(m_chunks_mutex);
         for (auto it = m_chunks.begin(); it != m_chunks.end();) {
@@ -315,12 +315,34 @@ void ClientWorld::request_chunk() {
         for (auto pos : required_chunks) {
             auto it = m_chunks.find(pos);
             if (it == m_chunks.end()) {
-                need_send_pos.emplace(pos);
+                need_send_pos.emplace_back(pos);
             }
         }
     }
     if (need_send_pos.empty()) {
         return;
+    }
+    using enum ChunkLoadStyle;
+    switch (m_chunk_load_style) {
+    case RANDOM:
+
+        break;
+    case CENTER: {
+
+        glm::vec3 player_pos = m_player.get_player_pos();
+        auto dist2 = [player_pos](ChunkPos chunk_pos) {
+            ChunkPos player_chunk_pos =
+                get_chunk_pos(player_pos.x, player_pos.z);
+            float dx = player_chunk_pos.x - chunk_pos.x;
+            float dz = player_chunk_pos.z - chunk_pos.z;
+            return dx * dx + dz * dz;
+        };
+
+        std::sort(need_send_pos.begin(), need_send_pos.end(),
+                  [&dist2](const auto& a, const auto& b) {
+                      return dist2(a) < dist2(b);
+                  });
+    }
     }
     auto uuid = m_player.get_uuid();
     ChunkDataReq req;

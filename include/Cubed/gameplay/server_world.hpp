@@ -131,7 +131,7 @@ private:
 
     std::atomic<std::shared_ptr<ThreadPool>> m_gen_thread_pool;
 
-    std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::RANDOM};
+    std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::CENTER};
 
     PlayerUUIDMap m_uuid_to_name;
     tbb::concurrent_unordered_map<std::string, Timer> m_timers;
