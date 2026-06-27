@@ -104,6 +104,25 @@ bool ClientWorld::can_pass_block(const glm::ivec3& block_pos) const {
     auto id = chunk_blocks[ClientChunk::index(x, y, z)];
     return BlockManager::is_passable(id);
 }
+
+void ClientWorld::rebuild_world() {
+    if (m_is_rebuilding.exchange(true)) {
+        return;
+    }
+    stop_thread_pool();
+    {
+        std::lock_guard lk(m_chunks_mutex);
+        m_chunks.clear();
+    }
+    {
+        std::lock_guard lock(m_pending_upload_queue_mutex);
+        m_pending_upload_queue.clear();
+    }
+    start_thread_pool();
+    request_chunk();
+    m_is_rebuilding = false;
+}
+
 BlockType ClientWorld::get_block_tpye(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     std::shared_lock lk(m_chunks_mutex);

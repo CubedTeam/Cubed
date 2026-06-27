@@ -17,3 +17,7 @@ message ChunkDataRsp {
     repeated uint32 neighbor_blocks_3 = 7 [packed=true];
     repeated uint32 neighbor_blocks_4 = 8 [packed=true];
 }
+
+message S2C_ClearAllChunks {
+    bool clear = 1;
+}

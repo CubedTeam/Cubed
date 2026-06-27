@@ -392,6 +392,16 @@ void ServerWorld::rebuild_world() {
     start_thread_pool();
     start_gen_thread();
     need_gen(std::nullopt);
+    Arena arena;
+    auto* rsp = Arena::Create<S2C_ClearAllChunks>(&arena);
+    rsp->set_clear(true);
+    {
+        std::lock_guard lock(m_player_mutex);
+        for (auto& [uuid, player] : m_players) {
+            player.get_session()->send(make_packet(*rsp));
+        }
+    }
+
     m_is_rebuilding = false;
 }
 

@@ -37,6 +37,8 @@ public:
     bool can_pass_block(const glm::ivec3& block_pos) const;
     BlockType get_block_tpye(const glm::ivec3& block_pos) const;
 
+    void rebuild_world();
+
     void push_delete_vbo(GLuint vbo);
     void push_delete_vao(GLuint vao);
     // void hot_reload();
@@ -105,6 +107,7 @@ private:
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
     std::atomic<bool> m_requesting_chunk{false};
+    std::atomic<bool> m_is_rebuilding{false};
     std::shared_ptr<NetworkClient> m_client;
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 

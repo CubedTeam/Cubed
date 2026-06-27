@@ -78,8 +78,8 @@ asio::awaitable<void> NetworkClient::read_loop() {
             } break;
             case to_num(PacketEnum::CHUNK_DATA_RSP): {
                 ChunkDataRsp rsp;
-                Logger::info("Client: Receive Chunk Data rsp, size {}mb",
-                             body_data.size() / 1024.0f / 1024);
+                // Logger::info("Client: Receive Chunk Data rsp, size {}mb",
+                //              body_data.size() / 1024.0f / 1024);
                 if (decode_packet(rsp, body_data, header)) {
                     m_world.receive_chunk(std::move(rsp));
                 }
@@ -107,6 +107,15 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 auto* rsp = Arena::Create<LogoutRsp>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_player_logout(*rsp);
+                }
+            } break;
+            case to_num(PacketEnum::S2C_CLEAR_ALL_CHUNKS): {
+                auto* rsp = Arena::Create<S2C_ClearAllChunks>(&arena);
+                if (decode_packet(*rsp, body_data, header)) {
+                    if (rsp->clear()) {
+                        Logger::info("Client Clear All Chunk");
+                        m_world.rebuild_world();
+                    }
                 }
             } break;
             }
