@@ -83,6 +83,7 @@ void NetworkServer::net_run() {
 }
 
 void NetworkServer::start_server(int port) {
+    m_port = port;
     m_world.init_world();
     net_run();
     m_started = true;

@@ -697,8 +697,9 @@ void DevPanel::show_shader_tab_item() {
         ImGui::Checkbox("Flip Y", &m_app.renderer().flip_y());
         if (ImGui::SliderFloat("AmbientStrength",
                                &m_app.renderer().ambient_strength(), 0.0f,
-                               0.35f))
-            ;
+                               0.35f)) {
+        }
+
         ImGui::SliderFloat("SpecularStrength",
                            &m_app.renderer().specular_strength(), 0.0f, 2.0f);
         ImGui::Checkbox("Discard Transparent",

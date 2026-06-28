@@ -246,8 +246,7 @@ void App::window_focus_callback(GLFWwindow* window, int focused) {
     }
 }
 
-void App::window_reshape_callback(GLFWwindow* window, int new_width,
-                                  int new_height) {
+void App::window_reshape_callback(GLFWwindow* window, int, int) {
 
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
