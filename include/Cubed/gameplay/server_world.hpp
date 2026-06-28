@@ -23,6 +23,7 @@ namespace Cubed {
 class Session;
 class ServerWorld {
 public:
+    enum class ThreadPoolKind { NET, GEN };
     ServerWorld();
     ~ServerWorld();
     void handle_player_exit(const std::string& uuid);
@@ -58,9 +59,10 @@ public:
     bool is_tick_running() const;
     void tick_running(bool run);
 
-    int pool_threads() const;
+    int gen_pool_threads() const;
     int max_threads() const;
-    void change_pool_threads(int threads);
+
+    void change_pool_threads(ThreadPoolKind kind, int threads);
 
     int chunk_load_style() const;
     void set_chunk_load_style(int id);
@@ -135,7 +137,8 @@ private:
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<bool> m_init{false};
     std::atomic<int> m_rendering_distance{24};
-    std::atomic<int> m_pool_threads{0};
+    std::atomic<int> m_gen_pool_threads{0};
+    std::atomic<int> m_net_pool_threads{0};
     std::atomic<int> m_max_threads{1};
 
     std::atomic<TickType> m_game_ticks{0};
@@ -152,6 +155,7 @@ private:
     RecentQueue<std::string> m_need_gen_queue;
 
     std::atomic<std::shared_ptr<ThreadPool>> m_gen_thread_pool;
+    std::atomic<std::shared_ptr<ThreadPool>> m_net_thread_pool;
 
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::CENTER};
 
@@ -177,5 +181,9 @@ private:
     void send_time();
 
     void send_chunk(int task_id, const std::string& uuid, ChunkPos pos);
+
+    int
+    change_pool_threads(std::atomic<std::shared_ptr<ThreadPool>>& thread_pool,
+                        int threads);
 };
 } // namespace Cubed

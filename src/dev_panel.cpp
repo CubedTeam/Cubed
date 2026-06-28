@@ -504,13 +504,14 @@ void DevPanel::show_server_world_table_bar() {
     }
 
     ImGui::Text("Pool Threads %d  Max Support Threads %d  Reserved Threads %d",
-                m_app.server_world().pool_threads(),
+                m_app.server_world().gen_pool_threads(),
                 m_app.server_world().max_threads(), RESERVED_THREADS);
     ImGui::SliderInt("Set Pool Threads", &m_threads, 1,
                      m_app.server_world().max_threads());
     ImGui::SameLine();
     if (ImGui::Button("Set")) {
-        m_app.server_world().change_pool_threads(m_threads);
+        m_app.server_world().change_pool_threads(
+            ServerWorld::ThreadPoolKind::GEN, m_threads);
     }
     if (m_threads > m_app.server_world().max_threads() - RESERVED_THREADS) {
         ImGui::TextColored(

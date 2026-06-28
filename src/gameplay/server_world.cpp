@@ -390,10 +390,19 @@ void ServerWorld::start_server_thread() {
 
 void ServerWorld::start_thread_pool() {
     int max_thread = std::thread::hardware_concurrency();
-    if (m_pool_threads == 0) {
-        change_pool_threads(max_thread - RESERVED_THREADS);
+    if (m_gen_pool_threads == 0) {
+        m_gen_pool_threads = change_pool_threads(m_gen_thread_pool,
+                                                 max_thread - RESERVED_THREADS);
     } else {
-        change_pool_threads(m_pool_threads);
+        m_gen_pool_threads =
+            change_pool_threads(m_gen_thread_pool, m_gen_pool_threads);
+    }
+
+    if (m_net_pool_threads == 0) {
+        m_net_pool_threads = change_pool_threads(m_net_thread_pool, 4);
+    } else {
+        m_net_pool_threads =
+            change_pool_threads(m_net_thread_pool, m_net_pool_threads);
     }
 }
 
@@ -420,7 +429,14 @@ void ServerWorld::stop_thread_pool() {
         pool_ptr->stop();
     }
     m_gen_thread_pool.store(nullptr);
-    Logger::info("Thread Pool Stopped");
+    Logger::info("Gen Thread Pool Stopped");
+
+    auto p = m_net_thread_pool.load();
+    if (p) {
+        p->stop();
+    }
+    m_net_thread_pool.store(nullptr);
+    Logger::info("Net Thread Pool Stopped");
 }
 
 void ServerWorld::serever_run(std::stop_token stoken) {
@@ -536,10 +552,7 @@ void ServerWorld::update() {
     {
         std::lock_guard lk(m_chunks_mutex);
         bool consumed = false;
-        auto size = m_new_finished_chunk.size();
-        if (size != 0) {
-            Logger::info("New generated {} chunks", size);
-        }
+
         for (auto& x : m_new_finished_chunk) {
             auto it = m_chunks.find(x.pos);
             if (it == m_chunks.end()) {
@@ -704,7 +717,7 @@ void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
             it->second.task_id(task_id);
         }
     }
-    auto pool = m_gen_thread_pool.load();
+    auto pool = m_net_thread_pool.load();
     pool->enqueue(
         [task_id, uuid, pos, this]() { send_chunk(task_id, uuid, pos); });
 }
@@ -757,18 +770,31 @@ void ServerWorld::per_tick_time(int ms) { m_per_tick_time = ms; }
 
 bool ServerWorld::is_tick_running() const { return m_tick_running.load(); }
 void ServerWorld::tick_running(bool run) { m_tick_running = run; }
-int ServerWorld::pool_threads() const { return m_pool_threads.load(); }
+int ServerWorld::gen_pool_threads() const { return m_gen_pool_threads.load(); }
 int ServerWorld::max_threads() const { return m_max_threads.load(); }
-void ServerWorld::change_pool_threads(int threads) {
+
+void ServerWorld::change_pool_threads(ThreadPoolKind kind, int threads) {
+    switch (kind) {
+    case ThreadPoolKind::NET:
+        m_net_pool_threads = change_pool_threads(m_net_thread_pool, threads);
+        break;
+    case ThreadPoolKind::GEN:
+        m_gen_pool_threads = change_pool_threads(m_gen_thread_pool, threads);
+        break;
+    }
+}
+
+int ServerWorld::change_pool_threads(
+    std::atomic<std::shared_ptr<ThreadPool>>& thread_pool, int threads) {
     m_max_threads = std::thread::hardware_concurrency();
     if (m_max_threads < 1) {
         Logger::warn("Can't Get Max Support Threads, Set Max Threads to 4");
-        m_max_threads = 4;
+        m_max_threads = 1;
     }
     int used_thread = std::clamp(threads, 1, m_max_threads.load());
     Logger::info("Create New Thread Pool Use {} Threads", used_thread);
-    m_gen_thread_pool.store(std::make_shared<ThreadPool>(used_thread));
-    m_pool_threads = used_thread;
+    thread_pool.store(std::make_shared<ThreadPool>(used_thread));
+    return used_thread;
 }
 int ServerWorld::chunk_load_style() const {
     return std::to_underlying(m_chunk_load_style.load());
