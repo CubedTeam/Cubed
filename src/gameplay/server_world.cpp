@@ -30,10 +30,8 @@ void ServerWorld::stop() {
     stop_server_thread();
     wait_all_chunk_tasks();
     stop_thread_pool();
-    {
-        std::lock_guard lock(m_chunks_mutex);
-        m_chunks.clear();
-    }
+
+    m_chunks.clear();
 }
 
 void ServerWorld::wait_all_chunk_tasks() {
@@ -54,40 +52,41 @@ void ServerWorld::wait_all_chunk_tasks() {
 
 void ServerWorld::update_ref_count(const ChunkPosSet& old,
                                    const ChunkPosSet& now) {
-    std::lock_guard lock(m_chunks_mutex);
 
     // Elements in the old set that are not contained in now are not needed by
     // the current player.
 
     for (auto& pos : old) {
         if (!now.contains(pos)) {
-            auto it = m_chunks.find(pos);
-            if (it == m_chunks.end()) {
-                Logger::warn(
-                    "Update Ref Count Error, can't Find old pos in m_chunks");
+
+            chunk_acc acc;
+            if (!m_chunks.find(acc, pos)) {
+                Logger::warn("Update Ref Count Error, can't Find old pos "
+                             "in m_chunks");
                 continue;
             }
-            if (it->second.ref_count == 0) {
+            if (acc->second.ref_count == 0) {
                 Logger::error("Chunk {} {} error, ref count is 0", pos.x,
                               pos.z);
-                m_chunks.erase(pos);
+                m_chunks.erase(acc);
                 continue;
             }
-            if (--it->second.ref_count == 0) {
-                m_chunks.erase(pos);
+            if (--acc->second.ref_count == 0) {
+                m_chunks.erase(acc);
             }
         }
     }
 
     for (auto& pos : now) {
-        auto it = m_chunks.find(pos);
-        if (it == m_chunks.end()) {
+
+        chunk_acc acc;
+        if (!m_chunks.find(acc, pos)) {
             Logger::warn(
                 "Update Ref Count Error, can't Find now pos in m_chunks");
             continue;
         }
         if (!old.contains(pos)) {
-            ++it->second.ref_count;
+            ++acc->second.ref_count;
         }
     }
 }
@@ -125,31 +124,30 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
     rsq_pos->set_x(pos.x);
     rsq_pos->set_z(pos.z);
     {
-        std::shared_lock lock(m_chunks_mutex);
-        auto it = m_chunks.find(pos);
-        if (it == m_chunks.end()) {
+        chunk_caac cacc;
+        if (!m_chunks.find(cacc, pos)) {
             // No chunk found and not generating
             Logger::error("Chunk {} {} neither pending nor ready", pos.x,
                           pos.z);
             return;
         }
 
-        if (it->second.state == ChunkState::GENERATING) {
+        if (cacc->second.state == ChunkState::GENERATING) {
 
             m_waiting_chunk_requests.emplace(uuid, task_id, pos);
             return;
         }
-        if (it->second.state != ChunkState::READY) {
+        if (cacc->second.state != ChunkState::READY) {
             Logger::error("Chunk {} {} is invaild", pos.x, pos.z);
             return;
         }
 
-        rsp->set_chunk_seed(it->second.chunk->seed());
-        rsp->set_biome_type(std::to_underlying(it->second.chunk->biome()));
+        rsp->set_chunk_seed(cacc->second.chunk->seed());
+        rsp->set_biome_type(std::to_underlying(cacc->second.chunk->biome()));
         auto* blocks = rsp->mutable_chunk_blocks();
-        auto& chunk_blocks = it->second.chunk->get_chunk_blocks();
+        auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
         blocks->Assign(chunk_blocks.begin(), chunk_blocks.end());
-        auto& neighbor_blocks = it->second.chunk->get_neightbor_blocks();
+        auto& neighbor_blocks = cacc->second.chunk->get_neightbor_blocks();
 
         auto assign = [](auto* nb,
                          const std::optional<std::vector<BlockType>>& blocks) {
@@ -213,7 +211,7 @@ void ServerWorld::init_world() {
 
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
-    m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
+    // m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
     start_thread_pool();
 
     auto t1 = std::chrono::system_clock::now();
@@ -254,12 +252,15 @@ void ServerWorld::gen_chunks_internal(const std::string& uuid) {
     ASSERT_MSG(!required_chunks_set.empty(), "required chunks is empty!!");
 
     Logger::info("New Gen Chunks Sum: {}", need_gen_chunks_pos.size());
+    {
+        std::lock_guard lock(m_new_chunk_mutex);
+        if (need_gen_chunks_pos.empty() && m_new_chunks.empty()) {
+            m_could_gen = true;
 
-    if (need_gen_chunks_pos.empty() && m_new_chunks.empty()) {
-        m_could_gen = true;
-
-        return;
+            return;
+        }
     }
+
     {
         // Create new chunk
         std::lock_guard lock(m_new_chunk_mutex);
@@ -300,15 +301,12 @@ void ServerWorld::compute_required_chunks(
 void ServerWorld::sync_and_collect_missing_chunks(
     std::vector<ChunkPos>& need_gen_chunks_pos,
     const ChunkPosSet& required_chunks) {
-    {
-        std::lock_guard lock(m_chunks_mutex);
-        for (auto pos : required_chunks) {
-            auto it = m_chunks.find(pos);
-            if (it == m_chunks.end()) {
-                need_gen_chunks_pos.push_back(pos);
-                m_chunks.emplace(
-                    pos, ChunkEntity{ChunkState::GENERATING, nullptr, 0});
-            }
+
+    for (auto pos : required_chunks) {
+        chunk_acc acc;
+        if (m_chunks.insert(acc, pos)) {
+            need_gen_chunks_pos.push_back(pos);
+            acc->second = ChunkEntity{ChunkState::GENERATING, nullptr, 0};
         }
     }
 }
@@ -520,13 +518,12 @@ bool ServerWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
     world_z = block_pos.z;
 
     auto [chunk_x, chunk_z] = get_chunk_pos(world_x, world_z);
-    std::lock_guard lk(m_chunks_mutex);
-    auto it = m_chunks.find(ChunkPos{chunk_x, chunk_z});
+    chunk_acc acc;
 
-    if (it == m_chunks.end()) {
+    if (!m_chunks.find(acc, ChunkPos{chunk_x, chunk_z})) {
         return false;
     }
-    if (it->second.state != ChunkState::READY) {
+    if (acc->second.state != ChunkState::READY) {
         return false;
     }
     auto [x, y, z] = ServerChunk::world_to_block(world_x, world_y, world_z,
@@ -536,7 +533,7 @@ bool ServerWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
         return false;
     }
 
-    it->second.chunk->set_chunk_block(ServerChunk::index(x, y, z), id);
+    acc->second.chunk->set_chunk_block(ServerChunk::index(x, y, z), id);
     return true;
 }
 
@@ -552,13 +549,13 @@ void ServerWorld::rebuild_world() {
     }
     stop_gen_thread();
     stop_thread_pool();
+    stop_server_thread();
     m_cave_carcer.reload(ChunkGenerator::seed());
     m_river_worm.reload(ChunkGenerator::seed());
-    {
-        std::lock_guard lk(m_chunks_mutex);
-        m_chunks.clear();
-        m_new_finished_chunk.clear();
-    }
+
+    m_chunks.clear();
+    m_new_finished_chunk.clear();
+
     {
         std::lock_guard lock(m_new_chunk_mutex);
         m_new_chunks.clear();
@@ -567,6 +564,7 @@ void ServerWorld::rebuild_world() {
     ChunkGenerator::reload();
     start_thread_pool();
     start_gen_thread();
+    start_server_thread();
     Arena arena;
     auto* rsp = Arena::Create<S2C_ClearAllChunks>(&arena);
     rsp->set_clear(true);
@@ -583,19 +581,18 @@ void ServerWorld::rebuild_world() {
 void ServerWorld::update() {
     poll_finished_chunks();
     {
-        std::lock_guard lk(m_chunks_mutex);
         bool consumed = false;
 
         for (auto& x : m_new_finished_chunk) {
-            auto it = m_chunks.find(x.pos);
-            if (it == m_chunks.end()) {
+            chunk_acc acc;
+            if (!m_chunks.find(acc, x.pos)) {
                 Logger::error(
                     "New Chunk {} {} not Find, don't move to m_chunks", x.pos.x,
                     x.pos.z);
                 continue;
             }
-            it->second.chunk = std::move(x.chunk);
-            it->second.state = ChunkState::READY;
+            acc->second.chunk = std::move(x.chunk);
+            acc->second.state = ChunkState::READY;
             consumed = true;
         }
         if (consumed) {
@@ -867,9 +864,6 @@ void ServerWorld::set_chunk_load_style(int id) {
     Logger::error("Can,t Find Chunk Load Style Id {}, Nothing Will Do", id);
 }
 
-int ServerWorld::chunk_size() const {
-    std::shared_lock lock(m_chunks_mutex);
-    return m_chunks.size();
-}
+int ServerWorld::chunk_size() const { return m_chunks.size(); }
 
 } // namespace Cubed

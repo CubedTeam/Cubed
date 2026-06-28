@@ -110,12 +110,15 @@ private:
     };
 
     using ChunkHashMap =
-        std::unordered_map<ChunkPos, ChunkEntity, ChunkPos::Hash>;
+        tbb::concurrent_hash_map<ChunkPos, ChunkEntity, ChunkPos::TBBHash>;
     using PlayerHashMap = std::unordered_map<std::string, ServerPlayer>;
     using PendingChunkHashMap =
         std::unordered_map<ChunkPos, PendingChunk, ChunkPos::Hash>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     using PlayerUUIDMap = tbb::concurrent_hash_map<std::string, std::string>;
+
+    using chunk_acc = ChunkHashMap::accessor;
+    using chunk_caac = ChunkHashMap::const_accessor;
 
     using uuid_acc = PlayerUUIDMap::accessor;
     using uuid_cacc = PlayerUUIDMap::const_accessor;
@@ -148,7 +151,6 @@ private:
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
 
-    mutable std::shared_mutex m_chunks_mutex;
     std::shared_mutex m_new_chunk_mutex;
     mutable std::shared_mutex m_player_mutex;
     std::mutex m_need_gen_queue_mutex;
