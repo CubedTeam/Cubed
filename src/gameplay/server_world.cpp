@@ -111,7 +111,10 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
             m_waiting_chunk_requests.emplace(uuid, task_id, pos);
             return;
         }
-
+        if (it->second.state != ChunkState::READY) {
+            Logger::error("Chunk {} {} is invaild", pos.x, pos.z);
+            return;
+        }
         rsp->set_chunk_seed(it->second.chunk->seed());
         rsp->set_biome_type(std::to_underlying(it->second.chunk->biome()));
         auto* blocks = rsp->mutable_chunk_blocks();
@@ -474,7 +477,9 @@ bool ServerWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
     if (it == m_chunks.end()) {
         return false;
     }
-
+    if (it->second.state != ChunkState::READY) {
+        return false;
+    }
     auto [x, y, z] = ServerChunk::world_to_block(world_x, world_y, world_z,
                                                  chunk_x, chunk_z);
     if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
