@@ -123,6 +123,9 @@ target_link_libraries(${PROJECT_NAME}
         protobuf::libprotobuf
         absl::log
         absl::check
+        absl::base
+        absl::strings
+        absl::flat_hash_map
         zstd::zstd
         $<$<PLATFORM_ID:Windows>:ws2_32>
 

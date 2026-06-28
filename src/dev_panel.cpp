@@ -530,7 +530,7 @@ void DevPanel::show_server_world_table_bar() {
     ImGui::SameLine();
     if (ImGui::Button("Request Chunk Build")) {
         Logger::warn("This Request Chunk Build button is not finish");
-        m_app.server_world().need_gen(std::nullopt);
+        m_app.server_world().need_gen(m_player->get_uuid());
     }
     ImGui::SameLine();
     if (ImGui::Checkbox("Gen Thread", &m_gen_thread_running)) {
@@ -540,6 +540,7 @@ void DevPanel::show_server_world_table_bar() {
             m_app.server_world().stop_gen_thread();
         }
     }
+    ImGui::Text("Server Chunk Size %d", m_app.server_world().chunk_size());
 
     if (ImGui::BeginTabBar("World Settings")) {
         if (ImGui::BeginTabItem("Time")) {

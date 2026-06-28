@@ -34,4 +34,14 @@ bool ServerPlayer::is_disconnect(TickType current_gametick) const {
 int ServerPlayer::task_id() const { return m_chunk_task_id.load(); }
 void ServerPlayer::task_id(int id) { m_chunk_task_id = id; }
 
+bool ServerPlayer::has_player(ChunkPos pos) const {
+    std::shared_lock lock(m_chunk_pos_mutex);
+    return m_player_chunk_pos_set.find(pos) != m_player_chunk_pos_set.end();
+}
+void ServerPlayer::update_chunk_set(const ChunkPosSet& set) {
+    std::lock_guard lock(m_chunk_pos_mutex);
+    m_player_chunk_pos_set.clear();
+    m_player_chunk_pos_set.insert(set.begin(), set.end());
+}
+
 } // namespace Cubed

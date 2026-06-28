@@ -13,6 +13,7 @@
 #include <future>
 #include <shared_mutex>
 #include <tbb/concurrent_hash_map.h>
+#include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <unordered_map>
 #include <unordered_set>
@@ -24,10 +25,9 @@ class ServerWorld {
 public:
     ServerWorld();
     ~ServerWorld();
-    void player_join(std::string_view name, std::string_view uuid);
     void handle_player_exit(const std::string& uuid);
     void init_world();
-    void need_gen(std::optional<std::string> uuid);
+    void need_gen(std::string uuid);
     void update();
     void hot_reload();
 
@@ -74,6 +74,9 @@ public:
 
     void handle_chunk_req(int task_id, const std::string& uuid, ChunkPos pos);
     void handle_block_change(const BlockChangeReq& req);
+
+    int chunk_size() const;
+
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,
@@ -82,25 +85,42 @@ public:
     }
 
 private:
+    enum class ChunkState { NONE, GENERATING, READY, PENDING_DELETE };
+    struct ChunkEntity {
+        ChunkState state;
+        std::shared_ptr<ServerChunk> chunk;
+    };
+
     enum class ChunkLoadStyle { RANDOM, CENTER };
+    struct PendingRequest {
+        std::string uuid;
+        int task_id;
+        ChunkPos pos;
+    };
     struct PendingChunk {
         ServerChunk chunk;
         std::future<void> future;
     };
+    struct FinishedChunk {
+        ChunkPos pos;
+        std::shared_ptr<ServerChunk> chunk;
+    };
+
     using ChunkHashMap =
-        tbb::concurrent_unordered_map<ChunkPos, ServerChunk, ChunkPos::Hash>;
+        std::unordered_map<ChunkPos, ChunkEntity, ChunkPos::Hash>;
     using PlayerHashMap = std::unordered_map<std::string, ServerPlayer>;
     using PendingChunkHashMap =
         std::unordered_map<ChunkPos, PendingChunk, ChunkPos::Hash>;
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
     using PlayerUUIDMap = tbb::concurrent_hash_map<std::string, std::string>;
+
     using uuid_acc = PlayerUUIDMap::accessor;
     using uuid_cacc = PlayerUUIDMap::const_accessor;
     // key = uuid
     PlayerHashMap m_players;
     ChunkHashMap m_chunks;
     PendingChunkHashMap m_new_chunks;
-    std::vector<std::pair<ChunkPos, ServerChunk>> m_new_finished_chunk;
+    std::vector<FinishedChunk> m_new_finished_chunk;
 
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
@@ -136,19 +156,26 @@ private:
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::CENTER};
 
     PlayerUUIDMap m_uuid_to_name;
+
     tbb::concurrent_unordered_map<std::string, Timer> m_timers;
+    tbb::concurrent_queue<PendingRequest> m_waiting_chunk_requests;
+
     void init_chunks();
 
-    void gen_chunks_internal(std::optional<std::string> uuid);
+    void gen_chunks_internal(const std::string& uuid);
 
     void compute_required_chunks(ChunkPosSet& required_chunks,
                                  const std::optional<std::string>& uuid);
     void sync_and_collect_missing_chunks(std::vector<ChunkPos>&,
                                          const ChunkPosSet&);
-    void submit_new_chunks(const std::optional<std::string>& uuid);
+    void submit_new_chunks(const std::string& uuid);
     void poll_finished_chunks();
     void wait_all_chunk_tasks();
 
+    void clear_unused_chunks();
+
     void send_time();
+
+    void send_chunk(int task_id, const std::string& uuid, ChunkPos pos);
 };
 } // namespace Cubed

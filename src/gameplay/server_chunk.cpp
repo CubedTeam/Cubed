@@ -13,7 +13,9 @@ ServerChunk::ServerChunk(ServerChunk&& other) noexcept
       m_world(other.m_world), m_heightmap(std::move(other.m_heightmap)),
       m_blocks(std::move(other.m_blocks)),
       m_neightbor_blocks(std::move(other.m_neightbor_blocks)),
-      m_seed(other.m_seed), m_conditions(other.m_conditions) {}
+      m_seed(other.m_seed), m_conditions(other.m_conditions) {
+    ASSERT_MSG(!other.m_gening, "Other is Gening Can't Move");
+}
 
 ServerChunk& ServerChunk::operator=(ServerChunk&& other) noexcept {
     // Logger::info("other Chunk pos {} {} in Chunk& Chunk::operator=(Chunk&&
@@ -22,6 +24,7 @@ ServerChunk& ServerChunk::operator=(ServerChunk&& other) noexcept {
     if (this == &other) {
         return *this;
     }
+    ASSERT_MSG(!other.m_gening, "Other is Gening Can't Move");
     m_chunk_pos = std::move(other.m_chunk_pos);
     m_heightmap = std::move(other.m_heightmap);
     m_blocks = std::move(other.m_blocks);
@@ -145,10 +148,13 @@ void ServerChunk::gen_chunk() {
     if (m_gening.exchange(true))
         return;
     m_gening = true;
+    ASSERT_MSG(m_blocks.empty(),
+               "Blocks isn't Empty, chunk already generated!");
     if (m_blocks.size() != 0) {
         Logger::warn(
             "Request Generator Chunk {} {} ,but the Blocks size is Not 0",
             m_chunk_pos.x, m_chunk_pos.z);
+        return;
     }
     std::vector<ServerChunk> neighbor;
     for (int i = 0; i < 4; i++) {
@@ -169,6 +175,7 @@ void ServerChunk::gen_chunk() {
     }
     gen_phase_four(m_neightbor_blocks);
     gen_phase_five();
+    m_gening = false;
 }
 // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
 

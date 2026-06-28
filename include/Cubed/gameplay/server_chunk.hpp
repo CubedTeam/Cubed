@@ -93,4 +93,5 @@ private:
     // Generate biome-specific vegetation/structures
     void gen_phase_five();
 };
+
 } // namespace Cubed
