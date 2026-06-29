@@ -28,26 +28,11 @@ void ServerWorld::stop() {
     send_server_stop();
     stop_gen_thread();
     stop_server_thread();
-    wait_all_chunk_tasks();
+    // wait_all_chunk_tasks();
     stop_thread_pool();
 
+    m_finished_queue.clear();
     m_chunks.clear();
-}
-
-void ServerWorld::wait_all_chunk_tasks() {
-    std::lock_guard lock(m_new_chunk_mutex);
-    for (auto& [pos, task] : m_new_chunks) {
-        if (task.future.valid()) {
-            try {
-                task.future.get();
-            } catch (const std::exception& e) {
-                Logger::error("Chunk generation failed: {}", e.what());
-                continue;
-            }
-        } else {
-            Logger::error("Chunk {} {} not started gen task", pos.x, pos.z);
-        }
-    }
 }
 
 void ServerWorld::update_ref_count(const ChunkPosSet& old,
@@ -265,7 +250,7 @@ void ServerWorld::gen_chunks_internal(const std::string& uuid) {
         // Create new chunk
         std::lock_guard lock(m_new_chunk_mutex);
         for (auto& pos : need_gen_chunks_pos) {
-            m_new_chunks.emplace(
+            m_new_chunks.emplace_back(
                 pos, std::make_unique<ServerChunk>(ServerChunk(*this, pos)));
         }
     }
@@ -321,25 +306,24 @@ void ServerWorld::submit_new_chunks(const std::string& uuid) {
     switch (m_chunk_load_style) {
     case RANDOM:
         // Enqueue directly in random order
-        for (auto& [pos, task] : m_new_chunks) {
-            if (!task.future.valid()) {
-                task.future =
-                    pool_ptr->enqueue([&task]() { task.chunk->gen_chunk(); });
-            }
+        for (auto& task : m_new_chunks) {
+
+            pool_ptr->enqueue([&task, this]() {
+                std::unique_ptr<ServerChunk> chunk{std::move(task.chunk)};
+                chunk->gen_chunk();
+                m_finished_queue.push(std::move(chunk));
+            });
         }
         break;
     case CENTER: {
         std::vector<std::pair<ChunkPos, PendingChunk*>> tasks;
-        for (auto& [pos, task] : m_new_chunks) {
-            if (!task.future.valid()) {
-                tasks.emplace_back(pos, &task);
-            }
+        for (auto& task : m_new_chunks) {
+
+            tasks.emplace_back(task.pos, &task);
         }
         glm::vec3 player_pos = get_player_pos(uuid);
-
-        auto dist2 = [player_pos](ChunkPos chunk_pos) {
-            ChunkPos player_chunk_pos =
-                get_chunk_pos(player_pos.x, player_pos.z);
+        ChunkPos player_chunk_pos = get_chunk_pos(player_pos.x, player_pos.z);
+        auto dist2 = [player_chunk_pos](ChunkPos chunk_pos) {
             float dx = player_chunk_pos.x - chunk_pos.x;
             float dz = player_chunk_pos.z - chunk_pos.z;
             return dx * dx + dz * dz;
@@ -350,39 +334,16 @@ void ServerWorld::submit_new_chunks(const std::string& uuid) {
                       return dist2(a.first) < dist2(b.first);
                   });
         for (auto& [pos, task] : tasks) {
-            if (!task->future.valid()) {
-                task->future =
-                    pool_ptr->enqueue([task]() { task->chunk->gen_chunk(); });
-            }
+
+            pool_ptr->enqueue([this, chunk = std::move(task->chunk)]() mutable {
+                chunk->gen_chunk();
+                m_finished_queue.push(std::move(chunk));
+            });
         }
+    } break;
     }
-    }
-}
 
-void ServerWorld::poll_finished_chunks() {
-    m_new_finished_chunk.clear();
-    std::lock_guard lock(m_new_chunk_mutex);
-    std::erase_if(
-        m_new_chunks, [&](std::pair<const ChunkPos, PendingChunk>& pair) {
-            auto& pending = pair.second;
-            if (!pending.future.valid()) {
-                return false;
-            }
-            if (pending.future.wait_for(0ms) != std::future_status::ready) {
-                return false;
-            }
-            try {
-                pending.future.get();
-            } catch (const std::exception& e) {
-                Logger::error("Chunk generation failed: {}", e.what());
-                return true;
-            }
-            // Spawn complete, move away
-            m_new_finished_chunk.emplace_back(pair.first,
-                                              std::move(pending.chunk));
-
-            return true;
-        });
+    m_new_chunks.clear();
 }
 
 void ServerWorld::start_gen_thread() {
@@ -554,7 +515,6 @@ void ServerWorld::rebuild_world() {
     m_river_worm.reload(ChunkGenerator::seed());
 
     m_chunks.clear();
-    m_new_finished_chunk.clear();
 
     {
         std::lock_guard lock(m_new_chunk_mutex);
@@ -579,19 +539,24 @@ void ServerWorld::rebuild_world() {
 }
 
 void ServerWorld::update() {
-    poll_finished_chunks();
+    // poll_finished_chunks();
     {
         bool consumed = false;
-
-        for (auto& x : m_new_finished_chunk) {
+        std::unique_ptr<ServerChunk> chunk;
+        while (m_finished_queue.try_pop(chunk)) {
+            if (!chunk) {
+                Logger::error("Finished Queue has nullptr Chunk");
+                return;
+            }
             chunk_acc acc;
-            if (!m_chunks.find(acc, x.pos)) {
+            auto pos = chunk->get_chunk_pos();
+            if (!m_chunks.find(acc, pos)) {
                 Logger::error(
-                    "New Chunk {} {} not Find, don't move to m_chunks", x.pos.x,
-                    x.pos.z);
+                    "New Chunk {} {} not Find, don't move to m_chunks", pos.x,
+                    pos.z);
                 continue;
             }
-            acc->second.chunk = std::move(x.chunk);
+            acc->second.chunk = std::move(chunk);
             acc->second.state = ChunkState::READY;
             consumed = true;
         }

@@ -11,7 +11,6 @@
 #include "world/block_change.pb.h"
 
 #include <absl/container/flat_hash_set.h>
-#include <future>
 #include <shared_mutex>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
@@ -101,10 +100,6 @@ private:
         ChunkPos pos;
     };
     struct PendingChunk {
-        std::unique_ptr<ServerChunk> chunk;
-        std::future<void> future;
-    };
-    struct FinishedChunk {
         ChunkPos pos;
         std::unique_ptr<ServerChunk> chunk;
     };
@@ -112,8 +107,7 @@ private:
     using ChunkHashMap =
         tbb::concurrent_hash_map<ChunkPos, ChunkEntity, ChunkPos::TBBHash>;
     using PlayerHashMap = std::unordered_map<std::string, ServerPlayer>;
-    using PendingChunkHashMap =
-        std::unordered_map<ChunkPos, PendingChunk, ChunkPos::Hash>;
+    using NewChunkVector = std::vector<PendingChunk>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     using PlayerUUIDMap = tbb::concurrent_hash_map<std::string, std::string>;
 
@@ -125,8 +119,7 @@ private:
     // key = uuid
     PlayerHashMap m_players;
     ChunkHashMap m_chunks;
-    PendingChunkHashMap m_new_chunks;
-    std::vector<FinishedChunk> m_new_finished_chunk;
+    NewChunkVector m_new_chunks;
 
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
@@ -167,6 +160,7 @@ private:
 
     tbb::concurrent_unordered_map<std::string, Timer> m_timers;
     tbb::concurrent_queue<PendingRequest> m_waiting_chunk_requests;
+    tbb::concurrent_queue<std::unique_ptr<ServerChunk>> m_finished_queue;
 
     void init_chunks();
 
@@ -177,8 +171,7 @@ private:
     void sync_and_collect_missing_chunks(std::vector<ChunkPos>&,
                                          const ChunkPosSet&);
     void submit_new_chunks(const std::string& uuid);
-    void poll_finished_chunks();
-    void wait_all_chunk_tasks();
+    // void wait_all_chunk_tasks();
 
     void update_ref_count(const ChunkPosSet& old, const ChunkPosSet& now);
 
