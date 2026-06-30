@@ -9,7 +9,7 @@ permissions:
 jobs:
   formatting:
     runs-on: ubuntu-latest
-    container: silkeh/clang:latest   
+    container: silkeh/clang:21   
     steps:
       - uses: actions/checkout@v4
       - name: Run clang-format
