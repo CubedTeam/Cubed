@@ -32,7 +32,6 @@ public:
     void update();
     void hot_reload();
 
-    void rebuild_world();
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     void start_gen_thread();
@@ -131,7 +130,6 @@ private:
     std::atomic<bool> m_could_gen{true};
     std::atomic<bool> m_gen_running{false};
     std::atomic<bool> m_need_gen_chunk{false};
-    std::atomic<bool> m_is_rebuilding{false};
     std::atomic<bool> m_init{false};
     std::atomic<bool> m_stopped{false};
     std::atomic<int> m_rendering_distance{24};

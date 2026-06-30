@@ -17,7 +17,6 @@ static constexpr const char* THEMES[] = {"Dark", "Light"};
 static constexpr const char* GAITS[] = {"Walk", "Run"};
 static constexpr const char* GAME_MODES[] = {"Creative", "Spectator"};
 static constexpr const char* CHUNK_LOAD_STYLE[] = {"Random", "Center"};
-static char perlin_noise_input_buffer[64];
 
 constexpr float TEMP_MIN = 0.0f;
 constexpr float TEMP_MAX = 1.0f;
@@ -46,16 +45,6 @@ constexpr float DELTA_ANGLE_MIN = -30.0f;
 constexpr float DELTA_ANGLE_MAX = 30.0f;
 constexpr int PATH_STEP_MIN = 1;
 constexpr int PATH_STEP_MAX = 1000;
-
-static int filter_unsigned(ImGuiInputTextCallbackData* data) {
-    if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
-        char c = data->EventChar;
-        if (c < '0' || c > '9') {
-            return 1;
-        }
-    }
-    return 0;
-}
 
 DevPanel::DevPanel(App& app) : m_app(app) {}
 
@@ -483,25 +472,8 @@ void DevPanel::show_world_tab_item() {
 }
 
 void DevPanel::show_server_world_table_bar() {
-    if (m_text_editing.perlin_seed) {
-        if (ImGui::InputText("ChunkGenerator Seed", perlin_noise_input_buffer,
-                             sizeof(perlin_noise_input_buffer),
-                             ImGuiInputTextFlags_CallbackCharFilter |
-                                 ImGuiInputTextFlags_EnterReturnsTrue,
-                             filter_unsigned)) {
-            ChunkGenerator::seed(static_cast<unsigned int>(
-                std::strtoul(perlin_noise_input_buffer, nullptr, 10)));
-            m_text_editing.perlin_seed = false;
-            m_player->set_player_pos({0.0f, 255.0f, 0.0f});
-            m_app.server_world().rebuild_world();
-        }
-    }
-    if (!m_text_editing.perlin_seed) {
-        ImGui::Text("ChunkGenerator Seed: %u", ChunkGenerator::seed());
-        if (ImGui::IsItemClicked()) {
-            m_text_editing.perlin_seed = true;
-        }
-    }
+
+    ImGui::Text("ChunkGenerator Seed: %u", ChunkGenerator::seed());
 
     ImGui::Text("Pool Threads %d  Max Support Threads %d  Reserved Threads %d",
                 m_app.server_world().gen_pool_threads(),
@@ -525,12 +497,8 @@ void DevPanel::show_server_world_table_bar() {
                      IM_ARRAYSIZE(CHUNK_LOAD_STYLE))) {
         m_app.server_world().set_chunk_load_style(m_chunk_style);
     }
-    if (ImGui::Button("Rebuild World")) {
-        m_app.server_world().rebuild_world();
-    }
-    ImGui::SameLine();
+
     if (ImGui::Button("Request Chunk Build")) {
-        Logger::warn("This Request Chunk Build button is not finish");
         m_app.server_world().need_gen(m_player->get_uuid());
     }
     ImGui::SameLine();
@@ -572,6 +540,10 @@ void DevPanel::show_client_world_table_bar() {
         m_app.client_world().rendering_distance(rendering_distance);
         // Config::get().set("world.rendering_distance", rendering_distance);
     }
+    if (ImGui::Button("Rebuild World")) {
+        m_app.client_world().rebuild_world();
+    }
+    ImGui::SameLine();
     if (ImGui::Button("Spawn Point")) {
         m_player->set_player_pos({0.0f, 255.0f, 0.0f});
     }

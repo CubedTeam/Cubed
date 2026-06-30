@@ -26,9 +26,6 @@ class DevPanel {
         int gait = 0;
         float pos[3] = {0.0f, 0.0f, 0.0f};
     };
-    struct TextEditing {
-        bool perlin_seed = false;
-    };
 
 public:
     DevPanel(App& app);
@@ -40,7 +37,6 @@ private:
     ConfigView m_config;
     ClientPlayer* m_player;
     PlayerProfile m_player_profile;
-    TextEditing m_text_editing;
     bool m_need_save_config = false;
     bool m_gen_thread_running = true;
     int m_theme = 0;

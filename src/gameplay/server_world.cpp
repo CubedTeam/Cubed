@@ -504,40 +504,6 @@ void ServerWorld::hot_reload() {
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
 }
 
-void ServerWorld::rebuild_world() {
-    if (m_is_rebuilding.exchange(true)) {
-        return;
-    }
-    stop_gen_thread();
-    stop_thread_pool();
-    stop_server_thread();
-    m_cave_carcer.reload(ChunkGenerator::seed());
-    m_river_worm.reload(ChunkGenerator::seed());
-
-    m_chunks.clear();
-
-    {
-        std::lock_guard lock(m_new_chunk_mutex);
-        m_new_chunks.clear();
-    }
-    m_could_gen = true;
-    ChunkGenerator::reload();
-    start_thread_pool();
-    start_gen_thread();
-    start_server_thread();
-    Arena arena;
-    auto* rsp = Arena::Create<S2C_ClearAllChunks>(&arena);
-    rsp->set_clear(true);
-    {
-        std::lock_guard lock(m_player_mutex);
-        for (auto& [uuid, player] : m_players) {
-            player.get_session()->send(make_packet(*rsp));
-        }
-    }
-
-    m_is_rebuilding = false;
-}
-
 void ServerWorld::update() {
     // poll_finished_chunks();
     {
