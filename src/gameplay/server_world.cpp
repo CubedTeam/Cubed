@@ -585,7 +585,7 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
         it->second.update_sync_gametick(m_game_ticks);
         name = it->second.get_name();
     }
-
+    ChunkPos pos = get_chunk_pos(x, z);
     // update other player pos;
     std::vector<std::shared_ptr<Session>> other;
     {
@@ -594,11 +594,16 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
             if (o_uuid == uuid) {
                 continue;
             }
-            other.emplace_back(player.get_session());
+            if (player.has_player(pos)) {
+                other.emplace_back(player.get_session());
+            }
         }
     }
 
     for (auto& session : other) {
+        if (!session) {
+            continue;
+        }
         Arena arena;
         auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
         rsp->set_uuid(uuid);
@@ -694,7 +699,9 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     }
 
     for (auto& s : sessions) {
-        s->send(make_packet(*rsp));
+        if (s) {
+            s->send(make_packet(*rsp));
+        }
     }
 }
 
@@ -741,13 +748,21 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     pos->set_y(y);
     pos->set_z(z);
     rsp->set_block(req.block());
+    std::vector<std::shared_ptr<Session>> sessions;
+    auto chunk_pos = get_chunk_pos(x, z);
     {
         std::shared_lock lock(m_player_mutex);
         for (auto& [uuid, player] : m_players) {
-            auto session = player.get_session();
-            if (session) {
-                session->send(make_packet(*rsp));
+            if (player.has_player(chunk_pos)) {
+                auto session = player.get_session();
+                sessions.emplace_back(std::move(session));
             }
+        }
+    }
+
+    for (auto& x : sessions) {
+        if (x) {
+            x->send(make_packet(*rsp));
         }
     }
 }

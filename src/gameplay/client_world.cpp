@@ -3,6 +3,7 @@
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
+#include "Cubed/tools/math_tools.hpp"
 
 #include <numbers>
 
@@ -608,6 +609,11 @@ void ClientWorld::update(float delta_time) {
         for (auto& [uuid, player] : m_other_players) {
             player.render_pos =
                 glm::mix(player.render_pos, player.target_pos, 0.15f);
+            if (Math::distance2(player.render_pos, m_player.get_player_pos()) >
+                m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
+                    CHUNK_SIZE) {
+                continue;
+            }
             m_render_player_data.emplace_back(player.name, player.render_pos);
         }
     }
