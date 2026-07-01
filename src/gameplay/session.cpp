@@ -21,11 +21,12 @@ void Session::start() {
         asio::detached);
 }
 
-void Session::send(std::shared_ptr<std::vector<uint8_t>> packet) {
-    asio::post(m_strand, [self = shared_from_this(),
-                          packet = std::move(packet)]() mutable {
+void Session::send(std::shared_ptr<std::vector<uint8_t>> packet, int priority) {
+    asio::post(m_strand, [self = shared_from_this(), packet = std::move(packet),
+                          priority]() mutable {
         bool idle = self->m_write_queue.empty();
-        self->m_write_queue.emplace_back(std::move(packet));
+        self->m_write_queue.emplace(priority, self->m_sequence++,
+                                    std::move(packet));
         if (idle) {
             self->do_write();
         }
@@ -118,15 +119,16 @@ asio::awaitable<void> Session::read_loop() {
 void Session::do_write() {
 
     auto self = shared_from_this();
+    auto packet = std::move(m_write_queue.top().packet);
     asio::async_write(
-        m_socket, asio::buffer(*(m_write_queue.front())),
+        m_socket, asio::buffer(*packet),
         asio::bind_executor(m_strand, [self](std::error_code ec, size_t) {
             if (ec) {
                 Logger::warn("Write Ec {}", ec.message());
                 self->close();
                 return;
             }
-            self->m_write_queue.pop_front();
+            self->m_write_queue.pop();
             if (!self->m_write_queue.empty()) {
                 self->do_write();
             }

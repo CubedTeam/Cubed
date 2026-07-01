@@ -84,7 +84,7 @@ void ServerWorld::send_time() {
     rsp->set_game_tick(m_game_ticks);
 
     for (auto& [uuid, player] : m_players) {
-        player.get_session()->send(make_packet(*rsp));
+        player.get_session()->send(make_packet(*rsp), 3);
     }
 }
 
@@ -573,7 +573,7 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
         pos->set_x(x);
         pos->set_y(y);
         pos->set_z(z);
-        session->send(make_packet(*rsp));
+        session->send(make_packet(*rsp), 0);
     }
 }
 
@@ -597,7 +597,7 @@ void ServerWorld::handle_player_login(const std::string& name,
     if (!sucess) {
         auto* rsp = Arena::Create<LoginRsp>(&arena);
         rsp->set_success(false);
-        session->send(make_packet(*rsp));
+        session->send(make_packet(*rsp), 0);
         return;
     }
 
@@ -621,7 +621,7 @@ void ServerWorld::handle_player_login(const std::string& name,
     auto* rsp = Arena::Create<LoginRsp>(&arena);
     rsp->set_success(true);
     rsp->set_uuid(uuid);
-    session->send(make_packet(*rsp));
+    session->send(make_packet(*rsp), 0);
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {
@@ -649,7 +649,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     auto* rsp = Arena::Create<LogoutRsp>(&arena);
     rsp->set_uuid(uuid);
     rsp->set_server_stop(false);
-    exit_session->send(make_packet(*rsp));
+    exit_session->send(make_packet(*rsp), 0);
 
     std::vector<std::shared_ptr<Session>> sessions;
     {
@@ -661,7 +661,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
 
     for (auto& s : sessions) {
         if (s) {
-            s->send(make_packet(*rsp));
+            s->send(make_packet(*rsp), 0);
         }
     }
 }
@@ -723,7 +723,7 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
 
     for (auto& x : sessions) {
         if (x) {
-            x->send(make_packet(*rsp));
+            x->send(make_packet(*rsp), 1);
         }
     }
 }
@@ -783,7 +783,7 @@ void ServerWorld::send_server_stop() {
     rsp->set_server_stop(true);
     std::shared_lock lock(m_player_mutex);
     for (auto& [uuid, player] : m_players) {
-        player.get_session()->send(make_packet(*rsp));
+        player.get_session()->send(make_packet(*rsp), 0);
     }
     Logger::info("Send Server Mesaage Success");
 }

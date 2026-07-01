@@ -270,7 +270,7 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
-    m_client->send(make_packet(*req));
+    m_client->send(make_packet(*req), 0);
 }
 
 void ClientWorld::receive_block_change(const BlockChangeRsp& rsp) {
@@ -336,7 +336,7 @@ void ClientWorld::init(std::string_view player_name,
     start_thread_pool();
     // request login
     Logger::info("Send Login Request");
-    m_client->send(make_packet(req));
+    m_client->send(make_packet(req), 0);
 }
 
 void ClientWorld::start_client_thread(std::string_view uuid) {
@@ -427,7 +427,7 @@ void ClientWorld::report_player_pos() {
     v3->set_x(player_pos.x);
     v3->set_y(player_pos.y);
     v3->set_z(player_pos.z);
-    m_client->send(make_packet(*pos));
+    m_client->send(make_packet(*pos), 0);
 }
 
 void ClientWorld::update_chunk(const ChunkPosSet& old, const ChunkPosSet& now) {
