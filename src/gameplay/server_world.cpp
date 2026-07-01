@@ -700,9 +700,9 @@ void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
 }
 
 void ServerWorld::handle_block_change(const BlockChangeReq& req) {
-    float x = req.pos().x();
-    float y = req.pos().y();
-    float z = req.pos().z();
+    float x = std::floor(req.pos().x());
+    float y = std::floor(req.pos().y());
+    float z = std::floor(req.pos().z());
     if (!set_block(glm::ivec3(x, y, z), req.block())) {
         return;
     }
