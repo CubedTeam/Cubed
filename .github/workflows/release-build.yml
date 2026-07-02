@@ -63,6 +63,8 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
           -DVCPKG_TARGET_TRIPLET=x64-windows-release
+          -DVCPKG_BUILD_TYPE=release
+          -DBUILD_TESTING=OFF
           "-DCUBED_VERSION=${{ steps.version.outputs.version }}"
 
       - name: Build
