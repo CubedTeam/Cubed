@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message LoginReq {
+    string name = 1;
+}
+
+message LoginRsp {
+    bool success = 1;
+    string uuid = 2;
+}
+
+message LogoutReq {
+    string uuid = 1;
+}
+
+message LogoutRsp {
+    string uuid = 1;
+    bool server_stop = 2;
+}
+

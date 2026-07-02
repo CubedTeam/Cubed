@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/constants.hpp"
+#include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/path.hpp"
 
 #include <tbb/concurrent_hash_map.h>

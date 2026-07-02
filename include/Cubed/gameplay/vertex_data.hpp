@@ -5,14 +5,14 @@
 #include <glad/glad.h>
 #include <vector>
 namespace Cubed {
-class World;
+class ClientWorld;
 struct VertexData {
     std::vector<Vertex3D> m_vertices;
     GLuint m_vbo = 0;
     GLuint m_vao = 0;
     std::atomic<std::size_t> m_sum{0};
-    World& m_world;
-    VertexData(World& world);
+    ClientWorld& m_world;
+    VertexData(ClientWorld& world);
     ~VertexData();
     VertexData(const VertexData&) = delete;
     VertexData(VertexData&&) noexcept;

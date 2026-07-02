@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14...3.24)
+cmake_minimum_required(VERSION 3.21)
 project(Cubed LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -6,167 +6,118 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_CONFIGURATION_TYPES
+   AND NOT CMAKE_BUILD_TYPE)
+
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
+
+endif()
+
+if(NOT DEFINED CUBED_VERSION)
+    set(CUBED_VERSION "dev")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-if(MSVC)
-    add_compile_options(/utf-8)
-endif()
-
-find_package(OpenGL REQUIRED)
-
-if (UNIX AND NOT APPLE)
-    find_package(Freetype REQUIRED)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(EGL REQUIRED egl)
-    pkg_check_modules(Wayland REQUIRED wayland-client wayland-egl)
-    find_package(glfw3 REQUIRED)   
-endif()
-
-add_library(glad STATIC third_party/glad/src/glad.c)
-target_include_directories(glad PUBLIC third_party/glad/include)
-
-include(FetchContent)
-
-if (WIN32)
-    FetchContent_Declare(
-        glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG 3.4  
-    )
-
-    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)         
-    set(GLFW_VULKAN_STATIC ON CACHE BOOL "" FORCE)     
-    set(GLFW_STATIC ON CACHE BOOL "" FORCE)          
-
-    FetchContent_MakeAvailable(glfw)
-
-    FetchContent_Declare(
-        freetype
-        GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
-        GIT_TAG VER-2-14-3
-    )
-    FetchContent_MakeAvailable(freetype)
-    if(TARGET freetype)
-    add_library(Freetype::Freetype ALIAS freetype)
-    endif()
-    set(_BUILD_SHARED_LIBS_SAVED ${BUILD_SHARED_LIBS})
-    set(BUILD_SHARED_LIBS ON)
-
-    FetchContent_Declare(
-    onetbb                           
-    GIT_REPOSITORY https://github.com/uxlfoundation/oneTBB.git
-    GIT_TAG v2023.0.0
-    )
-    set(BUILD_TESTING OFF CACHE BOOL "Build tests" FORCE)
-    set(TBB_TEST OFF CACHE BOOL "Build TBB tests" FORCE)
-    FetchContent_MakeAvailable(onetbb)
-
-    set(BUILD_SHARED_LIBS ${_BUILD_SHARED_LIBS_SAVED})
-    unset(_BUILD_SHARED_LIBS_SAVED)
-
-endif()
-
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.3 
-    
+list(APPEND CMAKE_MODULE_PATH 
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
 )
-FetchContent_MakeAvailable(glm)
-FetchContent_Declare(
-    soil2
-    GIT_REPOSITORY https://github.com/SpartanJ/SOIL2.git
-    GIT_TAG 1.31  
-    
-)
-FetchContent_MakeAvailable(soil2)
-FetchContent_Declare(
-    tomlplusplus
-    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
-    GIT_TAG v3.4.0
-)
-FetchContent_MakeAvailable(tomlplusplus)
+
+include(Dependencies)
+
+add_subdirectory(third_party/glad)
 
 add_subdirectory(third_party/imgui)
 
-set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+add_executable(${PROJECT_NAME})
 
-add_executable(${PROJECT_NAME}
-    src/main.cpp
-    src/app.cpp
-    src/debug_collector.cpp
-    src/camera.cpp
-    src/config.cpp
-    src/dev_panel.cpp
-    src/gameplay/biome.cpp
-    src/gameplay/chunk.cpp
-    src/gameplay/chunk_generator.cpp
-    src/gameplay/player.cpp
-    src/gameplay/tree.cpp
-    src/gameplay/world.cpp
-    src/input.cpp
-    src/map_table.cpp
-    src/renderer.cpp
-    src/shader.cpp
-    src/texture_manager.cpp
-    src/tools/cubed_random.cpp
-    src/tools/math_tools.cpp
-    src/tools/shader_tools.cpp
-    src/tools/font.cpp
-    src/tools/perlin_noise.cpp
-    src/ui/text.cpp
-    src/window.cpp
-    src/gameplay/builders/biome_builder.cpp
-    src/gameplay/builders/plain_builder.cpp
-    src/gameplay/builders/mountain_builder.cpp
-    src/gameplay/builders/river_builder.cpp
-    src/gameplay/builders/desert_builder.cpp
-    src/gameplay/builders/forest_builder.cpp
-    src/gameplay/cave_carver.cpp
-    src/gameplay/cave_path.cpp
-    src/gameplay/builders/snowy_plain_builder.cpp
-    src/gameplay/river_worm.cpp
-    src/gameplay/river_path.cpp
-    src/block.cpp
-    src/gameplay/vertex_data.cpp
-    src/gameplay/builders/ocean_builder.cpp
+add_subdirectory(src)
+
+file(GLOB_RECURSE PROTO_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/proto/*.proto
 )
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "Building with AddressSanitizer enabled for target: ${PROJECT_NAME}")
+protobuf_generate(
+    TARGET ${PROJECT_NAME}           
+    LANGUAGE cpp         
+    PROTOS ${PROTO_FILES}
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/proto
+)
 
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        #-fsanitize=address
-        #-fsanitize=thread
-        -fno-omit-frame-pointer   
-        -g                        
-    )
+configure_file(
+    src/version.hpp.in
+    ${CMAKE_BINARY_DIR}/generated/version.hpp
+    @ONLY
+)
 
-    target_link_options(${PROJECT_NAME} PRIVATE
-        #-fsanitize=address
-        #-fsanitize=thread
-    )
+target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+        $<$<CONFIG:Debug>:-g>
+        #$<$<CONFIG:Debug>:-fsanitize=address>
+        #$<$<CONFIG:Debug>:-fsanitize=thread>
 
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_MODE)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-        ASSETS_PATH="${CMAKE_SOURCE_DIR}/assets/"
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wpedantic>
+
+        $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
+target_link_options(${PROJECT_NAME}
+    PRIVATE
+        #$<$<CONFIG:Debug>:-fsanitize=address>
+        #$<$<CONFIG:Debug>:-fsanitize=thread>
+)
+
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        ASIO_STANDALONE
+        ASIO_NO_DEPRECATED
+        $<$<CONFIG:Debug>:DEBUG_MODE>
+        $<$<CXX_COMPILER_ID:MSVC>:
+            WIN32_LEAN_AND_MEAN
+            NOMINMAX
+            _CRT_SECURE_NO_WARNINGS
+        >
+)
+
+if(CMAKE_CONFIGURATION_TYPES)
+    # Visual Studio / Xcode multi-configuration generator
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+            ASSETS_PATH="$<$<CONFIG:Debug>:${PROJECT_SOURCE_DIR}/assets/>$<$<NOT:$<CONFIG:Debug>>:./assets/>"
     )
 else()
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-        ASSETS_PATH="./assets/"
-    )
+    # Ninja / Makefiles single-configuration generator
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(${PROJECT_NAME}
+            PRIVATE
+                ASSETS_PATH="${PROJECT_SOURCE_DIR}/assets/"
+        )
+    else()
+        target_compile_definitions(${PROJECT_NAME}
+            PRIVATE
+                ASSETS_PATH="./assets/"
+        )
+    endif()
 endif()
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIR})
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/third_party/asio/include
+        ${CMAKE_BINARY_DIR}/generated
+        ${PROJECT_BINARY_DIR}
+        ${PROJECT_BINARY_DIR}/src
+
+)
+
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
@@ -179,42 +130,24 @@ target_link_libraries(${PROJECT_NAME}
         tomlplusplus::tomlplusplus
         imgui
         tbb
+        protobuf::libprotobuf
+        absl::log
+        absl::check
+        absl::base
+        absl::strings
+        absl::flat_hash_map
+        zstd::zstd
+        $<$<PLATFORM_ID:Windows>:ws2_32>
+
 )
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-#    target_link_libraries(${PROJECT_NAME} PRIVATE tbb)
-endif()
-
-if (UNIX AND NOT APPLE)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            ${EGL_LIBRARIES}
-            ${Wayland_LIBRARIES}
+if(WIN32)
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        COMMAND_EXPAND_LISTS
     )
-
-
-    target_include_directories(${PROJECT_NAME}
-        PRIVATE
-            ${EGL_INCLUDE_DIRS}
-            ${Wayland_INCLUDE_DIRS}
-    )
-
-
-    target_compile_options(${PROJECT_NAME} PRIVATE ${EGL_CFLAGS_OTHER} ${Wayland_CFLAGS_OTHER})
-endif()
-
-if (WIN32)
-    foreach(TBB_LIB IN ITEMS tbb tbbmalloc tbbmalloc_proxy)
-        if(TARGET ${TBB_LIB})
-            add_custom_command(
-                TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    $<TARGET_FILE:${TBB_LIB}>
-                    $<TARGET_FILE_DIR:${PROJECT_NAME}>
-                COMMENT "Copying ${TBB_LIB}.dll"
-            )
-        else()
-            message(STATUS "Target ${TBB_LIB} not found, skipping copy")
-        endif()
-    endforeach()
 endif()

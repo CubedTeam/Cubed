@@ -31,7 +31,7 @@ public:
                     {
                         std::unique_lock lock(m_mtx);
                         m_cv.wait(lock, stoken,
-                                  [this, stoken] { return !m_tasks.empty(); });
+                                  [this] { return !m_tasks.empty(); });
                         if (stoken.stop_requested() && m_tasks.empty()) {
                             return;
                         }
@@ -62,7 +62,9 @@ public:
         return fut;
     }
     void stop() {
-        m_stopping = true;
+        if (m_stopping.exchange(true)) {
+            return;
+        }
         for (auto& w : m_workers) {
             w.request_stop();
         }

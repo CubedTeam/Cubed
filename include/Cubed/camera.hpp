@@ -8,12 +8,12 @@
 
 namespace Cubed {
 
-class Player;
+class ClientPlayer;
 
 class Camera {
 private:
     bool m_firse_mouse = true;
-    Player* m_player;
+    ClientPlayer* m_player;
     float m_last_mouse_x, m_last_mouse_y;
     glm::vec3 m_camera_pos;
     bool m_under_water = false;
@@ -23,7 +23,7 @@ public:
 
     void update_move_camera();
 
-    void camera_init(Player* player);
+    void camera_init(ClientPlayer* player);
     void hot_reload();
     void reset_camera();
     void update_cursor_position_camera(double xpos, double ypos);

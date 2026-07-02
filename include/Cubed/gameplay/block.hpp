@@ -2,12 +2,15 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace Cubed {
 
 using BlockType = uint8_t;
+using OptionalBlockVectorArray =
+    std::array<std::optional<std::vector<BlockType>>, 4>;
 
 struct BlockTexture {
     std::string name;

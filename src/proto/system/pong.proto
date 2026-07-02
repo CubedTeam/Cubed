@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Pong {
+    uint64 timestamp = 1;
+}

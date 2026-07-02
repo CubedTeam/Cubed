@@ -4,8 +4,8 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/gameplay/player.hpp"
-#include "Cubed/gameplay/world.hpp"
+#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -21,31 +21,34 @@
 
 namespace Cubed {
 
-Renderer::Renderer(const Camera& camera, World& world,
+Renderer::Renderer(const Camera& camera, ClientWorld& world,
                    const TextureManager& texture_manager, DevPanel& dev_panel)
     : m_camera(camera), m_dev_panel(dev_panel),
       m_texture_manager(texture_manager), m_world(world) {}
 
 Renderer::~Renderer() {
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &m_outline_vbo);
-    glDeleteBuffers(1, &m_outline_indices_vbo);
-    glDeleteBuffers(1, &m_sky_vbo);
-    glDeleteBuffers(1, &m_ui_vbo);
-    glDeleteBuffers(1, &m_text_vbo);
-    glBindVertexArray(0);
-    glDeleteVertexArrays(NUM_VAO, m_vao.data());
-    glDeleteFramebuffers(1, &m_fbo);
-    glDeleteTextures(1, &m_screen_texture);
-    glDeleteTextures(1, &m_screen_depth_texture);
+    if (m_init) {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDeleteBuffers(1, &m_outline_vbo);
+        glDeleteBuffers(1, &m_outline_indices_vbo);
+        glDeleteBuffers(1, &m_sky_vbo);
+        glDeleteBuffers(1, &m_ui_vbo);
+        glDeleteBuffers(1, &m_text_vbo);
+        glDeleteBuffers(1, &m_player_vbo);
+        glBindVertexArray(0);
+        glDeleteVertexArrays(NUM_VAO, m_vao.data());
+        glDeleteFramebuffers(1, &m_fbo);
+        glDeleteTextures(1, &m_screen_texture);
+        glDeleteTextures(1, &m_screen_depth_texture);
 
-    glDeleteFramebuffers(1, &m_oit_fbo);
-    glDeleteTextures(1, &m_accum_texture);
-    glDeleteTextures(1, &m_reveal_texture);
-    glDeleteTextures(1, &m_oit_depth_texture);
+        glDeleteFramebuffers(1, &m_oit_fbo);
+        glDeleteTextures(1, &m_accum_texture);
+        glDeleteTextures(1, &m_reveal_texture);
+        glDeleteTextures(1, &m_oit_depth_texture);
 
-    glDeleteFramebuffers(1, &m_depth_map_fbo);
-    glDeleteTextures(1, &m_depth_map_texture);
+        glDeleteFramebuffers(1, &m_depth_map_fbo);
+        glDeleteTextures(1, &m_depth_map_texture);
+    }
 }
 
 void Renderer::hot_reload() {
@@ -86,7 +89,9 @@ void Renderer::init() {
                      "shaders/billboard_f_shader.glsl"};
     Shader water_shader{"water", "shaders/water_v_shader.glsl",
                         "shaders/water_f_shader.glsl"};
-
+    Shader player_shader{"player", "shaders/player_v_shader.glsl",
+                         "shaders/player_f_shader.glsl"};
+    m_shaders.insert({player_shader.hash(), std::move(player_shader)});
     m_shaders.insert({world_shader.hash(), std::move(world_shader)});
     m_shaders.insert({outline_shader.hash(), std::move(outline_shader)});
     m_shaders.insert({sky_shdaer.hash(), std::move(sky_shdaer)});
@@ -100,6 +105,7 @@ void Renderer::init() {
     m_shaders.insert({depth_shader.hash(), std::move(depth_shader)});
     m_shaders.insert({billboard.hash(), std::move(billboard)});
     m_shaders.insert({water_shader.hash(), std::move(water_shader)});
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -109,9 +115,9 @@ void Renderer::init() {
 #ifdef DEBUG_MODE
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(
-        [](GLenum source, GLenum type, GLuint id, GLenum severity,
-           GLsizei length, const GLchar* message, const void* user_param) {
-            Logger::log(Logger::Level::DEBUG, std::source_location::current(),
+        [](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* message,
+           const void*) {
+            Logger::log(Logger::Level::L_DEBUG, std::source_location::current(),
                         "GL Debug: {}", reinterpret_cast<const char*>(message));
         },
         nullptr);
@@ -165,12 +171,22 @@ void Renderer::init() {
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
+    glBindVertexArray(m_vao[5]);
+    glGenBuffers(1, &m_player_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_player_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES_PLAYER), VERTICES_PLAYER,
+                 GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
     init_quad();
     init_text();
     hot_reload();
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    m_init = true;
 }
 
 const Shader& Renderer::get_shader(const std::string& name) const {
@@ -214,7 +230,7 @@ void Renderer::render() {
     render_sky();
     render_world();
     render_outline();
-
+    render_player();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_FRAMEBUFFER_SRGB);
     glDisable(GL_DEPTH_TEST);
@@ -260,7 +276,7 @@ void Renderer::render_outline() {
     const auto& shader = get_shader("outline");
     shader.use();
 
-    const auto& block_pos = m_world.get_look_block_pos("TestPlayer");
+    const auto& block_pos = m_world.get_look_block_pos();
 
     if (block_pos != std::nullopt) {
 
@@ -660,37 +676,42 @@ void Renderer::render_world() {
         glActiveTexture(GL_TEXTURE1);
         glEnable(GL_DEPTH_TEST);
         for (const auto& snapshot : m_render_snapshots) {
+            if (!snapshot) {
+                continue;
+            }
             glBindTexture(GL_TEXTURE_2D_ARRAY,
                           m_texture_manager.get_texture_array());
-            glBindVertexArray(snapshot.normal_vao);
+            glBindVertexArray(snapshot->normal_vao);
 
-            glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_vertices_count);
+            glDrawArrays(GL_TRIANGLES, 0, snapshot->normal_vertices_count);
         }
 
         // cross_plane and discard
 
         for (const auto& snapshot : m_render_snapshots) {
-
+            if (!snapshot) {
+                continue;
+            }
             glm::vec2 camera_pos_xz{camera_pos.x, camera_pos.z};
-            if (snapshot.cross_vertices_count != 0) {
-                glm::vec2 center_xz{snapshot.center.x, snapshot.center.z};
+            if (snapshot->cross_vertices_count != 0) {
+                glm::vec2 center_xz{snapshot->center.x, snapshot->center.z};
                 float dist2d = glm::distance(camera_pos_xz, center_xz);
                 if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
                     glBindTexture(GL_TEXTURE_2D_ARRAY,
                                   m_texture_manager.get_cross_plane_array());
-                    glBindVertexArray(snapshot.cross_vao);
+                    glBindVertexArray(snapshot->cross_vao);
 
                     glDrawArrays(GL_TRIANGLES, 0,
-                                 snapshot.cross_vertices_count);
+                                 snapshot->cross_vertices_count);
                 }
             }
-            if (snapshot.normal_discard_vertices_count != 0) {
+            if (snapshot->normal_discard_vertices_count != 0) {
                 glBindTexture(GL_TEXTURE_2D_ARRAY,
                               m_texture_manager.get_texture_array());
-                glBindVertexArray(snapshot.normal_discard_vao);
+                glBindVertexArray(snapshot->normal_discard_vao);
 
                 glDrawArrays(GL_TRIANGLES, 0,
-                             snapshot.normal_discard_vertices_count);
+                             snapshot->normal_discard_vertices_count);
             }
         }
     }
@@ -746,28 +767,33 @@ void Renderer::render_world() {
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_pbr_texture());
     normal_block_shader.set_loc("enablePBR", m_pbr);
     for (const auto& snapshot : m_render_snapshots) {
-
-        if (Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
+        if (!snapshot) {
+            continue;
+        }
+        if (Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                      m_planes)) {
 
-            glBindVertexArray(snapshot.normal_vao);
+            glBindVertexArray(snapshot->normal_vao);
 
-            glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_vertices_count);
+            glDrawArrays(GL_TRIANGLES, 0, snapshot->normal_vertices_count);
 
             rendered_sum++;
         }
     }
     // discard
     for (const auto& snapshot : m_render_snapshots) {
-        if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
+        if (!snapshot) {
+            continue;
+        }
+        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
-        if (snapshot.normal_discard_vertices_count != 0) {
-            glBindVertexArray(snapshot.normal_discard_vao);
+        if (snapshot->normal_discard_vertices_count != 0) {
+            glBindVertexArray(snapshot->normal_discard_vao);
 
             glDrawArrays(GL_TRIANGLES, 0,
-                         snapshot.normal_discard_vertices_count);
+                         snapshot->normal_discard_vertices_count);
         }
     }
     // cross_plane
@@ -776,18 +802,21 @@ void Renderer::render_world() {
                   m_texture_manager.get_cross_plane_array());
     normal_block_shader.set_loc("enablePBR", false);
     for (const auto& snapshot : m_render_snapshots) {
-        if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
+        if (!snapshot) {
+            continue;
+        }
+        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
         glm::vec2 camera_pos_xz{camera_pos.x, camera_pos.z};
-        if (snapshot.cross_vertices_count != 0) {
-            glm::vec2 center_xz{snapshot.center.x, snapshot.center.z};
+        if (snapshot->cross_vertices_count != 0) {
+            glm::vec2 center_xz{snapshot->center.x, snapshot->center.z};
             float dist2d = glm::distance(camera_pos_xz, center_xz);
             if (dist2d <= CROSS_PLANE_DISTANCE * 16) {
-                glBindVertexArray(snapshot.cross_vao);
+                glBindVertexArray(snapshot->cross_vao);
 
-                glDrawArrays(GL_TRIANGLES, 0, snapshot.cross_vertices_count);
+                glDrawArrays(GL_TRIANGLES, 0, snapshot->cross_vertices_count);
             }
         }
     }
@@ -837,16 +866,20 @@ void Renderer::render_world() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
     for (const auto& snapshot : m_render_snapshots) {
-        if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
+        if (!snapshot) {
+            continue;
+        }
+        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
 
-        if (snapshot.normal_blend_vertices_count != 0) {
+        if (snapshot->normal_blend_vertices_count != 0) {
 
-            glBindVertexArray(snapshot.normal_blend_vao);
+            glBindVertexArray(snapshot->normal_blend_vao);
 
-            glDrawArrays(GL_TRIANGLES, 0, snapshot.normal_blend_vertices_count);
+            glDrawArrays(GL_TRIANGLES, 0,
+                         snapshot->normal_blend_vertices_count);
         }
     }
 
@@ -886,16 +919,19 @@ void Renderer::render_world() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_texture_array());
     for (const auto& snapshot : m_render_snapshots) {
-        if (!Math::is_aabb_in_frustum(snapshot.center, snapshot.half_extents,
+        if (!snapshot) {
+            continue;
+        }
+        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
 
-        if (snapshot.water_vertices_count != 0) {
+        if (snapshot->water_vertices_count != 0) {
 
-            glBindVertexArray(snapshot.water_vao);
+            glBindVertexArray(snapshot->water_vao);
 
-            glDrawArrays(GL_TRIANGLES, 0, snapshot.water_vertices_count);
+            glDrawArrays(GL_TRIANGLES, 0, snapshot->water_vertices_count);
         }
     }
 
@@ -924,6 +960,26 @@ void Renderer::render_world() {
     DebugCollector::get().report(
         "rendered_chunk", "Rendered Chunk: " + std::to_string(rendered_sum));
 }
+
+void Renderer::render_player() {
+    auto& shader = get_shader("player");
+    shader.use();
+    m_v_mat = m_camera.get_camera_lookat();
+
+    auto& players = m_world.render_player_data();
+
+    for (auto& player : players) {
+        m_m_mat = glm::translate(
+            glm::mat4(1.0f), player.render_pos + glm::vec3(-0.5f, 0.0f, -0.5f));
+        m_mv_mat = m_v_mat * m_m_mat;
+        shader.set_loc("mv_matrix", m_mv_mat);
+        shader.set_loc("proj_matrix", m_p_mat);
+        glBindVertexArray(m_vao[5]);
+        glEnable(GL_DEPTH_TEST);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+
 #pragma endregion
 void Renderer::render_dev_panel() {
     glDisable(GL_DEPTH_TEST);

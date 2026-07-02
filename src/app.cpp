@@ -2,19 +2,23 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
-#include "Cubed/gameplay/player.hpp"
+#include "Cubed/tools/arg_parser.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
+#include "version.hpp"
 
 #include <exception>
 #include <imgui_impl_glfw.h>
-
 namespace Cubed {
 
 App::App() {}
 
-App::~App() {}
+App::~App() {
+    if (m_client) {
+        m_client->stop();
+    }
+}
 void App::cursor_position_callback(GLFWwindow* window, double xpos,
                                    double ypos) {
     ImGuiIO& io = ImGui::GetIO();
@@ -30,9 +34,13 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos,
         app->m_camera.update_cursor_position_camera(xpos, ypos);
     }
 }
-void App::init() {
+void App::init(int argc, char** argv) {
+    handle_toml();
+    handle_argument(argc, argv);
+
     m_window.init();
     m_window.imgui_init();
+
     Logger::info("Window Init Success");
 
     glfwSetWindowUserPointer(m_window.get_glfw_window(), this);
@@ -50,6 +58,7 @@ void App::init() {
     glfwSetCursorEnterCallback(m_window.get_glfw_window(),
                                cursor_enter_callback);
     glfwSetCharCallback(m_window.get_glfw_window(), char_callback);
+
     ChunkGenerator::init();
     BlockManager::init();
     m_renderer.init();
@@ -58,11 +67,92 @@ void App::init() {
     // MapTable::init_map();
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");
-    m_world.init_world();
+    if (!m_argument.is_client) {
+        m_server.start_server(m_argument.port);
+    }
+
+    m_client = std::make_shared<NetworkClient>(m_client_world);
+
+    m_client->start(m_argument.ip, m_argument.port);
+    // init will send packet
+    m_client_world.init(m_argument.player, m_client);
+
     Logger::info("World Init Success");
 
-    m_camera.camera_init(&m_world.get_player("TestPlayer"));
+    m_camera.camera_init(&m_client_world.get_player());
     m_dev_panel.init();
+}
+
+void App::handle_argument(int argc, char** argv) {
+
+    static const std::unordered_map<std::string_view,
+                                    std::function<void(ArgParser&)>>
+        HANDLERS{
+
+            {"--client", [&](ArgParser&) { m_argument.is_client = true; }},
+
+            {"--host", [&](ArgParser&) { m_argument.is_client = false; }},
+
+            {"-p",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("-p");
+
+                 auto r = std::from_chars(arg.data(), arg.data() + arg.size(),
+                                          m_argument.port);
+
+                 if (r.ec != std::errc{} || r.ptr != arg.data() + arg.size()) {
+                     throw std::runtime_error(
+                         std::format("Invalid port: {}", arg));
+                 }
+
+                 if (m_argument.port > 65535) {
+                     throw std::runtime_error(
+                         std::format("Port {} out of range", m_argument.port));
+                 }
+             }},
+
+            {"--ip",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--ip");
+                 m_argument.ip = arg;
+             }},
+            {"--player",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--player");
+                 m_argument.player = arg;
+             }},
+            {"-V",
+             [&](ArgParser) {
+                 std::cout << CUBED_VERSION << "\n";
+                 exit(EXIT_SUCCESS);
+             }}
+
+        };
+    ArgParser parser(argc, argv);
+
+    while (parser.has_next()) {
+        auto arg = parser.next();
+        if (auto it = HANDLERS.find(arg); it != HANDLERS.end()) {
+            it->second(parser);
+        } else {
+            Logger::warn("Unknown argument: {}", arg);
+        }
+    }
+}
+
+void App::handle_toml() {
+    toml::table server;
+    try {
+        server = toml::parse_file("server.toml");
+    } catch (const toml::parse_error& e) {
+        // Logger::warn("Ip toml parse error {}", e.what());
+        return;
+    }
+
+    m_argument.ip =
+        *TOML::safe_get_value(server, "ip", std::string("127.0.01"));
+    m_argument.port = *TOML::safe_get_value(server, "port", 25530);
+    m_argument.is_client = *TOML::safe_get_value(server, "client", false);
 }
 
 void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
@@ -111,7 +201,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
         break;
     }
 
-    app->m_world.get_player("TestPlayer").update_player_move_state(key, action);
+    app->m_client_world.get_player().update_player_move_state(key, action);
 }
 
 void App::mouse_button_callback(GLFWwindow* window, int button, int action,
@@ -162,8 +252,7 @@ void App::window_focus_callback(GLFWwindow* window, int focused) {
     }
 }
 
-void App::window_reshape_callback(GLFWwindow* window, int new_width,
-                                  int new_height) {
+void App::window_reshape_callback(GLFWwindow* window, int, int) {
 
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
@@ -180,7 +269,7 @@ void App::mouse_scroll_callback(GLFWwindow* window, double xoffset,
         ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
         return;
     }
-    auto& player = app->m_world.get_player("TestPlayer");
+    auto& player = app->m_client_world.get_player();
     player.update_scroll(yoffset);
 }
 
@@ -218,9 +307,15 @@ void App::run() {
 
     last_time = glfwGetTime();
     while (!glfwWindowShouldClose(m_window.get_glfw_window())) {
-
+        if (m_client_world.is_receive_exit()) {
+            break;
+        }
         update();
         render();
+    }
+    m_client_world.request_exit();
+    if (!m_argument.is_client) {
+        m_server.server_world().stop();
     }
 }
 static Gait player_gait = Gait::WALK;
@@ -244,9 +339,9 @@ void App::update() {
             std::format("RSS: {}mb", Tools::get_current_rss() / (1024 * 1024)));
     }
     m_texture_manager.update();
-    m_world.update(delta_time);
+    m_client_world.update(delta_time);
     m_camera.update_move_camera();
-    const auto& player = m_world.get_player("TestPlayer");
+    const auto& player = m_client_world.get_player();
     if (player_gait != player.get_gait()) {
         player_gait = player.get_gait();
         float fov = static_cast<float>(Config::get().get<double>("player.fov"));
@@ -265,7 +360,7 @@ int App::start_cubed_application(int argc, char** argv) {
     App app;
 
     try {
-        app.init();
+        app.init(argc, argv);
         Logger::info("Game Init Finish Start Run...");
         app.run();
 
@@ -288,6 +383,7 @@ DevPanel& App::dev_panel() { return m_dev_panel; }
 Renderer& App::renderer() { return m_renderer; }
 TextureManager& App::texture_manager() { return m_texture_manager; }
 Window& App::window() { return m_window; }
-World& App::world() { return m_world; }
-
+ClientWorld& App::client_world() { return m_client_world; }
+ServerWorld& App::server_world() { return m_server.server_world(); }
+const App::Argument& App::argument() const { return m_argument; }
 } // namespace Cubed

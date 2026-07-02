@@ -5,7 +5,7 @@
 namespace Cubed {
 
 class App;
-class Player;
+class ClientPlayer;
 class DevPanel {
     struct ConfigView {
         float fov = 70.0f;
@@ -26,9 +26,6 @@ class DevPanel {
         int gait = 0;
         float pos[3] = {0.0f, 0.0f, 0.0f};
     };
-    struct TextEditing {
-        bool perlin_seed = false;
-    };
 
 public:
     DevPanel(App& app);
@@ -38,9 +35,8 @@ public:
 private:
     App& m_app;
     ConfigView m_config;
-    Player* m_player;
+    ClientPlayer* m_player;
     PlayerProfile m_player_profile;
-    TextEditing m_text_editing;
     bool m_need_save_config = false;
     bool m_gen_thread_running = true;
     int m_theme = 0;
@@ -58,6 +54,8 @@ private:
     void show_chunk_table_bar();
     void show_settings_tab_item();
     void show_world_tab_item();
+    void show_server_world_table_bar();
+    void show_client_world_table_bar();
     void show_player_tab_item();
     void show_items_tab_item();
     void show_shader_tab_item();

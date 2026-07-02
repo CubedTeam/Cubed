@@ -1,7 +1,7 @@
 #include "Cubed/camera.hpp"
 
-#include "Cubed/gameplay/player.hpp"
-#include "Cubed/gameplay/world.hpp"
+#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 
 namespace Cubed {
@@ -22,7 +22,7 @@ void Camera::update_move_camera() {
     }
 }
 
-void Camera::camera_init(Player* player) {
+void Camera::camera_init(ClientPlayer* player) {
     m_player = player;
     update_move_camera();
     reset_camera();
