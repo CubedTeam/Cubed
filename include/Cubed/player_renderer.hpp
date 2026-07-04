@@ -6,6 +6,7 @@ namespace Cubed {
 class Renderer;
 class PlayerRenderer {
 public:
+    static constexpr int BODY_PART_NUM = 6;
     PlayerRenderer(Renderer& renderer);
     ~PlayerRenderer();
     void init();
@@ -13,7 +14,6 @@ public:
     void shadow_render(const Shader& shader, glm::mat4& light_matrix);
 
 private:
-    static constexpr int BODY_PART_NUM = 6;
     struct PlayerVertex {
 
         float x = 0.0f, y = 0.0f, z = 0.0f;

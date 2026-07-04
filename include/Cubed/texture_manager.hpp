@@ -16,6 +16,8 @@ private:
     GLuint m_normal_texture_array = 0;
     GLfloat m_max_aniso = 0.0f;
 
+    GLuint m_skin = 0;
+
     int m_aniso = 1;
 
     std::vector<GLuint> m_item_textures;
@@ -30,6 +32,7 @@ private:
     void init_block();
     void init_ui();
     void init_block_status();
+    void init_skin();
     void hot_reload();
 
 public:
@@ -43,6 +46,7 @@ public:
     GLuint get_ui_array() const;
     GLuint get_pbr_texture() const;
     const std::vector<GLuint>& item_textures() const;
+    GLuint get_skin() const;
     // Must call after MapTable::init_map() and glfwMakeContextCurrent(window);
     void init_texture();
 

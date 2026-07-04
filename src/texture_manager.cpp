@@ -14,6 +14,7 @@ constexpr int CROSS_PLANE_SIZE = 16;
 constexpr int BLOCK_ITEM_SIZE = 16;
 constexpr int UI_SIZE = 16;
 constexpr int BLOCK_STATUS_SIZE = 16;
+constexpr int SKIN_SIZE = 64;
 
 unsigned char* generate_flat_normal_map(int width = BLOCK_NORMAL_SIZE,
                                         int height = BLOCK_NORMAL_SIZE) {
@@ -44,6 +45,7 @@ void TextureManager::delet_texture() {
         for (auto& id : m_item_textures) {
             glDeleteTextures(1, &id);
         }
+        glDeleteTextures(1, &m_skin);
         Logger::info("Successfully delete all texture");
     }
 }
@@ -66,6 +68,8 @@ GLuint TextureManager::get_pbr_texture() const {
 const std::vector<GLuint>& TextureManager::item_textures() const {
     return m_item_textures;
 }
+
+GLuint TextureManager::get_skin() const { return m_skin; }
 
 void TextureManager::load_block_status(unsigned id) {
 
@@ -279,6 +283,31 @@ void TextureManager::init_ui() {
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
+
+void TextureManager::init_skin() {
+
+    glGenTextures(1, &m_skin);
+    glBindTexture(GL_TEXTURE_2D, m_skin);
+    std::string path = "texture/skin/player001.png";
+    unsigned char* image_data = nullptr;
+    image_data = (Tools::load_image_data(path));
+    glBindTexture(GL_TEXTURE_2D, m_skin);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SKIN_SIZE, SKIN_SIZE, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, image_data);
+    Tools::delete_image_data(image_data);
+    glBindTexture(GL_TEXTURE_2D, m_skin);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    if (m_aniso >= 1) {
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY,
+                        static_cast<GLfloat>(m_aniso));
+    }
+}
+
 void TextureManager::init_block_status() {
     glGenTextures(1, &m_block_status_array);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_block_status_array);
@@ -315,6 +344,7 @@ void TextureManager::init_texture() {
     init_block();
     init_block_status();
     init_ui();
+    init_skin();
     m_init = true;
 }
 

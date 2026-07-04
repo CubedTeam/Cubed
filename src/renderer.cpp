@@ -1046,4 +1046,7 @@ float& Renderer::water_density() { return m_water_density; }
 const Camera& Renderer::camera() const { return m_camera; }
 const ClientWorld& Renderer::world() const { return m_world; }
 const glm::mat4& Renderer::proj_mat() const { return m_p_mat; }
+const TextureManager& Renderer::texture_mamger() const {
+    return m_texture_manager;
+}
 } // namespace Cubed
