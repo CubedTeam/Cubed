@@ -43,4 +43,5 @@ target_sources(${PROJECT_NAME}
         gameplay/client_player.cpp
         gameplay/session.cpp
         gameplay/network_client.cpp
+        player_renderer.cpp
 )

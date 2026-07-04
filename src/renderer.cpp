@@ -24,7 +24,8 @@ namespace Cubed {
 Renderer::Renderer(const Camera& camera, ClientWorld& world,
                    const TextureManager& texture_manager, DevPanel& dev_panel)
     : m_camera(camera), m_dev_panel(dev_panel),
-      m_texture_manager(texture_manager), m_world(world) {}
+      m_texture_manager(texture_manager), m_world(world),
+      m_player_renderer(*this) {}
 
 Renderer::~Renderer() {
     if (m_init) {
@@ -171,18 +172,11 @@ void Renderer::init() {
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
-    glBindVertexArray(m_vao[5]);
-    glGenBuffers(1, &m_player_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_player_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES_PLAYER), VERTICES_PLAYER,
-                 GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
     init_quad();
     init_text();
     hot_reload();
+
+    m_player_renderer.init();
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -964,20 +958,7 @@ void Renderer::render_world() {
 void Renderer::render_player() {
     auto& shader = get_shader("player");
     shader.use();
-    m_v_mat = m_camera.get_camera_lookat();
-
-    auto& players = m_world.render_player_data();
-
-    for (auto& player : players) {
-        m_m_mat = glm::translate(
-            glm::mat4(1.0f), player.render_pos + glm::vec3(-0.5f, 0.0f, -0.5f));
-        m_mv_mat = m_v_mat * m_m_mat;
-        shader.set_loc("mv_matrix", m_mv_mat);
-        shader.set_loc("proj_matrix", m_p_mat);
-        glBindVertexArray(m_vao[5]);
-        glEnable(GL_DEPTH_TEST);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    m_player_renderer.render(shader);
 }
 
 #pragma endregion
@@ -1054,4 +1035,8 @@ float& Renderer::cloud_threshold_high() { return m_cloud_threshold_high; }
 float& Renderer::refract_strength() { return m_refract_strength; }
 float& Renderer::underwater_fog_density() { return m_underwater_fog_density; }
 float& Renderer::water_density() { return m_water_density; }
+
+const Camera& Renderer::camera() const { return m_camera; }
+const ClientWorld& Renderer::world() const { return m_world; }
+const glm::mat4& Renderer::proj_mat() const { return m_p_mat; }
 } // namespace Cubed
