@@ -92,6 +92,9 @@ void Renderer::init() {
                         "shaders/water_f_shader.glsl"};
     Shader player_shader{"player", "shaders/player_v_shader.glsl",
                          "shaders/player_f_shader.glsl"};
+    Shader player_depth_shader{"player_depth",
+                               "shaders/depth_player_shader.glsl",
+                               "shaders/depth_player_fragment_shader.glsl"};
     m_shaders.insert({player_shader.hash(), std::move(player_shader)});
     m_shaders.insert({world_shader.hash(), std::move(world_shader)});
     m_shaders.insert({outline_shader.hash(), std::move(outline_shader)});
@@ -106,7 +109,8 @@ void Renderer::init() {
     m_shaders.insert({depth_shader.hash(), std::move(depth_shader)});
     m_shaders.insert({billboard.hash(), std::move(billboard)});
     m_shaders.insert({water_shader.hash(), std::move(water_shader)});
-
+    m_shaders.insert(
+        {player_depth_shader.hash(), std::move(player_depth_shader)});
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -708,6 +712,9 @@ void Renderer::render_world() {
                              snapshot->normal_discard_vertices_count);
             }
         }
+        // player
+        auto& player_shadow = get_shader("player_depth");
+        m_player_renderer.shadow_render(player_shadow, light_space_matrix);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 

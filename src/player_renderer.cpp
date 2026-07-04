@@ -104,24 +104,52 @@ void PlayerRenderer::render(const Shader& shader) {
     }
     auto& m_camera = m_renderer.camera();
     auto& m_world = m_renderer.world();
-
+    auto& m_player = m_world.get_player();
     glm::mat4 m_v_mat = m_camera.get_camera_lookat();
     glm::mat4 m_m_mat;
     glm::mat4 m_mv_mat;
     glm::mat4 m_p_mat = m_renderer.proj_mat();
 
     auto& players = m_world.render_player_data();
+    shader.set_loc("proj_matrix", m_p_mat);
 
     for (auto& player : players) {
+        if (player.uuid == m_player.get_uuid()) {
+            continue;
+        }
         m_m_mat = glm::translate(
             glm::mat4(1.0f), player.render_pos + glm::vec3(-0.5f, 0.0f, -0.5f));
         m_mv_mat = m_v_mat * m_m_mat;
+
         shader.set_loc("mv_matrix", m_mv_mat);
-        shader.set_loc("proj_matrix", m_p_mat);
         glBindVertexArray(m_vao);
         glEnable(GL_DEPTH_TEST);
         glDrawArrays(GL_TRIANGLES, 0, m_vertices_sum);
     }
 }
 
+void PlayerRenderer::shadow_render(const Shader& shader,
+                                   glm::mat4& light_matrix) {
+    if (!m_inited) {
+        Logger::error("Player Renderer isn't init");
+        return;
+    }
+    shader.use();
+    shader.set_loc("lightSpaceMatrix", light_matrix);
+    auto& m_world = m_renderer.world();
+    auto& players = m_world.render_player_data();
+
+    glm::mat4 m_m_mat;
+    for (auto& player : players) {
+        m_m_mat = glm::translate(
+            glm::mat4(1.0f), player.render_pos + glm::vec3(-0.5f, 0.0f, -0.5f));
+        shader.set_loc("modelMatrix", m_m_mat);
+        glBindVertexArray(m_vao);
+        glEnable(GL_DEPTH_TEST);
+        glDrawArrays(GL_TRIANGLES, 0, m_vertices_sum);
+    }
+}
+
+GLuint PlayerRenderer::vao() { return m_vao; }
+int PlayerRenderer::sum() { return m_vertices_sum; }
 } // namespace Cubed

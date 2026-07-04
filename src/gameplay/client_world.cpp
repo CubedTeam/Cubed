@@ -51,7 +51,7 @@ const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
 }
 
 ClientPlayer& ClientWorld::get_player() { return m_player; }
-
+const ClientPlayer& ClientWorld::get_player() const { return m_player; }
 int ClientWorld::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;
@@ -303,7 +303,7 @@ void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
         if (it == m_other_players.end()) {
             m_other_players.emplace(
                 std::piecewise_construct, std::forward_as_tuple(rsp.uuid()),
-                std::forward_as_tuple(rsp.name(), pos, pos));
+                std::forward_as_tuple(rsp.name(), rsp.uuid(), pos, pos));
         } else {
             it->second.target_pos = pos;
         }
@@ -699,9 +699,12 @@ void ClientWorld::update(float delta_time) {
                     CHUNK_SIZE) {
                 continue;
             }
-            m_render_player_data.emplace_back(player.name, player.render_pos);
+            m_render_player_data.emplace_back(player.name, player.uuid,
+                                              player.render_pos);
         }
     }
+    m_render_player_data.emplace_back(m_player.get_name(), m_player.get_uuid(),
+                                      m_player.get_player_pos());
 }
 
 glm::vec3 ClientWorld::sunlight_dir() const {
@@ -738,8 +741,7 @@ const std::vector<const ChunkRenderSnapshot*>&
 ClientWorld::render_snapshots() const {
     return m_render_snapshots;
 };
-const std::vector<RemotePlayerRenderData>&
-ClientWorld::render_player_data() const {
+const std::vector<PlayerRenderData>& ClientWorld::render_player_data() const {
     return m_render_player_data;
 }
 std::vector<glm::vec4>& ClientWorld::planes() { return m_planes; }

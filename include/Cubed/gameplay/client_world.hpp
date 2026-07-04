@@ -16,12 +16,14 @@ namespace Cubed {
 
 struct RemotePlayerInfo {
     std::string name;
+    std::string uuid;
     glm::vec3 render_pos;
     glm::vec3 target_pos;
 };
 
-struct RemotePlayerRenderData {
+struct PlayerRenderData {
     std::string name;
+    std::string uuid;
     glm::vec3 render_pos;
 };
 
@@ -34,6 +36,7 @@ public:
     void update(float delta_time);
     const std::optional<LookBlock>& get_look_block_pos() const;
     ClientPlayer& get_player();
+    const ClientPlayer& get_player() const;
     int get_block(const glm::ivec3& block_pos) const;
     bool is_solid(const glm::ivec3& block_pos) const;
     bool can_pass_block(const glm::ivec3& block_pos) const;
@@ -65,7 +68,7 @@ public:
     void request_chunk();
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
-    const std::vector<RemotePlayerRenderData>& render_player_data() const;
+    const std::vector<PlayerRenderData>& render_player_data() const;
     glm::vec3 sunlight_dir() const;
     void receive_chunk(std::vector<uint8_t> data, PacketHeader header);
     void request_exit();
@@ -110,7 +113,7 @@ private:
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
-    std::vector<RemotePlayerRenderData> m_render_player_data;
+    std::vector<PlayerRenderData> m_render_player_data;
     tbb::concurrent_unordered_map<std::string, Timer> m_timers;
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};

@@ -10,6 +10,9 @@ public:
     ~PlayerRenderer();
     void init();
     void render(const Shader& shader);
+    void shadow_render(const Shader& shader, glm::mat4& light_matrix);
+    GLuint vao();
+    int sum();
 
 private:
     Renderer& m_renderer;
