@@ -126,9 +126,16 @@ void PlayerRenderer::init() {
                 glm::vec3 p{VERTICES_POS[face][vex][0],
                             VERTICES_POS[face][vex][1],
                             VERTICES_POS[face][vex][2]};
+                float su = TEX_COORDS[face][vex][0];
+                float sv = TEX_COORDS[face][vex][1];
 
-                float u = rect.x + TEX_COORDS[face][vex][0] * rect.w;
-                float v = rect.y + TEX_COORDS[face][vex][1] * rect.h;
+                if (face == 2) {
+                    float t = su;
+                    su = sv;
+                    sv = 1.0f - t;
+                }
+                float u = rect.x + su * rect.w;
+                float v = rect.y + sv * rect.h;
 
                 u /= 64.0f;
                 v /= 64.0f;
@@ -193,16 +200,16 @@ void PlayerRenderer::render(const Shader& shader) {
         if (player.uuid == m_player.get_uuid()) {
             continue;
         }
+
         glm::mat4 model(1.0f);
 
         model = glm::translate(model, player.render_pos);
 
-        model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
+        // model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
+        model = glm::rotate(model, glm::radians(player.yaw + 180.0f),
+                            glm::vec3(0, 1, 0));
+        model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
-        model = glm::rotate(model, glm::radians(player.yaw),
-                            glm::vec3(0.0f, 1.0f, 0.0f));
-
-        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
         m_mv_mat = m_v_mat * model;
 
         glActiveTexture(GL_TEXTURE0);
@@ -217,7 +224,7 @@ void PlayerRenderer::render(const Shader& shader) {
 
                 head_model =
                     glm::rotate(head_model, glm::radians(-player.pitch),
-                                glm::vec3(-1, 0, 0));
+                                glm::vec3(1, 0, 0));
 
                 head_model =
                     glm::translate(head_model, glm::vec3(-0.5f, -1.5f, -0.5f));
@@ -250,12 +257,10 @@ void PlayerRenderer::shadow_render(const Shader& shader,
 
         model = glm::translate(model, player.render_pos);
 
-        model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
-
-        model = glm::rotate(model, glm::radians(player.yaw),
-                            glm::vec3(0.0f, 1.0f, 0.0f));
-
-        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+        // model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
+        model = glm::rotate(model, glm::radians(player.yaw + 180.0f),
+                            glm::vec3(0, 1, 0));
+        model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
         shader.set_loc("modelMatrix", model);
 
@@ -268,7 +273,7 @@ void PlayerRenderer::shadow_render(const Shader& shader,
 
                 head_model =
                     glm::rotate(head_model, glm::radians(-player.pitch),
-                                glm::vec3(-1, 0, 0));
+                                glm::vec3(1, 0, 0));
 
                 head_model =
                     glm::translate(head_model, glm::vec3(-0.5f, -1.5f, -0.5f));
