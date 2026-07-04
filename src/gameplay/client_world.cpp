@@ -262,7 +262,7 @@ void ClientWorld::push_delete_vao(GLuint vao) {
 
 void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
-    {
+    if (id != 0) {
         AABB block_box = get_block_aabb(pos);
         std::shared_lock lock(m_other_players_mutex);
 
@@ -296,6 +296,8 @@ void ClientWorld::receive_time(const UpdateTime& rsp) {
 }
 
 void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
+    auto pitch = rsp.pitch();
+    auto yaw = rsp.yaw();
     {
         std::lock_guard lock(m_other_players_mutex);
         glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
@@ -303,9 +305,12 @@ void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
         if (it == m_other_players.end()) {
             m_other_players.emplace(
                 std::piecewise_construct, std::forward_as_tuple(rsp.uuid()),
-                std::forward_as_tuple(rsp.name(), rsp.uuid(), pos, pos));
+                std::forward_as_tuple(rsp.name(), rsp.uuid(), pos, pos, yaw,
+                                      yaw, pitch, pitch));
         } else {
             it->second.target_pos = pos;
+            it->second.yaw = yaw;
+            it->second.pitch = pitch;
         }
         // Logger::info("Player {} pos Update", rsp.name());
     }
@@ -439,6 +444,8 @@ void ClientWorld::report_player_pos() {
     v3->set_x(player_pos.x);
     v3->set_y(player_pos.y);
     v3->set_z(player_pos.z);
+    pos->set_yaw(m_player.yaw());
+    pos->set_pitch(m_player.pitch());
     m_client->send(make_packet(*pos), 0);
 }
 
@@ -699,12 +706,18 @@ void ClientWorld::update(float delta_time) {
                     CHUNK_SIZE) {
                 continue;
             }
-            m_render_player_data.emplace_back(player.name, player.uuid,
-                                              player.render_pos);
+            player.render_yaw = glm::mix(player.render_yaw, player.yaw, 0.15);
+            player.render_pitch =
+                glm::mix(player.render_pitch, player.pitch, 0.15);
+
+            m_render_player_data.emplace_back(
+                player.name, player.uuid, player.render_pos, player.render_yaw,
+                player.render_pitch);
         }
     }
     m_render_player_data.emplace_back(m_player.get_name(), m_player.get_uuid(),
-                                      m_player.get_player_pos());
+                                      m_player.get_player_pos(), m_player.yaw(),
+                                      m_player.pitch());
 }
 
 glm::vec3 ClientWorld::sunlight_dir() const {

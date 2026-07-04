@@ -224,13 +224,15 @@ void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
     m_yaw += offset_x * m_sensitivity;
     m_pitch += offset_y * m_sensitivity;
 
-    m_yaw = std::fmod(m_yaw, 360.0);
+    m_yaw = std::fmod(m_yaw.load(), 360.0);
 
-    m_pitch = std::clamp(m_pitch, -89.0f, 89.0f);
+    m_pitch = std::clamp(m_pitch.load(), -89.0f, 89.0f);
 
-    m_front.x = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    m_front.y = sin(glm::radians(m_pitch));
-    m_front.z = -cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+    m_front.x =
+        sin(glm::radians(m_yaw.load())) * cos(glm::radians(m_pitch.load()));
+    m_front.y = sin(glm::radians(m_pitch.load()));
+    m_front.z =
+        -cos(glm::radians(m_yaw.load())) * cos(glm::radians(m_pitch.load()));
 
     m_front = glm::normalize(m_front);
 }
@@ -554,4 +556,8 @@ void ClientPlayer::set_uuid(std::string_view uuid) { m_uuid = uuid; }
 const std::string& ClientPlayer::get_uuid() const { return m_uuid; }
 const std::string& ClientPlayer::get_name() const { return m_name; }
 void ClientPlayer::init(std::string_view name) { m_name = name; }
+
+float ClientPlayer::yaw() const { return m_yaw; }
+float ClientPlayer::pitch() const { return m_pitch; }
+
 } // namespace Cubed

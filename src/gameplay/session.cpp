@@ -67,9 +67,7 @@ asio::awaitable<void> Session::read_loop() {
             if (cmd_id == std::to_underlying(PacketEnum::PLAYER_POS)) {
                 auto* pos = Arena::Create<PlayerPos>(&arena);
                 if (decode_packet(*pos, body_data, header)) {
-                    m_server_world.sync_player_pos(pos->uuid(), pos->pos().x(),
-                                                   pos->pos().y(),
-                                                   pos->pos().z());
+                    m_server_world.sync_player_pos(*pos);
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::CHUNK_DATA_REQ)) {

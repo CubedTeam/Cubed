@@ -3,6 +3,7 @@
 #include "Cubed/gameplay/cave_carver.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/packet.hpp" // IWYU pragma: keep
 #include "Cubed/gameplay/river_worm.hpp"
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_player.hpp"
@@ -69,7 +70,7 @@ public:
 
     bool set_block(const glm::ivec3& block_pos, unsigned id);
 
-    void sync_player_pos(const std::string& uuid, float x, float y, float z);
+    void sync_player_pos(const PlayerPos& rsp);
     void handle_player_login(const std::string& player_name,
                              std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const std::string& uuid) const;

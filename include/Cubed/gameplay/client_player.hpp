@@ -61,6 +61,9 @@ public:
 
     void init(std::string_view name);
 
+    float yaw() const;
+    float pitch() const;
+
 private:
     using enum GameMode;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
@@ -70,8 +73,8 @@ private:
     float m_g = DEFAULT_G;
     constexpr static float MAX_SPACE_ON_TIME = 0.3f;
 
-    float m_yaw = 0.0f;
-    float m_pitch = 0.0f;
+    std::atomic<float> m_yaw = 0.0f;
+    std::atomic<float> m_pitch = 0.0f;
 
     float m_sensitivity = 0.15f;
 

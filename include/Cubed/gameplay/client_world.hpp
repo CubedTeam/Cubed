@@ -19,12 +19,18 @@ struct RemotePlayerInfo {
     std::string uuid;
     glm::vec3 render_pos;
     glm::vec3 target_pos;
+    float render_yaw;
+    float yaw;
+    float render_pitch;
+    float pitch;
 };
 
 struct PlayerRenderData {
     std::string name;
     std::string uuid;
     glm::vec3 render_pos;
+    float yaw;
+    float pitch;
 };
 
 class ClientWorld {

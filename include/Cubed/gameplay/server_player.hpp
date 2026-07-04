@@ -38,6 +38,11 @@ public:
     const ChunkPosSet& get_chunk_pos_set() const;
     ChunkPosSet& get_chunk_pos_set();
 
+    void set_yaw(float yaw);
+    void set_pitch(float pitch);
+    float yaw() const;
+    float pitch() const;
+
 private:
     static constexpr TickType TIMEOUT = 200;
     std::string m_name;
@@ -48,6 +53,8 @@ private:
     std::shared_ptr<Session> m_session;
     std::atomic<TickType> m_last_gametick{0};
     std::atomic<int> m_chunk_task_id{0};
+    std::atomic<float> m_yaw{0.0f};
+    std::atomic<float> m_pitch{0.0f};
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
 };

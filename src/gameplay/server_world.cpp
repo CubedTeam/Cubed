@@ -537,9 +537,14 @@ void ServerWorld::update() {
     }
 }
 
-void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
-                                  float z) {
+void ServerWorld::sync_player_pos(const PlayerPos& prsp) {
     std::string name;
+    auto x = prsp.pos().x();
+    auto y = prsp.pos().y();
+    auto z = prsp.pos().z();
+    auto uuid = prsp.uuid();
+    auto yaw = prsp.yaw();
+    auto pitch = prsp.pitch();
     {
         std::lock_guard lock(m_player_mutex);
         auto it = m_players.find(uuid);
@@ -549,6 +554,8 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
         }
         it->second.update_pos(x, y, z);
         it->second.update_sync_gametick(m_game_ticks);
+        it->second.set_pitch(pitch);
+        it->second.set_yaw(yaw);
         name = it->second.get_name();
     }
     ChunkPos pos = get_chunk_pos(x, z);
@@ -578,6 +585,8 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
         pos->set_x(x);
         pos->set_y(y);
         pos->set_z(z);
+        rsp->set_yaw(yaw);
+        rsp->set_pitch(pitch);
         session->send(make_packet(*rsp), 0);
     }
 }

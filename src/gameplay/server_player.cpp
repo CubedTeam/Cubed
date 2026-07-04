@@ -53,4 +53,9 @@ ServerPlayer::ChunkPosSet& ServerPlayer::get_chunk_pos_set() {
     std::lock_guard lock(m_chunk_pos_mutex);
     return m_player_chunk_pos_set;
 }
+void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
+void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
+float ServerPlayer::yaw() const { return m_yaw.load(); }
+float ServerPlayer::pitch() const { return m_pitch.load(); }
+
 } // namespace Cubed
