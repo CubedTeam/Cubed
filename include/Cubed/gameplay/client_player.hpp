@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_mode.hpp"
+#include "Cubed/gameplay/player.hpp"
 #include "Cubed/input.hpp"
 
 #include <absl/container/flat_hash_set.h>
@@ -11,7 +12,7 @@
 #include <optional>
 #include <shared_mutex>
 namespace Cubed {
-enum class Gait { WALK = 0, RUN };
+
 class ClientWorld;
 class ClientPlayer {
 public:
@@ -25,7 +26,7 @@ public:
 
     static AABB get_aabb(const glm::vec3& pos);
     const glm::vec3& get_front() const;
-    const Gait& get_gait() const;
+    Gait get_gait() const;
     const std::optional<LookBlock>& get_look_block_pos() const;
     // thread safe
     glm::vec3 get_player_pos() const;
@@ -50,16 +51,24 @@ public:
 
     unsigned place_block() const;
 
-    Gait& gait();
+    void set_gait(Gait gait);
     GameMode& game_mode();
 
     const ClientWorld& get_world() const;
 
     void set_uuid(std::string_view uuid);
-    const std::string& get_uuid() const;
+    std::string get_uuid() const;
     const std::string& get_name() const;
 
     void init(std::string_view name);
+
+    float yaw() const;
+    float pitch() const;
+    float& angle();
+    float& walk_time();
+    bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
+                  glm::ivec3& block_pos, glm::vec3& normal,
+                  float distance = 4.0f);
 
 private:
     using enum GameMode;
@@ -70,8 +79,8 @@ private:
     float m_g = DEFAULT_G;
     constexpr static float MAX_SPACE_ON_TIME = 0.3f;
 
-    float m_yaw = 0.0f;
-    float m_pitch = 0.0f;
+    std::atomic<float> m_yaw = 0.0f;
+    std::atomic<float> m_pitch = 0.0f;
 
     float m_sensitivity = 0.15f;
 
@@ -88,6 +97,9 @@ private:
 
     unsigned m_place_block = 1;
 
+    bool m_moving = false;
+    bool m_sprinting = false;
+
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 move_distance{0.0f, 0.0f, 0.0f};
     // player is tow block tall, the pos is the lower pos
@@ -99,20 +111,21 @@ private:
     glm::vec3 m_right{0, 0, 0};
     static constexpr glm::vec3 M_SIZE{0.6f, 1.8f, 0.6f};
 
-    Gait m_gait = Gait::WALK;
+    std::atomic<Gait> m_gait = Gait::STOP;
     MoveState m_move_state{};
     GameMode m_game_mode = CREATIVE;
     std::optional<LookBlock> m_look_block = std::nullopt;
     std::string m_name{};
+    mutable std::shared_mutex m_uuid_mutex;
     std::string m_uuid;
     ClientWorld& m_world;
+
+    float m_angle{0.0f};
+    float m_walk_time{0.0f};
 
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
-    bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
-                  glm::ivec3& block_pos, glm::vec3& normal,
-                  float distance = 4.0f);
 
     void update_direction();
     void update_lookup_block();
@@ -121,5 +134,6 @@ private:
     void update_y_move(glm::vec3& player_pos);
     void update_z_move(glm::vec3& player_pos);
     void update_player_chunk();
+    Gait compute_gait() const;
 };
 } // namespace Cubed

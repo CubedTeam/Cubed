@@ -82,9 +82,11 @@ void ServerWorld::send_time() {
 
     rsp->set_day_tick(m_day_tick);
     rsp->set_game_tick(m_game_ticks);
-
-    for (auto& [uuid, player] : m_players) {
-        player.get_session()->send(make_packet(*rsp), 3);
+    {
+        std::shared_lock lock(m_player_mutex);
+        for (auto& [uuid, player] : m_players) {
+            player.get_session()->send(make_packet(*rsp), 3);
+        }
     }
 }
 
@@ -537,9 +539,14 @@ void ServerWorld::update() {
     }
 }
 
-void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
-                                  float z) {
+void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     std::string name;
+    auto x = prsp.pos().x();
+    auto y = prsp.pos().y();
+    auto z = prsp.pos().z();
+    auto uuid = prsp.uuid();
+    auto yaw = prsp.yaw();
+    auto pitch = prsp.pitch();
     {
         std::lock_guard lock(m_player_mutex);
         auto it = m_players.find(uuid);
@@ -547,8 +554,13 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
             Logger::warn("Player {} is not in this Server", uuid);
             return;
         }
+
         it->second.update_pos(x, y, z);
         it->second.update_sync_gametick(m_game_ticks);
+        it->second.set_pitch(pitch);
+        it->second.set_yaw(yaw);
+        it->second.set_gait(get_gait_from_id(prsp.gait()));
+
         name = it->second.get_name();
     }
     ChunkPos pos = get_chunk_pos(x, z);
@@ -578,6 +590,9 @@ void ServerWorld::sync_player_pos(const std::string& uuid, float x, float y,
         pos->set_x(x);
         pos->set_y(y);
         pos->set_z(z);
+        rsp->set_yaw(yaw);
+        rsp->set_pitch(pitch);
+        rsp->set_gait(prsp.gait());
         session->send(make_packet(*rsp), 0);
     }
 }
@@ -605,7 +620,7 @@ void ServerWorld::handle_player_login(const std::string& name,
         session->send(make_packet(*rsp), 0);
         return;
     }
-
+    ++m_player_sum;
     m_uuid_to_name.emplace(uuid, name);
     // Pre-insert into new_chunks to ensure correct addition to waiting_player
     /*ChunkPosSet required_chunks;
@@ -647,7 +662,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     }
 
     m_uuid_to_name.erase(uuid);
-
+    --m_player_sum;
     update_ref_count(old_set, {});
 
     Arena arena;

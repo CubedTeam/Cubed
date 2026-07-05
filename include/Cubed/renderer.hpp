@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Cubed/constants.hpp"
+#include "Cubed/player_renderer.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/shader.hpp"
 #include "Cubed/ui/text.hpp"
@@ -50,6 +51,14 @@ public:
     float& underwater_fog_density();
     float& water_density();
 
+    const Camera& camera() const;
+    const ClientWorld& world() const;
+    ClientWorld& world();
+    const glm::mat4& proj_mat() const;
+    const TextureManager& texture_mamger() const;
+
+    float delta_time() const;
+
 private:
     struct ParallelLight {
         glm::vec3 sundir; // direction from sun to vertex
@@ -92,7 +101,7 @@ private:
     DevPanel& m_dev_panel;
     const TextureManager& m_texture_manager;
     ClientWorld& m_world;
-
+    PlayerRenderer m_player_renderer;
     bool m_discard_tranparent = true;
     bool m_shader_on = true;
     bool m_water_perturb = true;
@@ -174,7 +183,6 @@ private:
     2 - outline vao
     3 - ui vao
     4 - text vao
-    5 - player vao
     */
     std::vector<GLuint> m_vao;
     std::vector<Vertex2D> m_ui;

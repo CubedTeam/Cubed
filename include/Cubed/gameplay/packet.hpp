@@ -52,7 +52,7 @@ enum class PacketEnum : uint16_t {
     LOGOUT_REQ = 1003,
     LOGOUT_RSP = 1004,
     PLAYER_INFO = 2001,
-    PLAYER_POS = 2002,
+    C2S_PLAYER_INFO = 2002,
     PLAYER_INFO_RSP = 2003,
     CHUNK_DATA_REQ = 3001,
     CHUNK_DATA_RSP = 3002,
@@ -87,8 +87,8 @@ template <> constexpr uint16_t get_packet_id<LogoutRsp>() {
 template <> constexpr uint16_t get_packet_id<PlayerInfo>() {
     return std::to_underlying(PacketEnum::PLAYER_INFO);
 }
-template <> constexpr uint16_t get_packet_id<PlayerPos>() {
-    return std::to_underlying(PacketEnum::PLAYER_POS);
+template <> constexpr uint16_t get_packet_id<C2S_PlayerInfo>() {
+    return std::to_underlying(PacketEnum::C2S_PLAYER_INFO);
 }
 template <> constexpr uint16_t get_packet_id<PlayerInfoRsp>() {
     return std::to_underlying(PacketEnum::PLAYER_INFO_RSP);

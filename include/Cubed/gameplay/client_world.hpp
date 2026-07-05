@@ -14,15 +14,28 @@
 #include <tbb/concurrent_unordered_map.h>
 namespace Cubed {
 
-struct RemotePlayerInfo {
+struct PlayerInfo {
     std::string name;
+    std::string uuid;
     glm::vec3 render_pos;
     glm::vec3 target_pos;
+    float render_yaw;
+    float yaw;
+    float render_pitch;
+    float pitch;
+    Gait gait;
+    float angle = 0.0f;
+    float walk_time = 0.0f;
 };
 
-struct RemotePlayerRenderData {
+struct PlayerRenderData {
     std::string name;
+    std::string uuid;
     glm::vec3 render_pos;
+    float yaw;
+    float pitch;
+    Gait gait;
+    float angle;
 };
 
 class ClientWorld {
@@ -34,6 +47,7 @@ public:
     void update(float delta_time);
     const std::optional<LookBlock>& get_look_block_pos() const;
     ClientPlayer& get_player();
+    const ClientPlayer& get_player() const;
     int get_block(const glm::ivec3& block_pos) const;
     bool is_solid(const glm::ivec3& block_pos) const;
     bool can_pass_block(const glm::ivec3& block_pos) const;
@@ -65,13 +79,17 @@ public:
     void request_chunk();
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
-    const std::vector<RemotePlayerRenderData>& render_player_data() const;
+    const std::vector<PlayerRenderData>& render_player_data() const;
+    std::vector<PlayerRenderData>& render_player_data();
+
     glm::vec3 sunlight_dir() const;
+    bool sphere_collide_world(glm::vec3 center, float radius) const;
     void receive_chunk(std::vector<uint8_t> data, PacketHeader header);
     void request_exit();
     bool is_receive_exit();
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
+
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,
@@ -86,21 +104,20 @@ private:
                                  ChunkPos::TBBHash>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     using ChunkPosVector = std::vector<ChunkPos>;
-    using OtherPlayerHashMap =
-        std::unordered_map<std::string, RemotePlayerInfo>;
+    using OtherPlayerHashMap = std::unordered_map<std::string, PlayerInfo>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
     ClientPlayer m_player;
-    OtherPlayerHashMap m_other_players;
+    OtherPlayerHashMap m_player_info;
     ChunkHashMap m_chunks;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
-    mutable std::shared_mutex m_other_players_mutex;
+    mutable std::shared_mutex m_player_info_mutex;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
@@ -110,7 +127,7 @@ private:
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
-    std::vector<RemotePlayerRenderData> m_render_player_data;
+    std::vector<PlayerRenderData> m_render_player_data;
     tbb::concurrent_unordered_map<std::string, Timer> m_timers;
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};
@@ -127,9 +144,7 @@ private:
 
     void client_run(std::stop_token token);
 
-    void set_player_pos();
-
-    void report_player_pos();
+    void report_player_info();
 
     void set_block(const glm::ivec3& pos, unsigned id);
 

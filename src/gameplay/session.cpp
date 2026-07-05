@@ -64,12 +64,10 @@ asio::awaitable<void> Session::read_loop() {
                                                        shared_from_this());
                 }
             }
-            if (cmd_id == std::to_underlying(PacketEnum::PLAYER_POS)) {
-                auto* pos = Arena::Create<PlayerPos>(&arena);
+            if (cmd_id == std::to_underlying(PacketEnum::C2S_PLAYER_INFO)) {
+                auto* pos = Arena::Create<C2S_PlayerInfo>(&arena);
                 if (decode_packet(*pos, body_data, header)) {
-                    m_server_world.sync_player_pos(pos->uuid(), pos->pos().x(),
-                                                   pos->pos().y(),
-                                                   pos->pos().z());
+                    m_server_world.sync_player_pos(*pos);
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::CHUNK_DATA_REQ)) {

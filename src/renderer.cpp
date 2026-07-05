@@ -24,7 +24,8 @@ namespace Cubed {
 Renderer::Renderer(const Camera& camera, ClientWorld& world,
                    const TextureManager& texture_manager, DevPanel& dev_panel)
     : m_camera(camera), m_dev_panel(dev_panel),
-      m_texture_manager(texture_manager), m_world(world) {}
+      m_texture_manager(texture_manager), m_world(world),
+      m_player_renderer(*this) {}
 
 Renderer::~Renderer() {
     if (m_init) {
@@ -91,6 +92,9 @@ void Renderer::init() {
                         "shaders/water_f_shader.glsl"};
     Shader player_shader{"player", "shaders/player_v_shader.glsl",
                          "shaders/player_f_shader.glsl"};
+    Shader player_depth_shader{"player_depth",
+                               "shaders/depth_player_shader.glsl",
+                               "shaders/depth_player_fragment_shader.glsl"};
     m_shaders.insert({player_shader.hash(), std::move(player_shader)});
     m_shaders.insert({world_shader.hash(), std::move(world_shader)});
     m_shaders.insert({outline_shader.hash(), std::move(outline_shader)});
@@ -105,7 +109,8 @@ void Renderer::init() {
     m_shaders.insert({depth_shader.hash(), std::move(depth_shader)});
     m_shaders.insert({billboard.hash(), std::move(billboard)});
     m_shaders.insert({water_shader.hash(), std::move(water_shader)});
-
+    m_shaders.insert(
+        {player_depth_shader.hash(), std::move(player_depth_shader)});
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -171,18 +176,11 @@ void Renderer::init() {
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
-    glBindVertexArray(m_vao[5]);
-    glGenBuffers(1, &m_player_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_player_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES_PLAYER), VERTICES_PLAYER,
-                 GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
     init_quad();
     init_text();
     hot_reload();
+
+    m_player_renderer.init();
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -714,6 +712,9 @@ void Renderer::render_world() {
                              snapshot->normal_discard_vertices_count);
             }
         }
+        // player
+        auto& player_shadow = get_shader("player_depth");
+        m_player_renderer.shadow_render(player_shadow, light_space_matrix);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
@@ -964,20 +965,28 @@ void Renderer::render_world() {
 void Renderer::render_player() {
     auto& shader = get_shader("player");
     shader.use();
-    m_v_mat = m_camera.get_camera_lookat();
 
-    auto& players = m_world.render_player_data();
+    glm::vec3 light_dir_view =
+        glm::normalize(glm::mat3(m_v_mat) * m_parallel_light.lightdir);
 
-    for (auto& player : players) {
-        m_m_mat = glm::translate(
-            glm::mat4(1.0f), player.render_pos + glm::vec3(-0.5f, 0.0f, -0.5f));
-        m_mv_mat = m_v_mat * m_m_mat;
-        shader.set_loc("mv_matrix", m_mv_mat);
-        shader.set_loc("proj_matrix", m_p_mat);
-        glBindVertexArray(m_vao[5]);
-        glEnable(GL_DEPTH_TEST);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    shader.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
+    shader.set_loc("ambientStrength", m_ambient_strength);
+    shader.set_loc("sunlightColor", m_parallel_light.directional_light_color);
+    shader.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
+    shader.set_loc("sunlightDir", light_dir_view);
+    shader.set_loc("shadowMode", m_shadow_mode);
+    shader.set_loc("shader_on", m_shader_on);
+    shader.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
+    shader.set_loc("minRadius", m_min_radius);
+    shader.set_loc("maxRadius", m_max_radius);
+    shader.set_loc("samples", m_samples);
+    shader.set_loc("renderDistance", m_world.rendering_distance());
+    shader.set_loc("skyColor", m_sky_uniform.sky_top);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
+
+    m_player_renderer.render(shader);
 }
 
 #pragma endregion
@@ -1054,4 +1063,13 @@ float& Renderer::cloud_threshold_high() { return m_cloud_threshold_high; }
 float& Renderer::refract_strength() { return m_refract_strength; }
 float& Renderer::underwater_fog_density() { return m_underwater_fog_density; }
 float& Renderer::water_density() { return m_water_density; }
+
+const Camera& Renderer::camera() const { return m_camera; }
+const ClientWorld& Renderer::world() const { return m_world; }
+ClientWorld& Renderer::world() { return m_world; }
+const glm::mat4& Renderer::proj_mat() const { return m_p_mat; }
+const TextureManager& Renderer::texture_mamger() const {
+    return m_texture_manager;
+}
+float Renderer::delta_time() const { return m_delta_time; }
 } // namespace Cubed

@@ -3,6 +3,7 @@
 #include "Cubed/gameplay/cave_carver.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/packet.hpp" // IWYU pragma: keep
 #include "Cubed/gameplay/river_worm.hpp"
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_player.hpp"
@@ -69,7 +70,7 @@ public:
 
     bool set_block(const glm::ivec3& block_pos, unsigned id);
 
-    void sync_player_pos(const std::string& uuid, float x, float y, float z);
+    void sync_player_pos(const C2S_PlayerInfo& rsp);
     void handle_player_login(const std::string& player_name,
                              std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const std::string& uuid) const;
@@ -136,7 +137,7 @@ private:
     std::atomic<int> m_gen_pool_threads{0};
     std::atomic<int> m_net_pool_threads{0};
     std::atomic<int> m_max_threads{1};
-
+    std::atomic<size_t> m_player_sum{0};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
     std::atomic<bool> m_tick_running{true};

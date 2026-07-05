@@ -51,7 +51,7 @@ const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
 }
 
 ClientPlayer& ClientWorld::get_player() { return m_player; }
-
+const ClientPlayer& ClientWorld::get_player() const { return m_player; }
 int ClientWorld::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;
@@ -262,11 +262,11 @@ void ClientWorld::push_delete_vao(GLuint vao) {
 
 void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
-    {
+    if (id != 0) {
         AABB block_box = get_block_aabb(pos);
-        std::shared_lock lock(m_other_players_mutex);
+        std::shared_lock lock(m_player_info_mutex);
 
-        for (auto& [uuid, player] : m_other_players) {
+        for (auto& [uuid, player] : m_player_info) {
             AABB box = ClientPlayer::get_aabb(player.target_pos);
             if (box.intersects(block_box)) {
                 return;
@@ -296,16 +296,23 @@ void ClientWorld::receive_time(const UpdateTime& rsp) {
 }
 
 void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
+    auto pitch = rsp.pitch();
+    auto yaw = rsp.yaw();
     {
-        std::lock_guard lock(m_other_players_mutex);
+        std::lock_guard lock(m_player_info_mutex);
         glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
-        auto it = m_other_players.find(rsp.uuid());
-        if (it == m_other_players.end()) {
-            m_other_players.emplace(
+        auto it = m_player_info.find(rsp.uuid());
+        if (it == m_player_info.end()) {
+            m_player_info.emplace(
                 std::piecewise_construct, std::forward_as_tuple(rsp.uuid()),
-                std::forward_as_tuple(rsp.name(), pos, pos));
+                std::forward_as_tuple(rsp.name(), rsp.uuid(), pos, pos, yaw,
+                                      yaw, pitch, pitch,
+                                      get_gait_from_id(rsp.gait())));
         } else {
             it->second.target_pos = pos;
+            it->second.yaw = yaw;
+            it->second.pitch = pitch;
+            it->second.gait = get_gait_from_id(rsp.gait());
         }
         // Logger::info("Player {} pos Update", rsp.name());
     }
@@ -321,8 +328,8 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
         return;
     }
     {
-        std::lock_guard lock(m_other_players_mutex);
-        int sum = m_other_players.erase(rsp.uuid());
+        std::lock_guard lock(m_player_info_mutex);
+        int sum = m_player_info.erase(rsp.uuid());
         if (sum == 0) {
             Logger::warn("Player {} not find", rsp.uuid());
         } else {
@@ -336,7 +343,7 @@ void ClientWorld::init(std::string_view player_name,
     m_player.init(player_name);
     m_client = client;
     // timer
-    register_timer("player_pos", 1, [this]() { report_player_pos(); });
+    register_timer("player_pos", 1, [this]() { report_player_info(); });
     LoginReq req;
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
@@ -427,19 +434,23 @@ void ClientWorld::client_run(std::stop_token stoken) {
     }
 }
 
-void ClientWorld::report_player_pos() {
+void ClientWorld::report_player_info() {
     if (!m_client) {
         return;
     }
     Arena arena;
-    auto* pos = Arena::Create<PlayerPos>(&arena);
-    pos->set_uuid(m_player.get_uuid());
+    auto* info = Arena::Create<C2S_PlayerInfo>(&arena);
+    info->set_uuid(m_player.get_uuid());
     glm::vec3 player_pos = m_player.get_player_pos();
-    auto* v3 = pos->mutable_pos();
+    auto* v3 = info->mutable_pos();
     v3->set_x(player_pos.x);
     v3->set_y(player_pos.y);
     v3->set_z(player_pos.z);
-    m_client->send(make_packet(*pos), 0);
+    info->set_yaw(m_player.yaw());
+    info->set_pitch(m_player.pitch());
+    info->set_gait(get_gait_id(m_player.get_gait()));
+
+    m_client->send(make_packet(*info), 0);
 }
 
 void ClientWorld::update_chunk(const ChunkPosSet& old, const ChunkPosSet& now) {
@@ -690,8 +701,8 @@ void ClientWorld::update(float delta_time) {
 
     m_render_player_data.clear();
     {
-        std::lock_guard lock(m_other_players_mutex);
-        for (auto& [uuid, player] : m_other_players) {
+        std::lock_guard lock(m_player_info_mutex);
+        for (auto& [uuid, player] : m_player_info) {
             player.render_pos =
                 glm::mix(player.render_pos, player.target_pos, 0.15f);
             if (Math::distance2(player.render_pos, m_player.get_player_pos()) >
@@ -699,7 +710,49 @@ void ClientWorld::update(float delta_time) {
                     CHUNK_SIZE) {
                 continue;
             }
-            m_render_player_data.emplace_back(player.name, player.render_pos);
+            player.render_yaw = glm::mix(player.render_yaw, player.yaw, 0.15);
+            player.render_pitch =
+                glm::mix(player.render_pitch, player.pitch, 0.15);
+
+            if (player.gait == Gait::WALK || player.gait == Gait::RUN) {
+
+                player.walk_time += delta_time;
+
+                float speed = player.gait == Gait::RUN ? 14.0f : 8.0f;
+                float amp = player.gait == Gait::RUN ? 50.0f : 35.0f;
+                // float amp = 90.0f;
+                player.angle =
+                    glm::sin(player.walk_time * speed) * glm::radians(amp);
+            } else if (player.gait == Gait::STOP) {
+                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
+                player.angle = glm::mix(player.angle, 0.0f, t);
+            }
+
+            m_render_player_data.emplace_back(
+                player.name, player.uuid, player.render_pos, player.render_yaw,
+                player.render_pitch, player.gait, player.angle);
+        }
+        {
+            auto gait = m_player.get_gait();
+            auto& walk_time = m_player.walk_time();
+            auto& angle = m_player.angle();
+            if (gait == Gait::WALK || gait == Gait::RUN) {
+
+                walk_time += delta_time;
+
+                float speed = gait == Gait::RUN ? 14.0f : 8.0f;
+                float amp = gait == Gait::RUN ? 50.0f : 35.0f;
+                // float amp = 90.0f;
+                angle = glm::sin(walk_time * speed) * glm::radians(amp);
+            } else if (gait == Gait::STOP) {
+                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
+                angle = glm::mix(angle, 0.0f, t);
+            }
+
+            m_render_player_data.emplace_back(
+                m_player.get_name(), m_player.get_uuid(),
+                m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
+                m_player.get_gait(), m_player.angle());
         }
     }
 }
@@ -721,6 +774,33 @@ glm::vec3 ClientWorld::sunlight_dir() const {
 
     return glm::normalize(-dir);
 }
+
+bool ClientWorld::sphere_collide_world(glm::vec3 center, float radius) const {
+    glm::ivec3 min = glm::floor(center - glm::vec3(radius));
+    glm::ivec3 max = glm::floor(center + glm::vec3(radius));
+
+    for (int x = min.x; x <= max.x; ++x) {
+        for (int y = min.y; y <= max.y; ++y) {
+            for (int z = min.z; z <= max.z; ++z) {
+                if (!is_solid({x, y, z}))
+                    continue;
+
+                glm::vec3 closest;
+                closest.x = glm::clamp(center.x, float(x), float(x + 1));
+                closest.y = glm::clamp(center.y, float(y), float(y + 1));
+                closest.z = glm::clamp(center.z, float(z), float(z + 1));
+
+                glm::vec3 d = center - closest;
+
+                if (glm::dot(d, d) < radius * radius)
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 int ClientWorld::rendering_distance() const {
     return m_rendering_distance.load();
 }
@@ -738,8 +818,10 @@ const std::vector<const ChunkRenderSnapshot*>&
 ClientWorld::render_snapshots() const {
     return m_render_snapshots;
 };
-const std::vector<RemotePlayerRenderData>&
-ClientWorld::render_player_data() const {
+const std::vector<PlayerRenderData>& ClientWorld::render_player_data() const {
+    return m_render_player_data;
+}
+std::vector<PlayerRenderData>& ClientWorld::render_player_data() {
     return m_render_player_data;
 }
 std::vector<glm::vec4>& ClientWorld::planes() { return m_planes; }

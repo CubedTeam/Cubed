@@ -199,6 +199,11 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
             app->m_camera.reset_camera();
         }
         break;
+    case GLFW_KEY_F5:
+        if (action == GLFW_PRESS) {
+            app->m_camera.change_perspective();
+        }
+        break;
     }
 
     app->m_client_world.get_player().update_player_move_state(key, action);

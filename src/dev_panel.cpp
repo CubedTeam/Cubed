@@ -572,9 +572,9 @@ void DevPanel::show_player_tab_item() {
             if (ImGui::Combo("Gait", &m_player_profile.gait, GAITS,
                              IM_ARRAYSIZE(GAITS))) {
                 if (m_player_profile.gait == 0) {
-                    m_player->gait() = Gait::WALK;
+                    m_player->set_gait(Gait::WALK);
                 } else if (m_player_profile.gait == 1) {
-                    m_player->gait() = Gait::RUN;
+                    m_player->set_gait(Gait::RUN);
                 } else {
                     ASSERT_MSG(false, "Unknown Gait");
                 }
@@ -613,11 +613,11 @@ void DevPanel::show_player_tab_item() {
             m_player->deceleration() = DEFAULT_DECELERATION;
             m_player->g() = DEFAULT_G;
             m_player->change_mode(GameMode::CREATIVE);
-            m_player->gait() = Gait::WALK;
+            m_player->set_gait(Gait::WALK);
             m_player_profile.game_mode = 0;
             m_player_profile.gait = 0;
         }
-        if (m_player->gait() == Gait::WALK) {
+        if (m_player->get_gait() == Gait::WALK) {
             m_player_profile.gait = 0;
         } else {
             m_player_profile.gait = 1;
@@ -753,7 +753,7 @@ void DevPanel::update_player_profile() {
         ASSERT(false);
         return;
     }
-    m_player_profile.gait = std::to_underlying(m_player->gait());
+    m_player_profile.gait = std::to_underlying(m_player->get_gait());
     m_player_profile.game_mode = std::to_underlying(m_player->game_mode());
 }
 
