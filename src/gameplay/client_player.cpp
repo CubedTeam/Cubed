@@ -149,6 +149,7 @@ void ClientPlayer::update_player_move_state(int key, int action) {
         if (action == GLFW_RELEASE) {
             m_move_state.forward = false;
             m_moving = false;
+            m_sprinting = false;
         }
         break;
     case GLFW_KEY_S:
