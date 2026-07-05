@@ -15,7 +15,8 @@ void Camera::update_move_camera() {
     ASSERT_MSG(m_player, "nullptr");
     auto pos = m_player->get_player_pos();
     // pos.y need to add 1.6f to center
-    glm::vec3 eye = glm::vec3(pos.x, pos.y + 1.6f, pos.z);
+    static constexpr float PLAYER_EYE_OFFSET = 1.6f;
+    glm::vec3 eye = glm::vec3(pos.x, pos.y + PLAYER_EYE_OFFSET, pos.z);
     auto forward = m_player->get_front();
     m_front = forward;
     switch (m_perspective) {
@@ -28,9 +29,8 @@ void Camera::update_move_camera() {
     case Perspective::THIRD_PERSON_FRONT:
         m_camera_pos = eye + forward * DISTANCE;
         m_front = -m_front;
+        break;
     }
-
-    //  m_camera_pos += forward * 0.5f;
     glm::ivec3 block_pos = glm::floor(m_camera_pos);
     auto& world = m_player->get_world();
     if (world.get_block_tpye(block_pos) == 7) {
