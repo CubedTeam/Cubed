@@ -222,7 +222,7 @@ void PlayerRenderer::render(const Shader& shader) {
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, m_renderer.texture_mamger().get_skin());
 
         auto make_rotated = [&](glm::vec3 pivot, float angle) {
@@ -243,30 +243,54 @@ void PlayerRenderer::render(const Shader& shader) {
                                 glm::vec3(1, 0, 0));
                 head_model = glm::translate(head_model, -HEAD_PIVOT);
                 glm::mat4 head_mv = m_v_mat * head_model;
+                shader.set_loc("norm_matrix",
+                               glm::transpose(glm::inverse(head_mv)));
+                shader.set_loc("modelMatrix", head_model);
                 shader.set_loc("mv_matrix", head_mv);
             } break;
             case 1: {
-                shader.set_loc("mv_matrix", m_v_mat * model);
+                glm::mat4 mv_mat = m_v_mat * model;
+                shader.set_loc("norm_matrix",
+                               glm::transpose(glm::inverse(mv_mat)));
+                shader.set_loc("modelMatrix", model);
+                shader.set_loc("mv_matrix", mv_mat);
             } break;
             case 2: { // left arm
-                shader.set_loc("mv_matrix",
-                               m_v_mat *
-                                   make_rotated(LEFT_ARM_PIVOT, player.angle));
+                glm::mat4 model_mat =
+                    make_rotated(LEFT_ARM_PIVOT, player.angle);
+                glm::mat4 mv_mat = m_v_mat * model_mat;
+                shader.set_loc("norm_matrix",
+                               glm::transpose(glm::inverse(mv_mat)));
+                shader.set_loc("modelMatrix", model_mat);
+                shader.set_loc("mv_matrix", mv_mat);
             } break;
             case 3: { // right arm
-                shader.set_loc(
-                    "mv_matrix",
-                    m_v_mat * make_rotated(RIGHT_ARM_PIVOT, -player.angle));
+                glm::mat4 model_mat =
+                    make_rotated(RIGHT_ARM_PIVOT, -player.angle);
+                glm::mat4 mv_mat = m_v_mat * model_mat;
+                shader.set_loc("norm_matrix",
+                               glm::transpose(glm::inverse(mv_mat)));
+                shader.set_loc("modelMatrix", model_mat);
+                shader.set_loc("mv_matrix", mv_mat);
             } break;
             case 4: { // left leg
-                shader.set_loc("mv_matrix",
-                               m_v_mat *
-                                   make_rotated(LEFT_LEG_PIVOT, -player.angle));
+                glm::mat4 model_mat =
+                    make_rotated(LEFT_LEG_PIVOT, -player.angle);
+                glm::mat4 mv_mat = m_v_mat * model_mat;
+                shader.set_loc("norm_matrix",
+                               glm::transpose(glm::inverse(mv_mat)));
+                shader.set_loc("modelMatrix", model_mat);
+                shader.set_loc("mv_matrix", mv_mat);
             } break;
             case 5: { // right leg
-                shader.set_loc("mv_matrix",
-                               m_v_mat *
-                                   make_rotated(RIGHT_LEG_PIVOT, player.angle));
+                glm::mat4 model_mat =
+                    make_rotated(RIGHT_LEG_PIVOT, player.angle);
+
+                glm::mat4 mv_mat = m_v_mat * model_mat;
+                shader.set_loc("norm_matrix",
+                               glm::transpose(glm::inverse(mv_mat)));
+                shader.set_loc("modelMatrix", model_mat);
+                shader.set_loc("mv_matrix", mv_mat);
             } break;
             }
 

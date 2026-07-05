@@ -965,6 +965,29 @@ void Renderer::render_world() {
 void Renderer::render_player() {
     auto& shader = get_shader("player");
     shader.use();
+
+    glm::vec3 light_dir_view =
+        glm::normalize(glm::mat3(m_v_mat) * m_parallel_light.lightdir);
+
+    shader.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
+    shader.set_loc("ambientStrength", m_ambient_strength);
+    shader.set_loc("sunlightColor", m_parallel_light.directional_light_color);
+    shader.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
+    shader.set_loc("sunlightDir", light_dir_view);
+    shader.set_loc("shadowMode", m_shadow_mode);
+    shader.set_loc("shader_on", m_shader_on);
+    shader.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
+    shader.set_loc("minRadius", m_min_radius);
+    shader.set_loc("maxRadius", m_max_radius);
+    shader.set_loc("samples", m_samples);
+    shader.set_loc("specularStrength", m_specular_strength);
+    shader.set_loc("cameraPos", m_camera.get_camera_pos());
+    shader.set_loc("renderDistance", m_world.rendering_distance());
+    shader.set_loc("skyColor", m_sky_uniform.sky_top);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);
+
     m_player_renderer.render(shader);
 }
 
