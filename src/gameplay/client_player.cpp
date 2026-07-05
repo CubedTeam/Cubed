@@ -568,8 +568,15 @@ void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
 const ClientWorld& ClientPlayer::get_world() const { return m_world; }
 
-void ClientPlayer::set_uuid(std::string_view uuid) { m_uuid = uuid; }
-const std::string& ClientPlayer::get_uuid() const { return m_uuid; }
+void ClientPlayer::set_uuid(std::string_view uuid) {
+    std::lock_guard lock(m_uuid_mutex);
+    m_uuid = uuid;
+}
+std::string ClientPlayer::get_uuid() const {
+
+    std::shared_lock lock(m_uuid_mutex);
+    return m_uuid;
+}
 const std::string& ClientPlayer::get_name() const { return m_name; }
 void ClientPlayer::init(std::string_view name) { m_name = name; }
 

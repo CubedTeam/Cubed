@@ -54,7 +54,7 @@ private:
     glm::vec3 m_pos{0.0f};
     ServerWorld& m_world;
     ChunkPos m_last_chunk_pos{0, 0};
-    std::shared_ptr<Session> m_session;
+    std::atomic<std::shared_ptr<Session>> m_session;
     std::atomic<TickType> m_last_gametick{0};
     std::atomic<int> m_chunk_task_id{0};
     std::atomic<float> m_yaw{0.0f};

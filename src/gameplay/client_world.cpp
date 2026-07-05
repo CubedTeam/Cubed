@@ -753,7 +753,6 @@ void ClientWorld::update(float delta_time) {
                 m_player.get_name(), m_player.get_uuid(),
                 m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
                 m_player.get_gait(), m_player.angle());
-            Logger::info("World Update m_player yaw {}", m_player.yaw());
         }
     }
 }

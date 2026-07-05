@@ -57,7 +57,7 @@ public:
     const ClientWorld& get_world() const;
 
     void set_uuid(std::string_view uuid);
-    const std::string& get_uuid() const;
+    std::string get_uuid() const;
     const std::string& get_name() const;
 
     void init(std::string_view name);
@@ -116,6 +116,7 @@ private:
     GameMode m_game_mode = CREATIVE;
     std::optional<LookBlock> m_look_block = std::nullopt;
     std::string m_name{};
+    mutable std::shared_mutex m_uuid_mutex;
     std::string m_uuid;
     ClientWorld& m_world;
 

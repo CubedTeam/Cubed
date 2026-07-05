@@ -137,7 +137,7 @@ private:
     std::atomic<int> m_gen_pool_threads{0};
     std::atomic<int> m_net_pool_threads{0};
     std::atomic<int> m_max_threads{1};
-
+    std::atomic<size_t> m_player_sum{0};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
     std::atomic<bool> m_tick_running{true};

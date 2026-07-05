@@ -82,9 +82,11 @@ void ServerWorld::send_time() {
 
     rsp->set_day_tick(m_day_tick);
     rsp->set_game_tick(m_game_ticks);
-
-    for (auto& [uuid, player] : m_players) {
-        player.get_session()->send(make_packet(*rsp), 3);
+    {
+        std::shared_lock lock(m_player_mutex);
+        for (auto& [uuid, player] : m_players) {
+            player.get_session()->send(make_packet(*rsp), 3);
+        }
     }
 }
 
@@ -618,7 +620,7 @@ void ServerWorld::handle_player_login(const std::string& name,
         session->send(make_packet(*rsp), 0);
         return;
     }
-
+    ++m_player_sum;
     m_uuid_to_name.emplace(uuid, name);
     // Pre-insert into new_chunks to ensure correct addition to waiting_player
     /*ChunkPosSet required_chunks;
@@ -660,7 +662,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     }
 
     m_uuid_to_name.erase(uuid);
-
+    --m_player_sum;
     update_ref_count(old_set, {});
 
     Arena arena;

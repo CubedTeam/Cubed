@@ -207,7 +207,6 @@ void PlayerRenderer::render(const Shader& shader) {
             if (m_camera.is_first_person()) {
                 continue;
             }
-            Logger::info("render yaw = {}", player.yaw);
         }
 
         glm::mat4 model(1.0f);
