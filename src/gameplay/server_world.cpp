@@ -537,7 +537,7 @@ void ServerWorld::update() {
     }
 }
 
-void ServerWorld::sync_player_pos(const PlayerPos& prsp) {
+void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     std::string name;
     auto x = prsp.pos().x();
     auto y = prsp.pos().y();
@@ -552,10 +552,13 @@ void ServerWorld::sync_player_pos(const PlayerPos& prsp) {
             Logger::warn("Player {} is not in this Server", uuid);
             return;
         }
+
         it->second.update_pos(x, y, z);
         it->second.update_sync_gametick(m_game_ticks);
         it->second.set_pitch(pitch);
         it->second.set_yaw(yaw);
+        it->second.set_gait(get_gait_from_id(prsp.gait()));
+
         name = it->second.get_name();
     }
     ChunkPos pos = get_chunk_pos(x, z);
@@ -587,6 +590,7 @@ void ServerWorld::sync_player_pos(const PlayerPos& prsp) {
         pos->set_z(z);
         rsp->set_yaw(yaw);
         rsp->set_pitch(pitch);
+        rsp->set_gait(prsp.gait());
         session->send(make_packet(*rsp), 0);
     }
 }

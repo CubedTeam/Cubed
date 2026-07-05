@@ -14,7 +14,7 @@
 #include <tbb/concurrent_unordered_map.h>
 namespace Cubed {
 
-struct RemotePlayerInfo {
+struct PlayerInfo {
     std::string name;
     std::string uuid;
     glm::vec3 render_pos;
@@ -23,6 +23,9 @@ struct RemotePlayerInfo {
     float yaw;
     float render_pitch;
     float pitch;
+    Gait gait;
+    float angle = 0.0f;
+    float walk_time = 0.0f;
 };
 
 struct PlayerRenderData {
@@ -31,6 +34,8 @@ struct PlayerRenderData {
     glm::vec3 render_pos;
     float yaw;
     float pitch;
+    Gait gait;
+    float angle;
 };
 
 class ClientWorld {
@@ -75,12 +80,15 @@ public:
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
     const std::vector<PlayerRenderData>& render_player_data() const;
+    std::vector<PlayerRenderData>& render_player_data();
+
     glm::vec3 sunlight_dir() const;
     void receive_chunk(std::vector<uint8_t> data, PacketHeader header);
     void request_exit();
     bool is_receive_exit();
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
+
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,
@@ -95,21 +103,20 @@ private:
                                  ChunkPos::TBBHash>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     using ChunkPosVector = std::vector<ChunkPos>;
-    using OtherPlayerHashMap =
-        std::unordered_map<std::string, RemotePlayerInfo>;
+    using OtherPlayerHashMap = std::unordered_map<std::string, PlayerInfo>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
     ClientPlayer m_player;
-    OtherPlayerHashMap m_other_players;
+    OtherPlayerHashMap m_player_info;
     ChunkHashMap m_chunks;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
-    mutable std::shared_mutex m_other_players_mutex;
+    mutable std::shared_mutex m_player_info_mutex;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
@@ -136,9 +143,7 @@ private:
 
     void client_run(std::stop_token token);
 
-    void set_player_pos();
-
-    void report_player_pos();
+    void report_player_info();
 
     void set_block(const glm::ivec3& pos, unsigned id);
 

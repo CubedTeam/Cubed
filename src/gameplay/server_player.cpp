@@ -57,5 +57,6 @@ void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
 void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
 float ServerPlayer::yaw() const { return m_yaw.load(); }
 float ServerPlayer::pitch() const { return m_pitch.load(); }
-
+Gait ServerPlayer::gait() const { return m_gait; }
+void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 } // namespace Cubed

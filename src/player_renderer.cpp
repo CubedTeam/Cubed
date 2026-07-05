@@ -103,6 +103,12 @@ constexpr std::array<std::array<UVRect, 6>,
                    {LEFT_LEG_UV},
                    {RIGHT_LEG_UV}}};
 
+constexpr glm::vec3 HEAD_PIVOT{0.5, 1.5, 0.5};
+constexpr glm::vec3 LEFT_ARM_PIVOT{0.125f, 1.50f, 0.50f};
+constexpr glm::vec3 RIGHT_ARM_PIVOT{0.875, 1.50, 0.50};
+constexpr glm::vec3 LEFT_LEG_PIVOT{0.375, 0.75, 0.50};
+constexpr glm::vec3 RIGHT_LEG_PIVOT{0.625, 0.75, 0.50};
+
 } // namespace
 namespace Cubed {
 PlayerRenderer::PlayerRenderer(Renderer& renderer) : m_renderer(renderer) {}
@@ -190,7 +196,6 @@ void PlayerRenderer::render(const Shader& shader) {
     auto& m_world = m_renderer.world();
     auto& m_player = m_world.get_player();
     glm::mat4 m_v_mat = m_camera.get_camera_lookat();
-    glm::mat4 m_mv_mat;
     glm::mat4 m_p_mat = m_renderer.proj_mat();
 
     auto& players = m_world.render_player_data();
@@ -210,30 +215,54 @@ void PlayerRenderer::render(const Shader& shader) {
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
-        m_mv_mat = m_v_mat * model;
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_renderer.texture_mamger().get_skin());
 
+        auto make_rotated = [&](glm::vec3 pivot, float angle) {
+            glm::mat4 mat = model;
+            mat = glm::translate(mat, pivot);
+            mat = glm::rotate(mat, angle, glm::vec3(1, 0, 0));
+            mat = glm::translate(mat, -pivot);
+            return mat;
+        };
+
         for (int i = 0; i < BODY_PART_NUM; i++) {
-            if (i == 0) {
+            switch (i) {
+            case 0: {
                 glm::mat4 head_model = model;
-
-                head_model =
-                    glm::translate(head_model, glm::vec3(0.5f, 1.5f, 0.5f));
-
+                head_model = glm::translate(head_model, HEAD_PIVOT);
                 head_model =
                     glm::rotate(head_model, glm::radians(-player.pitch),
                                 glm::vec3(1, 0, 0));
-
-                head_model =
-                    glm::translate(head_model, glm::vec3(-0.5f, -1.5f, -0.5f));
-
+                head_model = glm::translate(head_model, -HEAD_PIVOT);
                 glm::mat4 head_mv = m_v_mat * head_model;
                 shader.set_loc("mv_matrix", head_mv);
-            } else {
-                shader.set_loc("mv_matrix", m_mv_mat);
+            } break;
+            case 1: {
+                shader.set_loc("mv_matrix", m_v_mat * model);
+            } break;
+            case 2: { // left arm
+                shader.set_loc("mv_matrix",
+                               m_v_mat *
+                                   make_rotated(LEFT_ARM_PIVOT, player.angle));
+            } break;
+            case 3: { // right arm
+                shader.set_loc(
+                    "mv_matrix",
+                    m_v_mat * make_rotated(RIGHT_ARM_PIVOT, -player.angle));
+            } break;
+            case 4: { // left leg
+                shader.set_loc("mv_matrix",
+                               m_v_mat *
+                                   make_rotated(LEFT_LEG_PIVOT, -player.angle));
+            } break;
+            case 5: { // right leg
+                shader.set_loc("mv_matrix",
+                               m_v_mat *
+                                   make_rotated(RIGHT_LEG_PIVOT, player.angle));
+            } break;
             }
+
             glBindVertexArray(m_vao[i]);
             glEnable(GL_DEPTH_TEST);
             glDrawArrays(GL_TRIANGLES, 0, m_vertices[i].size());
@@ -262,24 +291,46 @@ void PlayerRenderer::shadow_render(const Shader& shader,
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
-        shader.set_loc("modelMatrix", model);
+        auto make_rotated = [&](glm::vec3 pivot, float angle) {
+            glm::mat4 mat = model;
+            mat = glm::translate(mat, pivot);
+            mat = glm::rotate(mat, angle, glm::vec3(1, 0, 0));
+            mat = glm::translate(mat, -pivot);
+            return mat;
+        };
 
         for (int i = 0; i < BODY_PART_NUM; i++) {
-            if (i == 0) {
+            switch (i) {
+            case 0: {
                 glm::mat4 head_model = model;
-
-                head_model =
-                    glm::translate(head_model, glm::vec3(0.5f, 1.5f, 0.5f));
-
+                head_model = glm::translate(head_model, HEAD_PIVOT);
                 head_model =
                     glm::rotate(head_model, glm::radians(-player.pitch),
                                 glm::vec3(1, 0, 0));
-
-                head_model =
-                    glm::translate(head_model, glm::vec3(-0.5f, -1.5f, -0.5f));
+                head_model = glm::translate(head_model, -HEAD_PIVOT);
                 shader.set_loc("modelMatrix", head_model);
-            } else {
+            } break;
+            case 1: {
                 shader.set_loc("modelMatrix", model);
+            } break;
+            case 2: { // left arm
+                shader.set_loc("modelMatrix",
+                               make_rotated(LEFT_ARM_PIVOT, player.angle));
+            } break;
+            case 3: { // right arm
+                shader.set_loc("modelMatrix",
+                               make_rotated(RIGHT_ARM_PIVOT, -player.angle));
+            } break;
+            case 4: { // left leg
+                shader.set_loc("modelMatrix",
+
+                               make_rotated(LEFT_LEG_PIVOT, -player.angle));
+            } break;
+            case 5: { // right leg
+                shader.set_loc("modelMatrix",
+
+                               make_rotated(RIGHT_LEG_PIVOT, player.angle));
+            } break;
             }
             glBindVertexArray(m_vao[i]);
             glEnable(GL_DEPTH_TEST);

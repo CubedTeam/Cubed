@@ -1,6 +1,7 @@
 #pragma once
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/player.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <atomic>
@@ -43,6 +44,9 @@ public:
     float yaw() const;
     float pitch() const;
 
+    Gait gait() const;
+    void set_gait(Gait gait);
+
 private:
     static constexpr TickType TIMEOUT = 200;
     std::string m_name;
@@ -55,6 +59,7 @@ private:
     std::atomic<int> m_chunk_task_id{0};
     std::atomic<float> m_yaw{0.0f};
     std::atomic<float> m_pitch{0.0f};
+    std::atomic<Gait> m_gait;
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
 };

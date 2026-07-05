@@ -2,11 +2,12 @@ syntax = "proto3";
 
 import "common/vector3.proto";
 
-message PlayerPos {
+message C2S_PlayerInfo {
     string uuid = 1;
     Vec3 pos = 2;
     float yaw = 3;
     float pitch = 4;
+    int32 gait = 5;
 }
 
 message PlayerInfoRsp {
@@ -15,4 +16,5 @@ message PlayerInfoRsp {
     Vec3 pos = 3;
     float yaw = 4;
     float pitch = 5;
+    int32 gait = 6;
 }

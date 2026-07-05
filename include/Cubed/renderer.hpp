@@ -53,8 +53,11 @@ public:
 
     const Camera& camera() const;
     const ClientWorld& world() const;
+    ClientWorld& world();
     const glm::mat4& proj_mat() const;
     const TextureManager& texture_mamger() const;
+
+    float delta_time() const;
 
 private:
     struct ParallelLight {

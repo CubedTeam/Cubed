@@ -20,7 +20,7 @@ AABB ClientPlayer::get_aabb(const glm::vec3& pos) {
 }
 const glm::vec3& ClientPlayer::get_front() const { return m_front; }
 
-const Gait& ClientPlayer::get_gait() const { return m_gait; }
+Gait ClientPlayer::get_gait() const { return m_gait.load(); }
 
 const std::optional<LookBlock>& ClientPlayer::get_look_block_pos() const {
     return m_look_block;
@@ -111,10 +111,9 @@ void ClientPlayer::change_mode(GameMode mode) {
     Logger::info("Change GameMode to {}", to_str(mode));
     if (mode == CREATIVE) {
         is_fly = false;
-        m_gait = Gait::WALK;
+        m_max_speed = m_max_walk_speed;
     } else if (mode == SPECTATOR) {
         is_fly = true;
-        m_gait = Gait::RUN;
         m_max_speed = m_max_run_speed;
     }
 }
@@ -128,7 +127,7 @@ void ClientPlayer::set_player_pos(const glm::vec3& pos) { m_player_pos = pos; }
 void ClientPlayer::set_place_block(unsigned id) { m_place_block = id; }
 
 void ClientPlayer::update(float delta_time) {
-
+    m_gait = compute_gait();
     update_move(delta_time);
     update_lookup_block();
 
@@ -145,36 +144,41 @@ void ClientPlayer::update_player_move_state(int key, int action) {
     case GLFW_KEY_W:
         if (action == GLFW_PRESS) {
             m_move_state.forward = true;
+            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.forward = false;
-            if (m_game_mode != SPECTATOR) {
-                m_gait = Gait::WALK;
-            }
+            m_moving = false;
         }
         break;
     case GLFW_KEY_S:
         if (action == GLFW_PRESS) {
             m_move_state.back = true;
+            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.back = false;
+            m_moving = false;
         }
         break;
     case GLFW_KEY_A:
         if (action == GLFW_PRESS) {
             m_move_state.left = true;
+            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.left = false;
+            m_moving = false;
         }
         break;
     case GLFW_KEY_D:
         if (action == GLFW_PRESS) {
             m_move_state.right = true;
+            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.right = false;
+            m_moving = false;
         }
         break;
     case GLFW_KEY_SPACE:
@@ -205,7 +209,7 @@ void ClientPlayer::update_player_move_state(int key, int action) {
         break;
     case GLFW_KEY_LEFT_CONTROL:
         if (action == GLFW_PRESS) {
-            m_gait = Gait::RUN;
+            m_sprinting = true;
         }
         break;
     case GLFW_KEY_F4:
@@ -300,6 +304,9 @@ void ClientPlayer::update_move(float delta_time) {
     if (delta_time > 1.0f) {
         return;
     }
+    if (m_xz_speed < 0.01f) {
+        m_sprinting = false;
+    }
     // ensure the thread safe
     glm::vec3 player_pos;
 
@@ -309,12 +316,10 @@ void ClientPlayer::update_move(float delta_time) {
     }
 
     if (m_game_mode != SPECTATOR) {
-        if (m_gait == Gait::RUN) {
-            m_max_speed = m_max_run_speed;
-        }
-        if (m_gait == Gait::WALK) {
-            m_max_speed = m_max_walk_speed;
-        }
+        m_max_speed =
+            (m_gait == Gait::RUN) ? m_max_run_speed : m_max_walk_speed;
+    } else {
+        m_max_speed = m_max_run_speed;
     }
 
     if (space_on) {
@@ -407,7 +412,7 @@ void ClientPlayer::update_x_move(glm::vec3& player_pos) {
                 if (!m_world.can_pass_block(block_pos)) {
                     AABB block_box = ClientWorld::get_block_aabb(block_pos);
                     if (player_box.intersects(block_box)) {
-                        m_gait = Gait::WALK;
+                        m_sprinting = false;
                         player_pos.x -= move_distance.x;
                         return;
                     }
@@ -471,7 +476,7 @@ void ClientPlayer::update_z_move(glm::vec3& player_pos) {
                 if (!m_world.can_pass_block(block_pos)) {
                     AABB block_box = ClientWorld::get_block_aabb(block_pos);
                     if (player_box.intersects(block_box)) {
-                        m_gait = Gait::WALK;
+                        m_sprinting = false;
                         player_pos.z -= move_distance.z;
                         return;
                     }
@@ -495,6 +500,16 @@ void ClientPlayer::update_player_chunk() {
         m_world.request_chunk();
         m_last_chunk_pos = chunk_pos;
     }
+}
+
+Gait ClientPlayer::compute_gait() const {
+    if (m_xz_speed < 0.01f)
+        return Gait::STOP;
+
+    if (m_sprinting)
+        return Gait::RUN;
+
+    return Gait::WALK;
 }
 
 void ClientPlayer::update_scroll(double yoffset) {
@@ -548,7 +563,7 @@ float& ClientPlayer::deceleration() { return m_deceleration; }
 float& ClientPlayer::g() { return m_g; }
 float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
 unsigned ClientPlayer::place_block() const { return m_place_block; };
-Gait& ClientPlayer::gait() { return m_gait; }
+void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
 const ClientWorld& ClientPlayer::get_world() const { return m_world; }
 
