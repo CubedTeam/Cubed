@@ -450,25 +450,6 @@ void ClientWorld::report_player_info() {
     info->set_pitch(m_player.pitch());
     info->set_gait(get_gait_id(m_player.get_gait()));
 
-    {
-        std::lock_guard lock(m_player_info_mutex);
-        auto it = m_player_info.find(m_player.get_uuid());
-        if (it == m_player_info.end()) {
-            m_player_info.emplace(
-                std::piecewise_construct,
-                std::forward_as_tuple(m_player.get_uuid()),
-                std::forward_as_tuple(m_player.get_name(), m_player.get_uuid(),
-                                      player_pos, player_pos, m_player.yaw(),
-                                      m_player.yaw(), m_player.pitch(),
-                                      m_player.pitch(), m_player.get_gait()));
-        } else {
-            it->second.target_pos = player_pos;
-            it->second.yaw = m_player.yaw();
-            it->second.pitch = m_player.pitch();
-            it->second.gait = m_player.get_gait();
-        }
-    }
-
     m_client->send(make_packet(*info), 0);
 }
 
@@ -750,6 +731,29 @@ void ClientWorld::update(float delta_time) {
             m_render_player_data.emplace_back(
                 player.name, player.uuid, player.render_pos, player.render_yaw,
                 player.render_pitch, player.gait, player.angle);
+        }
+        {
+            auto gait = m_player.get_gait();
+            auto& walk_time = m_player.walk_time();
+            auto& angle = m_player.angle();
+            if (gait == Gait::WALK || gait == Gait::RUN) {
+
+                walk_time += delta_time;
+
+                float speed = gait == Gait::RUN ? 14.0f : 8.0f;
+                float amp = gait == Gait::RUN ? 50.0f : 35.0f;
+                // float amp = 90.0f;
+                angle = glm::sin(walk_time * speed) * glm::radians(amp);
+            } else if (gait == Gait::STOP) {
+                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
+                angle = glm::mix(angle, 0.0f, t);
+            }
+
+            m_render_player_data.emplace_back(
+                m_player.get_name(), m_player.get_uuid(),
+                m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
+                m_player.get_gait(), m_player.angle());
+            Logger::info("World Update m_player yaw {}", m_player.yaw());
         }
     }
 }

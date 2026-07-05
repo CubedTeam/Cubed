@@ -574,5 +574,6 @@ void ClientPlayer::init(std::string_view name) { m_name = name; }
 
 float ClientPlayer::yaw() const { return m_yaw; }
 float ClientPlayer::pitch() const { return m_pitch; }
-
+float& ClientPlayer::angle() { return m_angle; }
+float& ClientPlayer::walk_time() { return m_walk_time; }
 } // namespace Cubed

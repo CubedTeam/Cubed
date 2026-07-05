@@ -202,8 +202,12 @@ void PlayerRenderer::render(const Shader& shader) {
     shader.set_loc("proj_matrix", m_p_mat);
 
     for (auto& player : players) {
+
         if (player.uuid == m_player.get_uuid()) {
-            continue;
+            if (m_camera.is_first_person()) {
+                continue;
+            }
+            Logger::info("render yaw = {}", player.yaw);
         }
 
         glm::mat4 model(1.0f);
@@ -211,7 +215,11 @@ void PlayerRenderer::render(const Shader& shader) {
         model = glm::translate(model, player.render_pos);
 
         // model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
-        model = glm::rotate(model, glm::radians(player.yaw + 180.0f),
+        // glm::rotate(..., +yaw, Y) follows the OpenGL right‑handed coordinate
+        // system, where a positive angle means counter‑clockwise rotation.
+        // Therefore the model must use -yaw to align with the direction of
+        // m_front.
+        model = glm::rotate(model, glm::radians(-player.yaw + 180.0f),
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
@@ -287,7 +295,8 @@ void PlayerRenderer::shadow_render(const Shader& shader,
         model = glm::translate(model, player.render_pos);
 
         // model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
-        model = glm::rotate(model, glm::radians(player.yaw + 180.0f),
+
+        model = glm::rotate(model, glm::radians(-player.yaw + 180.0f),
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 

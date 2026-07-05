@@ -64,6 +64,8 @@ public:
 
     float yaw() const;
     float pitch() const;
+    float& angle();
+    float& walk_time();
 
 private:
     using enum GameMode;
@@ -113,6 +115,9 @@ private:
     std::string m_name{};
     std::string m_uuid;
     ClientWorld& m_world;
+
+    float m_angle{0.0f};
+    float m_walk_time{0.0f};
 
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;
