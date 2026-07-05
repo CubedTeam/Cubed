@@ -228,7 +228,7 @@ void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
     m_yaw += offset_x * m_sensitivity;
     m_pitch += offset_y * m_sensitivity;
 
-    m_yaw = std::fmod(m_yaw.load(), 360.0);
+    // m_yaw = std::fmod(m_yaw.load(), 360.0);
 
     m_pitch = std::clamp(m_pitch.load(), -89.0f, 89.0f);
 
