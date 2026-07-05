@@ -83,6 +83,7 @@ public:
     std::vector<PlayerRenderData>& render_player_data();
 
     glm::vec3 sunlight_dir() const;
+    bool sphere_collide_world(glm::vec3 center, float radius) const;
     void receive_chunk(std::vector<uint8_t> data, PacketHeader header);
     void request_exit();
     bool is_receive_exit();

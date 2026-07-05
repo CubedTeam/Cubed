@@ -775,6 +775,33 @@ glm::vec3 ClientWorld::sunlight_dir() const {
 
     return glm::normalize(-dir);
 }
+
+bool ClientWorld::sphere_collide_world(glm::vec3 center, float radius) const {
+    glm::ivec3 min = glm::floor(center - glm::vec3(radius));
+    glm::ivec3 max = glm::floor(center + glm::vec3(radius));
+
+    for (int x = min.x; x <= max.x; ++x) {
+        for (int y = min.y; y <= max.y; ++y) {
+            for (int z = min.z; z <= max.z; ++z) {
+                if (!is_solid({x, y, z}))
+                    continue;
+
+                glm::vec3 closest;
+                closest.x = glm::clamp(center.x, float(x), float(x + 1));
+                closest.y = glm::clamp(center.y, float(y), float(y + 1));
+                closest.z = glm::clamp(center.z, float(z), float(z + 1));
+
+                glm::vec3 d = center - closest;
+
+                if (glm::dot(d, d) < radius * radius)
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 int ClientWorld::rendering_distance() const {
     return m_rendering_distance.load();
 }

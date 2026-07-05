@@ -66,6 +66,9 @@ public:
     float pitch() const;
     float& angle();
     float& walk_time();
+    bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
+                  glm::ivec3& block_pos, glm::vec3& normal,
+                  float distance = 4.0f);
 
 private:
     using enum GameMode;
@@ -122,9 +125,6 @@ private:
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
-    bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
-                  glm::ivec3& block_pos, glm::vec3& normal,
-                  float distance = 4.0f);
 
     void update_direction();
     void update_lookup_block();

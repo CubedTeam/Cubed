@@ -6,7 +6,8 @@
 
 namespace {
 constexpr float DISTANCE = 4.0f;
-}
+
+} // namespace
 namespace Cubed {
 
 Camera::Camera() {}
@@ -23,13 +24,19 @@ void Camera::update_move_camera() {
     case Perspective::FIRST_PERSON:
         m_camera_pos = eye;
         break;
-    case Perspective::THIRD_PERSON_BACK:
-        m_camera_pos = eye - forward * DISTANCE;
-        break;
-    case Perspective::THIRD_PERSON_FRONT:
-        m_camera_pos = eye + forward * DISTANCE;
-        m_front = -m_front;
-        break;
+    case Perspective::THIRD_PERSON_BACK: {
+        constexpr float CAMERA_RADIUS = 0.2f;
+
+        glm::vec3 target = eye - forward * DISTANCE;
+        m_camera_pos = camera_collision(eye, target, CAMERA_RADIUS);
+    } break;
+    case Perspective::THIRD_PERSON_FRONT: {
+        m_front = -forward;
+        constexpr float CAMERA_RADIUS = 0.2f;
+
+        glm::vec3 target = eye + forward * DISTANCE;
+        m_camera_pos = camera_collision(eye, target, CAMERA_RADIUS);
+    } break;
     }
     glm::ivec3 block_pos = glm::floor(m_camera_pos);
     auto& world = m_player->get_world();
@@ -96,4 +103,26 @@ void Camera::change_perspective() {
 bool Camera::is_first_person() const {
     return m_perspective == Perspective::FIRST_PERSON;
 }
+
+glm::vec3 Camera::camera_collision(glm::vec3 start, glm::vec3 end,
+                                   float radius) {
+    constexpr float STEP = 0.05f;
+
+    glm::vec3 last = start;
+
+    glm::vec3 dir = glm::normalize(end - start);
+    float len = glm::length(end - start);
+
+    for (float t = 0.0f; t <= len; t += STEP) {
+        glm::vec3 p = start + dir * t;
+
+        if (m_player->get_world().sphere_collide_world(p, radius))
+            return last;
+
+        last = p;
+    }
+
+    return end;
+}
+
 } // namespace Cubed

@@ -25,6 +25,8 @@ private:
     bool m_under_water = false;
     Perspective m_perspective = Perspective::FIRST_PERSON;
     glm::vec3 m_front;
+    glm::vec3 camera_collision(glm::vec3 start, glm::vec3 end,
+                               float radius = 0.2f);
 
 public:
     Camera();
