@@ -7,6 +7,7 @@
 #include "Cubed/texture_manager.hpp"
 
 #include <glm/glm.hpp>
+
 namespace {
 struct Cuboid {
     glm::vec3 offset;

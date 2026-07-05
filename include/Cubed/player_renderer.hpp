@@ -1,7 +1,9 @@
 #pragma once
 #include "Cubed/shader.hpp"
 
+#include <array>
 #include <glad/glad.h>
+
 namespace Cubed {
 class Renderer;
 class PlayerRenderer {
