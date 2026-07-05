@@ -980,8 +980,6 @@ void Renderer::render_player() {
     shader.set_loc("minRadius", m_min_radius);
     shader.set_loc("maxRadius", m_max_radius);
     shader.set_loc("samples", m_samples);
-    shader.set_loc("specularStrength", m_specular_strength);
-    shader.set_loc("cameraPos", m_camera.get_camera_pos());
     shader.set_loc("renderDistance", m_world.rendering_distance());
     shader.set_loc("skyColor", m_sky_uniform.sky_top);
 
