@@ -107,6 +107,10 @@ void DevPanel::show_about_table_bar() {
         ImGui::Text("OpenAl Soft");
         ImGui::Text("dr_libs");
         ImGui::Separator();
+        ImGui::Text("Music");
+        ImGui::Text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), "
+                    "CC BY 4.0.");
+        ImGui::Separator();
         ImGui::Text("Special Thanks");
         ImGui::Text("TANGERIME");
         ImGui::Text("SkyOnPole");

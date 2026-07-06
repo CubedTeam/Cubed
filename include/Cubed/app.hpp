@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/network_server.hpp"
 #include "Cubed/gameplay/server_world.hpp"
@@ -61,6 +62,8 @@ private:
                         m_dev_panel};
 
     Window m_window{m_renderer};
+
+    AudioEngine m_audio;
 
     inline static double last_time = glfwGetTime();
     inline static double current_time = glfwGetTime();

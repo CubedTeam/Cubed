@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
@@ -40,7 +41,7 @@ struct PlayerRenderData {
 
 class ClientWorld {
 public:
-    ClientWorld();
+    ClientWorld(AudioEngine& auido);
     ~ClientWorld();
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client);
@@ -112,6 +113,7 @@ private:
     ClientPlayer m_player;
     OtherPlayerHashMap m_player_info;
     ChunkHashMap m_chunks;
+    AudioEngine& m_audio;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 

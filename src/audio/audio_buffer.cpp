@@ -1,0 +1,22 @@
+#include "Cubed/audio/audio_buffer.hpp"
+
+namespace Cubed {
+AudioBuffer::AudioBuffer(const AudioData& data) {
+    alGenBuffers(1, &m_buffer);
+    set_data(data);
+}
+AudioBuffer::~AudioBuffer() { alDeleteBuffers(1, &m_buffer); }
+
+ALuint AudioBuffer::buffer() const { return m_buffer; }
+void AudioBuffer::set_data(const AudioData& data) {
+    ALenum format;
+    if (data.channels == 1) {
+        format = AL_FORMAT_MONO16;
+    } else {
+        format = AL_FORMAT_STEREO16;
+    }
+    alBufferData(m_buffer, format, data.pcm.data(), data.pcm.size(),
+                 data.sample_rate);
+}
+
+} // namespace Cubed

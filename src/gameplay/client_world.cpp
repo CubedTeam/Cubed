@@ -20,7 +20,8 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld() : m_player(*this) {}
+ClientWorld::ClientWorld(AudioEngine& auido)
+    : m_player(*this), m_audio(auido) {}
 
 ClientWorld::~ClientWorld() {
     stop_client_thread();
@@ -356,6 +357,7 @@ void ClientWorld::init(std::string_view player_name,
     // request login
     Logger::info("Send Login Request");
     m_client->send(make_packet(req), 0);
+    m_audio.play_bgm();
 }
 
 void ClientWorld::start_client_thread(std::string_view uuid) {

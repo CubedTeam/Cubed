@@ -32,6 +32,8 @@ add_subdirectory(third_party/glad)
 
 add_subdirectory(third_party/imgui)
 
+add_subdirectory(third_party/dr_libs)
+
 add_executable(${PROJECT_NAME})
 
 add_subdirectory(src)
@@ -129,6 +131,7 @@ target_link_libraries(${PROJECT_NAME}
         Freetype::Freetype
         tomlplusplus::tomlplusplus
         imgui
+        dr_libs
         tbb
         protobuf::libprotobuf
         absl::log

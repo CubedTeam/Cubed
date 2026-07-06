@@ -12,7 +12,7 @@
 #include <imgui_impl_glfw.h>
 namespace Cubed {
 
-App::App() {}
+App::App() : m_client_world(m_audio) {}
 
 App::~App() {
     if (m_client) {
@@ -58,6 +58,8 @@ void App::init(int argc, char** argv) {
     glfwSetCursorEnterCallback(m_window.get_glfw_window(),
                                cursor_enter_callback);
     glfwSetCharCallback(m_window.get_glfw_window(), char_callback);
+
+    m_audio.init();
 
     ChunkGenerator::init();
     BlockManager::init();
@@ -357,6 +359,7 @@ void App::update() {
             m_renderer.update_fov(fov + 5.0f);
         }
     }
+    m_audio.update(m_camera.get_camera_pos());
     m_renderer.update(delta_time);
 }
 
