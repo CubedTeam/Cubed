@@ -8,6 +8,8 @@ AudioBuffer::AudioBuffer(const AudioData& data) {
 AudioBuffer::~AudioBuffer() { alDeleteBuffers(1, &m_buffer); }
 
 ALuint AudioBuffer::buffer() const { return m_buffer; }
+float AudioBuffer::duration() const { return m_duration; }
+
 void AudioBuffer::set_data(const AudioData& data) {
     ALenum format;
     if (data.channels == 1) {
@@ -17,6 +19,8 @@ void AudioBuffer::set_data(const AudioData& data) {
     }
     alBufferData(m_buffer, format, data.pcm.data(), data.pcm.size(),
                  data.sample_rate);
+    m_duration = static_cast<float>(data.pcm.size()) /
+                 (data.channels * data.sample_rate);
 }
 
 } // namespace Cubed

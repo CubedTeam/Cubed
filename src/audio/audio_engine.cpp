@@ -33,7 +33,10 @@ void AudioEngine::init() {
 
     m_sounds.init();
     m_bgm = std::make_unique<AudioSource>();
-    m_bgm->set_buffer(m_sounds.get_buffer("bgm/bgm001.mp3"));
+    m_bgm->set_buffer_2d(m_sounds.get_buffer("bgm/bgm001.mp3"));
+
+    m_fade_map.try_emplace("bgm", m_bgm.get(), 5.0f, 2.0f);
+
     Logger::info("Audio Engine Init Success");
 
     m_init = true;
@@ -41,6 +44,11 @@ void AudioEngine::init() {
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
 
-void AudioEngine::update(glm::vec3 listener_pos) {}
+void AudioEngine::update_listener(glm::vec3 listener_pos) {}
+void AudioEngine::update(float dt) {
 
+    for (auto& [key, fade] : m_fade_map) {
+        fade.update();
+    }
+}
 } // namespace Cubed

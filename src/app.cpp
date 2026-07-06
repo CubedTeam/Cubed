@@ -329,9 +329,9 @@ static Gait player_gait = Gait::WALK;
 void App::update() {
     glfwPollEvents();
     current_time = glfwGetTime();
-    delta_time = current_time - last_time;
+    dt = current_time - last_time;
     last_time = current_time;
-    fps_time_count += delta_time;
+    fps_time_count += dt;
     frame_count++;
     if (fps_time_count >= 1.0f) {
         fps = static_cast<int>(frame_count / fps_time_count);
@@ -346,7 +346,7 @@ void App::update() {
             std::format("RSS: {}mb", Tools::get_current_rss() / (1024 * 1024)));
     }
     m_texture_manager.update();
-    m_client_world.update(delta_time);
+    m_client_world.update(dt);
     m_camera.update_move_camera();
     const auto& player = m_client_world.get_player();
     if (player_gait != player.get_gait()) {
@@ -359,8 +359,9 @@ void App::update() {
             m_renderer.update_fov(fov + 5.0f);
         }
     }
-    m_audio.update(m_camera.get_camera_pos());
-    m_renderer.update(delta_time);
+    m_audio.update_listener(m_camera.get_camera_pos());
+    m_audio.update(dt);
+    m_renderer.update(dt);
 }
 
 int App::start_cubed_application(int argc, char** argv) {
@@ -382,7 +383,7 @@ int App::start_cubed_application(int argc, char** argv) {
     return 1;
 }
 
-float App::delte_time() { return delta_time; }
+float App::delta_time() { return dt; }
 
 float App::get_fps() { return fps; }
 

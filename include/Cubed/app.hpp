@@ -38,7 +38,7 @@ public:
     static int start_cubed_application(int argc, char** argv);
 
     static unsigned int seed();
-    static float delte_time();
+    static float delta_time();
     static float get_fps();
 
     Camera& camera();
@@ -67,7 +67,7 @@ private:
 
     inline static double last_time = glfwGetTime();
     inline static double current_time = glfwGetTime();
-    inline static double delta_time = 0.0f;
+    inline static double dt = 0.0f;
     inline static double fps_time_count = 0.0f;
     inline static int frame_count = 0;
     inline static int fps = 0;

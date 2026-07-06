@@ -12,9 +12,11 @@ public:
     AudioBuffer& operator=(AudioBuffer&&) = delete;
     ~AudioBuffer();
     ALuint buffer() const;
+    float duration() const;
 
 private:
     ALuint m_buffer = 0;
+    float m_duration = 0.0f;
     void set_data(const AudioData& data);
 };
 } // namespace Cubed

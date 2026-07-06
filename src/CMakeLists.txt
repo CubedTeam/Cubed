@@ -50,4 +50,5 @@ target_sources(${PROJECT_NAME}
         audio/audio_buffer.cpp
         audio/sound_manager.cpp
         audio/source_pool.cpp
+        audio/audio_fade.cpp
 )
