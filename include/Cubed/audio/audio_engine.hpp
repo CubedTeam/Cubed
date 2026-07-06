@@ -3,6 +3,7 @@
 #include "Cubed/audio/audio_fade.hpp"
 #include "Cubed/audio/audio_source.hpp"
 #include "Cubed/audio/sound_manager.hpp"
+#include "Cubed/audio/source_pool.hpp"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -25,11 +26,11 @@ public:
 
     void init();
     void play_bgm();
+    void play_3d(const std::string& sound, const glm::vec3& pos);
     void update_listener(glm::vec3 listener_pos);
     void update(float dt);
 
 private:
-    using SourcePool = std::unordered_map<std::string, ALuint>;
     using FadeMap = std::unordered_map<std::string, AudioFade>;
     bool m_init{false};
     ALCdevice* device{nullptr};
@@ -38,5 +39,6 @@ private:
     std::unique_ptr<AudioSource> m_bgm;
     FadeMap m_fade_map;
     SoundManager m_sounds;
+    std::shared_ptr<SourcePool> m_pool;
 };
 } // namespace Cubed

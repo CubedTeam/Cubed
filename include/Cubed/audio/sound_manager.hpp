@@ -8,8 +8,8 @@ class SoundManager {
 public:
     SoundManager();
     ~SoundManager();
-    void load(const std::string& name);
-    const AudioBuffer& get_buffer(const std::string& name) const;
+    const AudioBuffer& load(const std::string& name);
+    const AudioBuffer& get_buffer(const std::string& name);
     void init();
     void clear();
 

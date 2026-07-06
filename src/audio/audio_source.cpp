@@ -1,5 +1,7 @@
 #include "Cubed/audio/audio_source.hpp"
 
+#include "Cubed/tools/log.hpp"
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -22,6 +24,22 @@ void AudioSource::set_buffer_2d(const AudioBuffer& buffer) {
     alSource3f(m_source, AL_POSITION, 0, 0, 0);
 }
 
+void AudioSource::set_buffer_3d(const AudioBuffer& buffer,
+                                const glm::vec3& pos) {
+
+    if (buffer.channels() != 1) {
+        Logger::warn("3D sound should use mono audio.");
+    }
+
+    if (state() != AudioState::STOPPED && state() != AudioState::INITIAL) {
+        stop();
+    }
+    m_duration = buffer.duration();
+
+    alSourcei(m_source, AL_BUFFER, buffer.buffer());
+    alSource3f(m_source, AL_POSITION, pos.x, pos.y, pos.z);
+}
+
 void AudioSource::set_loop(bool on) {
     if (on) {
         alSourcei(m_source, AL_LOOPING, AL_TRUE);
@@ -37,6 +55,16 @@ void AudioSource::set_volume(float volume) {
 }
 
 void AudioSource::play() { alSourcePlay(m_source); }
+
+void AudioSource::play_2d(const AudioBuffer& buffer) {
+    set_buffer_2d(buffer);
+    play();
+}
+
+void AudioSource::play_3d(const AudioBuffer& buffer, const glm::vec3& pos) {
+    set_buffer_3d(buffer, pos);
+    play();
+}
 
 void AudioSource::stop() { alSourceStop(m_source); }
 void AudioSource::pause() { alSourcePause(m_source); }
@@ -67,4 +95,14 @@ AudioState AudioSource::state() const {
     throw std::runtime_error("Invaild state");
 }
 
+void AudioSource::mark_in_use() { m_using = true; }
+bool AudioSource::in_use() const { return m_using; }
+void AudioSource::reset() {
+    alSourcei(m_source, AL_BUFFER, 0);
+    alSourcef(m_source, AL_GAIN, 1.0f);
+    alSourcef(m_source, AL_PITCH, 1.0f);
+    alSource3f(m_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alSourcei(m_source, AL_LOOPING, AL_FALSE);
+    m_using = false;
+}
 } // namespace Cubed

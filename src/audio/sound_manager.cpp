@@ -9,28 +9,38 @@ namespace Cubed {
 SoundManager::SoundManager() {}
 SoundManager::~SoundManager() { clear(); }
 void SoundManager::clear() { m_buffers.clear(); }
-void SoundManager::init() { load("bgm/bgm001.mp3"); }
+void SoundManager::init() {
+    try {
+        // load("bgm/bgm001.mp3");
+    } catch (const std::exception& e) {
+    }
+}
 
-void SoundManager::load(const std::string& name) {
-    fs::path sound_path{std::string(ASSETS_PATH) + "sound/" + name};
+const AudioBuffer& SoundManager::load(const std::string& name) {
+    fs::path sound_path{fs::path(ASSETS_PATH) / "sound" / name};
     try {
 
         AudioData data = AudioLoader::load(sound_path);
-        auto [_, inserted] = m_buffers.try_emplace(name, data);
+        auto [pos, inserted] = m_buffers.try_emplace(name, data);
         if (!inserted) {
             Logger::error("Key Already exist, check the sound name {}", name);
         }
-
+        return pos->second;
     } catch (const std::exception& e) {
         Logger::error("Load Sound Error {}", e.what());
+        throw;
     }
 }
-const AudioBuffer& SoundManager::get_buffer(const std::string& name) const {
+const AudioBuffer& SoundManager::get_buffer(const std::string& name) {
     auto it = m_buffers.find(name);
     if (it == m_buffers.end()) {
-        std::string err = std::format("Can't Find Buffer {}", name);
-        ASSERT_MSG(false, err);
-        throw std::runtime_error(err);
+        try {
+            return load(name);
+        } catch (const std::exception& e) {
+            std::string err = std::format("Can't Find Buffer {}", name);
+            ASSERT_MSG(false, err);
+            throw std::runtime_error(err);
+        }
     }
     return it->second;
 }
