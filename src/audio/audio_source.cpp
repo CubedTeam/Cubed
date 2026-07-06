@@ -1,7 +1,6 @@
 #include "Cubed/audio/audio_source.hpp"
 
-#include "Cubed/tools/log.hpp"
-
+#include <algorithm>
 #include <stdexcept>
 
 namespace Cubed {
@@ -14,7 +13,7 @@ AudioSource::~AudioSource() {
 }
 
 void AudioSource::set_buffer_2d(const AudioBuffer& buffer) {
-    if (state() == AudioState::PLAYING) {
+    if (state() != AudioState::STOPPED && state() != AudioState::INITIAL) {
         stop();
     }
     m_duration = buffer.duration();
@@ -32,10 +31,7 @@ void AudioSource::set_loop(bool on) {
 }
 
 void AudioSource::set_volume(float volume) {
-    if (volume > 1.0f) {
-        Logger::error("Volume {} is too large", volume);
-        return;
-    }
+    volume = std::clamp(volume, 0.0f, 1.0f);
     m_volume = volume;
     alSourcef(m_source, AL_GAIN, volume);
 }
@@ -53,7 +49,7 @@ float AudioSource::current_time() const {
 }
 float AudioSource::volume() const { return m_volume; }
 
-AudioState AudioSource::state() {
+AudioState AudioSource::state() const {
     ALint state;
     alGetSourcei(m_source, AL_SOURCE_STATE, &state);
     switch (state) {
@@ -65,6 +61,8 @@ AudioState AudioSource::state() {
         return AudioState::STOPPED;
     case AL_PAUSED:
         return AudioState::PAUSED;
+    default:
+        throw std::runtime_error("Invalid OpenAL source state");
     }
     throw std::runtime_error("Invaild state");
 }

@@ -20,7 +20,7 @@ public:
     float duration() const;
     float current_time() const;
     float volume() const;
-    AudioState state();
+    AudioState state() const;
 
 private:
     ALuint m_source = 0;
