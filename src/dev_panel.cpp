@@ -104,6 +104,8 @@ void DevPanel::show_about_table_bar() {
         ImGui::Text("Asio");
         ImGui::Text("protobuf");
         ImGui::Text("zstd");
+        ImGui::Text("OpenAl Soft");
+        ImGui::Text("dr_libs");
         ImGui::Separator();
         ImGui::Text("Special Thanks");
         ImGui::Text("TANGERIME");
