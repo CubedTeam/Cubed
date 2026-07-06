@@ -137,6 +137,7 @@ target_link_libraries(${PROJECT_NAME}
         absl::strings
         absl::flat_hash_map
         zstd::zstd
+        OpenAL::OpenAL
         $<$<PLATFORM_ID:Windows>:ws2_32>
 
 )
