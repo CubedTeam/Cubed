@@ -2,6 +2,9 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 
+#define STB_VORBIS_IMPLEMENTATION
+#include "stb/stb_vorbis.h"
+
 #include <dr_flac.h>
 #include <dr_mp3.h>
 #include <dr_wav.h>
@@ -24,6 +27,9 @@ AudioData AudioLoader::load(const std::filesystem::path& path) {
     }
     if (ext == ".flac") {
         return load_flac(path);
+    }
+    if (ext == ".ogg") {
+        return load_ogg(path);
     }
     throw std::runtime_error(std::format("Unsupported audio format {}", ext));
 }
@@ -87,4 +93,43 @@ AudioData AudioLoader::load_flac(const std::filesystem::path& path) {
 
     return data;
 }
+
+AudioData AudioLoader::load_ogg(const std::filesystem::path& path) {
+    int error = 0;
+    stb_vorbis* vorbis =
+        stb_vorbis_open_filename(path.string().c_str(), &error, nullptr);
+    if (!vorbis) {
+        throw std::runtime_error("Failed to open Ogg Vorbis file: " +
+                                 path.string());
+    }
+
+    stb_vorbis_info info = stb_vorbis_get_info(vorbis);
+    int channels = info.channels;
+    int sample_rate = info.sample_rate;
+
+    int total_frames = stb_vorbis_stream_length_in_samples(vorbis);
+    if (total_frames <= 0) {
+        stb_vorbis_close(vorbis);
+        throw std::runtime_error(
+            "Failed to get Ogg stream length (or stream is empty)");
+    }
+
+    std::vector<int16_t> pcm(total_frames * channels);
+
+    int frames_read = stb_vorbis_get_samples_short_interleaved(
+        vorbis, channels, pcm.data(), total_frames);
+
+    if (frames_read < total_frames) {
+        pcm.resize(frames_read * channels);
+    }
+
+    stb_vorbis_close(vorbis);
+
+    AudioData data;
+    data.channels = channels;
+    data.sample_rate = sample_rate;
+    data.pcm = std::move(pcm);
+    return data;
+}
+
 } // namespace Cubed
