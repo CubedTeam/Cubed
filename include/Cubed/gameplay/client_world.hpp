@@ -90,7 +90,7 @@ public:
     bool is_receive_exit();
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
-
+    AudioEngine& get_audio();
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,

@@ -123,6 +123,8 @@ private:
     float m_angle{0.0f};
     float m_walk_time{0.0f};
 
+    float m_footstep_timer = 0.0f;
+
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
@@ -134,6 +136,7 @@ private:
     void update_y_move(glm::vec3& player_pos);
     void update_z_move(glm::vec3& player_pos);
     void update_player_chunk();
+    void play_walk_sound(float dt);
     Gait compute_gait() const;
 };
 } // namespace Cubed

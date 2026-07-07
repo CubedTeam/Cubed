@@ -607,6 +607,8 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
                       static_cast<float>(z + 1)}};
 }
 
+AudioEngine& ClientWorld::get_audio() { return m_audio; }
+
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
         return;

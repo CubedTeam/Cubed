@@ -1,5 +1,6 @@
 #include "Cubed/audio/audio_source.hpp"
 
+#include "Cubed/audio/audio_error.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <algorithm>
@@ -35,9 +36,20 @@ void AudioSource::set_buffer_3d(const AudioBuffer& buffer,
         stop();
     }
     m_duration = buffer.duration();
-
+    Logger::info("buffer={}", buffer.buffer());
+    Logger::info("source={} isSource={}", m_source, alIsSource(m_source));
+    Logger::info("buffer={} isBuffer={}", buffer.buffer(),
+                 alIsBuffer(buffer.buffer()));
     alSourcei(m_source, AL_BUFFER, buffer.buffer());
+    check_al_error();
     alSource3f(m_source, AL_POSITION, pos.x, pos.y, pos.z);
+    check_al_error();
+
+    alSourcef(m_source, AL_REFERENCE_DISTANCE, 4.0f);
+
+    alSourcef(m_source, AL_ROLLOFF_FACTOR, 1.0f);
+
+    alSourcef(m_source, AL_MAX_DISTANCE, 100.0f);
 }
 
 void AudioSource::set_loop(bool on) {
@@ -64,6 +76,7 @@ void AudioSource::play_2d(const AudioBuffer& buffer) {
 void AudioSource::play_3d(const AudioBuffer& buffer, const glm::vec3& pos) {
     set_buffer_3d(buffer, pos);
     play();
+    check_al_error();
 }
 
 void AudioSource::stop() { alSourceStop(m_source); }

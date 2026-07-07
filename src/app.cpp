@@ -359,7 +359,8 @@ void App::update() {
             m_renderer.update_fov(fov + 5.0f);
         }
     }
-    m_audio.update_listener(m_camera.get_camera_pos());
+    m_audio.update_listener(m_camera.get_camera_pos(),
+                            m_camera.get_camera_front(), glm::vec3(0, 1, 0));
     m_audio.update(dt);
     m_renderer.update(dt);
 }

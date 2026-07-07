@@ -1,5 +1,6 @@
 #include "Cubed/audio/audio_engine.hpp"
 
+#include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <stdexcept>
@@ -58,7 +59,8 @@ void AudioEngine::init() {
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
 
-void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos) {
+void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
+                          bool check) {
     if (!m_pool) {
         Logger::error("Source Pool is nullptr");
         return;
@@ -67,11 +69,28 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos) {
     if (!source) {
         Logger::error("Source is Full");
     }
-    auto& buffer = m_sounds.get_buffer(sound);
-    source->play_3d(buffer, pos);
+
+    try {
+        auto& buffer = m_sounds.get_buffer(sound);
+        source->play_3d(buffer, pos);
+    } catch (const std::exception& e) {
+        if (check) {
+            ASSERT_MSG(false, e.what());
+        }
+    }
 }
 
-void AudioEngine::update_listener(glm::vec3 listener_pos) {}
+void AudioEngine::update_listener(const glm::vec3& pos,
+                                  const glm::vec3& forward,
+                                  const glm::vec3& up) {
+    alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
+
+    float orientation[] = {forward.x, forward.y, forward.z,
+
+                           up.x,      up.y,      up.z};
+
+    alListenerfv(AL_ORIENTATION, orientation);
+}
 void AudioEngine::update(float dt) {
 
     for (auto& [key, fade] : m_fade_map) {

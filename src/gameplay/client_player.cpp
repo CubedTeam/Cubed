@@ -1,9 +1,9 @@
 #include "Cubed/gameplay/client_player.hpp"
 
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
-
 namespace Cubed {
 ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
@@ -144,42 +144,35 @@ void ClientPlayer::update_player_move_state(int key, int action) {
     case GLFW_KEY_W:
         if (action == GLFW_PRESS) {
             m_move_state.forward = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.forward = false;
-            m_moving = false;
+
             m_sprinting = false;
         }
         break;
     case GLFW_KEY_S:
         if (action == GLFW_PRESS) {
             m_move_state.back = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.back = false;
-            m_moving = false;
         }
         break;
     case GLFW_KEY_A:
         if (action == GLFW_PRESS) {
             m_move_state.left = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.left = false;
-            m_moving = false;
         }
         break;
     case GLFW_KEY_D:
         if (action == GLFW_PRESS) {
             m_move_state.right = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.right = false;
-            m_moving = false;
         }
         break;
     case GLFW_KEY_SPACE:
@@ -223,6 +216,8 @@ void ClientPlayer::update_player_move_state(int key, int action) {
         }
         break;
     }
+    m_moving = m_move_state.forward || m_move_state.back || m_move_state.left ||
+               m_move_state.right;
 }
 
 void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
@@ -391,6 +386,7 @@ void ClientPlayer::update_move(float delta_time) {
         m_player_pos = player_pos;
     }
     update_player_chunk();
+    play_walk_sound(delta_time);
 }
 
 void ClientPlayer::update_x_move(glm::vec3& player_pos) {
@@ -501,6 +497,42 @@ void ClientPlayer::update_player_chunk() {
         m_world.request_chunk();
         m_last_chunk_pos = chunk_pos;
     }
+}
+
+void ClientPlayer::play_walk_sound(float dt) {
+    if (!m_moving || is_fly) {
+        return;
+    }
+
+    m_footstep_timer += dt;
+    if (m_sprinting) {
+        const float WALK_INTERVAL = 0.3f;
+
+        if (m_footstep_timer < WALK_INTERVAL) {
+            return;
+        }
+    } else {
+        const float WALK_INTERVAL = 0.45f;
+
+        if (m_footstep_timer < WALK_INTERVAL) {
+            return;
+        }
+    }
+
+    m_footstep_timer = 0.0f;
+
+    glm::ivec3 block = glm::floor(m_player_pos);
+    block.y -= 1;
+    BlockType id = m_world.get_block_tpye(block);
+    Logger::info("player Block {} Walk Sound", id);
+    if (id == 0) {
+        return;
+    }
+    std::string name = BlockManager::name_form_id(id);
+    std::string sound = "block/" + name + "/walk.ogg";
+    auto& audio = m_world.get_audio();
+    audio.play_3d(sound, m_player_pos);
+    Logger::info("Player block {} walk sound", name);
 }
 
 Gait ClientPlayer::compute_gait() const {

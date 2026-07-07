@@ -1,6 +1,6 @@
 #include "Cubed/audio/audio_loader.hpp"
 
-#include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/log.hpp"
 
 #define STB_VORBIS_IMPLEMENTATION
 #include "stb/stb_vorbis.h"
@@ -14,7 +14,7 @@ namespace Cubed {
 AudioData AudioLoader::load(const std::filesystem::path& path) {
     if (!fs::is_regular_file(path)) {
         std::string err = std::format("Path {} is not a file", path.string());
-        ASSERT_MSG(false, err);
+
         throw std::runtime_error(err);
     }
     auto ext = path.extension().string();
@@ -46,6 +46,8 @@ AudioData AudioLoader::load_wav(const std::filesystem::path& path) {
     drwav_read_pcm_frames_s16(&wav, wav.totalPCMFrameCount, data.pcm.data());
 
     drwav_uninit(&wav);
+    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
+                 data.channels, data.sample_rate, data.pcm.size());
     return data;
 }
 
@@ -68,7 +70,8 @@ AudioData AudioLoader::load_mp3(const std::filesystem::path& path) {
     data.pcm.assign(pcm, pcm + frame_count * config.channels);
 
     drmp3_free(pcm, nullptr);
-
+    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
+                 data.channels, data.sample_rate, data.pcm.size());
     return data;
 }
 
@@ -90,7 +93,8 @@ AudioData AudioLoader::load_flac(const std::filesystem::path& path) {
     data.pcm.assign(pcm, pcm + frame_count * channels);
 
     drflac_free(pcm, nullptr);
-
+    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
+                 data.channels, data.sample_rate, data.pcm.size());
     return data;
 }
 
@@ -117,7 +121,7 @@ AudioData AudioLoader::load_ogg(const std::filesystem::path& path) {
     std::vector<int16_t> pcm(total_frames * channels);
 
     int frames_read = stb_vorbis_get_samples_short_interleaved(
-        vorbis, channels, pcm.data(), total_frames);
+        vorbis, channels, pcm.data(), pcm.size());
 
     if (frames_read < total_frames) {
         pcm.resize(frames_read * channels);
@@ -129,6 +133,10 @@ AudioData AudioLoader::load_ogg(const std::filesystem::path& path) {
     data.channels = channels;
     data.sample_rate = sample_rate;
     data.pcm = std::move(pcm);
+
+    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
+                 data.channels, data.sample_rate, data.pcm.size());
+
     return data;
 }
 

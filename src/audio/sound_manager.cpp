@@ -1,7 +1,7 @@
 #include "Cubed/audio/sound_manager.hpp"
 
 #include "Cubed/audio/audio_loader.hpp"
-#include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/log.hpp"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -38,7 +38,7 @@ const AudioBuffer& SoundManager::get_buffer(const std::string& name) {
             return load(name);
         } catch (const std::exception& e) {
             std::string err = std::format("Can't Find Buffer {}", name);
-            ASSERT_MSG(false, err);
+
             throw std::runtime_error(err);
         }
     }

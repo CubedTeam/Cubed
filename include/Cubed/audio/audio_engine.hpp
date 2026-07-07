@@ -26,8 +26,10 @@ public:
 
     void init();
     void play_bgm();
-    void play_3d(const std::string& sound, const glm::vec3& pos);
-    void update_listener(glm::vec3 listener_pos);
+    void play_3d(const std::string& sound, const glm::vec3& pos,
+                 bool check = false);
+    void update_listener(const glm::vec3& pos, const glm::vec3& forward,
+                         const glm::vec3& up);
     void update(float dt);
 
 private:
