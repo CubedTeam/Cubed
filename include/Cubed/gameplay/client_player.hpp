@@ -17,6 +17,8 @@ namespace Cubed {
 class ClientWorld;
 class ClientPlayer {
 public:
+    static constexpr float WALK_SOUND_INTERVAL = 0.45f;
+    static constexpr float RUN_SOUND_INTERVAL = 0.3f;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     ClientPlayer(ClientWorld& world);
     ~ClientPlayer();

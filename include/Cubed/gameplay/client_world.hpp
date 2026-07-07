@@ -28,6 +28,7 @@ struct PlayerInfo {
     Gait gait;
     float angle = 0.0f;
     float walk_time = 0.0f;
+    float moving_time = 0.0f;
 };
 
 struct PlayerRenderData {

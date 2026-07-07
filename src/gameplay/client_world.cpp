@@ -398,7 +398,7 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
-    m_timers.try_emplace("under water bubble", 1.0f, [this]() {
+    m_timers.try_emplace("under water bubble", 1.5f, [this]() {
         if (m_player.is_underwater()) {
             auto ans = m_random.random_int(1, 2);
             std::string sound =
@@ -792,6 +792,36 @@ void ClientWorld::update(float delta_time) {
             } else if (player.gait == Gait::STOP) {
                 float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
                 player.angle = glm::mix(player.angle, 0.0f, t);
+            }
+
+            // walking sound
+            if (player.gait == Gait::STOP) {
+                player.moving_time = 0.0f;
+            } else {
+                player.moving_time += delta_time;
+            }
+            auto play_walk_sound = [&]() {
+                glm::ivec3 block = glm::floor(player.render_pos);
+                block.y -= 1;
+                BlockType id = get_block_tpye(block);
+                if (id == 0) {
+                    return;
+                }
+                std::string name = BlockManager::name_form_id(id);
+                std::string sound = "block/" + name + "/walk.ogg";
+                m_audio.play_3d(sound, player.render_pos);
+            };
+            if (player.gait == Gait::WALK) {
+                if (player.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
+                    player.moving_time = 0.0f;
+                    play_walk_sound();
+                }
+            }
+            if (player.gait == Gait::RUN) {
+                if (player.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
+                    player.moving_time = 0.0f;
+                    play_walk_sound();
+                }
             }
 
             m_render_player_data.emplace_back(

@@ -5,10 +5,7 @@
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 
-namespace {
-constexpr float WALK_SOUND_INTERVAL = 0.45f;
-constexpr float RUN_SOUND_INTERVAL = 0.3f;
-} // namespace
+namespace {} // namespace
 
 namespace Cubed {
 ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
