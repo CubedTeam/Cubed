@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 
 #include "Cubed/config.hpp"
+#include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/tools/math_tools.hpp"
@@ -357,6 +358,8 @@ void ClientWorld::init(std::string_view player_name,
                        std::shared_ptr<NetworkClient> client) {
     m_player.init(player_name);
     m_client = client;
+    m_random.init(ChunkGenerator::seed());
+
     // timer
     register_ticktimer("player_pos", 1, [this]() { report_player_info(); });
     m_timers.try_emplace("Birds Sound", 60.0f, [this]() {
@@ -370,6 +373,26 @@ void ClientWorld::init(std::string_view player_name,
             if (m_chunks.find(cacc, pos)) {
                 if (cacc->second->get_biome() == BiomeType::FOREST) {
                     m_audio.play_2d("ambient/birds.ogg", true);
+                }
+            }
+        }
+    });
+
+    m_timers.try_emplace("Ocean Wave", 3.0f, [this]() {
+        auto player_pos = m_player.get_player_pos();
+        if (player_pos.y < SEA_LEVEL - 10 || player_pos.y > SEA_LEVEL + 10) {
+            return;
+        }
+
+        auto ans = m_random.random_int(1, 4);
+        std::string sound =
+            "ambient/ocean/wave00" + std::to_string(ans) + ".flac";
+        ChunkPos pos = get_chunk_pos(player_pos.x, player_pos.z);
+        {
+            chunk_cacc cacc;
+            if (m_chunks.find(cacc, pos)) {
+                if (cacc->second->get_biome() == BiomeType::OCEAN) {
+                    m_audio.play_2d(sound, true);
                 }
             }
         }

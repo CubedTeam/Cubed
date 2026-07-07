@@ -6,6 +6,7 @@
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 
 #include <absl/container/flat_hash_set.h>
@@ -152,6 +153,8 @@ private:
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_thread_pool;
+
+    Random m_random;
 
     void client_run(std::stop_token token);
 
