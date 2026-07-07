@@ -580,7 +580,7 @@ float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
 unsigned ClientPlayer::place_block() const { return m_place_block; };
 void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
-const ClientWorld& ClientPlayer::get_world() const { return m_world; }
+ClientWorld& ClientPlayer::get_world() { return m_world; }
 
 void ClientPlayer::set_uuid(std::string_view uuid) {
     std::lock_guard lock(m_uuid_mutex);
@@ -614,6 +614,9 @@ void ClientPlayer::init(std::string_view name) {
         Logger::info("Player block {} walk sound", name);
     });
 }
+
+bool ClientPlayer::is_underwater() const { return m_underwater; }
+void ClientPlayer::set_underwater(bool u) { m_underwater = u; }
 
 float ClientPlayer::yaw() const { return m_yaw; }
 float ClientPlayer::pitch() const { return m_pitch; }

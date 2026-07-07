@@ -55,7 +55,7 @@ public:
     void set_gait(Gait gait);
     GameMode& game_mode();
 
-    const ClientWorld& get_world() const;
+    ClientWorld& get_world();
 
     void set_uuid(std::string_view uuid);
     std::string get_uuid() const;
@@ -70,6 +70,8 @@ public:
     bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
                   glm::ivec3& block_pos, glm::vec3& normal,
                   float distance = 4.0f);
+    bool is_underwater() const;
+    void set_underwater(bool u);
 
 private:
     using enum GameMode;
@@ -100,6 +102,7 @@ private:
 
     bool m_moving = false;
     bool m_sprinting = false;
+    bool m_underwater = false;
 
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 move_distance{0.0f, 0.0f, 0.0f};

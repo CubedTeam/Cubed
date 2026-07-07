@@ -398,6 +398,15 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
+    m_timers.try_emplace("under water bubble", 1.0f, [this]() {
+        if (m_player.is_underwater()) {
+            auto ans = m_random.random_int(1, 2);
+            std::string sound =
+                "ambient/water/bubble00" + std::to_string(ans) + ".ogg";
+            m_audio.play_2d(sound, true);
+        }
+    });
+
     LoginReq req;
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
