@@ -11,7 +11,8 @@ SoundManager::~SoundManager() { clear(); }
 void SoundManager::clear() { m_buffers.clear(); }
 void SoundManager::init() {
     try {
-        // load("bgm/bgm001.mp3");
+        load("bgm/bgm001.mp3");
+        load("ambient/birds.ogg");
     } catch (const std::exception& e) {
     }
 }

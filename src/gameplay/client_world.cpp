@@ -43,7 +43,7 @@ ClientWorld::~ClientWorld() {
         }
         m_pending_delete_vao.clear();
     }
-    m_timers.clear();
+    m_ticktimers.clear();
 }
 
 const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
@@ -358,7 +358,23 @@ void ClientWorld::init(std::string_view player_name,
     m_player.init(player_name);
     m_client = client;
     // timer
-    register_timer("player_pos", 1, [this]() { report_player_info(); });
+    register_ticktimer("player_pos", 1, [this]() { report_player_info(); });
+    m_timers.try_emplace("Birds Sound", 60.0f, [this]() {
+        auto player_pos = m_player.get_player_pos();
+        if (player_pos.y < SEA_LEVEL) {
+            return;
+        }
+        ChunkPos pos = get_chunk_pos(player_pos.x, player_pos.z);
+        {
+            chunk_cacc cacc;
+            if (m_chunks.find(cacc, pos)) {
+                if (cacc->second->get_biome() == BiomeType::FOREST) {
+                    m_audio.play_2d("ambient/birds.ogg", true);
+                }
+            }
+        }
+    });
+
     LoginReq req;
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
@@ -443,7 +459,7 @@ void ClientWorld::client_run(std::stop_token stoken) {
     auto next = Clock::now();
     while (!stoken.stop_requested()) {
         next += TICK;
-        for (auto& x : m_timers) {
+        for (auto& x : m_ticktimers) {
             x.second.update();
         }
         std::this_thread::sleep_until(next);
@@ -778,6 +794,10 @@ void ClientWorld::update(float delta_time) {
     PendingSound pending_sound;
     while (m_pending_sound.try_pop(pending_sound)) {
         m_audio.play_3d(pending_sound.sound, pending_sound.sound_pos);
+    }
+
+    for (auto& [pos, timer] : m_timers) {
+        timer.update(delta_time);
     }
 }
 

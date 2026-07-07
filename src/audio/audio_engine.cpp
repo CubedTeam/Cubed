@@ -89,6 +89,29 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
     } catch (const std::exception& e) {
         if (check) {
             ASSERT_MSG(false, e.what());
+            Logger::error("Player Sound Error {}", e.what());
+        }
+    }
+}
+
+void AudioEngine::play_2d(const std::string& sound, bool check) {
+    if (!m_pool) {
+        Logger::error("Source Pool is nullptr");
+        return;
+    }
+    auto* source = m_pool->acquire();
+    source->set_volume(m_sfx_volume);
+    if (!source) {
+        Logger::error("Source is Full");
+    }
+
+    try {
+        auto& buffer = m_sounds.get_buffer(sound);
+        source->play_2d(buffer);
+    } catch (const std::exception& e) {
+        if (check) {
+            ASSERT_MSG(false, e.what());
+            Logger::error("Player Sound Error {}", e.what());
         }
     }
 }

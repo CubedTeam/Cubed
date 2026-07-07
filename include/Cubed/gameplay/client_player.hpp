@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_mode.hpp"
+#include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/player.hpp"
 #include "Cubed/input.hpp"
 
@@ -123,7 +124,7 @@ private:
     float m_angle{0.0f};
     float m_walk_time{0.0f};
 
-    float m_footstep_timer = 0.0f;
+    std::unordered_map<std::string, Timer> m_timers;
 
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;

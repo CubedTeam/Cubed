@@ -4,6 +4,12 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+
+namespace {
+constexpr float WALK_SOUND_INTERVAL = 0.45f;
+constexpr float RUN_SOUND_INTERVAL = 0.3f;
+} // namespace
+
 namespace Cubed {
 ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
@@ -386,7 +392,19 @@ void ClientPlayer::update_move(float delta_time) {
         m_player_pos = player_pos;
     }
     update_player_chunk();
-    play_walk_sound(delta_time);
+    auto it = m_timers.find("Player Walk Sound");
+
+    if (it != m_timers.end()) {
+        if (m_sprinting) {
+            it->second.set_threshold(RUN_SOUND_INTERVAL);
+        } else {
+            it->second.set_threshold(WALK_SOUND_INTERVAL);
+        }
+    }
+
+    for (auto& [key, timer] : m_timers) {
+        timer.update(delta_time);
+    }
 }
 
 void ClientPlayer::update_x_move(glm::vec3& player_pos) {
@@ -499,42 +517,6 @@ void ClientPlayer::update_player_chunk() {
     }
 }
 
-void ClientPlayer::play_walk_sound(float dt) {
-    if (!m_moving || is_fly) {
-        return;
-    }
-
-    m_footstep_timer += dt;
-    if (m_sprinting) {
-        const float WALK_INTERVAL = 0.3f;
-
-        if (m_footstep_timer < WALK_INTERVAL) {
-            return;
-        }
-    } else {
-        const float WALK_INTERVAL = 0.45f;
-
-        if (m_footstep_timer < WALK_INTERVAL) {
-            return;
-        }
-    }
-
-    m_footstep_timer = 0.0f;
-
-    glm::ivec3 block = glm::floor(m_player_pos);
-    block.y -= 1;
-    BlockType id = m_world.get_block_tpye(block);
-    Logger::info("player Block {} Walk Sound", id);
-    if (id == 0) {
-        return;
-    }
-    std::string name = BlockManager::name_form_id(id);
-    std::string sound = "block/" + name + "/walk.ogg";
-    auto& audio = m_world.get_audio();
-    audio.play_3d(sound, m_player_pos);
-    Logger::info("Player block {} walk sound", name);
-}
-
 Gait ClientPlayer::compute_gait() const {
     if (m_xz_speed < 0.01f)
         return Gait::STOP;
@@ -610,7 +592,28 @@ std::string ClientPlayer::get_uuid() const {
     return m_uuid;
 }
 const std::string& ClientPlayer::get_name() const { return m_name; }
-void ClientPlayer::init(std::string_view name) { m_name = name; }
+void ClientPlayer::init(std::string_view name) {
+
+    m_name = name;
+
+    m_timers.try_emplace("Player Walk Sound", WALK_SOUND_INTERVAL, [this]() {
+        if (!m_moving || is_fly) {
+            return;
+        }
+        glm::ivec3 block = glm::floor(m_player_pos);
+        block.y -= 1;
+        BlockType id = m_world.get_block_tpye(block);
+        Logger::info("player Block {} Walk Sound", id);
+        if (id == 0) {
+            return;
+        }
+        std::string name = BlockManager::name_form_id(id);
+        std::string sound = "block/" + name + "/walk.ogg";
+        auto& audio = m_world.get_audio();
+        audio.play_3d(sound, m_player_pos);
+        Logger::info("Player block {} walk sound", name);
+    });
+}
 
 float ClientPlayer::yaw() const { return m_yaw; }
 float ClientPlayer::pitch() const { return m_pitch; }

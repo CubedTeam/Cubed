@@ -92,10 +92,10 @@ public:
     static AABB get_block_aabb(const glm::ivec3& pos);
     AudioEngine& get_audio();
     template <typename Fn>
-    void register_timer(std::string_view id, TickType threshold, Fn&& f) {
-        m_timers.emplace(std::piecewise_construct,
-                         std::forward_as_tuple(std::string(id)),
-                         std::forward_as_tuple(threshold, std::forward<Fn>(f)));
+    void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
+        m_ticktimers.emplace(
+            std::piecewise_construct, std::forward_as_tuple(std::string(id)),
+            std::forward_as_tuple(threshold, std::forward<Fn>(f)));
     }
 
 private:
@@ -136,7 +136,10 @@ private:
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
     std::vector<PlayerRenderData> m_render_player_data;
-    tbb::concurrent_unordered_map<std::string, Timer> m_timers;
+
+    tbb::concurrent_unordered_map<std::string, TickTimer> m_ticktimers;
+    std::unordered_map<std::string, Timer> m_timers;
+
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};
     std::atomic<int> m_rendering_distance{24};

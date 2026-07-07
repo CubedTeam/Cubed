@@ -156,7 +156,7 @@ private:
 
     PlayerUUIDMap m_uuid_to_name;
 
-    tbb::concurrent_unordered_map<std::string, Timer> m_timers;
+    tbb::concurrent_unordered_map<std::string, TickTimer> m_timers;
     tbb::concurrent_queue<PendingRequest> m_waiting_chunk_requests;
     tbb::concurrent_queue<std::unique_ptr<ServerChunk>> m_finished_queue;
 
