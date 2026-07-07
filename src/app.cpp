@@ -63,7 +63,7 @@ void App::init(int argc, char** argv) {
 
     ChunkGenerator::init();
     BlockManager::init();
-    m_renderer.init();
+    m_renderer.init(m_argument.debug_on);
     Logger::info("Renderer Init Success");
     m_window.update_viewport();
     // MapTable::init_map();
@@ -127,6 +127,12 @@ void App::handle_argument(int argc, char** argv) {
              [&](ArgParser) {
                  std::cout << CUBED_VERSION << "\n";
                  exit(EXIT_SUCCESS);
+             }},
+
+            {"--no-debug",
+             [&](ArgParser) {
+                 m_argument.debug_on = false;
+                 Logger::info("Switch off opengl debug out put");
              }}
 
         };
