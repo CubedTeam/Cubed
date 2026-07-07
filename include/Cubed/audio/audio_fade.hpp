@@ -12,7 +12,6 @@ private:
     float m_in_duration = 0.0f;
     float m_out_duration = 0.0f;
     float m_start_gain = 0.0f;
-    float m_end_gain = 0.0f;
     bool m_fade_in = true;
     bool m_active = true;
 };

@@ -7,7 +7,10 @@
 #include <stdexcept>
 
 namespace Cubed {
-AudioSource::AudioSource() { alGenSources(1, &m_source); }
+AudioSource::AudioSource(float volume) {
+    alGenSources(1, &m_source);
+    set_target_volume(volume);
+}
 AudioSource::~AudioSource() {
     if (m_source != 0) {
         stop();
@@ -62,7 +65,6 @@ void AudioSource::set_loop(bool on) {
 
 void AudioSource::set_volume(float volume) {
     volume = std::clamp(volume, 0.0f, 1.0f);
-    m_volume = volume;
     alSourcef(m_source, AL_GAIN, volume);
 }
 
@@ -76,7 +78,6 @@ void AudioSource::play_2d(const AudioBuffer& buffer) {
 void AudioSource::play_3d(const AudioBuffer& buffer, const glm::vec3& pos) {
     set_buffer_3d(buffer, pos);
     play();
-    check_al_error();
 }
 
 void AudioSource::stop() { alSourceStop(m_source); }
@@ -88,7 +89,14 @@ float AudioSource::current_time() const {
     alGetSourcef(m_source, AL_SEC_OFFSET, &sec);
     return static_cast<float>(sec);
 }
-float AudioSource::volume() const { return m_volume; }
+
+float AudioSource::target_volume() const { return m_target_volume; }
+float& AudioSource::target_volume() { return m_target_volume; }
+
+void AudioSource::set_target_volume(float volume) {
+    m_target_volume = volume;
+    set_volume(m_target_volume);
+}
 
 AudioState AudioSource::state() const {
     ALint state;
@@ -111,11 +119,33 @@ AudioState AudioSource::state() const {
 void AudioSource::mark_in_use() { m_using = true; }
 bool AudioSource::in_use() const { return m_using; }
 void AudioSource::reset() {
+    alSourceStop(m_source);
+
     alSourcei(m_source, AL_BUFFER, 0);
+
     alSourcef(m_source, AL_GAIN, 1.0f);
     alSourcef(m_source, AL_PITCH, 1.0f);
+
     alSource3f(m_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alSource3f(m_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+    alSource3f(m_source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
+
+    alSourcef(m_source, AL_REFERENCE_DISTANCE, 1.0f);
+    alSourcef(m_source, AL_ROLLOFF_FACTOR, 1.0f);
+    alSourcef(m_source, AL_MAX_DISTANCE, FLT_MAX);
+
+    alSourcef(m_source, AL_CONE_INNER_ANGLE, 360.0f);
+    alSourcef(m_source, AL_CONE_OUTER_ANGLE, 360.0f);
+    alSourcef(m_source, AL_CONE_OUTER_GAIN, 0.0f);
+
     alSourcei(m_source, AL_LOOPING, AL_FALSE);
+
+    alSourcei(m_source, AL_SOURCE_RELATIVE, AL_FALSE);
+
+    alSourcef(m_source, AL_SEC_OFFSET, 0.0f);
+
+    m_duration = 0.0f;
+    m_target_volume = 1.0f;
     m_using = false;
 }
 } // namespace Cubed

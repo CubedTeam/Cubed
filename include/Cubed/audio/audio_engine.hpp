@@ -30,7 +30,10 @@ public:
                  bool check = false);
     void update_listener(const glm::vec3& pos, const glm::vec3& forward,
                          const glm::vec3& up);
-    void update(float dt);
+    void update();
+    void reload_config();
+
+    float& bgm_target_volume();
 
 private:
     using FadeMap = std::unordered_map<std::string, AudioFade>;
@@ -42,5 +45,8 @@ private:
     FadeMap m_fade_map;
     SoundManager m_sounds;
     std::shared_ptr<SourcePool> m_pool;
+
+    float m_music_volume = 1.0f;
+    float m_sfx_volume = 1.0f;
 };
 } // namespace Cubed

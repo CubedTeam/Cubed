@@ -1,5 +1,6 @@
 #include "Cubed/audio/audio_engine.hpp"
 
+#include "Cubed/config.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
@@ -33,8 +34,15 @@ void AudioEngine::init() {
     }
     alcMakeContextCurrent(context);
 
+    auto& config = Config::get();
+
+    m_music_volume = static_cast<float>(config.get<double>("volume.music"));
+    m_sfx_volume = static_cast<float>(config.get<double>("volume.SFX"));
+
     m_sounds.init();
-    m_bgm = std::make_unique<AudioSource>();
+
+    m_bgm = std::make_unique<AudioSource>(m_music_volume);
+
     m_bgm->set_buffer_2d(m_sounds.get_buffer("bgm/bgm001.mp3"));
 
     m_fade_map.try_emplace("bgm", m_bgm.get(), 5.0f, 2.0f);
@@ -66,6 +74,7 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
         return;
     }
     auto* source = m_pool->acquire();
+    source->set_volume(m_sfx_volume);
     if (!source) {
         Logger::error("Source is Full");
     }
@@ -91,11 +100,24 @@ void AudioEngine::update_listener(const glm::vec3& pos,
 
     alListenerfv(AL_ORIENTATION, orientation);
 }
-void AudioEngine::update(float dt) {
+void AudioEngine::update() {
 
     for (auto& [key, fade] : m_fade_map) {
         fade.update();
     }
     m_pool->update();
 }
+
+void AudioEngine::reload_config() {
+    auto& config = Config::get();
+
+    m_music_volume = static_cast<float>(config.get<double>("volume.music"));
+    m_sfx_volume = static_cast<float>(config.get<double>("volume.SFX"));
+    if (m_bgm) {
+        m_bgm->set_target_volume(m_music_volume);
+    }
+}
+
+float& AudioEngine::bgm_target_volume() { return m_bgm->target_volume(); }
+
 } // namespace Cubed

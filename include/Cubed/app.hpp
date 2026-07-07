@@ -49,6 +49,7 @@ public:
     ClientWorld& client_world();
     ServerWorld& server_world();
     const Argument& argument() const;
+    AudioEngine& audio();
 
 private:
     Camera m_camera;

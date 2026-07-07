@@ -44,6 +44,11 @@ void Config::create_config() {
         [texture]
         aniso = 1       # i is the minimun value, indicating off 
 
+        [volume]
+        music = 1.0
+        SFX = 1.0
+
+
     )"sv;
 
     try {

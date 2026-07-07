@@ -10,8 +10,9 @@ AudioFade::AudioFade(AudioSource* source, float fade_in, float fade_out)
         m_active = false;
         return;
     }
+
     m_start_gain = 0.0f;
-    m_end_gain = m_source->volume();
+
     m_source->set_volume(0.0f);
 }
 AudioFade::~AudioFade() {}
@@ -27,13 +28,12 @@ void AudioFade::update() {
         // Ease Out Sine
         t = std::sin(t * std::numbers::pi_v<float> * 0.5f);
 
-        float gain = std::lerp(m_start_gain, m_end_gain, t);
+        float gain = std::lerp(m_start_gain, m_source->target_volume(), t);
         m_source->set_volume(gain);
         if (t >= 1.0f) {
-            m_source->set_volume(m_end_gain);
+            m_source->set_volume(m_source->target_volume());
             m_fade_in = false;
-            m_start_gain = m_end_gain;
-            m_end_gain = 0.0f;
+            m_start_gain = m_source->target_volume();
         }
     } else {
         float start_time =
@@ -50,11 +50,11 @@ void AudioFade::update() {
         // Smoothstep
         t = t * t * (3.0f - 2.0f * t);
 
-        float gain = std::lerp(m_start_gain, m_end_gain, t);
+        float gain = std::lerp(m_start_gain, 0.0f, t);
         m_source->set_volume(gain);
 
         if (t >= 1.0f) {
-            m_source->set_volume(m_end_gain);
+            m_source->set_volume(0.0f);
             m_active = false;
         }
     }

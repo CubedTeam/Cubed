@@ -361,7 +361,7 @@ void App::update() {
     }
     m_audio.update_listener(m_camera.get_camera_pos(),
                             m_camera.get_camera_front(), glm::vec3(0, 1, 0));
-    m_audio.update(dt);
+    m_audio.update();
     m_renderer.update(dt);
 }
 
@@ -396,4 +396,5 @@ Window& App::window() { return m_window; }
 ClientWorld& App::client_world() { return m_client_world; }
 ServerWorld& App::server_world() { return m_server.server_world(); }
 const App::Argument& App::argument() const { return m_argument; }
+AudioEngine& App::audio() { return m_audio; }
 } // namespace Cubed

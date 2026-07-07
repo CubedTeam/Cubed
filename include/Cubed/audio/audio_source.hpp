@@ -9,7 +9,7 @@ enum class AudioState { INITIAL, PLAYING, PAUSED, STOPPED };
 
 class AudioSource {
 public:
-    AudioSource();
+    AudioSource(float volume = 1.0f);
     ~AudioSource();
 
     void set_buffer_2d(const AudioBuffer& buffer);
@@ -25,7 +25,9 @@ public:
     void pause();
     float duration() const;
     float current_time() const;
-    float volume() const;
+    float target_volume() const;
+    float& target_volume();
+    void set_target_volume(float volume);
     AudioState state() const;
 
     void mark_in_use();
@@ -34,7 +36,7 @@ public:
 
 private:
     ALuint m_source = 0;
-    float m_volume = 1.0f;
+    float m_target_volume = 1.0f;
     float m_duration = 0.0f;
     bool m_using;
 };
