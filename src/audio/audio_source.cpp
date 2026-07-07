@@ -39,20 +39,22 @@ void AudioSource::set_buffer_3d(const AudioBuffer& buffer,
         stop();
     }
     m_duration = buffer.duration();
-    Logger::info("buffer={}", buffer.buffer());
-    Logger::info("source={} isSource={}", m_source, alIsSource(m_source));
-    Logger::info("buffer={} isBuffer={}", buffer.buffer(),
-                 alIsBuffer(buffer.buffer()));
     alSourcei(m_source, AL_BUFFER, buffer.buffer());
     check_al_error();
     alSource3f(m_source, AL_POSITION, pos.x, pos.y, pos.z);
     check_al_error();
 
     alSourcef(m_source, AL_REFERENCE_DISTANCE, 4.0f);
-
     alSourcef(m_source, AL_ROLLOFF_FACTOR, 1.0f);
+    alSourcef(m_source, AL_MAX_DISTANCE, 48.0f);
+    ALfloat l[3];
+    alGetListenerfv(AL_POSITION, l);
 
-    alSourcef(m_source, AL_MAX_DISTANCE, 100.0f);
+    Logger::info("Listener Pos = ({}, {}, {})", l[0], l[1], l[2]);
+    ALfloat p[3];
+    alGetSourcefv(m_source, AL_POSITION, p);
+
+    Logger::info("Source Pos = ({}, {}, {})", p[0], p[1], p[2]);
 }
 
 void AudioSource::set_loop(bool on) {

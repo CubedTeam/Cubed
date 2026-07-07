@@ -1,5 +1,6 @@
 #include "Cubed/audio/audio_engine.hpp"
 
+#include "Cubed/audio/audio_error.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
@@ -33,6 +34,9 @@ void AudioEngine::init() {
         throw std::runtime_error("Failed to create OpenAL context.");
     }
     alcMakeContextCurrent(context);
+
+    alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+    check_al_error();
 
     auto& config = Config::get();
 

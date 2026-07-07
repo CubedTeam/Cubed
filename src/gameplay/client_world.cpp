@@ -152,8 +152,7 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
 
     auto [chunk_x, chunk_z] = get_chunk_pos(world_x, world_z);
     ChunkPos pos{chunk_x, chunk_z};
-    auto [x, y, z] = ClientChunk::world_to_block(world_x, world_y, world_z,
-                                                 chunk_x, chunk_z);
+
     BlockType origin_id = 0;
     {
         chunk_acc acc;
@@ -161,7 +160,8 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
         if (!m_chunks.find(acc, pos)) {
             return;
         }
-
+        auto [x, y, z] = ClientChunk::world_to_block(world_x, world_y, world_z,
+                                                     chunk_x, chunk_z);
         if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
             z >= CHUNK_SIZE) {
             return;
@@ -171,7 +171,8 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
         acc->second->set_chunk_block(idx, id);
         acc->second->mark_dirty();
     }
-    glm::vec3 sound_pos{x + 0.5, y, z + 0.5};
+
+    glm::vec3 sound_pos{world_x + 0.5f, world_y + 0.5f, world_z + 0.5f};
 
     if (id == 0) {
         std::string name = BlockManager::name_form_id(origin_id);
