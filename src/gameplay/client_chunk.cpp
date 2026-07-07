@@ -282,7 +282,7 @@ void ClientChunk::need_upload() { m_need_upload = true; }
 void ClientChunk::set_chunk_block(int index, unsigned id) {
     m_blocks[index] = id;
 }
-
+BlockType ClientChunk::get_chunk_block(int index) { return m_blocks[index]; }
 ChunkPos ClientChunk::chunk_pos() const { return m_chunk_pos; }
 
 BiomeType ClientChunk::biome() const { return m_biome; }

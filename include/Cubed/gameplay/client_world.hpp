@@ -108,6 +108,12 @@ private:
     using OtherPlayerHashMap = std::unordered_map<std::string, PlayerInfo>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
+
+    struct PendingSound {
+        std::string sound;
+        glm::vec3 sound_pos;
+    };
+
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
     ClientPlayer m_player;
@@ -123,7 +129,7 @@ private:
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
-
+    tbb::concurrent_queue<PendingSound> m_pending_sound;
     std::vector<GLuint> m_pending_delete_vbo;
     std::vector<GLuint> m_pending_delete_vao;
 
