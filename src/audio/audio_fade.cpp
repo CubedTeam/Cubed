@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
-
+#include <numbers>
 namespace Cubed {
 AudioFade::AudioFade(AudioSource* source, float fade_in, float fade_out)
     : m_source(source), m_in_duration(fade_in), m_out_duration(fade_out) {
