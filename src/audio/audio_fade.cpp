@@ -16,6 +16,14 @@ AudioFade::AudioFade(AudioSource* source, float fade_in, float fade_out)
     m_source->set_volume(0.0f);
 }
 AudioFade::~AudioFade() {}
+
+void AudioFade::reset() {
+    m_active = true;
+    m_fade_in = true;
+    m_start_gain = 0.0f;
+    m_source->set_volume(0.0f);
+}
+
 void AudioFade::update() {
     if (!m_active || !m_source) {
         return;

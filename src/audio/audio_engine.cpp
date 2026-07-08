@@ -71,6 +71,20 @@ void AudioEngine::init() {
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
 
+void AudioEngine::change_bgm(const std::string& sound) {
+    Logger::info("change bgm {}", sound);
+    m_bgm->stop();
+    m_bgm->reset();
+    m_bgm->set_buffer_2d(m_sounds.get_buffer(sound));
+    m_bgm->set_target_volume(m_music_volume);
+    m_bgm->set_volume(m_music_volume);
+    auto it = m_fade_map.find("bgm");
+    if (it != m_fade_map.end()) {
+        it->second.reset();
+    }
+    m_bgm->play();
+};
+
 void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
                           bool check) {
     if (!m_pool) {

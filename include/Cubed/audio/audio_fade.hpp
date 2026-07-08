@@ -6,6 +6,7 @@ public:
     AudioFade(AudioSource* source, float fade_in = 0.0f, float fade_out = 0.0f);
     ~AudioFade();
     void update();
+    void reset();
 
 private:
     AudioSource* m_source = nullptr;

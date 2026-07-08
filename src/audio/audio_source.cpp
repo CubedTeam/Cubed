@@ -47,6 +47,8 @@ void AudioSource::set_buffer_3d(const AudioBuffer& buffer,
     alSourcef(m_source, AL_REFERENCE_DISTANCE, 4.0f);
     alSourcef(m_source, AL_ROLLOFF_FACTOR, 1.0f);
     alSourcef(m_source, AL_MAX_DISTANCE, 48.0f);
+
+    /*
     ALfloat l[3];
     alGetListenerfv(AL_POSITION, l);
 
@@ -55,6 +57,7 @@ void AudioSource::set_buffer_3d(const AudioBuffer& buffer,
     alGetSourcefv(m_source, AL_POSITION, p);
 
     Logger::info("Source Pos = ({}, {}, {})", p[0], p[1], p[2]);
+    */
 }
 
 void AudioSource::set_loop(bool on) {

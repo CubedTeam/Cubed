@@ -26,6 +26,7 @@ public:
 
     void init();
     void play_bgm();
+    void change_bgm(const std::string& sound);
     void play_3d(const std::string& sound, const glm::vec3& pos,
                  bool check = false);
     void play_2d(const std::string& sound, bool check = false);

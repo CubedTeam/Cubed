@@ -407,6 +407,14 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
+    m_timers.try_emplace("bgm change", 350.0f, [this]() {
+        if (m_day_tick >= 17000 || m_day_tick < 5000) {
+            m_audio.change_bgm("bgm/bgm002.ogg");
+        } else {
+            m_audio.change_bgm("bgm/bgm001.mp3");
+        }
+    });
+
     LoginReq req;
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
