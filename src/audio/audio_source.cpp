@@ -156,6 +156,7 @@ void AudioSource::reset() {
     alSourcef(m_source, AL_SEC_OFFSET, 0.0f);
 
     clear_filter();
+    clear_effect_slot();
 
     m_duration = 0.0f;
     m_target_volume = 1.0f;
@@ -168,4 +169,15 @@ void AudioSource::set_filter(const AudioFilter& filter) {
 void AudioSource::clear_filter() {
     alSourcei(m_source, AL_DIRECT_FILTER, AL_FILTER_NULL);
 }
+
+void AudioSource::set_effect_slot(const AudioEffectSlot& slot) {
+    alSource3i(m_source, AL_AUXILIARY_SEND_FILTER, slot.slot(), 0,
+               AL_FILTER_NULL);
+}
+
+void AudioSource::clear_effect_slot() {
+    alSource3i(m_source, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, 0,
+               AL_FILTER_NULL);
+}
+
 } // namespace Cubed

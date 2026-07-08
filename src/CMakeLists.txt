@@ -52,4 +52,6 @@ target_sources(${PROJECT_NAME}
         audio/source_pool.cpp
         audio/audio_fade.cpp
         audio/audio_filter.cpp
+        audio/audio_effect.cpp
+        audio/audio_effect_slot.cpp
 )

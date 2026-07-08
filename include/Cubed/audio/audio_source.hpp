@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/audio/audio_buffer.hpp"
+#include "Cubed/audio/audio_effect_slot.hpp"
 #include "Cubed/audio/audio_filter.hpp"
 
 #include <AL/al.h>
@@ -37,6 +38,8 @@ public:
 
     void set_filter(const AudioFilter& filter);
     void clear_filter();
+    void set_effect_slot(const AudioEffectSlot& slot);
+    void clear_effect_slot();
 
 private:
     ALuint m_source = 0;

@@ -19,6 +19,10 @@ AudioEngine::~AudioEngine() {
     m_pool.reset();
     m_sounds.clear();
 
+    m_low_pass_filter.reset();
+    m_underwater_effect.reset();
+    m_underwater_slot.reset();
+
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device);
@@ -49,6 +53,12 @@ void AudioEngine::init() {
         m_low_pass_filter = std::make_unique<AudioFilter>();
 
         m_low_pass_filter->set_lowpass(1.0f, 0.15f);
+
+        m_underwater_effect = std::make_unique<AudioEffect>();
+        m_underwater_effect->set_reverb(0.8f, 0.3162f, 0.01f);
+        // m_underwater_effect->set_reverb(20.0f, 1.0f, 1.0f);
+        m_underwater_slot = std::make_unique<AudioEffectSlot>();
+        m_underwater_slot->set_effect(*m_underwater_effect);
     }
 
     alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
@@ -120,6 +130,7 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
         auto& buffer = m_sounds.get_buffer(sound);
         if (m_efx_supported && m_underwater) {
             source->set_filter(*m_low_pass_filter);
+            source->set_effect_slot(*m_underwater_slot);
         }
         source->play_3d(buffer, pos);
     } catch (const std::exception& e) {
@@ -145,6 +156,7 @@ void AudioEngine::play_2d(const std::string& sound, bool check) {
         auto& buffer = m_sounds.get_buffer(sound);
         if (m_efx_supported && m_underwater) {
             source->set_filter(*m_low_pass_filter);
+            source->set_effect_slot(*m_underwater_slot);
         }
         source->play_2d(buffer);
     } catch (const std::exception& e) {
@@ -195,9 +207,10 @@ void AudioEngine::underwater_change(bool underwater) {
     for (auto& source : m_pool->sources()) {
         if (m_underwater) {
             source.set_filter(*m_low_pass_filter);
-
+            source.set_effect_slot(*m_underwater_slot);
         } else {
             source.clear_filter();
+            source.clear_effect_slot();
         }
     }
     if (underwater) {

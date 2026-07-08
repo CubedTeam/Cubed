@@ -54,5 +54,7 @@ private:
     float m_music_volume = 1.0f;
     float m_sfx_volume = 1.0f;
     std::unique_ptr<AudioFilter> m_low_pass_filter;
+    std::unique_ptr<AudioEffect> m_underwater_effect;
+    std::unique_ptr<AudioEffectSlot> m_underwater_slot;
 };
 } // namespace Cubed
