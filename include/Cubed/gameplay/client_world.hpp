@@ -69,6 +69,8 @@ public:
 
     void receive_remote_player(const PlayerInfoRsp& rsp);
     void receive_player_logout(const LogoutRsp& rsp);
+    void receive_player_water_sound(const PlayerWaterSound& rsp);
+    void send_player_water_sound(bool underwater, const glm::vec3& pos);
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;

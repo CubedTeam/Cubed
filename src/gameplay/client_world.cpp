@@ -354,6 +354,33 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
     }
 }
 
+void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
+    if (rsp.uuid() == m_player.get_uuid()) {
+        return;
+    }
+    glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
+
+    Logger::info("Client: Receive Player Water Sound");
+
+    m_pending_sound.emplace("ambient/water/in_and_out_of_water.flac", pos);
+}
+
+void ClientWorld::send_player_water_sound(bool underwater,
+                                          const glm::vec3& pos) {
+    Arena arena;
+    auto* r = Arena::Create<PlayerWaterSound>(&arena);
+
+    r->set_underwater(underwater);
+    auto* p = r->mutable_pos();
+    p->set_x(pos.x);
+    p->set_y(pos.y);
+    p->set_z(pos.z);
+    r->set_uuid(m_player.get_uuid());
+
+    m_client->send(make_packet(*r));
+    Logger::info("Client: Send Player Water Sound");
+}
+
 void ClientWorld::init(std::string_view player_name,
                        std::shared_ptr<NetworkClient> client) {
     m_player.init(player_name);

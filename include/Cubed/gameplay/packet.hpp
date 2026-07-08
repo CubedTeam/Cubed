@@ -54,6 +54,7 @@ enum class PacketEnum : uint16_t {
     PLAYER_INFO = 2001,
     C2S_PLAYER_INFO = 2002,
     PLAYER_INFO_RSP = 2003,
+    PLAYER_WATER_SOUND = 2004,
     CHUNK_DATA_REQ = 3001,
     CHUNK_DATA_RSP = 3002,
     BLOCK_CHANGE_REQ = 3003,
@@ -116,6 +117,9 @@ template <> constexpr uint16_t get_packet_id<Ping>() {
 }
 template <> constexpr uint16_t get_packet_id<Pong>() {
     return std::to_underlying(PacketEnum::PONG);
+}
+template <> constexpr uint16_t get_packet_id<PlayerWaterSound>() {
+    return std::to_underlying(PacketEnum::PLAYER_WATER_SOUND);
 }
 
 template <typename T>
