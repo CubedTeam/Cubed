@@ -44,4 +44,14 @@ target_sources(${PROJECT_NAME}
         gameplay/session.cpp
         gameplay/network_client.cpp
         player_renderer.cpp
+        audio/audio_engine.cpp
+        audio/audio_loader.cpp
+        audio/audio_source.cpp
+        audio/audio_buffer.cpp
+        audio/sound_manager.cpp
+        audio/source_pool.cpp
+        audio/audio_fade.cpp
+        audio/audio_filter.cpp
+        audio/audio_effect.cpp
+        audio/audio_effect_slot.cpp
 )

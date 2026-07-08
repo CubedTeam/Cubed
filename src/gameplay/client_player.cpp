@@ -1,8 +1,11 @@
 #include "Cubed/gameplay/client_player.hpp"
 
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+
+namespace {} // namespace
 
 namespace Cubed {
 ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
@@ -144,42 +147,35 @@ void ClientPlayer::update_player_move_state(int key, int action) {
     case GLFW_KEY_W:
         if (action == GLFW_PRESS) {
             m_move_state.forward = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.forward = false;
-            m_moving = false;
+
             m_sprinting = false;
         }
         break;
     case GLFW_KEY_S:
         if (action == GLFW_PRESS) {
             m_move_state.back = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.back = false;
-            m_moving = false;
         }
         break;
     case GLFW_KEY_A:
         if (action == GLFW_PRESS) {
             m_move_state.left = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.left = false;
-            m_moving = false;
         }
         break;
     case GLFW_KEY_D:
         if (action == GLFW_PRESS) {
             m_move_state.right = true;
-            m_moving = true;
         }
         if (action == GLFW_RELEASE) {
             m_move_state.right = false;
-            m_moving = false;
         }
         break;
     case GLFW_KEY_SPACE:
@@ -223,6 +219,8 @@ void ClientPlayer::update_player_move_state(int key, int action) {
         }
         break;
     }
+    m_moving = m_move_state.forward || m_move_state.back || m_move_state.left ||
+               m_move_state.right;
 }
 
 void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
@@ -391,6 +389,19 @@ void ClientPlayer::update_move(float delta_time) {
         m_player_pos = player_pos;
     }
     update_player_chunk();
+    auto it = m_timers.find("Player Walk Sound");
+
+    if (it != m_timers.end()) {
+        if (m_sprinting) {
+            it->second.set_threshold(RUN_SOUND_INTERVAL);
+        } else {
+            it->second.set_threshold(WALK_SOUND_INTERVAL);
+        }
+    }
+
+    for (auto& [key, timer] : m_timers) {
+        timer.update(delta_time);
+    }
 }
 
 void ClientPlayer::update_x_move(glm::vec3& player_pos) {
@@ -566,7 +577,7 @@ float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
 unsigned ClientPlayer::place_block() const { return m_place_block; };
 void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
-const ClientWorld& ClientPlayer::get_world() const { return m_world; }
+ClientWorld& ClientPlayer::get_world() { return m_world; }
 
 void ClientPlayer::set_uuid(std::string_view uuid) {
     std::lock_guard lock(m_uuid_mutex);
@@ -578,7 +589,31 @@ std::string ClientPlayer::get_uuid() const {
     return m_uuid;
 }
 const std::string& ClientPlayer::get_name() const { return m_name; }
-void ClientPlayer::init(std::string_view name) { m_name = name; }
+void ClientPlayer::init(std::string_view name) {
+
+    m_name = name;
+
+    m_timers.try_emplace("Player Walk Sound", WALK_SOUND_INTERVAL, [this]() {
+        if (!m_moving || is_fly) {
+            return;
+        }
+        glm::ivec3 block = glm::floor(m_player_pos);
+        block.y -= 1;
+        BlockType id = m_world.get_block_tpye(block);
+        Logger::info("player Block {} Walk Sound", id);
+        if (id == 0) {
+            return;
+        }
+        std::string name = BlockManager::name_form_id(id);
+        std::string sound = "block/" + name + "/walk.ogg";
+        auto& audio = m_world.get_audio();
+        audio.play_3d(sound, m_player_pos);
+        Logger::info("Player block {} walk sound", name);
+    });
+}
+
+bool ClientPlayer::is_underwater() const { return m_underwater; }
+void ClientPlayer::set_underwater(bool u) { m_underwater = u; }
 
 float ClientPlayer::yaw() const { return m_yaw; }
 float ClientPlayer::pitch() const { return m_pitch; }

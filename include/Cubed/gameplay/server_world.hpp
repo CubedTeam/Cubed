@@ -71,6 +71,7 @@ public:
     bool set_block(const glm::ivec3& block_pos, unsigned id);
 
     void sync_player_pos(const C2S_PlayerInfo& rsp);
+    void sync_player_water_sound(const PlayerWaterSound& rsp);
     void handle_player_login(const std::string& player_name,
                              std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const std::string& uuid) const;
@@ -156,7 +157,7 @@ private:
 
     PlayerUUIDMap m_uuid_to_name;
 
-    tbb::concurrent_unordered_map<std::string, Timer> m_timers;
+    tbb::concurrent_unordered_map<std::string, TickTimer> m_timers;
     tbb::concurrent_queue<PendingRequest> m_waiting_chunk_requests;
     tbb::concurrent_queue<std::unique_ptr<ServerChunk>> m_finished_queue;
 

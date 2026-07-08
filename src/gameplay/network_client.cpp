@@ -119,6 +119,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     }
                 }
             } break;
+            case std::to_underlying(PacketEnum::PLAYER_WATER_SOUND): {
+                auto* rsp = Arena::Create<PlayerWaterSound>(&arena);
+                if (decode_packet(*rsp, body_data, header)) {
+                    m_world.receive_player_water_sound(*rsp);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

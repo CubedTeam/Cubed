@@ -40,10 +40,21 @@ void Camera::update_move_camera() {
     }
     glm::ivec3 block_pos = glm::floor(m_camera_pos);
     auto& world = m_player->get_world();
+    bool change;
     if (world.get_block_tpye(block_pos) == 7) {
-        m_under_water = true;
+        change = true;
     } else {
-        m_under_water = false;
+        change = false;
+    }
+    if (m_under_water != change) {
+        m_under_water = change;
+        m_player->set_underwater(m_under_water);
+        auto& audio = m_player->get_world().get_audio();
+        audio.play_3d("ambient/water/in_and_out_of_water.flac", m_camera_pos,
+                      true);
+        audio.underwater_change(m_under_water);
+        m_player->get_world().send_player_water_sound(m_under_water,
+                                                      m_camera_pos);
     }
 }
 

@@ -22,7 +22,7 @@ public:
              const TextureManager& texture_manager, DevPanel& dev_panel);
     ~Renderer();
     void hot_reload();
-    void init();
+    void init(bool debug_on);
     const Shader& get_shader(const std::string& name) const;
     void render();
     void update(float delta_time);

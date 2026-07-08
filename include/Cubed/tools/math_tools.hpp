@@ -104,6 +104,8 @@ inline float distance2(const glm::vec3& a, const glm::vec3& b) {
     return glm::dot(diff, diff);
 }
 
+inline float lerp(float a, float b, float t) { return a + t * (b - a); }
+
 } // namespace Math
 
 } // namespace Cubed

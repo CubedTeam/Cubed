@@ -76,6 +76,7 @@ public:
     void need_upload();
 
     void set_chunk_block(int index, unsigned id);
+    BlockType get_chunk_block(int index);
     bool is_temp_chunk() const;
     ChunkPos chunk_pos() const;
     BiomeType biome() const;

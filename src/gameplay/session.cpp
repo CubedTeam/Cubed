@@ -92,6 +92,12 @@ asio::awaitable<void> Session::read_loop() {
                     m_server_world.handle_player_exit(req->uuid());
                 }
             }
+            if (cmd_id == std::to_underlying(PacketEnum::PLAYER_WATER_SOUND)) {
+                auto* req = Arena::Create<PlayerWaterSound>(&arena);
+                if (decode_packet(*req, body_data, header)) {
+                    m_server_world.sync_player_water_sound(*req);
+                }
+            }
         }
     } catch (const asio::system_error& e) {
         auto ec = e.code();

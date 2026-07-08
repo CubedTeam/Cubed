@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_mode.hpp"
+#include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/player.hpp"
 #include "Cubed/input.hpp"
 
@@ -16,6 +17,8 @@ namespace Cubed {
 class ClientWorld;
 class ClientPlayer {
 public:
+    static constexpr float WALK_SOUND_INTERVAL = 0.45f;
+    static constexpr float RUN_SOUND_INTERVAL = 0.3f;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     ClientPlayer(ClientWorld& world);
     ~ClientPlayer();
@@ -54,7 +57,7 @@ public:
     void set_gait(Gait gait);
     GameMode& game_mode();
 
-    const ClientWorld& get_world() const;
+    ClientWorld& get_world();
 
     void set_uuid(std::string_view uuid);
     std::string get_uuid() const;
@@ -69,6 +72,8 @@ public:
     bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
                   glm::ivec3& block_pos, glm::vec3& normal,
                   float distance = 4.0f);
+    bool is_underwater() const;
+    void set_underwater(bool u);
 
 private:
     using enum GameMode;
@@ -99,6 +104,7 @@ private:
 
     bool m_moving = false;
     bool m_sprinting = false;
+    bool m_underwater = false;
 
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 move_distance{0.0f, 0.0f, 0.0f};
@@ -123,6 +129,8 @@ private:
     float m_angle{0.0f};
     float m_walk_time{0.0f};
 
+    std::unordered_map<std::string, Timer> m_timers;
+
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
@@ -134,6 +142,7 @@ private:
     void update_y_move(glm::vec3& player_pos);
     void update_z_move(glm::vec3& player_pos);
     void update_player_chunk();
+    void play_walk_sound(float dt);
     Gait compute_gait() const;
 };
 } // namespace Cubed

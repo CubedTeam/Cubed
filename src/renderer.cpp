@@ -57,7 +57,7 @@ void Renderer::hot_reload() {
     update_fov(config.get<double>("player.fov"));
 }
 
-void Renderer::init() {
+void Renderer::init(bool debug_on) {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         Logger::error("Failed to initialize glad");
         exit(EXIT_FAILURE);
@@ -118,14 +118,18 @@ void Renderer::init() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 #ifdef DEBUG_MODE
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(
-        [](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* message,
-           const void*) {
-            Logger::log(Logger::Level::L_DEBUG, std::source_location::current(),
-                        "GL Debug: {}", reinterpret_cast<const char*>(message));
-        },
-        nullptr);
+    if (debug_on) {
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(
+            [](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* message,
+               const void*) {
+                Logger::log(Logger::Level::L_DEBUG,
+                            std::source_location::current(), "GL Debug: {}",
+                            reinterpret_cast<const char*>(message));
+            },
+            nullptr);
+    }
+
 #endif
 
     m_vao.resize(NUM_VAO);

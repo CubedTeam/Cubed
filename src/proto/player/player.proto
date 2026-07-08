@@ -18,3 +18,9 @@ message PlayerInfoRsp {
     float pitch = 5;
     int32 gait = 6;
 }
+
+message PlayerWaterSound {
+    string uuid = 1;
+    Vec3 pos = 2;
+    bool underwater = 3;
+}

@@ -104,6 +104,12 @@ void DevPanel::show_about_table_bar() {
         ImGui::Text("Asio");
         ImGui::Text("protobuf");
         ImGui::Text("zstd");
+        ImGui::Text("OpenAl Soft");
+        ImGui::Text("dr_libs");
+        ImGui::Separator();
+        ImGui::Text("Music");
+        ImGui::Text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), "
+                    "CC BY 4.0.");
         ImGui::Separator();
         ImGui::Text("Special Thanks");
         ImGui::Text("TANGERIME");
@@ -430,6 +436,17 @@ void DevPanel::show_settings_tab_item() {
             ImGui::SameLine();
             ImGui::Text("Your need to click this button to apply config\n");
         }
+
+        if (ImGui::SliderFloat("Music", &m_config.volume_music, 0.0f, 1.0f)) {
+            Config::get().set("volume.music",
+                              static_cast<double>(m_config.volume_music));
+            m_app.audio().reload_config();
+        }
+        if (ImGui::SliderFloat("SFX", &m_config.volume_sfx, 0.0f, 1.0f)) {
+            Config::get().set("volume.SFX",
+                              static_cast<double>(m_config.volume_sfx));
+            m_app.audio().reload_config();
+        }
         if (ImGui::Combo("Theme", &m_theme, THEMES, IM_ARRAYSIZE(THEMES))) {
             if (m_theme == 0) {
                 ImGui::StyleColorsDark();
@@ -746,6 +763,10 @@ void DevPanel::update_config_view() {
     } else {
         m_config.is_enable_aniso = true;
     }
+    m_config.volume_music =
+        static_cast<float>(config.val_view("volume.music").value_or(1.0));
+    m_config.volume_sfx =
+        static_cast<float>(config.val_view("volume.SFX").value_or(1.0));
 }
 void DevPanel::update_player_profile() {
     if (!m_player) {

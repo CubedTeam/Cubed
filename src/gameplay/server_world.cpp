@@ -597,6 +597,47 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     }
 }
 
+void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
+    auto x = rsp.pos().x();
+    auto y = rsp.pos().y();
+    auto z = rsp.pos().z();
+    ChunkPos pos = get_chunk_pos(x, z);
+    auto uuid = rsp.uuid();
+    auto underwater = rsp.underwater();
+
+    std::vector<std::shared_ptr<Session>> other;
+
+    {
+        std::shared_lock lock(m_player_mutex);
+        for (auto& [o_uuid, player] : m_players) {
+            if (o_uuid == uuid) {
+                continue;
+            }
+            if (player.has_player(pos)) {
+                other.emplace_back(player.get_session());
+            }
+        }
+    }
+
+    Arena arena;
+    auto* r = Arena::Create<PlayerWaterSound>(&arena);
+    r->set_uuid(uuid);
+    r->set_underwater(underwater);
+    auto* p = r->mutable_pos();
+
+    p->set_x(x);
+    p->set_y(y);
+    p->set_z(z);
+
+    for (auto& session : other) {
+        if (!session) {
+            continue;
+        }
+
+        session->send(make_packet(*r), 5);
+    }
+}
+
 void ServerWorld::handle_player_login(const std::string& name,
                                       std::shared_ptr<Session> session) {
     std::string uuid = generate_uuid();

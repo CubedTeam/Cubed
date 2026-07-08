@@ -12,7 +12,7 @@
 #include <imgui_impl_glfw.h>
 namespace Cubed {
 
-App::App() {}
+App::App() : m_client_world(m_audio) {}
 
 App::~App() {
     if (m_client) {
@@ -59,9 +59,11 @@ void App::init(int argc, char** argv) {
                                cursor_enter_callback);
     glfwSetCharCallback(m_window.get_glfw_window(), char_callback);
 
+    m_audio.init();
+
     ChunkGenerator::init();
     BlockManager::init();
-    m_renderer.init();
+    m_renderer.init(m_argument.debug_on);
     Logger::info("Renderer Init Success");
     m_window.update_viewport();
     // MapTable::init_map();
@@ -125,6 +127,12 @@ void App::handle_argument(int argc, char** argv) {
              [&](ArgParser) {
                  std::cout << CUBED_VERSION << "\n";
                  exit(EXIT_SUCCESS);
+             }},
+
+            {"--no-debug",
+             [&](ArgParser) {
+                 m_argument.debug_on = false;
+                 Logger::info("Switch off opengl debug out put");
              }}
 
         };
@@ -327,9 +335,9 @@ static Gait player_gait = Gait::WALK;
 void App::update() {
     glfwPollEvents();
     current_time = glfwGetTime();
-    delta_time = current_time - last_time;
+    dt = current_time - last_time;
     last_time = current_time;
-    fps_time_count += delta_time;
+    fps_time_count += dt;
     frame_count++;
     if (fps_time_count >= 1.0f) {
         fps = static_cast<int>(frame_count / fps_time_count);
@@ -344,7 +352,7 @@ void App::update() {
             std::format("RSS: {}mb", Tools::get_current_rss() / (1024 * 1024)));
     }
     m_texture_manager.update();
-    m_client_world.update(delta_time);
+    m_client_world.update(dt);
     m_camera.update_move_camera();
     const auto& player = m_client_world.get_player();
     if (player_gait != player.get_gait()) {
@@ -357,7 +365,10 @@ void App::update() {
             m_renderer.update_fov(fov + 5.0f);
         }
     }
-    m_renderer.update(delta_time);
+    m_audio.update_listener(m_camera.get_camera_pos(),
+                            m_camera.get_camera_front(), glm::vec3(0, 1, 0));
+    m_audio.update();
+    m_renderer.update(dt);
 }
 
 int App::start_cubed_application(int argc, char** argv) {
@@ -379,7 +390,7 @@ int App::start_cubed_application(int argc, char** argv) {
     return 1;
 }
 
-float App::delte_time() { return delta_time; }
+float App::delta_time() { return dt; }
 
 float App::get_fps() { return fps; }
 
@@ -391,4 +402,5 @@ Window& App::window() { return m_window; }
 ClientWorld& App::client_world() { return m_client_world; }
 ServerWorld& App::server_world() { return m_server.server_world(); }
 const App::Argument& App::argument() const { return m_argument; }
+AudioEngine& App::audio() { return m_audio; }
 } // namespace Cubed

@@ -20,6 +20,8 @@ class DevPanel {
         bool is_enable_aniso = false;
         bool is_support_aniso = true;
         bool is_reload = true;
+        float volume_music = 1.0f;
+        float volume_sfx = 1.0f;
     };
     struct PlayerProfile {
         int game_mode = 0;

@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/network_server.hpp"
 #include "Cubed/gameplay/server_world.hpp"
@@ -17,6 +18,7 @@ public:
         int port = 25530;
         std::string ip{"127.0.0.1"};
         std::string player{"Unknown"};
+        bool debug_on = true;
     };
 
     App();
@@ -37,7 +39,7 @@ public:
     static int start_cubed_application(int argc, char** argv);
 
     static unsigned int seed();
-    static float delte_time();
+    static float delta_time();
     static float get_fps();
 
     Camera& camera();
@@ -48,6 +50,7 @@ public:
     ClientWorld& client_world();
     ServerWorld& server_world();
     const Argument& argument() const;
+    AudioEngine& audio();
 
 private:
     Camera m_camera;
@@ -62,9 +65,11 @@ private:
 
     Window m_window{m_renderer};
 
+    AudioEngine m_audio;
+
     inline static double last_time = glfwGetTime();
     inline static double current_time = glfwGetTime();
-    inline static double delta_time = 0.0f;
+    inline static double dt = 0.0f;
     inline static double fps_time_count = 0.0f;
     inline static int frame_count = 0;
     inline static int fps = 0;

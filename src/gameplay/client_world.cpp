@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 
 #include "Cubed/config.hpp"
+#include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/tools/math_tools.hpp"
@@ -20,7 +21,8 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld() : m_player(*this) {}
+ClientWorld::ClientWorld(AudioEngine& auido)
+    : m_player(*this), m_audio(auido) {}
 
 ClientWorld::~ClientWorld() {
     stop_client_thread();
@@ -42,7 +44,7 @@ ClientWorld::~ClientWorld() {
         }
         m_pending_delete_vao.clear();
     }
-    m_timers.clear();
+    m_ticktimers.clear();
 }
 
 const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
@@ -151,22 +153,36 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
 
     auto [chunk_x, chunk_z] = get_chunk_pos(world_x, world_z);
     ChunkPos pos{chunk_x, chunk_z};
+
+    BlockType origin_id = 0;
     {
         chunk_acc acc;
 
         if (!m_chunks.find(acc, pos)) {
             return;
         }
-
         auto [x, y, z] = ClientChunk::world_to_block(world_x, world_y, world_z,
                                                      chunk_x, chunk_z);
         if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
             z >= CHUNK_SIZE) {
             return;
         }
-
-        acc->second->set_chunk_block(ClientChunk::index(x, y, z), id);
+        int idx = ClientChunk::index(x, y, z);
+        origin_id = acc->second->get_chunk_block(idx);
+        acc->second->set_chunk_block(idx, id);
         acc->second->mark_dirty();
+    }
+
+    glm::vec3 sound_pos{world_x + 0.5f, world_y + 0.5f, world_z + 0.5f};
+
+    if (id == 0) {
+        std::string name = BlockManager::name_form_id(origin_id);
+        std::string sound = "block/" + name + "/break.ogg";
+        m_pending_sound.emplace(sound, sound_pos);
+    } else {
+        std::string name = BlockManager::name_form_id(id);
+        std::string sound = "block/" + name + "/place.ogg";
+        m_pending_sound.emplace(sound, sound_pos);
     }
 
     auto pool = m_thread_pool.load();
@@ -338,12 +354,94 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
     }
 }
 
+void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
+    if (rsp.uuid() == m_player.get_uuid()) {
+        return;
+    }
+    glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
+
+    Logger::info("Client: Receive Player Water Sound");
+
+    m_pending_sound.emplace("ambient/water/in_and_out_of_water.flac", pos);
+}
+
+void ClientWorld::send_player_water_sound(bool underwater,
+                                          const glm::vec3& pos) {
+    Arena arena;
+    auto* r = Arena::Create<PlayerWaterSound>(&arena);
+
+    r->set_underwater(underwater);
+    auto* p = r->mutable_pos();
+    p->set_x(pos.x);
+    p->set_y(pos.y);
+    p->set_z(pos.z);
+    r->set_uuid(m_player.get_uuid());
+
+    m_client->send(make_packet(*r));
+    Logger::info("Client: Send Player Water Sound");
+}
+
 void ClientWorld::init(std::string_view player_name,
                        std::shared_ptr<NetworkClient> client) {
     m_player.init(player_name);
     m_client = client;
+    m_random.init(ChunkGenerator::seed());
+
     // timer
-    register_timer("player_pos", 1, [this]() { report_player_info(); });
+    register_ticktimer("player_pos", 1, [this]() { report_player_info(); });
+    m_timers.try_emplace("Birds Sound", 60.0f, [this]() {
+        auto player_pos = m_player.get_player_pos();
+        if (player_pos.y < SEA_LEVEL) {
+            return;
+        }
+        ChunkPos pos = get_chunk_pos(player_pos.x, player_pos.z);
+        {
+            chunk_cacc cacc;
+            if (m_chunks.find(cacc, pos)) {
+                if (cacc->second->get_biome() == BiomeType::FOREST) {
+                    m_audio.play_2d("ambient/birds.ogg", true);
+                }
+            }
+        }
+    });
+
+    m_timers.try_emplace("Ocean Wave", 3.0f, [this]() {
+        auto player_pos = m_player.get_player_pos();
+        if (player_pos.y < SEA_LEVEL - 10 || player_pos.y > SEA_LEVEL + 10) {
+            return;
+        }
+
+        auto ans = m_random.random_int(1, 4);
+        std::string sound =
+            "ambient/ocean/wave00" + std::to_string(ans) + ".flac";
+        ChunkPos pos = get_chunk_pos(player_pos.x, player_pos.z);
+        {
+            chunk_cacc cacc;
+            if (m_chunks.find(cacc, pos)) {
+                if (cacc->second->get_biome() == BiomeType::OCEAN) {
+                    m_audio.play_2d(sound, true);
+                }
+            }
+        }
+    });
+
+    m_timers.try_emplace("under water bubble", 1.5f, [this]() {
+        if (m_player.is_underwater()) {
+            auto ans = m_random.random_int(1, 2);
+            std::string sound =
+                "ambient/water/bubble00" + std::to_string(ans) + ".ogg";
+            m_audio.play_3d(sound, m_player.get_player_pos(), true);
+        }
+    });
+
+    m_timers.try_emplace("bgm change", 350.0f, [this]() {
+        if (m_day_tick >= 17000 || m_day_tick < 5000) {
+            m_audio.change_bgm("bgm/bgm002.ogg");
+        } else {
+            m_audio.change_bgm("bgm/bgm001.mp3");
+        }
+    });
+
     LoginReq req;
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
@@ -356,6 +454,7 @@ void ClientWorld::init(std::string_view player_name,
     // request login
     Logger::info("Send Login Request");
     m_client->send(make_packet(req), 0);
+    m_audio.play_bgm();
 }
 
 void ClientWorld::start_client_thread(std::string_view uuid) {
@@ -427,7 +526,7 @@ void ClientWorld::client_run(std::stop_token stoken) {
     auto next = Clock::now();
     while (!stoken.stop_requested()) {
         next += TICK;
-        for (auto& x : m_timers) {
+        for (auto& x : m_ticktimers) {
             x.second.update();
         }
         std::this_thread::sleep_until(next);
@@ -605,6 +704,8 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
                       static_cast<float>(z + 1)}};
 }
 
+AudioEngine& ClientWorld::get_audio() { return m_audio; }
+
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
         return;
@@ -728,6 +829,36 @@ void ClientWorld::update(float delta_time) {
                 player.angle = glm::mix(player.angle, 0.0f, t);
             }
 
+            // walking sound
+            if (player.gait == Gait::STOP) {
+                player.moving_time = 0.0f;
+            } else {
+                player.moving_time += delta_time;
+            }
+            auto play_walk_sound = [&]() {
+                glm::ivec3 block = glm::floor(player.render_pos);
+                block.y -= 1;
+                BlockType id = get_block_tpye(block);
+                if (id == 0) {
+                    return;
+                }
+                std::string name = BlockManager::name_form_id(id);
+                std::string sound = "block/" + name + "/walk.ogg";
+                m_audio.play_3d(sound, player.render_pos);
+            };
+            if (player.gait == Gait::WALK) {
+                if (player.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
+                    player.moving_time = 0.0f;
+                    play_walk_sound();
+                }
+            }
+            if (player.gait == Gait::RUN) {
+                if (player.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
+                    player.moving_time = 0.0f;
+                    play_walk_sound();
+                }
+            }
+
             m_render_player_data.emplace_back(
                 player.name, player.uuid, player.render_pos, player.render_yaw,
                 player.render_pitch, player.gait, player.angle);
@@ -754,6 +885,16 @@ void ClientWorld::update(float delta_time) {
                 m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
                 m_player.get_gait(), m_player.angle());
         }
+    }
+
+    // sound
+    PendingSound pending_sound;
+    while (m_pending_sound.try_pop(pending_sound)) {
+        m_audio.play_3d(pending_sound.sound, pending_sound.sound_pos);
+    }
+
+    for (auto& [pos, timer] : m_timers) {
+        timer.update(delta_time);
     }
 }
 

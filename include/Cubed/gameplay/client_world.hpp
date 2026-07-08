@@ -1,10 +1,12 @@
 #pragma once
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 
 #include <absl/container/flat_hash_set.h>
@@ -26,6 +28,7 @@ struct PlayerInfo {
     Gait gait;
     float angle = 0.0f;
     float walk_time = 0.0f;
+    float moving_time = 0.0f;
 };
 
 struct PlayerRenderData {
@@ -40,7 +43,7 @@ struct PlayerRenderData {
 
 class ClientWorld {
 public:
-    ClientWorld();
+    ClientWorld(AudioEngine& auido);
     ~ClientWorld();
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client);
@@ -66,6 +69,8 @@ public:
 
     void receive_remote_player(const PlayerInfoRsp& rsp);
     void receive_player_logout(const LogoutRsp& rsp);
+    void receive_player_water_sound(const PlayerWaterSound& rsp);
+    void send_player_water_sound(bool underwater, const glm::vec3& pos);
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;
@@ -89,12 +94,12 @@ public:
     bool is_receive_exit();
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
-
+    AudioEngine& get_audio();
     template <typename Fn>
-    void register_timer(std::string_view id, TickType threshold, Fn&& f) {
-        m_timers.emplace(std::piecewise_construct,
-                         std::forward_as_tuple(std::string(id)),
-                         std::forward_as_tuple(threshold, std::forward<Fn>(f)));
+    void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
+        m_ticktimers.emplace(
+            std::piecewise_construct, std::forward_as_tuple(std::string(id)),
+            std::forward_as_tuple(threshold, std::forward<Fn>(f)));
     }
 
 private:
@@ -107,11 +112,18 @@ private:
     using OtherPlayerHashMap = std::unordered_map<std::string, PlayerInfo>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
+
+    struct PendingSound {
+        std::string sound;
+        glm::vec3 sound_pos;
+    };
+
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
     ClientPlayer m_player;
     OtherPlayerHashMap m_player_info;
     ChunkHashMap m_chunks;
+    AudioEngine& m_audio;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 
@@ -121,14 +133,17 @@ private:
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
-
+    tbb::concurrent_queue<PendingSound> m_pending_sound;
     std::vector<GLuint> m_pending_delete_vbo;
     std::vector<GLuint> m_pending_delete_vao;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
     std::vector<PlayerRenderData> m_render_player_data;
-    tbb::concurrent_unordered_map<std::string, Timer> m_timers;
+
+    tbb::concurrent_unordered_map<std::string, TickTimer> m_ticktimers;
+    std::unordered_map<std::string, Timer> m_timers;
+
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};
     std::atomic<int> m_rendering_distance{24};
@@ -141,6 +156,8 @@ private:
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_thread_pool;
+
+    Random m_random;
 
     void client_run(std::stop_token token);
 
