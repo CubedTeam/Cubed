@@ -430,7 +430,7 @@ void ClientWorld::init(std::string_view player_name,
             auto ans = m_random.random_int(1, 2);
             std::string sound =
                 "ambient/water/bubble00" + std::to_string(ans) + ".ogg";
-            m_audio.play_2d(sound, true);
+            m_audio.play_3d(sound, m_player.get_player_pos(), true);
         }
     });
 
