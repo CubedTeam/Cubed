@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/audio/audio_buffer.hpp"
+#include "Cubed/audio/audio_filter.hpp"
 
 #include <AL/al.h>
 #include <glm/glm.hpp>
@@ -33,6 +34,9 @@ public:
     void mark_in_use();
     bool in_use() const;
     void reset();
+
+    void set_filter(const AudioFilter& filter);
+    void clear_filter();
 
 private:
     ALuint m_source = 0;

@@ -35,6 +35,21 @@ void AudioEngine::init() {
     }
     alcMakeContextCurrent(context);
 
+    if (!alcIsExtensionPresent(device, "ALC_EXT_EFX")) {
+        Logger::error("EFX not supported!");
+        m_efx_supported = false;
+    } else {
+        Logger::info("EFX supported!");
+        m_efx_supported = true;
+    }
+
+    if (m_efx_supported) {
+
+        m_low_pass_filter = std::make_unique<AudioFilter>();
+
+        m_low_pass_filter->set_lowpass(1.0f, 0.15f);
+    }
+
     alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
     check_al_error();
 
@@ -78,6 +93,9 @@ void AudioEngine::change_bgm(const std::string& sound) {
     m_bgm->set_buffer_2d(m_sounds.get_buffer(sound));
     m_bgm->set_target_volume(m_music_volume);
     m_bgm->set_volume(m_music_volume);
+    if (m_efx_supported && m_underwater) {
+        m_bgm->set_filter(*m_low_pass_filter);
+    }
     auto it = m_fade_map.find("bgm");
     if (it != m_fade_map.end()) {
         it->second.reset();
@@ -99,6 +117,9 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
 
     try {
         auto& buffer = m_sounds.get_buffer(sound);
+        if (m_efx_supported && m_underwater) {
+            source->set_filter(*m_low_pass_filter);
+        }
         source->play_3d(buffer, pos);
     } catch (const std::exception& e) {
         if (check) {
@@ -121,6 +142,9 @@ void AudioEngine::play_2d(const std::string& sound, bool check) {
 
     try {
         auto& buffer = m_sounds.get_buffer(sound);
+        if (m_efx_supported && m_underwater) {
+            source->set_filter(*m_low_pass_filter);
+        }
         source->play_2d(buffer);
     } catch (const std::exception& e) {
         if (check) {
@@ -157,6 +181,29 @@ void AudioEngine::reload_config() {
     if (m_bgm) {
         m_bgm->set_target_volume(m_music_volume);
     }
+}
+
+void AudioEngine::underwater_change(bool underwater) {
+    m_underwater = underwater;
+    if (!m_efx_supported) {
+        return;
+    }
+    if (!m_pool) {
+        return;
+    }
+    for (auto& source : m_pool->sources()) {
+        if (m_underwater) {
+            source.set_filter(*m_low_pass_filter);
+        } else {
+            source.clear_filter();
+        }
+    }
+    if (underwater) {
+        m_bgm->set_filter(*m_low_pass_filter);
+    } else {
+        m_bgm->clear_filter();
+    }
+    Logger::info("Under Water Change {}", m_underwater);
 }
 
 float& AudioEngine::bgm_target_volume() { return m_bgm->target_volume(); }

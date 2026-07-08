@@ -16,6 +16,8 @@ public:
 
     void update();
     AudioSource* acquire();
+
+    std::vector<AudioSource>& sources();
 };
 
 } // namespace Cubed

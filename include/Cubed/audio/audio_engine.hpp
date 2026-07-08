@@ -35,6 +35,8 @@ public:
     void update();
     void reload_config();
 
+    void underwater_change(bool underwater);
+
     float& bgm_target_volume();
 
 private:
@@ -47,8 +49,10 @@ private:
     FadeMap m_fade_map;
     SoundManager m_sounds;
     std::shared_ptr<SourcePool> m_pool;
-
+    bool m_efx_supported = false;
+    bool m_underwater = false;
     float m_music_volume = 1.0f;
     float m_sfx_volume = 1.0f;
+    std::unique_ptr<AudioFilter> m_low_pass_filter;
 };
 } // namespace Cubed

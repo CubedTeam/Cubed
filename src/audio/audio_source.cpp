@@ -3,6 +3,7 @@
 #include "Cubed/audio/audio_error.hpp"
 #include "Cubed/tools/log.hpp"
 
+#include <AL/efx.h>
 #include <algorithm>
 #include <stdexcept>
 
@@ -149,8 +150,17 @@ void AudioSource::reset() {
 
     alSourcef(m_source, AL_SEC_OFFSET, 0.0f);
 
+    clear_filter();
+
     m_duration = 0.0f;
     m_target_volume = 1.0f;
     m_using = false;
+}
+
+void AudioSource::set_filter(const AudioFilter& filter) {
+    alSourcei(m_source, AL_DIRECT_FILTER, filter.filter());
+}
+void AudioSource::clear_filter() {
+    alSourcei(m_source, AL_DIRECT_FILTER, AL_FILTER_NULL);
 }
 } // namespace Cubed

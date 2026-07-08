@@ -20,5 +20,5 @@ AudioSource* SourcePool::acquire() {
     }
     return nullptr;
 }
-
+std::vector<AudioSource>& SourcePool::sources() { return m_sources; }
 } // namespace Cubed

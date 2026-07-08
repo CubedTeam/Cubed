@@ -49,8 +49,9 @@ void Camera::update_move_camera() {
     if (m_under_water != change) {
         m_under_water = change;
         m_player->set_underwater(m_under_water);
-        m_player->get_world().get_audio().play_2d(
-            "ambient/water/in_and_out_of_water.flac", true);
+        auto& audio = m_player->get_world().get_audio();
+        audio.play_2d("ambient/water/in_and_out_of_water.flac", true);
+        audio.underwater_change(m_under_water);
     }
 }
 
