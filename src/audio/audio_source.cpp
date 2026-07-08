@@ -74,6 +74,11 @@ void AudioSource::set_volume(float volume) {
     alSourcef(m_source, AL_GAIN, volume);
 }
 
+void AudioSource::set_pitch(float pitch) {
+    pitch = std::clamp(pitch, 0.0f, 1.0f);
+    alSourcef(m_source, AL_PITCH, pitch);
+}
+
 void AudioSource::play() { alSourcePlay(m_source); }
 
 void AudioSource::play_2d(const AudioBuffer& buffer) {

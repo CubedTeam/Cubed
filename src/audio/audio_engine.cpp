@@ -6,6 +6,7 @@
 #include "Cubed/tools/log.hpp"
 
 #include <stdexcept>
+
 namespace Cubed {
 AudioEngine::AudioEngine() {};
 
@@ -194,12 +195,14 @@ void AudioEngine::underwater_change(bool underwater) {
     for (auto& source : m_pool->sources()) {
         if (m_underwater) {
             source.set_filter(*m_low_pass_filter);
+
         } else {
             source.clear_filter();
         }
     }
     if (underwater) {
         m_bgm->set_filter(*m_low_pass_filter);
+
     } else {
         m_bgm->clear_filter();
     }

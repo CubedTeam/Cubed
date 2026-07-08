@@ -17,7 +17,7 @@ public:
     void set_buffer_3d(const AudioBuffer& buffer, const glm::vec3& vec3);
     void set_loop(bool on = true);
     void set_volume(float volume);
-
+    void set_pitch(float pitch);
     void play();
     void play_2d(const AudioBuffer& buffer);
     void play_3d(const AudioBuffer& buffer, const glm::vec3& pos);
