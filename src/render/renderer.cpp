@@ -34,7 +34,6 @@ Renderer::~Renderer() {
         m_outline_indices_vbo.reset();
         m_sky_vbo.reset();
         m_ui_vbo.reset();
-        m_text_vbo.reset();
         m_player_vbo.reset();
         glBindVertexArray(0);
         m_vao.clear();
@@ -141,7 +140,6 @@ void Renderer::init(bool debug_on) {
     m_player_vbo = std::make_unique<VertexBuffer>();
     m_quad_vbo = std::make_unique<VertexBuffer>();
     m_sky_vbo = std::make_unique<VertexBuffer>();
-    m_text_vbo = std::make_unique<VertexBuffer>();
     m_ui_vbo = std::make_unique<VertexBuffer>();
 
     m_vao[2].bind();
@@ -200,12 +198,6 @@ void Renderer::init_quad() {
 
 void Renderer::init_text() {
     m_vao[4].bind();
-    m_text_vbo->buffer_data(NULL, sizeof(float) * 6 * 4,
-                            BufferUsage::DYNAMIC_DRAW);
-
-    const auto& shader = get_shader("text");
-
-    Text::set_loc(shader);
 
     DebugCollector::get().init_text();
 }
@@ -395,8 +387,6 @@ void Renderer::render_sky() {
 
 void Renderer::render_text() {
 
-    m_vao[4].bind();
-
     const auto& shader = get_shader("text");
 
     shader.use();
@@ -410,7 +400,7 @@ void Renderer::render_text() {
 
     auto& texts = DebugCollector::get().all_texts();
     for (auto& t : texts) {
-        t.second.render();
+        t.second.render(shader);
     }
 
     glEnable(GL_DEPTH_TEST);

@@ -130,12 +130,11 @@ private:
     glm::mat4 m_p_mat, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat, m_norm_mat;
 
     std::unique_ptr<VertexBuffer> m_sky_vbo;
-    std::unique_ptr<VertexBuffer> m_text_vbo = 0;
-    std::unique_ptr<VertexBuffer> m_outline_indices_vbo = 0;
-    std::unique_ptr<VertexBuffer> m_outline_vbo = 0;
-    std::unique_ptr<VertexBuffer> m_ui_vbo = 0;
-    std::unique_ptr<VertexBuffer> m_player_vbo = 0;
-    std::unique_ptr<VertexBuffer> m_quad_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_outline_indices_vbo;
+    std::unique_ptr<VertexBuffer> m_outline_vbo;
+    std::unique_ptr<VertexBuffer> m_ui_vbo;
+    std::unique_ptr<VertexBuffer> m_player_vbo;
+    std::unique_ptr<VertexBuffer> m_quad_vbo;
 
     GLuint m_fbo = 0;
     std::unique_ptr<Texture> m_screen_texture;

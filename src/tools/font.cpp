@@ -1,9 +1,7 @@
 #include "Cubed/tools/font.hpp"
 
 #include "Cubed/constants.hpp"
-#include "Cubed/shader.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/shader_tools.hpp"
 
 namespace fs = std::filesystem;
 
@@ -26,7 +24,6 @@ Font::~Font() {
 
     FT_Done_Face(m_face);
     FT_Done_FreeType(m_ft);
-    glDeleteTextures(1, &m_text_texture);
 }
 
 void Font::load_character(char8_t c) {
@@ -36,10 +33,9 @@ void Font::load_character(char8_t c) {
     }
     const auto& width = m_face->glyph->bitmap.width;
     const auto& height = m_face->glyph->bitmap.rows;
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_text_texture);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, static_cast<int>(c), width,
-                    height, 1, GL_RED, GL_UNSIGNED_BYTE,
-                    m_face->glyph->bitmap.buffer);
+    m_text_texture->tex_sub_image_3d(TextureFormat::RED, GL_UNSIGNED_BYTE,
+                                     m_face->glyph->bitmap.buffer, 0, 0,
+                                     static_cast<int>(c), width, height);
 
     Character character = {
         glm::vec2{0.0f, 0.0f},
@@ -54,22 +50,16 @@ void Font::load_character(char8_t c) {
 
 void Font::setup_font_character() {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    glGenTextures(1, &m_text_texture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_text_texture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, m_texture_width,
-                 m_texture_height, MAX_CHARACTER, 0, GL_RED, GL_UNSIGNED_BYTE,
-                 nullptr);
+    m_text_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
+    m_text_texture->tex_image_3d(TextureFormat::RED, TextureFormat::RED,
+                                 GL_UNSIGNED_BYTE, nullptr, m_texture_width,
+                                 m_texture_height, MAX_CHARACTER);
 
     for (char8_t c = 0; c < 128; c++) {
         load_character(c);
     }
-
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    m_text_texture->set_linear();
+    m_text_texture->set_clamp_to_edge(false, true, true);
 }
 
 std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
@@ -110,7 +100,7 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
     return vertices;
 }
 
-GLuint Font::text_texture() { return m_text_texture; }
+const Texture* Font::text_texture() { return m_text_texture.get(); }
 
 const std::string& Font::font_path() { return m_font_path; }
 
