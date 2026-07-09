@@ -50,21 +50,21 @@ void TextureManager::delet_texture() {
     }
 }
 
-GLuint TextureManager::get_block_status_array() const {
-    return m_block_status_array->id();
+const Texture* TextureManager::get_block_status_array() const {
+    return m_block_status_array.get();
 }
 
-GLuint TextureManager::get_texture_array() const {
-    return m_texture_array->id();
+const Texture* TextureManager::get_texture_array() const {
+    return m_texture_array.get();
 }
 
-GLuint TextureManager::get_cross_plane_array() const {
-    return m_cross_plane_array->id();
+const Texture* TextureManager::get_cross_plane_array() const {
+    return m_cross_plane_array.get();
 }
-GLuint TextureManager::get_ui_array() const { return m_ui_array->id(); }
+const Texture* TextureManager::get_ui_array() const { return m_ui_array.get(); }
 
-GLuint TextureManager::get_pbr_texture() const {
-    return m_normal_texture_array->id();
+const Texture* TextureManager::get_pbr_texture() const {
+    return m_normal_texture_array.get();
 }
 
 const std::vector<std::unique_ptr<Texture>>&
@@ -72,7 +72,7 @@ TextureManager::item_textures() const {
     return m_item_textures;
 }
 
-GLuint TextureManager::get_skin() const { return m_skin->id(); }
+const Texture* TextureManager::get_skin() const { return m_skin.get(); }
 
 void TextureManager::load_block_status(unsigned id) {
 

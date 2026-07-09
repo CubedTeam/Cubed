@@ -223,8 +223,7 @@ void PlayerRenderer::render(const Shader& shader) {
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, m_renderer.texture_mamger().get_skin());
+        m_renderer.texture_mamger().get_skin()->bind(1);
 
         auto make_rotated = [&](glm::vec3 pivot, float angle) {
             glm::mat4 mat = model;

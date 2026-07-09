@@ -40,13 +40,13 @@ public:
     ~TextureManager();
 
     void delet_texture();
-    GLuint get_block_status_array() const;
-    GLuint get_texture_array() const;
-    GLuint get_cross_plane_array() const;
-    GLuint get_ui_array() const;
-    GLuint get_pbr_texture() const;
+    const Texture* get_block_status_array() const;
+    const Texture* get_texture_array() const;
+    const Texture* get_cross_plane_array() const;
+    const Texture* get_ui_array() const;
+    const Texture* get_pbr_texture() const;
     const std::vector<std::unique_ptr<Texture>>& item_textures() const;
-    GLuint get_skin() const;
+    const Texture* get_skin() const;
     // Must call after MapTable::init_map() and glfwMakeContextCurrent(window);
     void init_texture();
 
