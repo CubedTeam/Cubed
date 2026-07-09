@@ -651,13 +651,14 @@ void DevPanel::show_items_tab_item() {
         ImGui::Text("Place Block ");
         ImGui::SameLine();
         ImGui::Image(static_cast<ImTextureID>(static_cast<intptr_t>(
-                         textures[m_player->place_block()])),
+                         textures[m_player->place_block()]->id())),
                      ImVec2{48, 48});
         for (size_t i = 1; i < textures.size(); i++) {
-            if (ImGui::ImageButton(("##item" + std::to_string(i)).c_str(),
-                                   static_cast<ImTextureID>(
-                                       static_cast<intptr_t>(textures[i])),
-                                   ImVec2{48, 48})) {
+            if (ImGui::ImageButton(
+                    ("##item" + std::to_string(i)).c_str(),
+                    static_cast<ImTextureID>(
+                        static_cast<intptr_t>(textures[i]->id())),
+                    ImVec2{48, 48})) {
                 m_player->set_place_block(i);
             }
             if (ImGui::IsItemHovered()) {

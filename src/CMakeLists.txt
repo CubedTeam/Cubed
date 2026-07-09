@@ -56,4 +56,5 @@ target_sources(${PROJECT_NAME}
         audio/audio_effect_slot.cpp
         render/vertex_buffer.cpp
         render/vertex_array.cpp
+        render/texture.cpp
 )
