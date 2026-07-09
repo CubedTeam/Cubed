@@ -198,7 +198,12 @@ void ClientChunk::gen_vertex_data(
     m_is_on_gen_vertex_data = false;
 }
 
-GLuint ClientChunk::get_normal_vao() const { return m_vertex_data[0].m_vao; }
+GLuint ClientChunk::get_normal_vao() const {
+    if (!m_vertex_data[0].m_vao) {
+        return 0;
+    }
+    return m_vertex_data[0].m_vao->id();
+}
 
 size_t ClientChunk::get_normal_vertices_sum() const {
     if (m_vertex_data[0].m_sum == 0) {
@@ -207,26 +212,43 @@ size_t ClientChunk::get_normal_vertices_sum() const {
     return m_vertex_data[0].m_sum.load();
 }
 
-GLuint ClientChunk::get_cross_vao() const { return m_vertex_data[1].m_vao; }
+GLuint ClientChunk::get_cross_vao() const {
+    if (!m_vertex_data[1].m_vao) {
+        return 0;
+    }
+    return m_vertex_data[1].m_vao->id();
+}
 size_t ClientChunk::get_cross_vertices_sum() const {
     return m_vertex_data[1].m_sum.load();
 }
 
 GLuint ClientChunk::get_normal_discard_vao() const {
-    return m_vertex_data[2].m_vao;
+    if (!m_vertex_data[2].m_vao) {
+        return 0;
+    }
+    return m_vertex_data[2].m_vao->id();
 }
 size_t ClientChunk::get_normal_discard_vertices_sum() const {
+
     return m_vertex_data[2].m_sum.load();
 }
 
 GLuint ClientChunk::get_normal_blend_vao() const {
-    return m_vertex_data[3].m_vao;
+    if (!m_vertex_data[3].m_vao) {
+        return 0;
+    }
+    return m_vertex_data[3].m_vao->id();
 }
 size_t ClientChunk::get_normal_blend_vertices_sum() const {
     return m_vertex_data[3].m_sum.load();
 }
 
-GLuint ClientChunk::get_water_vao() const { return m_vertex_data[4].m_vao; }
+GLuint ClientChunk::get_water_vao() const {
+    if (!m_vertex_data[4].m_vao) {
+        return 0;
+    }
+    return m_vertex_data[4].m_vao->id();
+}
 size_t ClientChunk::get_water_vertices_sum() const {
     return m_vertex_data[4].m_sum.load();
 }

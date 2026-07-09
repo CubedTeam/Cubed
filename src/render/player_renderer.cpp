@@ -1,9 +1,9 @@
-#include "Cubed/player_renderer.hpp"
+#include "Cubed/render/player_renderer.hpp"
 
 #include "Cubed/camera.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
-#include "Cubed/renderer.hpp"
+#include "Cubed/render/renderer.hpp"
 #include "Cubed/texture_manager.hpp"
 
 #include <glm/glm.hpp>

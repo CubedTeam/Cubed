@@ -58,8 +58,8 @@ public:
 
     void rebuild_world();
 
-    void push_delete_vbo(GLuint vbo);
-    void push_delete_vao(GLuint vao);
+    void push_delete_vbo(std::unique_ptr<VertexBuffer>& vbo);
+    void push_delete_vao(std::unique_ptr<VertexArray>& vao);
     // void hot_reload();
 
     // void rebuild_world();
@@ -134,8 +134,8 @@ private:
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
     tbb::concurrent_queue<PendingSound> m_pending_sound;
-    std::vector<GLuint> m_pending_delete_vbo;
-    std::vector<GLuint> m_pending_delete_vao;
+    std::vector<std::unique_ptr<VertexBuffer>> m_pending_delete_vbo;
+    std::vector<std::unique_ptr<VertexArray>> m_pending_delete_vao;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;

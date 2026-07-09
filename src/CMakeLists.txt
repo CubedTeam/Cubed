@@ -11,7 +11,7 @@ target_sources(${PROJECT_NAME}
         gameplay/tree.cpp
         input.cpp
         map_table.cpp
-        renderer.cpp
+        render/renderer.cpp
         shader.cpp
         texture_manager.cpp
         tools/cubed_random.cpp
@@ -43,7 +43,7 @@ target_sources(${PROJECT_NAME}
         gameplay/client_player.cpp
         gameplay/session.cpp
         gameplay/network_client.cpp
-        player_renderer.cpp
+        render/player_renderer.cpp
         audio/audio_engine.cpp
         audio/audio_loader.cpp
         audio/audio_source.cpp
@@ -54,4 +54,6 @@ target_sources(${PROJECT_NAME}
         audio/audio_filter.cpp
         audio/audio_effect.cpp
         audio/audio_effect_slot.cpp
+        render/vertex_buffer.cpp
+        render/vertex_array.cpp
 )

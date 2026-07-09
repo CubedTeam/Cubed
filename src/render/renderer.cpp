@@ -1,4 +1,4 @@
-#include "Cubed/renderer.hpp"
+#include "Cubed/render/renderer.hpp"
 
 #include "Cubed/camera.hpp"
 #include "Cubed/config.hpp"
@@ -30,14 +30,14 @@ Renderer::Renderer(const Camera& camera, ClientWorld& world,
 Renderer::~Renderer() {
     if (m_init) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDeleteBuffers(1, &m_outline_vbo);
-        glDeleteBuffers(1, &m_outline_indices_vbo);
-        glDeleteBuffers(1, &m_sky_vbo);
-        glDeleteBuffers(1, &m_ui_vbo);
-        glDeleteBuffers(1, &m_text_vbo);
-        glDeleteBuffers(1, &m_player_vbo);
+        m_outline_vbo.reset();
+        m_outline_indices_vbo.reset();
+        m_sky_vbo.reset();
+        m_ui_vbo.reset();
+        m_text_vbo.reset();
+        m_player_vbo.reset();
         glBindVertexArray(0);
-        glDeleteVertexArrays(NUM_VAO, m_vao.data());
+        m_vao.clear();
         glDeleteFramebuffers(1, &m_fbo);
         glDeleteTextures(1, &m_screen_texture);
         glDeleteTextures(1, &m_screen_depth_texture);
@@ -133,52 +133,43 @@ void Renderer::init(bool debug_on) {
 #endif
 
     m_vao.resize(NUM_VAO);
-    glGenVertexArrays(NUM_VAO, m_vao.data());
-    glBindVertexArray(0);
+    VertexArray::unbind();
 
-    glBindVertexArray(m_vao[2]);
-    glGenBuffers(1, &m_outline_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_outline_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_VER), CUBE_VER, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-    glGenBuffers(1, &m_outline_indices_vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_outline_indices_vbo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(OUTLINE_CUBE_INDICES),
-                 OUTLINE_CUBE_INDICES, GL_STATIC_DRAW);
+    m_outline_vbo = std::make_unique<VertexBuffer>();
+    m_outline_indices_vbo =
+        std::make_unique<VertexBuffer>(BufferType::ELEMENT_ARRAY_BUFFER);
+    m_player_vbo = std::make_unique<VertexBuffer>();
+    m_quad_vbo = std::make_unique<VertexBuffer>();
+    m_sky_vbo = std::make_unique<VertexBuffer>();
+    m_text_vbo = std::make_unique<VertexBuffer>();
+    m_ui_vbo = std::make_unique<VertexBuffer>();
 
-    glBindVertexArray(m_vao[1]);
-    glGenBuffers(1, &m_sky_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_sky_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VERTICES_POS), VERTICES_POS,
-                 GL_STATIC_DRAW);
+    m_vao[2].bind();
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
+    m_outline_vbo->buffer_data(CUBE_VER, sizeof(CUBE_VER));
+    m_vao[2].attribute(0, 3, GL_FLOAT, 0, 0);
+    m_outline_indices_vbo->buffer_data(OUTLINE_CUBE_INDICES,
+                                       sizeof(OUTLINE_CUBE_INDICES));
 
-    glBindVertexArray(m_vao[3]);
-    glGenBuffers(1, &m_ui_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_ui_vbo);
+    m_vao[1].bind();
+    m_sky_vbo->buffer_data(VERTICES_POS, sizeof(VERTICES_POS));
+
+    m_vao[1].attribute(0, 3, GL_FLOAT, 0, 0);
+
+    m_vao[3].bind();
 
     for (int i = 0; i < 6; i++) {
         Vertex2D vex{SQUARE_VERTICES[i][0], SQUARE_VERTICES[i][1],
                      SQUARE_TEXTURE_POS[i][0], SQUARE_TEXTURE_POS[i][1], 0};
         m_ui.emplace_back(vex);
     }
+    m_ui_vbo->buffer_data(m_ui.data(), m_ui.size() * sizeof(Vertex2D));
 
-    glBufferData(GL_ARRAY_BUFFER, m_ui.size() * sizeof(Vertex2D), m_ui.data(),
-                 GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, m_ui_vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (void*)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D),
-                          (void*)offsetof(Vertex2D, s));
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex2D),
-                          (void*)offsetof(Vertex2D, layer));
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
+    m_vao[3].attribute(0, 3, GL_FLOAT, sizeof(Vertex2D), (void*)0);
+    m_vao[3].attribute(1, 2, GL_FLOAT, sizeof(Vertex2D),
+                       (void*)offsetof(Vertex2D, s));
+    m_vao[3].attribute(2, 1, GL_FLOAT, sizeof(Vertex2D),
+                       (void*)offsetof(Vertex2D, layer));
 
     init_quad();
     init_text();
@@ -186,8 +177,8 @@ void Renderer::init(bool debug_on) {
 
     m_player_renderer.init();
 
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    VertexArray::unbind();
+    VertexBuffer::unbind();
     m_init = true;
 }
 
@@ -198,28 +189,24 @@ const Shader& Renderer::get_shader(const std::string& name) const {
 }
 
 void Renderer::init_quad() {
-    glBindVertexArray(m_vao[0]);
-    glGenBuffers(1, &m_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD_VERTICES), QUAD_VERTICES,
-                 GL_STATIC_DRAW);
+    m_vao[0].bind();
+    m_quad_vbo->buffer_data(QUAD_VERTICES, sizeof(QUAD_VERTICES));
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                          (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                          (void*)(2 * sizeof(float)));
+    m_vao[0].attribute(0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
+
+    m_vao[0].attribute(1, 2, GL_FLOAT, 4 * sizeof(float),
+                       (void*)(2 * sizeof(float)));
 }
 
 void Renderer::init_text() {
-    glBindVertexArray(m_vao[4]);
-    glGenBuffers(1, &m_text_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_text_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    m_vao[4].bind();
+    m_text_vbo->buffer_data(NULL, sizeof(float) * 6 * 4,
+                            BufferUsage::DYNAMIC_DRAW);
 
     const auto& shader = get_shader("text");
+
     Text::set_loc(shader);
+
     DebugCollector::get().init_text();
 }
 
@@ -291,7 +278,7 @@ void Renderer::render_outline() {
         shader.set_loc("mv_matrix", m_mv_mat);
         shader.set_loc("proj_matrix", m_p_mat);
 
-        glBindVertexArray(m_vao[2]);
+        m_vao[2].bind();
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
@@ -364,7 +351,7 @@ void Renderer::render_sky() {
     sky_shader.set_loc("cloudWhiteMix", m_sky_uniform.cloud_white_mix);
     sky_shader.set_loc("cloudThresholdLow", m_cloud_threshold_low);
     sky_shader.set_loc("cloudThresholdHigh", m_cloud_threshold_high);
-    glBindVertexArray(m_vao[1]);
+    m_vao[1].bind();
 
     glDisable(GL_DEPTH_TEST);
 
@@ -376,7 +363,7 @@ void Renderer::render_sky() {
     billboard.use();
     glDepthMask(GL_FALSE);
 
-    glBindVertexArray(m_vao[0]);
+    m_vao[0].bind();
     // draw sun
     glm::vec3 sun_pos = m_camera.get_camera_pos() +
                         normalize(-m_world.sunlight_dir()) * (FAR_PLANE * 0.9f);
@@ -408,7 +395,7 @@ void Renderer::render_sky() {
 
 void Renderer::render_text() {
 
-    glBindVertexArray(m_vao[4]);
+    m_vao[4].bind();
 
     const auto& shader = get_shader("text");
 
@@ -440,7 +427,7 @@ void Renderer::render_ui() {
     shader.set_loc("m_matrix", m_ui_m_matrix);
     shader.set_loc("proj_matrix", m_ui_proj);
 
-    glBindVertexArray(m_vao[3]);
+    m_vao[3].bind();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_manager.get_ui_array());
@@ -455,7 +442,7 @@ void Renderer::render_underwater() {
     const auto& shader = get_shader("under_water");
     shader.use();
 
-    glBindVertexArray(m_vao[0]);
+    m_vao[0].bind();
 
     shader.set_loc("u_sceneTexture", 0);
     shader.set_loc("u_time", static_cast<float>(glfwGetTime()));
@@ -951,7 +938,7 @@ void Renderer::render_world() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    glBindVertexArray(m_vao[0]);
+    m_vao[0].bind();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_accum_texture);
@@ -984,8 +971,8 @@ void Renderer::render_player() {
     shader.set_loc("minRadius", m_min_radius);
     shader.set_loc("maxRadius", m_max_radius);
     shader.set_loc("samples", m_samples);
-    shader.set_loc("renderDistance", m_world.rendering_distance());
-    shader.set_loc("skyColor", m_sky_uniform.sky_top);
+    // shader.set_loc("renderDistance", m_world.rendering_distance());
+    // shader.set_loc("skyColor", m_sky_uniform.sky_top);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_depth_map_texture);

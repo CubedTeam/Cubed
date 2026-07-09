@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Cubed/constants.hpp"
-#include "Cubed/player_renderer.hpp"
 #include "Cubed/primitive_data.hpp"
+#include "Cubed/render/player_renderer.hpp"
+#include "Cubed/render/vertex_array.hpp"
+#include "Cubed/render/vertex_buffer.hpp"
 #include "Cubed/shader.hpp"
 #include "Cubed/ui/text.hpp"
 
@@ -126,12 +128,14 @@ private:
 
     glm::mat4 m_p_mat, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat, m_norm_mat;
 
-    GLuint m_sky_vbo = 0;
-    GLuint m_text_vbo = 0;
-    GLuint m_outline_indices_vbo = 0;
-    GLuint m_outline_vbo = 0;
-    GLuint m_ui_vbo = 0;
-    GLuint m_player_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_sky_vbo;
+    std::unique_ptr<VertexBuffer> m_text_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_outline_indices_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_outline_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_ui_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_player_vbo = 0;
+    std::unique_ptr<VertexBuffer> m_quad_vbo = 0;
+
     GLuint m_fbo = 0;
     GLuint m_screen_texture = 0;
     GLuint m_screen_depth_texture = 0;
@@ -143,8 +147,6 @@ private:
 
     GLuint m_depth_map_fbo = 0;
     GLuint m_depth_map_texture = 0;
-
-    GLuint m_quad_vbo = 0;
 
     glm::mat4 m_ui_proj;
     glm::mat4 m_ui_m_matrix;
@@ -184,7 +186,7 @@ private:
     3 - ui vao
     4 - text vao
     */
-    std::vector<GLuint> m_vao;
+    std::vector<VertexArray> m_vao;
     std::vector<Vertex2D> m_ui;
 
     void init_quad();
