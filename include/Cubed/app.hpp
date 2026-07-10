@@ -55,7 +55,7 @@ public:
     AudioEngine& audio();
 
 private:
-    Config m_config;
+    Config m_game_config;
     Camera m_camera;
     TextureManager m_texture_manager;
     NetworkServer m_server;

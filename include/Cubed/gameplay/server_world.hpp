@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/config.hpp"
 #include "Cubed/gameplay/cave_carver.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_time.hpp"
@@ -25,7 +26,7 @@ class Session;
 class ServerWorld {
 public:
     enum class ThreadPoolKind { NET, GEN };
-    ServerWorld();
+    ServerWorld(Config& config);
     ~ServerWorld();
     void stop();
     void handle_player_exit(const std::string& uuid);
@@ -118,6 +119,9 @@ private:
 
     using uuid_acc = PlayerUUIDMap::accessor;
     using uuid_cacc = PlayerUUIDMap::const_accessor;
+
+    Config& m_config;
+
     // key = uuid
     PlayerHashMap m_players;
     ChunkHashMap m_chunks;

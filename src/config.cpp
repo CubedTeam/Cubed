@@ -10,7 +10,7 @@ using namespace std::string_view_literals;
 
 namespace Cubed {
 
-Config::Config() { load_config(); }
+Config::Config(std::string_view path) : CONGIF_PATH(path) { load_config(); }
 
 Config::~Config() { save_to_file(); }
 

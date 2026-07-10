@@ -4,7 +4,10 @@
 using asio::ip::tcp;
 namespace Cubed {
 
-NetworkServer::NetworkServer(int port) : m_port(port) {}
+NetworkServer::NetworkServer()
+    : m_config(ASSETS_PATH "server-config.toml"), m_world(m_config) {
+    m_port = m_config.get("port", 25530);
+}
 
 NetworkServer::~NetworkServer() { stop(); }
 
@@ -84,6 +87,11 @@ void NetworkServer::net_run() {
 
 void NetworkServer::start_server(int port) {
     m_port = port;
+    m_config.set("port", m_port);
+    start_server();
+}
+
+void NetworkServer::start_server() {
     m_world.init_world();
     net_run();
     m_started = true;

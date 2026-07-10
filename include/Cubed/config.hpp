@@ -5,7 +5,7 @@ namespace Cubed {
 
 class Config {
 public:
-    Config();
+    explicit Config(std::string_view path);
     Config(const Config&) = delete;
     Config(Config&&) = delete;
     Config& operator=(const Config&) = delete;
@@ -54,8 +54,7 @@ public:
 
 private:
     toml::table m_tbl;
-    constexpr static inline std::string_view CONGIF_PATH =
-        ASSETS_PATH "config.toml";
+    const std::string CONGIF_PATH;
     const toml::node* find_node(const toml::table& root,
                                 std::string_view path) const;
     // Follow the path to find the last-level toml::table, creating it if it
