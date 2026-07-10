@@ -59,7 +59,7 @@ public:
     const Camera& camera() const;
     const ClientWorld& world() const;
     ClientWorld& world();
-    const glm::mat4& proj_mat() const;
+    const glm::mat4& world_proj_matrix() const;
     const TextureManager& texture_mamger() const;
     float delta_time() const;
 
@@ -85,7 +85,8 @@ private:
     float m_width = 0.0f;
     float m_height = 0.0f;
 
-    glm::mat4 m_p_mat, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat, m_norm_mat;
+    glm::mat4 m_world_proj_matrix, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat,
+        m_norm_mat;
 
     std::unique_ptr<VertexBuffer> m_sky_vbo;
     std::unique_ptr<VertexBuffer> m_outline_indices_vbo;
@@ -94,8 +95,8 @@ private:
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
 
-    glm::mat4 m_ui_proj;
-    glm::mat4 m_ui_m_matrix;
+    glm::mat4 m_ui_proj_matrix;
+    glm::mat4 m_ui_model_matrix;
     ShaderManager m_shaders;
 
     /*

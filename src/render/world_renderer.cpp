@@ -51,10 +51,12 @@ void WorldRenderer::render() {
     glEnable(GL_FRAMEBUFFER_SRGB);
 
     glDisable(GL_DEPTH_TEST);
+    // clear screen
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     render_underwater();
+    glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
 void WorldRenderer::day_night_calculation() {

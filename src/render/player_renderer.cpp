@@ -197,7 +197,7 @@ void PlayerRenderer::render(const Shader& shader) {
     auto& m_world = m_renderer.world();
     auto& m_player = m_world.get_player();
     glm::mat4 m_v_mat = m_camera.get_camera_lookat();
-    glm::mat4 m_p_mat = m_renderer.proj_mat();
+    glm::mat4 m_p_mat = m_renderer.world_proj_matrix();
 
     auto& players = m_world.render_player_data();
     shader.set_loc("proj_matrix", m_p_mat);
