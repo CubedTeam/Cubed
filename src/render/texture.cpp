@@ -134,6 +134,8 @@ void Texture::set_clamp_to_edge(bool r, bool s, bool t) const {
     }
 }
 
+TextureType Texture::type() const { return M_TYPE; }
+
 void Texture::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);

@@ -57,4 +57,5 @@ target_sources(${PROJECT_NAME}
         render/vertex_buffer.cpp
         render/vertex_array.cpp
         render/texture.cpp
+        render/frame_buffer.cpp
 )

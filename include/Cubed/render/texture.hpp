@@ -83,6 +83,8 @@ public:
     void set_clamp_to_border(bool r = true, bool s = true, bool t = true) const;
     void set_clamp_to_edge(bool r = true, bool s = true, bool t = true) const;
 
+    TextureType type() const;
+
 private:
     GLuint m_id = 0;
     const TextureType M_TYPE;

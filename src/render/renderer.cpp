@@ -37,16 +37,16 @@ Renderer::~Renderer() {
         m_player_vbo.reset();
         glBindVertexArray(0);
         m_vao.clear();
-        glDeleteFramebuffers(1, &m_fbo);
+        m_fbo.reset();
         m_screen_texture.reset();
         m_screen_depth_texture.reset();
 
-        glDeleteFramebuffers(1, &m_oit_fbo);
+        m_oit_fbo.reset();
         m_accum_texture.reset();
         m_oit_depth_texture.reset();
         m_reveal_texture.reset();
 
-        glDeleteFramebuffers(1, &m_depth_map_fbo);
+        m_depth_map_fbo.reset();
         m_depth_map_texture.reset();
     }
 }
@@ -204,7 +204,7 @@ void Renderer::init_text() {
 
 void Renderer::render() {
     glDisable(GL_FRAMEBUFFER_SRGB);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    m_fbo->bind();
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     day_night_calculation();
@@ -212,7 +212,7 @@ void Renderer::render() {
     render_world();
     render_outline();
     render_player();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    FrameBuffer::unbind();
     glEnable(GL_FRAMEBUFFER_SRGB);
     glDisable(GL_DEPTH_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
@@ -475,19 +475,19 @@ void Renderer::updata_framebuffer(int width, int height) {
     if (width <= 0 || height <= 0)
         return;
     if (m_fbo == 0) {
-        glGenFramebuffers(1, &m_fbo);
+        m_fbo = std::make_unique<FrameBuffer>();
     }
     if (m_oit_fbo == 0) {
-        glGenFramebuffers(1, &m_oit_fbo);
+        m_oit_fbo = std::make_unique<FrameBuffer>();
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
     m_screen_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D);
     m_screen_texture->tex_image_2d(TextureFormat::RGB, TextureFormat::RGB,
                                    GL_UNSIGNED_BYTE, nullptr, width, height);
 
     m_screen_texture->set_linear();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           m_screen_texture->id(), 0);
+
+    m_fbo->attach(Attachment::COLOR_ATTACHMENT0, *m_screen_texture);
 
     m_screen_depth_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D);
     m_screen_depth_texture->tex_image_2d(TextureFormat::DEPTH_COMPONENT32F,
@@ -495,50 +495,37 @@ void Renderer::updata_framebuffer(int width, int height) {
                                          GL_FLOAT, nullptr, width, height);
     // m_screen_depth_texture->set_nearest();
     m_screen_depth_texture->set_linear();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           m_screen_depth_texture->id(), 0);
+    m_fbo->attach(Attachment::DEPTH_ATTACHMENT, *m_screen_depth_texture);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        Logger::error("FBO incomplete after resize!");
-    } else {
-        Logger::info("Frame Buffer Complete!");
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, m_oit_fbo);
+    m_fbo->check_status();
     m_accum_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D);
     m_accum_texture->tex_image_2d(TextureFormat::RGBA16F, TextureFormat::RGBA,
                                   GL_HALF_FLOAT, nullptr, width, height);
     m_accum_texture->set_linear();
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           m_accum_texture->id(), 0);
+    m_oit_fbo->attach(Attachment::COLOR_ATTACHMENT0, *m_accum_texture);
     m_reveal_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D);
     m_reveal_texture->tex_image_2d(TextureFormat::R16F, TextureFormat::RED,
                                    GL_HALF_FLOAT, nullptr, width, height);
     m_reveal_texture->set_linear();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
-                           m_reveal_texture->id(), 0);
+    m_oit_fbo->attach(Attachment::COLOR_ATTACHMENT1, *m_reveal_texture);
     m_oit_depth_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D);
     m_oit_depth_texture->tex_image_2d(TextureFormat::DEPTH_COMPONENT32F,
                                       TextureFormat::DEPTH_COMPONENT, GL_FLOAT,
                                       nullptr, width, height);
     // m_oit_depth_texture->set_nearest();
     m_oit_depth_texture->set_linear();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           m_oit_depth_texture->id(), 0);
-    GLenum draw_buffer[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-    glDrawBuffers(2, draw_buffer);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        Logger::error("FBO incomplete after resize!");
-    } else {
-        Logger::info("Frame Buffer Complete!");
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    m_oit_fbo->attach(Attachment::DEPTH_ATTACHMENT, *m_oit_depth_texture);
+
+    std::array<GLenum, 2> draw_buffer = {GL_COLOR_ATTACHMENT0,
+                                         GL_COLOR_ATTACHMENT1};
+    m_oit_fbo->draw_buffer(draw_buffer);
+
+    m_oit_fbo->check_status();
 
     // depth map fbo
     if (m_depth_map_fbo == 0) {
-        glGenFramebuffers(1, &m_depth_map_fbo);
+        m_depth_map_fbo = std::make_unique<FrameBuffer>();
     }
 
     m_depth_map_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D);
@@ -557,18 +544,13 @@ void Renderer::updata_framebuffer(int width, int height) {
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE,
     //                 GL_COMPARE_REF_TO_TEXTURE);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    m_depth_map_fbo->attach(Attachment::DEPTH_ATTACHMENT, *m_depth_map_texture);
+    m_depth_map_fbo->draw_buffer(GL_NONE);
+    m_depth_map_fbo->read_buffer(GL_NONE);
+    m_depth_map_fbo->check_status();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_depth_map_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           m_depth_map_texture->id(), 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        Logger::error("FBO incomplete after resize!");
-    } else {
-        Logger::info("Frame Buffer Complete!");
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    FrameBuffer::unbind();
+
     m_width = width;
     m_height = height;
 }
@@ -634,7 +616,7 @@ void Renderer::render_world() {
             glCullFace(GL_BACK);
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, m_depth_map_fbo);
+        m_depth_map_fbo->bind();
         glClear(GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
@@ -680,7 +662,7 @@ void Renderer::render_world() {
         auto& player_shadow = get_shader("player_depth");
         m_player_renderer.shadow_render(player_shadow, light_space_matrix);
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    m_fbo->bind();
 
     glCullFace(GL_BACK);
     glViewport(0, 0, m_width, m_height);
@@ -784,15 +766,15 @@ void Renderer::render_world() {
     }
 
     // copy depth buffer
+    m_fbo->bind(FrameBufferType::READ_FRAMEBUFFER);
+    m_oit_fbo->bind(FrameBufferType::DRAW_FRAMEBUFFER);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_oit_fbo);
     glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height,
                       GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_oit_fbo);
+    m_oit_fbo->bind(FrameBufferType::DRAW_FRAMEBUFFER);
 
     // pass one accumulate
-    glBindFramebuffer(GL_FRAMEBUFFER, m_oit_fbo);
+    m_oit_fbo->bind();
 
     glClearBufferfv(GL_COLOR, 0, glm::value_ptr(glm::vec4(0.0f)));
     float one = 1.0f;
@@ -908,7 +890,7 @@ void Renderer::render_world() {
     m_accum_texture->bind(0);
     m_reveal_texture->bind(1);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    m_fbo->bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 

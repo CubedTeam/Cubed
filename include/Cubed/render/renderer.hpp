@@ -2,6 +2,7 @@
 
 #include "Cubed/constants.hpp"
 #include "Cubed/primitive_data.hpp"
+#include "Cubed/render/frame_buffer.hpp"
 #include "Cubed/render/player_renderer.hpp"
 #include "Cubed/render/texture.hpp"
 #include "Cubed/render/vertex_array.hpp"
@@ -136,16 +137,16 @@ private:
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
 
-    GLuint m_fbo = 0;
+    std::unique_ptr<FrameBuffer> m_fbo;
     std::unique_ptr<Texture> m_screen_texture;
     std::unique_ptr<Texture> m_screen_depth_texture;
 
-    GLuint m_oit_fbo = 0;
+    std::unique_ptr<FrameBuffer> m_oit_fbo = 0;
     std::unique_ptr<Texture> m_accum_texture;
     std::unique_ptr<Texture> m_reveal_texture;
     std::unique_ptr<Texture> m_oit_depth_texture;
 
-    GLuint m_depth_map_fbo = 0;
+    std::unique_ptr<FrameBuffer> m_depth_map_fbo = 0;
     std::unique_ptr<Texture> m_depth_map_texture;
 
     glm::mat4 m_ui_proj;
