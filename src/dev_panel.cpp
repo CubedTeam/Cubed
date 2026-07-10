@@ -46,7 +46,7 @@ constexpr float DELTA_ANGLE_MAX = 30.0f;
 constexpr int PATH_STEP_MIN = 1;
 constexpr int PATH_STEP_MAX = 1000;
 
-DevPanel::DevPanel(App& app) : m_app(app) {}
+DevPanel::DevPanel(App& app) : m_app(app), m_config(app.config()) {}
 
 void DevPanel::init() {
     m_player = &m_app.client_world().get_player();
@@ -355,96 +355,95 @@ void DevPanel::show_chunk_table_bar() {
 
 void DevPanel::show_settings_tab_item() {
     if (ImGui::BeginTabItem("settings")) {
-        if (ImGui::SliderFloat("FOV", &m_config.fov, 1.0f, 140.0f)) {
-            Config::get().set("player.fov", static_cast<double>(m_config.fov));
+        if (ImGui::SliderFloat("FOV", &m_config_view.fov, 1.0f, 140.0f)) {
+            m_config.set("player.fov", static_cast<double>(m_config_view.fov));
             m_app.renderer().hot_reload();
         }
         ImGui::SameLine();
         if (ImGui::Button("default##1")) {
-            m_config.fov = DEFAULT_FOV;
-            Config::get().set("player.fov", static_cast<double>(m_config.fov));
+            m_config_view.fov = DEFAULT_FOV;
+            m_config.set("player.fov", static_cast<double>(m_config_view.fov));
             m_app.renderer().hot_reload();
         }
-        if (ImGui::SliderFloat("Sensitivity", &m_config.mouse_sensitivity,
+        if (ImGui::SliderFloat("Sensitivity", &m_config_view.mouse_sensitivity,
                                0.01f, 1.0f)) {
-            Config::get().set("player.mouse_sensitivity",
-                              static_cast<double>(m_config.mouse_sensitivity));
+            m_config.set("player.mouse_sensitivity",
+                         static_cast<double>(m_config_view.mouse_sensitivity));
             m_player->hot_reload();
         }
         ImGui::SameLine();
         if (ImGui::Button("default##2")) {
-            m_config.mouse_sensitivity = 0.15f;
-            Config::get().set("player.mouse_sensitivity",
-                              static_cast<double>(m_config.mouse_sensitivity));
+            m_config_view.mouse_sensitivity = 0.15f;
+            m_config.set("player.mouse_sensitivity",
+                         static_cast<double>(m_config_view.mouse_sensitivity));
             m_player->hot_reload();
         }
 
-        if (ImGui::SliderInt("Distance", &m_config.rendering_distance, 2,
+        if (ImGui::SliderInt("Distance", &m_config_view.rendering_distance, 2,
                              128)) {
-            Config::get().set("world.rendering_distance",
-                              m_config.rendering_distance);
+            m_config.set("world.rendering_distance",
+                         m_config_view.rendering_distance);
             m_app.client_world().hot_reload();
         }
-        if (ImGui::Checkbox("Fullscreen", &m_config.fullscreen)) {
-            Config::get().set("window.fullscreen", m_config.fullscreen);
+        if (ImGui::Checkbox("Fullscreen", &m_config_view.fullscreen)) {
+            m_config.set("window.fullscreen", m_config_view.fullscreen);
             m_app.window().hot_reload();
         }
         ImGui::SameLine();
-        if (ImGui::Checkbox("V-Sync", &m_config.v_sync)) {
-            Config::get().set("window.V-Sync", m_config.v_sync);
+        if (ImGui::Checkbox("V-Sync", &m_config_view.v_sync)) {
+            m_config.set("window.V-Sync", m_config_view.v_sync);
             m_app.window().hot_reload();
         }
-        if (ImGui::Checkbox("Aniso", &m_config.is_enable_aniso)) {
-            m_config.is_reload = false;
-            if (m_config.is_enable_aniso) {
-                m_config.max_aniso = m_app.texture_manager().max_aniso();
-                if (m_config.max_aniso < 2) {
-                    m_config.is_support_aniso = false;
+        if (ImGui::Checkbox("Aniso", &m_config_view.is_enable_aniso)) {
+            m_config_view.is_reload = false;
+            if (m_config_view.is_enable_aniso) {
+                m_config_view.max_aniso = m_app.texture_manager().max_aniso();
+                if (m_config_view.max_aniso < 2) {
+                    m_config_view.is_support_aniso = false;
                 } else {
-                    m_config.aniso = 2;
+                    m_config_view.aniso = 2;
                 }
             } else {
-                m_config.aniso = 1;
+                m_config_view.aniso = 1;
             }
         }
-        if (m_config.is_enable_aniso) {
+        if (m_config_view.is_enable_aniso) {
             ImGui::SameLine();
-            if (!m_config.is_support_aniso) {
+            if (!m_config_view.is_support_aniso) {
                 ImGui::Text("Not Support\n");
             } else {
-                if (ImGui::SliderInt("##aniso", &m_config.aniso, 2,
-                                     m_config.max_aniso)) {
-                    m_config.is_reload = false;
+                if (ImGui::SliderInt("##aniso", &m_config_view.aniso, 2,
+                                     m_config_view.max_aniso)) {
+                    m_config_view.is_reload = false;
                     int log =
-                        static_cast<int>(std::log2(m_config.aniso) + 0.5f);
-                    m_config.aniso = static_cast<int>(std::pow(2, log));
-                    if (m_config.aniso < 2) {
-                        m_config.aniso = 2;
+                        static_cast<int>(std::log2(m_config_view.aniso) + 0.5f);
+                    m_config_view.aniso = static_cast<int>(std::pow(2, log));
+                    if (m_config_view.aniso < 2) {
+                        m_config_view.aniso = 2;
                     }
-                    if (m_config.aniso > m_config.max_aniso) {
-                        m_config.aniso = m_config.max_aniso;
+                    if (m_config_view.aniso > m_config_view.max_aniso) {
+                        m_config_view.aniso = m_config_view.max_aniso;
                     }
                 }
             }
         }
         if (ImGui::Button("ReloadTexture")) {
-            Config::get().set("texture.aniso", m_config.aniso);
+            m_config.set("texture.aniso", m_config_view.aniso);
             m_app.texture_manager().need_reload();
-            m_config.is_reload = true;
+            m_config_view.is_reload = true;
         }
-        if (!m_config.is_reload) {
+        if (!m_config_view.is_reload) {
             ImGui::SameLine();
             ImGui::Text("Your need to click this button to apply config\n");
         }
 
-        if (ImGui::SliderFloat("Music", &m_config.volume_music, 0.0f, 1.0f)) {
-            Config::get().set("volume.music",
-                              static_cast<double>(m_config.volume_music));
+        if (ImGui::SliderFloat("Music", &m_config_view.volume_music, 0.0f,
+                               1.0f)) {
+            m_config.set("volume.music", m_config_view.volume_music);
             m_app.audio().reload_config();
         }
-        if (ImGui::SliderFloat("SFX", &m_config.volume_sfx, 0.0f, 1.0f)) {
-            Config::get().set("volume.SFX",
-                              static_cast<double>(m_config.volume_sfx));
+        if (ImGui::SliderFloat("SFX", &m_config_view.volume_sfx, 0.0f, 1.0f)) {
+            m_config.set("volume.SFX", m_config_view.volume_sfx);
             m_app.audio().reload_config();
         }
         if (ImGui::Combo("Theme", &m_theme, THEMES, IM_ARRAYSIZE(THEMES))) {
@@ -453,10 +452,10 @@ void DevPanel::show_settings_tab_item() {
             } else if (m_theme == 1) {
                 ImGui::StyleColorsLight();
             }
-            Config::get().set("devpanel.theme", m_theme);
+            m_config.set("devpanel.theme", m_theme);
         }
         if (ImGui::Button("save")) {
-            Config::get().save_to_file();
+            m_config.save_to_file();
         }
 
         ImGui::EndTabItem();
@@ -750,32 +749,28 @@ void DevPanel::show_shader_tab_item() {
 }
 
 void DevPanel::update_config_view() {
-    auto config = Config::get();
-    m_config.fov =
-        static_cast<float>(config.val_view("player.fov").value_or(70.0));
-    m_config.fullscreen = config.val_view("window.fullscreen").value_or(false);
-    m_config.v_sync = config.val_view("window.V-Sync").value_or(true);
-    m_config.mouse_sensitivity = static_cast<float>(
-        config.val_view("player.mouse_sensitivity").value_or(0.15));
-    m_config.width = config.val_view("window.width").value_or(800);
-    m_config.height = config.val_view("window.height").value_or(600);
-    m_config.rendering_distance =
-        config.val_view("world.rendering_distance").value_or(24);
-    m_theme = config.val_view("devpanel.theme").value_or(0);
+    m_config_view.fov = m_config.get("player.fov", 70.0f);
+    m_config_view.fullscreen = m_config.get("window.fullscreen", false);
+    m_config_view.v_sync = m_config.get("window.V-Sync", true);
+    m_config_view.mouse_sensitivity =
+        m_config.get("player.mouse_sensitivity", 0.15f);
+    m_config_view.width = m_config.get("window.width", 800);
+    m_config_view.height = m_config.get("window.height", 600);
+    m_config_view.rendering_distance =
+        m_config.get("world.rendering_distance", 24);
+    m_theme = m_config.get("devpanel.theme", 0);
     if (m_theme != 1 && m_theme != 0) {
         m_theme = 0;
     }
-    m_config.aniso = config.val_view("texture.aniso").value_or(1);
-    m_config.max_aniso = m_app.texture_manager().max_aniso();
-    if (m_config.aniso <= 1) {
-        m_config.is_enable_aniso = false;
+    m_config_view.aniso = m_config.get("texture.aniso", 1);
+    m_config_view.max_aniso = m_app.texture_manager().max_aniso();
+    if (m_config_view.aniso <= 1) {
+        m_config_view.is_enable_aniso = false;
     } else {
-        m_config.is_enable_aniso = true;
+        m_config_view.is_enable_aniso = true;
     }
-    m_config.volume_music =
-        static_cast<float>(config.val_view("volume.music").value_or(1.0));
-    m_config.volume_sfx =
-        static_cast<float>(config.val_view("volume.SFX").value_or(1.0));
+    m_config_view.volume_music = m_config.get("volume.music", 1.0f);
+    m_config_view.volume_sfx = m_config.get("volume.SFX", 1.0f);
 }
 void DevPanel::update_player_profile() {
     if (!m_player) {

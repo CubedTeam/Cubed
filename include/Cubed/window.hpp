@@ -1,4 +1,7 @@
 #pragma once
+
+#include "Cubed/config.hpp"
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 namespace Cubed {
@@ -6,7 +9,7 @@ namespace Cubed {
 class Renderer;
 class Window {
 public:
-    Window(Renderer& renderer);
+    Window(Renderer& renderer, Config& config);
     ~Window();
 
     bool is_mouse_enable() const;
@@ -29,6 +32,7 @@ private:
     int m_width;
     int m_height;
     Renderer& m_renderer;
+    Config& m_config;
 };
 
 } // namespace Cubed

@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/audio/audio_engine.hpp"
+#include "Cubed/config.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
@@ -43,7 +44,7 @@ struct PlayerRenderData {
 
 class ClientWorld {
 public:
-    ClientWorld(AudioEngine& auido);
+    ClientWorld(AudioEngine& auido, Config& config);
     ~ClientWorld();
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client);
@@ -95,6 +96,7 @@ public:
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
     AudioEngine& get_audio();
+    Config& get_config();
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -124,6 +126,7 @@ private:
     OtherPlayerHashMap m_player_info;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
+    Config& m_config;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 

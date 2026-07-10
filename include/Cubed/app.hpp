@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/server_world.hpp"
 #define GLFW_INCLUDE_NONE
 #include "Cubed/camera.hpp"
+#include "Cubed/config.hpp"
 #include "Cubed/dev_panel.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/texture_manager.hpp"
@@ -49,23 +50,23 @@ public:
     Window& window();
     ClientWorld& client_world();
     ServerWorld& server_world();
+    Config& config();
     const Argument& argument() const;
     AudioEngine& audio();
 
 private:
+    Config m_config;
     Camera m_camera;
     TextureManager m_texture_manager;
     NetworkServer m_server;
     std::shared_ptr<NetworkClient> m_client;
+    AudioEngine m_audio;
     ClientWorld m_client_world;
 
-    DevPanel m_dev_panel{*this};
-    Renderer m_renderer{m_camera, m_client_world, m_texture_manager,
-                        m_dev_panel};
+    DevPanel m_dev_panel;
+    Renderer m_renderer;
 
-    Window m_window{m_renderer};
-
-    AudioEngine m_audio;
+    Window m_window;
 
     inline static double last_time = glfwGetTime();
     inline static double current_time = glfwGetTime();
@@ -74,6 +75,7 @@ private:
     inline static int frame_count = 0;
     inline static int fps = 0;
     Argument m_argument;
+
     void init(int argc, char** argv);
     void handle_argument(int argc, char** argv);
     void handle_toml();

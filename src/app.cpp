@@ -12,7 +12,12 @@
 #include <imgui_impl_glfw.h>
 namespace Cubed {
 
-App::App() : m_client_world(m_audio) {}
+App::App()
+    : m_texture_manager(m_config), m_audio(m_config),
+      m_client_world(m_audio, m_config), m_dev_panel(*this),
+      m_renderer(m_camera, m_client_world, m_texture_manager, m_dev_panel,
+                 m_config),
+      m_window(m_renderer, m_config) {}
 
 App::~App() {
     if (m_client) {
@@ -357,7 +362,7 @@ void App::update() {
     const auto& player = m_client_world.get_player();
     if (player_gait != player.get_gait()) {
         player_gait = player.get_gait();
-        float fov = static_cast<float>(Config::get().get<double>("player.fov"));
+        float fov = m_config.get("player.fov", 70.0f);
         if (player_gait == Gait::WALK) {
             m_renderer.update_fov(fov);
         }
@@ -401,6 +406,7 @@ TextureManager& App::texture_manager() { return m_texture_manager; }
 Window& App::window() { return m_window; }
 ClientWorld& App::client_world() { return m_client_world; }
 ServerWorld& App::server_world() { return m_server.server_world(); }
+Config& App::config() { return m_config; }
 const App::Argument& App::argument() const { return m_argument; }
 AudioEngine& App::audio() { return m_audio; }
 } // namespace Cubed

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/config.hpp"
 #include "Cubed/constants.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/player_renderer.hpp"
@@ -23,7 +24,8 @@ public:
     constexpr static int NUM_VAO = 7;
 
     Renderer(const Camera& camera, ClientWorld& world,
-             const TextureManager& texture_manager, DevPanel& dev_panel);
+             const TextureManager& texture_manager, DevPanel& dev_panel,
+             Config& config);
     ~Renderer();
     void hot_reload();
     void init(bool debug_on);
@@ -109,7 +111,7 @@ private:
     std::vector<Vertex2D> m_ui;
 
     WorldRenderer m_world_renderer;
-
+    Config& m_config;
     void init_quad();
     void init_text();
 

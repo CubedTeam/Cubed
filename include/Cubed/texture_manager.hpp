@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/config.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/render/texture.hpp"
 
@@ -19,7 +20,7 @@ private:
     std::unique_ptr<Texture> m_skin;
     std::vector<std::unique_ptr<Texture>> m_item_textures;
     GLfloat m_max_aniso = 0.0f;
-
+    Config& m_config;
     int m_aniso = 1;
 
     void load_block_status(unsigned status_id);
@@ -36,7 +37,7 @@ private:
     void hot_reload();
 
 public:
-    TextureManager();
+    TextureManager(Config& config);
     ~TextureManager();
 
     void delete_texture();

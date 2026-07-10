@@ -2,7 +2,6 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/constants.hpp"
-#include "Cubed/map_table.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
@@ -32,7 +31,7 @@ unsigned char* generate_flat_normal_map(int width = BLOCK_NORMAL_SIZE,
 
 namespace Cubed {
 
-TextureManager::TextureManager() {}
+TextureManager::TextureManager(Config& config) : m_config(config) {}
 
 TextureManager::~TextureManager() { delete_texture(); }
 
@@ -286,10 +285,9 @@ void TextureManager::init_texture() {
         Logger::info("Support anisotropic filtering max_aniso is {}",
                      m_max_aniso);
     }
-    m_aniso = Config::get().get<int>("texture.aniso");
+    m_aniso = m_config.get("texture.aniso", 1);
     m_aniso = std::min(static_cast<int>(m_max_aniso), m_aniso);
     Logger::info("Setting Texture Aniso is {}", m_aniso);
-    MapTable::init_map();
     Logger::info("Map Init Success");
 
     init_block();

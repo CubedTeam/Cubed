@@ -1,6 +1,5 @@
 #include "Cubed/gameplay/server_world.hpp"
 
-#include "Cubed/config.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -501,8 +500,8 @@ bool ServerWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
 }
 
 void ServerWorld::hot_reload() {
-    auto& config = Config::get();
-    int dist = config.get<int>("world.rendering_distance");
+
+    int dist = 24;
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
 }
 

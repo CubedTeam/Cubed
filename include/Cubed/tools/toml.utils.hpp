@@ -14,6 +14,7 @@ concept TomlValueType =
     std::same_as<std::decay_t<T>, toml::date> ||
     std::same_as<std::decay_t<T>, toml::time> ||
     std::same_as<std::decay_t<T>, toml::date_time> ||
+    std::same_as<std::decay_t<T>, float> ||
     std::same_as<std::decay_t<T>, std::string>;
 
 template <TomlValueType T>

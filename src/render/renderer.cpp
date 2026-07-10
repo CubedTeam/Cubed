@@ -20,10 +20,11 @@
 namespace Cubed {
 
 Renderer::Renderer(const Camera& camera, ClientWorld& world,
-                   const TextureManager& texture_manager, DevPanel& dev_panel)
+                   const TextureManager& texture_manager, DevPanel& dev_panel,
+                   Config& config)
     : m_camera(camera), m_dev_panel(dev_panel),
       m_texture_manager(texture_manager), m_world(world),
-      m_world_renderer(*this) {}
+      m_world_renderer(*this), m_config(config) {}
 
 Renderer::~Renderer() {
     if (m_init) {
@@ -38,10 +39,7 @@ Renderer::~Renderer() {
     }
 }
 
-void Renderer::hot_reload() {
-    auto& config = Config::get();
-    update_fov(config.get<double>("player.fov"));
-}
+void Renderer::hot_reload() { update_fov(m_config.get("player.fov", 70.0f)); }
 
 void Renderer::init(bool debug_on) {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {

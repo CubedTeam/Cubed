@@ -21,8 +21,8 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld(AudioEngine& auido)
-    : m_player(*this), m_audio(auido) {}
+ClientWorld::ClientWorld(AudioEngine& auido, Config& config)
+    : m_player(*this), m_audio(auido), m_config(config) {}
 
 ClientWorld::~ClientWorld() {
     stop_client_thread();
@@ -504,8 +504,7 @@ void ClientWorld::change_pool_threads(int threads) {
 }
 
 void ClientWorld::hot_reload() {
-    auto& config = Config::get();
-    int dist = config.get<int>("world.rendering_distance");
+    int dist = m_config.get<int>("world.rendering_distance", PRE_LOAD_DISTANCE);
     Logger::info("Get Config Randering dist {}", dist);
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
     request_chunk();
@@ -699,6 +698,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 }
 
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
+Config& ClientWorld::get_config() { return m_config; }
 
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
