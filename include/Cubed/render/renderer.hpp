@@ -85,8 +85,7 @@ private:
     float m_width = 0.0f;
     float m_height = 0.0f;
 
-    glm::mat4 m_world_proj_matrix, m_v_mat, m_m_mat, m_mv_mat, m_mvp_mat,
-        m_norm_mat;
+    glm::mat4 m_world_proj_matrix;
 
     std::unique_ptr<VertexBuffer> m_sky_vbo;
     std::unique_ptr<VertexBuffer> m_outline_indices_vbo;
