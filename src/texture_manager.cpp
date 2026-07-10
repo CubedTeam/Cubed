@@ -34,17 +34,15 @@ namespace Cubed {
 
 TextureManager::TextureManager() {}
 
-TextureManager::~TextureManager() { delet_texture(); }
+TextureManager::~TextureManager() { delete_texture(); }
 
-void TextureManager::delet_texture() {
+void TextureManager::delete_texture() {
     if (m_init) {
         m_texture_array.reset();
         m_block_status_array.reset();
         m_cross_plane_array.reset();
         m_normal_texture_array.reset();
-        for (auto& id : m_item_textures) {
-            id.reset();
-        }
+        m_item_textures.clear();
         m_skin.reset();
         Logger::info("Successfully delete all texture");
     }
@@ -310,7 +308,7 @@ void TextureManager::update() {
 void TextureManager::need_reload() { m_need_reload = true; }
 
 void TextureManager::hot_reload() {
-    delet_texture();
+    delete_texture();
 
     init_texture();
     m_need_reload = false;

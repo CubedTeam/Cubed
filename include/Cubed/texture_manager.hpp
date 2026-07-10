@@ -39,7 +39,7 @@ public:
     TextureManager();
     ~TextureManager();
 
-    void delet_texture();
+    void delete_texture();
     const Texture* get_block_status_array() const;
     const Texture* get_texture_array() const;
     const Texture* get_cross_plane_array() const;
