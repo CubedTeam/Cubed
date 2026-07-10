@@ -58,4 +58,6 @@ target_sources(${PROJECT_NAME}
         render/vertex_array.cpp
         render/texture.cpp
         render/frame_buffer.cpp
+        render/shader_manager.cpp
+        render/world_renderer.cpp
 )

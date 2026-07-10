@@ -2,11 +2,11 @@
 
 #include "Cubed/constants.hpp"
 #include "Cubed/primitive_data.hpp"
-#include "Cubed/render/frame_buffer.hpp"
 #include "Cubed/render/player_renderer.hpp"
-#include "Cubed/render/texture.hpp"
+#include "Cubed/render/shader_manager.hpp"
 #include "Cubed/render/vertex_array.hpp"
 #include "Cubed/render/vertex_buffer.hpp"
+#include "Cubed/render/world_renderer.hpp"
 #include "Cubed/shader.hpp"
 #include "Cubed/ui/text.hpp"
 
@@ -52,6 +52,7 @@ public:
     float& cloud_threshold_low();
     float& cloud_threshold_high();
     float& refract_strength();
+
     float& underwater_fog_density();
     float& water_density();
 
@@ -60,70 +61,26 @@ public:
     ClientWorld& world();
     const glm::mat4& proj_mat() const;
     const TextureManager& texture_mamger() const;
-
     float delta_time() const;
 
+    float height() const;
+    float width() const;
+    const glm::mat4& p_mat() const;
+
+    const std::vector<VertexArray>& vao() const;
+
 private:
-    struct ParallelLight {
-        glm::vec3 sundir; // direction from sun to vertex
-        glm::vec3 lightdir;
-        float sun_height = 0.0f;
-        float day_light = 0.0f;
-        float day_factor = 0.0f;
-        glm::vec3 sun_color;
-        glm::vec3 directional_light_color;
-        glm::vec3 finnal_ambient_color;
-        glm::mat4 light_space_matrix;
-    };
-
-    struct SkyUniform {
-        glm::vec3 sky_top;
-        glm::vec3 sky_bottom;
-        glm::vec3 sun_dir_view;
-        float horizon_sharpness;
-        float cloud_white_mix;
-    };
-
-    static constexpr glm::vec3 SUN_COLOR{1.00f, 0.95f, 0.80f};
-    static constexpr glm::vec3 MOON_COLOR{0.75f, 0.80f, 1.00f};
-
-    static constexpr glm::vec3 SUNSET_SUNLIGHT_COLOR{1.00f, 0.45f, 0.15f};
-    static constexpr glm::vec3 NOON_SUNLIGHT_COLOR{1.00f, 0.90f, 0.65f};
-    static constexpr glm::vec3 SUNSET_AMBIENT_COLOR{0.18f, 0.12f, 0.35f};
-    static constexpr glm::vec3 NOON_AMBIENT_COLOR{0.35f, 0.50f, 0.85f};
-    static constexpr glm::vec3 MOONLIGHT_COLOR{0.55f, 0.70f, 1.00f};
-    static constexpr glm::vec3 NIGHT_AMBIENT_COLOR{0.08f, 0.10f, 0.18f};
-    static constexpr float FAR_PLANE = 1000.0f;
-    static constexpr float NEAR_PLANE = 0.1f;
-    static constexpr float SUN_SIZE = 50.0f;
-    static constexpr float MOON_SIZE = 50.0f;
-    static constexpr float DEPTH_MAP_SIZE = 4096.0f;
-    static constexpr float ANGLE_STEP_DEG = 0.5f;
-    float m_ambient_strength = 0.1f;
-
     const Camera& m_camera;
     DevPanel& m_dev_panel;
     const TextureManager& m_texture_manager;
     ClientWorld& m_world;
-    PlayerRenderer m_player_renderer;
-    bool m_discard_tranparent = true;
-    bool m_shader_on = true;
-    bool m_water_perturb = true;
-    bool m_water_depth_fade = true;
-    bool m_pbr = true;
-    bool m_flip_y = false;
 
     bool m_init = false;
 
-    int m_shadow_mode = 0;
-    int m_light_cull_face = 0;
     float m_aspect = 0.0f;
     float m_fov = DEFAULT_FOV;
 
     float m_delta_time = 0.0f;
-
-    float m_cloud_time = 0.0f;
-    float m_cloud_speed = 5.0f;
 
     float m_width = 0.0f;
     float m_height = 0.0f;
@@ -137,49 +94,10 @@ private:
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
 
-    std::unique_ptr<FrameBuffer> m_fbo;
-    std::unique_ptr<Texture> m_screen_texture;
-    std::unique_ptr<Texture> m_screen_depth_texture;
-
-    std::unique_ptr<FrameBuffer> m_oit_fbo = 0;
-    std::unique_ptr<Texture> m_accum_texture;
-    std::unique_ptr<Texture> m_reveal_texture;
-    std::unique_ptr<Texture> m_oit_depth_texture;
-
-    std::unique_ptr<FrameBuffer> m_depth_map_fbo = 0;
-    std::unique_ptr<Texture> m_depth_map_texture;
-
     glm::mat4 m_ui_proj;
     glm::mat4 m_ui_m_matrix;
-    std::unordered_map<std::size_t, Shader> m_shaders;
+    ShaderManager m_shaders;
 
-    glm::vec3 m_blend_from_lightdir;
-    glm::vec3 m_blend_to_lightdir;
-    float m_blend_t = 1.0f;
-    bool m_blend_initialized = false;
-    static constexpr float BLEND_DURATION = 0.15f;
-    int m_light_size_uv = 20;
-
-    float m_min_radius = 2.0f;
-    float m_max_radius = 20.0f;
-    int m_samples = 16;
-
-    float m_specular_strength = 0.5f;
-
-    float moon_intensity = 0.3f;
-    float sun_intensity = 1.00f;
-
-    float m_cloud_threshold_low = 0.5f;
-    float m_cloud_threshold_high = 0.75f;
-
-    float m_refract_strength = 0.03f;
-
-    float m_underwater_fog_density = 0.08f;
-
-    float m_water_density = 0.12f;
-
-    ParallelLight m_parallel_light;
-    SkyUniform m_sky_uniform;
     /*
     0 - quad vao
     1 - sky vao
@@ -190,24 +108,18 @@ private:
     std::vector<VertexArray> m_vao;
     std::vector<Vertex2D> m_ui;
 
+    WorldRenderer m_world_renderer;
+
     void init_quad();
     void init_text();
 
     void day_night_calculation();
 
-    void render_outline();
     void render_sky();
     void render_text();
     void render_ui();
-    void render_world();
-    void render_player();
-    void render_underwater();
-    void render_dev_panel();
 
-    glm::vec3 quantize_sun_direction(const glm::vec3& sundir,
-                                     float angle_step_deg) const;
-    glm::vec3 get_smoothed_shadow_lightdir(const glm::vec3& raw_shadow_sundir,
-                                           float dt);
+    void render_dev_panel();
 };
 
 } // namespace Cubed
