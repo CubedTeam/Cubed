@@ -650,14 +650,23 @@ void DevPanel::show_items_tab_item() {
     if (ImGui::BeginTabItem("item")) {
         ImGui::Text("Place Block ");
         ImGui::SameLine();
-        ImGui::Image(static_cast<ImTextureID>(static_cast<intptr_t>(
-                         textures[m_player->place_block()])),
-                     ImVec2{48, 48});
+        auto& place_texture = textures[m_player->place_block()];
+        if (place_texture) {
+            ImGui::Image(static_cast<ImTextureID>(
+                             static_cast<intptr_t>(place_texture->id())),
+                         ImVec2{48, 48});
+        }
+
         for (size_t i = 1; i < textures.size(); i++) {
-            if (ImGui::ImageButton(("##item" + std::to_string(i)).c_str(),
-                                   static_cast<ImTextureID>(
-                                       static_cast<intptr_t>(textures[i])),
-                                   ImVec2{48, 48})) {
+            auto& item_texture = textures[i];
+            if (!item_texture) {
+                continue;
+            }
+            if (ImGui::ImageButton(
+                    ("##item" + std::to_string(i)).c_str(),
+                    static_cast<ImTextureID>(
+                        static_cast<intptr_t>(item_texture->id())),
+                    ImVec2{48, 48})) {
                 m_player->set_place_block(i);
             }
             if (ImGui::IsItemHovered()) {

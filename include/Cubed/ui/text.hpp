@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Cubed/primitive_data.hpp"
+#include "Cubed/render/vertex_array.hpp"
+#include "Cubed/render/vertex_buffer.hpp"
 #include "Cubed/ui/color.hpp"
 
 #include <glad/glad.h>
@@ -27,8 +29,7 @@ public:
     Text& text(std::string_view str);
 
     std::size_t uuid() const;
-    static void set_loc(const Shader& shader);
-    void render();
+    void render(const Shader& shader);
 
     bool operator==(const Text& other) const;
 
@@ -38,14 +39,14 @@ private:
 
     const std::string NAME;
     const std::size_t UUID;
+
     std::string m_text;
     glm::vec4 m_color{1.0f, 1.0f, 1.0f, 1.0f};
     glm::mat4 m_model_matrix;
 
     std::vector<Vertex2D> m_vertices;
-    GLuint m_vbo = 0;
-    static inline GLuint m_color_loc = 0;
-    static inline GLuint m_mv_loc = 0;
+    std::unique_ptr<VertexBuffer> m_vbo;
+    std::unique_ptr<VertexArray> m_vao;
 
     void update_vertices();
     void upload_to_gpu();

@@ -9,30 +9,30 @@
 
 namespace Cubed {
 
-Text::Text(std::string_view name) : NAME(name), UUID(HASH::str(name)) {}
+Text::Text(std::string_view name)
+    : NAME(name), UUID(HASH::str(name)),
+      m_vbo(std::make_unique<VertexBuffer>()),
+      m_vao(std::make_unique<VertexArray>()) {}
 
 Text::Text(std::string_view name, std::string_view str, glm::vec2 pos,
            Color color)
-    : NAME(name), UUID(HASH::str(name)) {
+    : NAME(name), UUID(HASH::str(name)),
+      m_vbo(std::make_unique<VertexBuffer>()),
+      m_vao(std::make_unique<VertexArray>()) {
     m_text.assign(str);
     m_pos = pos;
     m_color = color_value(color);
     update_vertices();
 }
 
-Text::~Text() {
-    if (m_vbo != 0) {
-        glDeleteBuffers(1, &m_vbo);
-    }
-}
+Text::~Text() { m_vbo.reset(); }
 
 Text::Text(Text&& other) noexcept
     : m_scale(other.m_scale), m_pos(other.m_pos), NAME(other.NAME),
       UUID(other.UUID), m_text(std::move(other.m_text)), m_color(other.m_color),
       m_model_matrix(other.m_model_matrix),
-      m_vertices(std::move(other.m_vertices)), m_vbo(other.m_vbo) {
-    other.m_vbo = 0;
-}
+      m_vertices(std::move(other.m_vertices)), m_vbo(std::move(other.m_vbo)),
+      m_vao(std::move(other.m_vao)) {}
 
 Text& Text::color(Color color) {
     m_color = color_value(color);
@@ -51,45 +51,24 @@ Text& Text::scale(float s) {
 
 std::size_t Text::uuid() const { return UUID; }
 
-void Text::set_loc(const Shader& shader) {
-    m_color_loc = shader.loc("textColor");
-    m_mv_loc = shader.loc("mv_matrix");
-}
-
 Text& Text::text(std::string_view str) {
     m_text.assign(str);
     update_vertices();
     return *this;
 }
 
-void Text::render() {
+void Text::render(const Shader& shader) {
     ASSERT_MSG(m_vbo != 0, "VBO not initialized!");
     ASSERT_MSG(!m_vertices.empty(), "Text String Not Set");
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, Font::text_texture());
-    ASSERT_MSG(m_color_loc, "m_color_loc is null");
-
+    Font::text_texture()->bind(0);
+    m_vao->bind();
     m_model_matrix =
         glm::translate(glm::mat4(1.0f), glm::vec3(m_pos.x, m_pos.y, 0.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(m_scale, m_scale, 1.0f));
 
-    glUniform3f(m_color_loc, m_color.x, m_color.y, m_color.z);
-    glUniformMatrix4fv(m_mv_loc, 1, GL_FALSE, glm::value_ptr(m_model_matrix));
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), (void*)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D),
-                          (void*)offsetof(Vertex2D, s));
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex2D),
-                          (void*)offsetof(Vertex2D, layer));
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-
+    shader.set_loc("textColor", glm::vec3(m_color.x, m_color.y, m_color.z));
+    shader.set_loc("mv_matrix", m_model_matrix);
     glDrawArrays(GL_TRIANGLES, 0, m_vertices.size());
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 void Text::update_vertices() {
@@ -98,13 +77,15 @@ void Text::update_vertices() {
 }
 
 void Text::upload_to_gpu() {
-    if (m_vbo == 0) {
-        glGenBuffers(1, &m_vbo);
-    }
     ASSERT_MSG(m_vbo, "Vbo Is Not Gen");
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Vertex2D),
-                 m_vertices.data(), GL_DYNAMIC_DRAW);
+    m_vao->bind();
+    m_vbo->buffer_data(m_vertices.data(), m_vertices.size() * sizeof(Vertex2D),
+                       BufferUsage::DYNAMIC_DRAW);
+    m_vao->attribute(0, 2, GL_FLOAT, sizeof(Vertex2D), (void*)0);
+    m_vao->attribute(1, 2, GL_FLOAT, sizeof(Vertex2D),
+                     (void*)offsetof(Vertex2D, s));
+    m_vao->attribute(2, 1, GL_FLOAT, sizeof(Vertex2D),
+                     (void*)offsetof(Vertex2D, layer));
 }
 
 bool Text::operator==(const Text& other) const { return UUID == other.uuid(); }

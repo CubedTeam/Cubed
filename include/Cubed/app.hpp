@@ -6,7 +6,7 @@
 #define GLFW_INCLUDE_NONE
 #include "Cubed/camera.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/renderer.hpp"
+#include "Cubed/render/renderer.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/window.hpp"
 namespace Cubed {

@@ -1,7 +1,7 @@
 #include "Cubed/window.hpp"
 
 #include "Cubed/config.hpp"
-#include "Cubed/renderer.hpp"
+#include "Cubed/render/renderer.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"

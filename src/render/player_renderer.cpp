@@ -1,9 +1,9 @@
-#include "Cubed/player_renderer.hpp"
+#include "Cubed/render/player_renderer.hpp"
 
 #include "Cubed/camera.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
-#include "Cubed/renderer.hpp"
+#include "Cubed/render/renderer.hpp"
 #include "Cubed/texture_manager.hpp"
 
 #include <glm/glm.hpp>
@@ -197,7 +197,7 @@ void PlayerRenderer::render(const Shader& shader) {
     auto& m_world = m_renderer.world();
     auto& m_player = m_world.get_player();
     glm::mat4 m_v_mat = m_camera.get_camera_lookat();
-    glm::mat4 m_p_mat = m_renderer.proj_mat();
+    glm::mat4 m_p_mat = m_renderer.world_proj_matrix();
 
     auto& players = m_world.render_player_data();
     shader.set_loc("proj_matrix", m_p_mat);
@@ -223,8 +223,7 @@ void PlayerRenderer::render(const Shader& shader) {
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, m_renderer.texture_mamger().get_skin());
+        m_renderer.texture_mamger().get_skin()->bind(1);
 
         auto make_rotated = [&](glm::vec3 pivot, float angle) {
             glm::mat4 mat = model;

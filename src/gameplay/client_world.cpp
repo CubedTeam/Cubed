@@ -32,16 +32,10 @@ ClientWorld::~ClientWorld() {
 
     {
         std::lock_guard lk(m_delete_vbo_mutex);
-        for (auto x : m_pending_delete_vbo) {
-            glDeleteBuffers(1, &x);
-        }
         m_pending_delete_vbo.clear();
     }
     {
         std::lock_guard lk(m_delete_vao_mutex);
-        for (auto x : m_pending_delete_vao) {
-            glDeleteVertexArrays(1, &x);
-        }
         m_pending_delete_vao.clear();
     }
     m_ticktimers.clear();
@@ -267,13 +261,13 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
         });
     }
 }
-void ClientWorld::push_delete_vbo(GLuint vbo) {
+void ClientWorld::push_delete_vbo(std::unique_ptr<VertexBuffer>& vbo) {
     std::lock_guard lk(m_delete_vbo_mutex);
-    m_pending_delete_vbo.push_back(vbo);
+    m_pending_delete_vbo.push_back(std::move(vbo));
 }
-void ClientWorld::push_delete_vao(GLuint vao) {
+void ClientWorld::push_delete_vao(std::unique_ptr<VertexArray>& vao) {
     std::lock_guard lk(m_delete_vao_mutex);
-    m_pending_delete_vao.push_back(vao);
+    m_pending_delete_vao.push_back(std::move(vao));
 }
 
 void ClientWorld::report_block_change(const glm::ivec3& pos,
@@ -729,17 +723,11 @@ void ClientWorld::update(float delta_time) {
     m_player.update(delta_time);
     {
         std::lock_guard lk(m_delete_vbo_mutex);
-        for (auto x : m_pending_delete_vbo) {
-            glDeleteBuffers(1, &x);
-        }
         m_pending_delete_vbo.clear();
     }
 
     {
         std::lock_guard lk(m_delete_vao_mutex);
-        for (auto x : m_pending_delete_vao) {
-            glDeleteVertexArrays(1, &x);
-        }
         m_pending_delete_vao.clear();
     }
 
