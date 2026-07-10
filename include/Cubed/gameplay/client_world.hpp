@@ -105,6 +105,12 @@ public:
     }
 
 private:
+    std::atomic<bool> m_is_pending_delete_queue_free{false};
+    std::mutex m_delete_vbo_mutex;
+    std::mutex m_delete_vao_mutex;
+    std::vector<std::unique_ptr<VertexBuffer>> m_pending_delete_vbo;
+    std::vector<std::unique_ptr<VertexArray>> m_pending_delete_vao;
+
     enum class ChunkLoadStyle { RANDOM, CENTER };
     using ChunkHashMap =
         tbb::concurrent_hash_map<ChunkPos, std::shared_ptr<ClientChunk>,
@@ -130,15 +136,11 @@ private:
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 
-    std::mutex m_delete_vbo_mutex;
-    std::mutex m_delete_vao_mutex;
     mutable std::shared_mutex m_player_info_mutex;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
     tbb::concurrent_queue<PendingSound> m_pending_sound;
-    std::vector<std::unique_ptr<VertexBuffer>> m_pending_delete_vbo;
-    std::vector<std::unique_ptr<VertexArray>> m_pending_delete_vao;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
