@@ -590,7 +590,7 @@ void ClientWorld::request_chunk() {
         }
     }
 
-    ChunkPosSet old = std::move(m_player.get_chunk_pos_set());
+    ChunkPosSet old = m_player.get_chunk_pos_set();
     m_player.update_chunk_set(required_chunks);
 
     ChunkPosVector need_send_pos;

@@ -25,7 +25,7 @@ public:
 
     void update_chunk_set(const ChunkPosSet& set);
     const ChunkPosSet& get_chunk_pos_set() const;
-    ChunkPosSet& get_chunk_pos_set();
+    ChunkPosSet get_chunk_pos_set();
 
     static AABB get_aabb(const glm::vec3& pos);
     const glm::vec3& get_front() const;

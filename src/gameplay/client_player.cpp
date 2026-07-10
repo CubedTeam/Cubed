@@ -561,7 +561,7 @@ const ClientPlayer::ChunkPosSet& ClientPlayer::get_chunk_pos_set() const {
     return m_player_chunk_pos_set;
 }
 
-ClientPlayer::ChunkPosSet& ClientPlayer::get_chunk_pos_set() {
+ClientPlayer::ChunkPosSet ClientPlayer::get_chunk_pos_set() {
     std::lock_guard lock(m_chunk_pos_mutex);
     return m_player_chunk_pos_set;
 }
