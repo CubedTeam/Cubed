@@ -119,6 +119,13 @@ void Renderer::init(bool debug_on) {
 
     VertexArray::unbind();
     VertexBuffer::unbind();
+
+    m_crosshair_image = std::make_unique<Image>();
+    m_crosshair_image->set_image("texture/ui/0.png");
+    m_crosshair_image
+        ->set_position(m_width / 2 + m_crosshair_image->width() / 2,
+                       m_height / 2 + m_crosshair_image->height() / 2)
+        .set_scale(3.0f);
     m_init = true;
 }
 
@@ -150,9 +157,15 @@ void Renderer::render() {
 
     m_world_renderer.render();
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDisable(GL_DEPTH_TEST);
+
     render_ui();
 
     render_dev_panel();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::render_lable(const Label& label) {
@@ -160,11 +173,6 @@ void Renderer::render_lable(const Label& label) {
     const auto& shader = get_shader("text");
 
     shader.use();
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glDisable(GL_DEPTH_TEST);
 
     shader.set_loc("projection", m_ui_proj_matrix);
 
@@ -183,8 +191,24 @@ void Renderer::render_lable(const Label& label) {
     shader.set_loc("mv_matrix", model_matrix);
 
     glDrawArrays(GL_TRIANGLES, 0, data.m_sum);
+}
 
-    glEnable(GL_DEPTH_TEST);
+void Renderer::render_image(const Image& image) {
+    const auto& shader = get_shader("image");
+    shader.use();
+    auto& pos = image.pos();
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
+        glm::scale(glm::mat4(1.0f),
+                   glm::vec3(image.width() * image.scale(),
+                             image.height() * image.scale(), 1.0f));
+    shader.set_loc("model_matrix", model_matrix);
+    shader.set_loc("proj_matrix", m_ui_proj_matrix);
+
+    m_vao[3].bind();
+    image.texture().bind(0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    Tools::check_opengl_error();
 }
 
 void Renderer::render_ui() {
@@ -194,25 +218,7 @@ void Renderer::render_ui() {
     render_crosshair();
 }
 
-void Renderer::render_crosshair() {
-    const auto& shader = get_shader("ui");
-    shader.use();
-
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    shader.set_loc("m_matrix", m_ui_model_matrix);
-    shader.set_loc("proj_matrix", m_ui_proj_matrix);
-
-    m_vao[3].bind();
-    m_texture_manager.get_ui_array()->bind(0);
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    Tools::check_opengl_error();
-
-    glEnable(GL_DEPTH_TEST);
-}
+void Renderer::render_crosshair() { m_crosshair_image->render(*this); }
 
 void Renderer::update(float delta_time) { m_delta_time = delta_time; }
 
@@ -231,10 +237,9 @@ void Renderer::update_proj_matrix(float aspect, float width, float height) {
 
     m_ui_proj_matrix = glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
     // scale and then translate
-    m_ui_model_matrix =
-        glm::translate(glm::mat4(1.0f),
-                       glm::vec3(width / 2.0f, height / 2.0f, 0.0)) *
-        glm::scale(glm::mat4(1.0f), glm::vec3(50.0f, 50.0f, 1.0f));
+    m_crosshair_image->set_position(
+        width / 2.0f + m_crosshair_image->width() / 2,
+        height / 2.0f + m_crosshair_image->height() / 2);
 }
 
 void Renderer::updata_framebuffer(int width, int height) {

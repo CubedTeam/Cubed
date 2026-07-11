@@ -14,18 +14,15 @@ public:
     Label(const std::string& id);
     virtual ~Label() = default;
 
-    Label& set_position(const glm::vec2& pos);
-    Label& set_position(float x, float y);
     Label& set_text(std::string_view text);
-    Label& set_scale(float scale);
+
     Label& set_color(Color color);
     virtual void update(float dt) override;
     virtual void render(Renderer& renderer) override;
 
     const UIVertexData& data() const;
-    const glm::vec2& pos() const;
+
     const TextStyle& text_style() const;
-    float scale() const;
 
 protected:
     virtual void on_update(float dt) override;

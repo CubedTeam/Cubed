@@ -9,6 +9,7 @@
 #include "Cubed/render/vertex_buffer.hpp"
 #include "Cubed/render/world_renderer.hpp"
 #include "Cubed/shader.hpp"
+#include "Cubed/ui/image.hpp"
 #include "Cubed/ui/label.hpp"
 
 #include <glm/glm.hpp>
@@ -33,6 +34,7 @@ public:
     void render();
 
     void render_lable(const Label& label);
+    void render_image(const Image& image);
 
     void update(float delta_time);
     void update_fov(float fov);
@@ -99,8 +101,9 @@ private:
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
 
+    std::unique_ptr<Image> m_crosshair_image;
+
     glm::mat4 m_ui_proj_matrix;
-    glm::mat4 m_ui_model_matrix;
     ShaderManager m_shaders;
 
     /*

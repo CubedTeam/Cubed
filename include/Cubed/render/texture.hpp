@@ -88,7 +88,6 @@ public:
 private:
     GLuint m_id = 0;
     const TextureType M_TYPE;
-
     GLenum get_gl_texture_type() const;
 };
 } // namespace Cubed

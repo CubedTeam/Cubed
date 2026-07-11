@@ -61,4 +61,5 @@ target_sources(${PROJECT_NAME}
         ui/widget.cpp
         ui/label.cpp
         ui/ui_vertex_data.cpp
+        ui/image.cpp
 )
