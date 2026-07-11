@@ -29,9 +29,7 @@ public:
     Font();
     ~Font();
 
-    static std::vector<Vertex2D> vertices(const std::string& text,
-                                          float x = 0.0f, float y = 0.0f,
-                                          float scale = 1.0f);
+    static std::vector<Vertex2D> vertices(const std::string& text);
     static const Texture* text_texture();
     static const std::string& font_path();
 

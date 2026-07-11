@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Cubed/ui/text.hpp"
+#include "Cubed/ui/label.hpp"
+#include "Cubed/ui/widget.hpp"
 
 #include <unordered_map>
 
@@ -11,14 +12,13 @@ public:
     static DebugCollector& get();
     DebugCollector();
 
-    std::unordered_map<std::size_t, Text>& all_texts();
-
-    Text& text(std::string_view name);
-    void report(std::string_view name, std::string_view content);
+    void report(const std::string& name, std::string_view content);
     void init_text();
+    Widget& get_widget();
 
 private:
-    std::unordered_map<std::size_t, Text> m_texts;
+    Widget m_widget;
+    std::unordered_map<std::string, Label*> m_component;
 };
 
 } // namespace Cubed

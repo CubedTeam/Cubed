@@ -9,7 +9,7 @@
 #include "Cubed/render/vertex_buffer.hpp"
 #include "Cubed/render/world_renderer.hpp"
 #include "Cubed/shader.hpp"
-#include "Cubed/ui/text.hpp"
+#include "Cubed/ui/label.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -31,6 +31,9 @@ public:
     void init(bool debug_on);
     const Shader& get_shader(const std::string& name) const;
     void render();
+
+    void render_lable(const Label& label);
+
     void update(float delta_time);
     void update_fov(float fov);
     void update_proj_matrix(float aspect, float width, float height);
@@ -118,9 +121,9 @@ private:
     void day_night_calculation();
 
     void render_sky();
-    void render_text();
-    void render_ui();
 
+    void render_ui();
+    void render_crosshair();
     void render_dev_panel();
 };
 

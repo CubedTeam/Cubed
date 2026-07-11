@@ -62,11 +62,13 @@ void Font::setup_font_character() {
     m_text_texture->set_clamp_to_edge(false, true, true);
 }
 
-std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
-                                     float scale) {
+std::vector<Vertex2D> Font::vertices(const std::string& text) {
     static Font font;
 
     std::vector<Vertex2D> vertices;
+
+    float pen_x = 0.0f;
+    float pen_y = 0.0f;
 
     for (char8_t c : text) {
         auto it = font.m_characters.find(c);
@@ -74,12 +76,14 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
             Logger::error("Can't find character {}", static_cast<char>(c));
             continue;
         }
-        Character& ch = it->second;
-        float xpos = x + ch.bearing.x * scale;
-        float ypos = y - ch.bearing.y * scale;
 
-        float w = ch.size.x * scale;
-        float h = ch.size.y * scale;
+        Character& ch = it->second;
+
+        float xpos = pen_x + ch.bearing.x;
+        float ypos = pen_y - ch.bearing.y;
+
+        float w = ch.size.x;
+        float h = ch.size.y;
 
         vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
                               static_cast<float>(c));
@@ -87,6 +91,7 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
                               static_cast<float>(c));
         vertices.emplace_back(xpos + w, ypos, ch.uv_max.x, ch.uv_min.y,
                               static_cast<float>(c));
+
         vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
                               static_cast<float>(c));
         vertices.emplace_back(xpos + w, ypos, ch.uv_max.x, ch.uv_min.y,
@@ -94,7 +99,7 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
         vertices.emplace_back(xpos + w, ypos + h, ch.uv_max.x, ch.uv_max.y,
                               static_cast<float>(c));
 
-        x += (ch.advance >> 6) * scale;
+        pen_x += (ch.advance >> 6);
     }
 
     return vertices;

@@ -375,6 +375,7 @@ void App::update() {
     m_audio.update_listener(m_camera.get_camera_pos(),
                             m_camera.get_camera_front(), glm::vec3(0, 1, 0));
     m_audio.update();
+    DebugCollector::get().get_widget().update(dt);
     m_renderer.update(dt);
 }
 

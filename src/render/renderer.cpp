@@ -152,12 +152,10 @@ void Renderer::render() {
 
     render_ui();
 
-    render_text();
-
     render_dev_panel();
 }
 
-void Renderer::render_text() {
+void Renderer::render_lable(const Label& label) {
 
     const auto& shader = get_shader("text");
 
@@ -170,15 +168,33 @@ void Renderer::render_text() {
 
     shader.set_loc("projection", m_ui_proj_matrix);
 
-    auto& texts = DebugCollector::get().all_texts();
-    for (auto& t : texts) {
-        t.second.render(shader);
-    }
+    Font::text_texture()->bind(0);
+    auto& data = label.data();
+    auto& pos = label.pos();
+    auto& text_style = label.text_style();
+    auto color = color_value(text_style.color);
+    data.m_vao->bind();
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
+        glm::scale(glm::mat4(1.0f),
+                   glm::vec3(label.scale(), label.scale(), 1.0f));
+
+    shader.set_loc("textColor", glm::vec3(color.x, color.y, color.z));
+    shader.set_loc("mv_matrix", model_matrix);
+
+    glDrawArrays(GL_TRIANGLES, 0, data.m_sum);
 
     glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::render_ui() {
+
+    auto& widget = DebugCollector::get().get_widget();
+    widget.render(*this);
+    render_crosshair();
+}
+
+void Renderer::render_crosshair() {
     const auto& shader = get_shader("ui");
     shader.use();
 

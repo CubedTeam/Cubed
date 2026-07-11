@@ -17,7 +17,6 @@ target_sources(${PROJECT_NAME}
         tools/shader_tools.cpp
         tools/font.cpp
         tools/perlin_noise.cpp
-        ui/text.cpp
         window.cpp
         gameplay/builders/biome_builder.cpp
         gameplay/builders/plain_builder.cpp
@@ -59,4 +58,7 @@ target_sources(${PROJECT_NAME}
         render/frame_buffer.cpp
         render/shader_manager.cpp
         render/world_renderer.cpp
+        ui/widget.cpp
+        ui/label.cpp
+        ui/ui_vertex_data.cpp
 )
