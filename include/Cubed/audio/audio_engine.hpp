@@ -4,6 +4,7 @@
 #include "Cubed/audio/audio_source.hpp"
 #include "Cubed/audio/sound_manager.hpp"
 #include "Cubed/audio/source_pool.hpp"
+#include "Cubed/config.hpp"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -17,7 +18,7 @@ class ClientWorld;
 
 class AudioEngine {
 public:
-    AudioEngine();
+    AudioEngine(Config& config);
     AudioEngine(const AudioEngine&) = delete;
     AudioEngine(AudioEngine&&) = delete;
     AudioEngine& operator=(const AudioEngine&) = delete;
@@ -48,6 +49,7 @@ private:
     std::unique_ptr<AudioSource> m_bgm;
     FadeMap m_fade_map;
     SoundManager m_sounds;
+    Config& m_config;
     std::shared_ptr<SourcePool> m_pool;
     bool m_efx_supported = false;
     bool m_underwater = false;

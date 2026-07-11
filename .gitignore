@@ -41,6 +41,7 @@ CMakeError.log
 *~
 .DS_Store
 assets/config.toml
+assets/server-config.toml
 .venv/
 pyout/
 vcpkg_installed/

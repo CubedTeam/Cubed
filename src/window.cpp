@@ -1,6 +1,5 @@
 #include "Cubed/window.hpp"
 
-#include "Cubed/config.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/font.hpp"
@@ -15,7 +14,8 @@ namespace Cubed {
 static int windowed_xpos = 0, windowed_ypos = 0;
 static int windowed_width = 800, windowed_height = 600;
 
-Window::Window(Renderer& renderer) : m_renderer(renderer) {}
+Window::Window(Renderer& renderer, Config& config)
+    : m_renderer(renderer), m_config(config) {}
 
 Window::~Window() {
     if (m_imgui_init) {
@@ -47,9 +47,8 @@ void Window::update_viewport() {
     glViewport(0, 0, m_width, m_height);
     m_renderer.update_proj_matrix(m_aspect, m_width, m_height);
     m_renderer.updata_framebuffer(m_width, m_height);
-    auto& config = Config::get();
-    config.set("window.width", windowed_width);
-    config.set("window.height", windowed_height);
+    m_config.set("window.width", windowed_width);
+    m_config.set("window.height", windowed_height);
 }
 
 void Window::init() {
@@ -61,10 +60,9 @@ void Window::init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    auto& config = Config::get();
-    m_width = config.get<int>("window.width");
-    m_height = config.get<int>("window.height");
-    if (config.get<bool>("window.fullscreen")) {
+    m_width = m_config.get("window.width", 800);
+    m_height = m_config.get("window.height", 600);
+    if (m_config.get("window.fullscreen", false)) {
         GLFWmonitor* primary_monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(primary_monitor);
         m_window = glfwCreateWindow(mode->width, mode->height, "Cubed",
@@ -74,7 +72,7 @@ void Window::init() {
     }
 
     glfwMakeContextCurrent(m_window);
-    if (config.get<bool>("window.V-Sync")) {
+    if (m_config.get("window.V-Sync", true)) {
         glfwSwapInterval(1);
     } else {
         glfwSwapInterval(0);
@@ -94,18 +92,17 @@ void Window::init() {
 }
 
 void Window::hot_reload() {
-    auto& config = Config::get();
     // V-Sync
-    if (config.get<bool>("window.V-Sync")) {
+    if (m_config.get("window.V-Sync", true)) {
         glfwSwapInterval(1);
     } else {
         glfwSwapInterval(0);
     }
     // Window
-    windowed_width = config.get<int>("window.width");
-    windowed_height = config.get<int>("window.height");
+    windowed_width = m_config.get("window.width", 800);
+    windowed_height = m_config.get("window.height", 600);
 
-    if (config.get<bool>("window.fullscreen")) {
+    if (m_config.get("window.fullscreen", false)) {
         glfwGetWindowPos(m_window, &windowed_xpos, &windowed_ypos);
         glfwGetWindowSize(m_window, &windowed_width, &windowed_height);
 
@@ -134,13 +131,12 @@ void Window::hot_reload() {
 
 void Window::toggle_fullscreen() {
 
-    auto& config = Config::get();
     GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
     if (monitor != nullptr) {
         glfwSetWindowMonitor(m_window, nullptr, windowed_xpos, windowed_ypos,
                              windowed_width, windowed_height, 0);
 
-        config.set("window.fullscreen", false);
+        m_config.set("window.fullscreen", false);
     } else {
         glfwGetWindowPos(m_window, &windowed_xpos, &windowed_ypos);
         glfwGetWindowSize(m_window, &windowed_width, &windowed_height);
@@ -150,7 +146,7 @@ void Window::toggle_fullscreen() {
 
         glfwSetWindowMonitor(m_window, primary, 0, 0, mode->width, mode->height,
                              GL_DONT_CARE);
-        config.set("window.fullscreen", true);
+        m_config.set("window.fullscreen", true);
     }
     update_viewport();
 }
@@ -194,14 +190,14 @@ void Window::imgui_init() {
                                               // the game to fully control
                                               // cursor appearance (e.g.,
                                               // hidden/disabled custom cursor).
-    auto theme = Config::get().get<int>("devpanel.theme");
+    auto theme = m_config.get("devpanel.theme", 0);
     if (theme == 0) {
         ImGui::StyleColorsDark();
     } else if (theme == 1) {
         ImGui::StyleColorsLight();
     } else {
         ImGui::StyleColorsDark();
-        Config::get().set("devpanel.theme", 0);
+        m_config.set("devpanel.theme", 0);
     }
 
     ImGuiStyle& style = ImGui::GetStyle();

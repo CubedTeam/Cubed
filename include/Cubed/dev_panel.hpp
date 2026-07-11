@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Cubed/config.hpp"
+
 #include <toml++/toml.hpp>
 
 namespace Cubed {
@@ -36,7 +38,8 @@ public:
 
 private:
     App& m_app;
-    ConfigView m_config;
+    Config& m_config;
+    ConfigView m_config_view;
     ClientPlayer* m_player;
     PlayerProfile m_player_profile;
     bool m_need_save_config = false;

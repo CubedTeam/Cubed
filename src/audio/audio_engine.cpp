@@ -1,14 +1,13 @@
 #include "Cubed/audio/audio_engine.hpp"
 
 #include "Cubed/audio/audio_error.hpp"
-#include "Cubed/config.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <stdexcept>
 
 namespace Cubed {
-AudioEngine::AudioEngine() {};
+AudioEngine::AudioEngine(Config& config) : m_config(config) {};
 
 AudioEngine::~AudioEngine() {
     if (!m_init) {
@@ -64,10 +63,8 @@ void AudioEngine::init() {
     alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
     check_al_error();
 
-    auto& config = Config::get();
-
-    m_music_volume = static_cast<float>(config.get<double>("volume.music"));
-    m_sfx_volume = static_cast<float>(config.get<double>("volume.SFX"));
+    m_music_volume = m_config.get("volume.music", 1.0f);
+    m_sfx_volume = m_config.get("volume.SFX", 1.0f);
 
     m_sounds.init();
 
@@ -187,10 +184,8 @@ void AudioEngine::update() {
 }
 
 void AudioEngine::reload_config() {
-    auto& config = Config::get();
-
-    m_music_volume = static_cast<float>(config.get<double>("volume.music"));
-    m_sfx_volume = static_cast<float>(config.get<double>("volume.SFX"));
+    m_music_volume = m_config.get("volume.music", 1.0f);
+    m_sfx_volume = m_config.get("volume.SFX", 1.0f);
     if (m_bgm) {
         m_bgm->set_target_volume(m_music_volume);
     }

@@ -1,99 +1,75 @@
 #pragma once
-#include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/toml.utils.hpp"
 
 namespace Cubed {
 
 class Config {
 public:
-    Config();
+    explicit Config(std::string_view path);
+    Config(const Config&) = delete;
+    Config(Config&&) = delete;
+    Config& operator=(const Config&) = delete;
+    Config& operator=(Config&&) = delete;
     ~Config();
-
-    static Config& get();
 
     toml::table& table();
 
-    void load_or_create_config();
+    void load_config();
     void save_to_file();
 
-    template <TOML::TomlValueType T> T get(std::string_view key) const {
-        size_t cur = 0;
-        auto pos = key.find('.');
-        const toml::table* table = &m_tbl;
-        while (pos != std::string_view::npos) {
-            std::string_view s = key.substr(cur, pos - cur);
-            if (s.empty()) {
-                Logger::error("Empty key/table name in path '{}'", key);
-                ASSERT(false);
-                std::abort();
-            }
-            cur = pos + 1;
-            pos = key.find('.', cur);
-            if (auto* next = (*table)[s].as_table()) {
-                table = next;
-            } else {
-                Logger::error("Can't find table {}", s);
-                ASSERT(false);
-                std::abort();
-            }
+    template <TOML::TomlValueType T>
+    T get(std::string_view key, T default_value) {
+        if (auto* node = find_node(m_tbl, key)) {
+            if (auto value = node->value<T>())
+                return *value;
         }
-        std::string_view n_key = key.substr(cur);
-        if (n_key.empty()) {
-            Logger::error("Trailing dot in path '{}'", key);
-            ASSERT(false);
-            std::abort();
-        }
-        auto opt = (*table)[n_key].value<T>();
-        if (opt) {
-            return *opt;
+
+        set(key, default_value);
+        save_to_file();
+
+        return default_value;
+    }
+
+    template <TOML::TomlValueType T> void set(std::string_view key, T&& value) {
+        auto pos = key.rfind('.');
+
+        toml::table* table;
+        std::string_view name;
+
+        if (pos == std::string_view::npos) {
+            table = &m_tbl;
+            name = key;
         } else {
-            Logger::error("Can't find key {}", n_key);
-            ASSERT(false);
-            std::abort();
+            table = find_or_create_table(key.substr(0, pos));
+            name = key.substr(pos + 1);
         }
+        // Insert node at the last level's table
+        table->insert_or_assign(name, std::forward<T>(value));
     }
-    template <typename T> void set(std::string_view key, T&& val) {
-        if constexpr (!TOML::TomlValueType<std::decay_t<T>>) {
-            static_assert(false, "Type Not Support");
-        }
-        size_t cur = 0;
-        auto pos = key.find('.');
-        toml::table* table = &m_tbl;
-        while (pos != std::string_view::npos) {
-            std::string_view s = key.substr(cur, pos - cur);
-            if (s.empty()) {
-                Logger::error("Empty key/table name in path '{}'", key);
-                ASSERT(false);
-                std::abort();
-            }
-            cur = pos + 1;
-            pos = key.find('.', cur);
-            if (auto* next = (*table)[s].as_table()) {
-                table = next;
-            } else {
-                auto [it, inserted] = table->insert_or_assign(s, toml::table{});
-                table = it->second.as_table();
-            }
-        }
-        std::string_view n_key = key.substr(cur);
-        if (n_key.empty()) {
-            Logger::error("Trailing dot in path '{}'", key);
-            ASSERT(false);
-            std::abort();
-        }
-        table->insert_or_assign(n_key, std::forward<T>(val));
-    }
+
     template <typename T> void set_and_save(std::string_view key, T&& val) {
         set(key, std::forward(val));
         save_to_file();
     }
-    toml::node_view<toml::node> val_view(std::string_view key);
 
 private:
     toml::table m_tbl;
-    constexpr static inline std::string_view CONGIF_PATH =
-        ASSETS_PATH "config.toml";
-    void create_config();
+    const std::string CONGIF_PATH;
+    const toml::node* find_node(const toml::table& root,
+                                std::string_view path) const;
+    // Follow the path to find the last-level toml::table, creating it if it
+    // does not exist
+    toml::table* find_or_create_table(std::string_view path);
 };
+
+template <>
+inline float Config::get(std::string_view key, float default_value) {
+    return static_cast<float>(
+        Config::get<double>(key, static_cast<double>(default_value)));
+}
+
+template <> inline void Config::set(std::string_view key, float&& value) {
+    Config::set<double>(key, static_cast<double>(value));
+}
 
 } // namespace Cubed

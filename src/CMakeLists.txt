@@ -10,7 +10,6 @@ target_sources(${PROJECT_NAME}
         gameplay/chunk_generator.cpp
         gameplay/tree.cpp
         input.cpp
-        map_table.cpp
         render/renderer.cpp
         shader.cpp
         texture_manager.cpp

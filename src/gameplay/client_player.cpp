@@ -121,9 +121,8 @@ void ClientPlayer::change_mode(GameMode mode) {
     }
 }
 void ClientPlayer::hot_reload() {
-    auto& config = Config::get();
-    m_sensitivity =
-        static_cast<float>(config.get<double>("player.mouse_sensitivity"));
+    auto& config = m_world.get_config();
+    m_sensitivity = config.get("player.mouse_sensitivity", 0.15f);
 }
 void ClientPlayer::set_player_pos(const glm::vec3& pos) { m_player_pos = pos; }
 
@@ -562,7 +561,7 @@ const ClientPlayer::ChunkPosSet& ClientPlayer::get_chunk_pos_set() const {
     return m_player_chunk_pos_set;
 }
 
-ClientPlayer::ChunkPosSet& ClientPlayer::get_chunk_pos_set() {
+ClientPlayer::ChunkPosSet ClientPlayer::get_chunk_pos_set() {
     std::lock_guard lock(m_chunk_pos_mutex);
     return m_player_chunk_pos_set;
 }

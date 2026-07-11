@@ -1,6 +1,5 @@
 #include "Cubed/gameplay/server_world.hpp"
 
-#include "Cubed/config.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -14,7 +13,7 @@ using namespace std::chrono_literals;
 using namespace google::protobuf;
 
 namespace Cubed {
-ServerWorld::ServerWorld() {}
+ServerWorld::ServerWorld(Config& config) : m_config(config) {}
 
 ServerWorld::~ServerWorld() { stop(); }
 
@@ -501,8 +500,7 @@ bool ServerWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
 }
 
 void ServerWorld::hot_reload() {
-    auto& config = Config::get();
-    int dist = config.get<int>("world.rendering_distance");
+    int dist = m_config.get("server_distance", 24);
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
 }
 

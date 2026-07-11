@@ -21,14 +21,25 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld(AudioEngine& auido)
-    : m_player(*this), m_audio(auido) {}
+ClientWorld::ClientWorld(AudioEngine& auido, Config& config)
+    : m_player(*this), m_audio(auido), m_config(config) {}
 
 ClientWorld::~ClientWorld() {
+    m_client->close();
+
     stop_client_thread();
     stop_thread_pool();
+    // Must first clean up and push the generated chunk data into
+    // m_pending_delete_vbo and m_pending_delete_vao; cannot delete them in the
+    // destructor, otherwise it will cause leaks and use-after-free.
+    m_dirty_chunk_queue.clear();
+    m_pending_upload_queue.clear();
 
     m_chunks.clear();
+
+    if (m_is_pending_delete_queue_free.exchange(true)) {
+        return;
+    }
 
     {
         std::lock_guard lk(m_delete_vbo_mutex);
@@ -262,10 +273,18 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
     }
 }
 void ClientWorld::push_delete_vbo(std::unique_ptr<VertexBuffer>& vbo) {
+    if (m_is_pending_delete_queue_free) {
+        Logger::error("Push delete vbo Use After Free");
+        return;
+    }
     std::lock_guard lk(m_delete_vbo_mutex);
     m_pending_delete_vbo.push_back(std::move(vbo));
 }
 void ClientWorld::push_delete_vao(std::unique_ptr<VertexArray>& vao) {
+    if (m_is_pending_delete_queue_free) {
+        Logger::error("Push delete vao Use After Free");
+        return;
+    }
     std::lock_guard lk(m_delete_vao_mutex);
     m_pending_delete_vao.push_back(std::move(vao));
 }
@@ -504,8 +523,7 @@ void ClientWorld::change_pool_threads(int threads) {
 }
 
 void ClientWorld::hot_reload() {
-    auto& config = Config::get();
-    int dist = config.get<int>("world.rendering_distance");
+    int dist = m_config.get<int>("world.rendering_distance", PRE_LOAD_DISTANCE);
     Logger::info("Get Config Randering dist {}", dist);
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
     request_chunk();
@@ -591,7 +609,7 @@ void ClientWorld::request_chunk() {
         }
     }
 
-    ChunkPosSet old = std::move(m_player.get_chunk_pos_set());
+    ChunkPosSet old = m_player.get_chunk_pos_set();
     m_player.update_chunk_set(required_chunks);
 
     ChunkPosVector need_send_pos;
@@ -699,6 +717,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 }
 
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
+Config& ClientWorld::get_config() { return m_config; }
 
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
