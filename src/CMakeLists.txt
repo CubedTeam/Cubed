@@ -9,7 +9,6 @@ target_sources(${PROJECT_NAME}
         gameplay/biome.cpp
         gameplay/chunk_generator.cpp
         gameplay/tree.cpp
-        input.cpp
         render/renderer.cpp
         shader.cpp
         texture_manager.cpp

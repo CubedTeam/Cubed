@@ -18,19 +18,4 @@ struct MouseState {
     bool right = false;
 };
 
-struct KeyState {
-    bool r = false;
-};
-
-struct InputState {
-    MoveState move_state;
-    MouseState mouse_state;
-    KeyState key_state;
-};
-
-namespace Input {
-InputState& get_input_state();
-
-}
-
 } // namespace Cubed

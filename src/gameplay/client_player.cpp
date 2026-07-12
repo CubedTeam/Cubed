@@ -132,7 +132,7 @@ void ClientPlayer::update(float delta_time) {
     m_gait = compute_gait();
     update_move(delta_time);
     update_lookup_block();
-
+    place_block(delta_time);
     DebugCollector::get().report("player_pos",
                                  std::format("x: {:.2f} y: {:.2f} z: {:.2f}",
                                              m_player_pos.x, m_player_pos.y,
@@ -274,30 +274,32 @@ void ClientPlayer::update_lookup_block() {
         m_look_block = std::nullopt;
     }
 }
-bool ClientPlayer::place_block(MouseKey key) {
+void ClientPlayer::place_block(float dt) {
 
     if (m_look_block == std::nullopt) {
-        return false;
+        return;
     }
-    bool placeed = false;
-    if (key == MouseKey::LEFT_BUTTON) {
+    m_place_time += dt;
+    if (m_place_time < PLACE_BLOCK_INTERVAL) {
+
+        return;
+    }
+    m_place_time = 0.0f;
+    if (m_mouse_state.left) {
         if (m_world.is_solid(m_look_block->pos)) {
             m_world.report_block_change(m_look_block->pos, 0);
-            placeed = true;
         }
     }
-    if (key == MouseKey::RIGHT_BUTTON) {
+    if (m_mouse_state.right) {
         glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
         if (!m_world.is_solid(near_pos)) {
             AABB block_box = ClientWorld::get_block_aabb(near_pos);
             AABB player_box = get_aabb(get_player_pos());
             if (!player_box.intersects(block_box)) {
                 m_world.report_block_change(near_pos, m_place_block);
-                placeed = true;
             }
         }
     }
-    return placeed;
 }
 void ClientPlayer::update_move(float delta_time) {
     // if frame rate less than 1 frame per second, don't update
@@ -555,7 +557,26 @@ bool ClientPlayer::update_scroll(float yoffset) {
 
 bool ClientPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS) {
-        return place_block(e.key);
+        if (e.key == MouseKey::LEFT_BUTTON) {
+            m_mouse_state.left = true;
+            m_place_time = PLACE_BLOCK_INTERVAL;
+            return true;
+        }
+        if (e.key == MouseKey::RIGHT_BUTTON) {
+            m_mouse_state.right = true;
+            m_place_time = PLACE_BLOCK_INTERVAL;
+            return true;
+        }
+    }
+    if (e.action == KeyAction::RELEASE) {
+        if (e.key == MouseKey::LEFT_BUTTON) {
+            m_mouse_state.left = false;
+            return true;
+        }
+        if (e.key == MouseKey::RIGHT_BUTTON) {
+            m_mouse_state.right = false;
+            return true;
+        }
     }
     return false;
 }
@@ -597,7 +618,7 @@ float& ClientPlayer::acceleration() { return m_acceleration; }
 float& ClientPlayer::deceleration() { return m_deceleration; }
 float& ClientPlayer::g() { return m_g; }
 float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
-unsigned ClientPlayer::place_block() const { return m_place_block; };
+unsigned ClientPlayer::get_current_block() const { return m_place_block; };
 void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
 ClientWorld& ClientPlayer::get_world() { return m_world; }

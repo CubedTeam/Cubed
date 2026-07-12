@@ -655,7 +655,7 @@ void DevPanel::show_items_tab_item() {
     if (ImGui::BeginTabItem("item")) {
         ImGui::Text("Place Block ");
         ImGui::SameLine();
-        auto& place_texture = textures[m_player->place_block()];
+        auto& place_texture = textures[m_player->get_current_block()];
         if (place_texture) {
             ImGui::Image(static_cast<ImTextureID>(
                              static_cast<intptr_t>(place_texture->id())),

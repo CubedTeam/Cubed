@@ -6,8 +6,8 @@
 #include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/player.hpp"
-#include "Cubed/input.hpp"
 #include "Cubed/input/event.hpp"
+#include "Cubed/input/input.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <glm/glm.hpp>
@@ -58,7 +58,7 @@ public:
     float& g();
     float& fly_y_speed();
 
-    unsigned place_block() const;
+    unsigned get_current_block() const;
 
     void set_gait(Gait gait);
     GameMode& game_mode();
@@ -80,6 +80,7 @@ public:
                   float distance = 4.0f);
     bool is_underwater() const;
     void set_underwater(bool u);
+    void place_block(float dt);
 
 private:
     using enum GameMode;
@@ -89,7 +90,8 @@ private:
     float m_deceleration = DEFAULT_DECELERATION;
     float m_g = DEFAULT_G;
     constexpr static float MAX_SPACE_ON_TIME = 0.3f;
-
+    constexpr static float PLACE_BLOCK_INTERVAL = 0.2f;
+    float m_place_time = PLACE_BLOCK_INTERVAL;
     std::atomic<float> m_yaw = 0.0f;
     std::atomic<float> m_pitch = 0.0f;
 
@@ -125,6 +127,7 @@ private:
 
     std::atomic<Gait> m_gait = Gait::STOP;
     MoveState m_move_state{};
+    MouseState m_mouse_state{};
     GameMode m_game_mode = CREATIVE;
     std::optional<LookBlock> m_look_block = std::nullopt;
     std::string m_name{};
@@ -143,8 +146,6 @@ private:
 
     void update_direction();
     void update_lookup_block();
-
-    bool place_block(MouseKey key);
 
     void update_move(float delta_time);
 
