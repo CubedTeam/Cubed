@@ -22,6 +22,9 @@ void SceneManager::render(Renderer& renderer) {
 }
 
 bool SceneManager::handle_event(const Event& e) {
+    if (m_scenes.empty()) {
+        return false;
+    }
     return m_scenes.top()->handle_event(e);
 }
 

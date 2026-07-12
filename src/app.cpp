@@ -17,8 +17,8 @@ App::App()
 
     : m_game_config(ASSETS_PATH "config.toml"),
       m_texture_manager(m_game_config), m_audio(m_game_config),
-      m_renderer(m_texture_manager, m_game_config),
-      m_window(m_renderer, m_game_config), m_scene_manager(*this) {}
+      m_renderer(m_texture_manager, m_game_config), m_window(m_game_config),
+      m_scene_manager(*this) {}
 
 App::~App() {}
 void App::cursor_position_callback(GLFWwindow* window, double xpos,
@@ -56,6 +56,8 @@ void App::init(int argc, char** argv) {
                                window_focus_callback);
     glfwSetWindowSizeCallback(m_window.get_glfw_window(),
                               window_reshape_callback);
+    glfwSetFramebufferSizeCallback(m_window.get_glfw_window(),
+                                   framebuffer_size_callback);
     glfwSetKeyCallback(m_window.get_glfw_window(), key_callback);
     glfwSetScrollCallback(m_window.get_glfw_window(), mouse_scroll_callback);
     glfwSetCursorEnterCallback(m_window.get_glfw_window(),
@@ -68,7 +70,6 @@ void App::init(int argc, char** argv) {
     BlockManager::init();
     m_renderer.init(m_argument.debug_on);
     Logger::info("Renderer Init Success");
-    m_window.update_viewport();
     // MapTable::init_map();
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");
@@ -77,6 +78,18 @@ void App::init(int argc, char** argv) {
     }
 
     m_scene_manager.request_push(SceneType::WORLD);
+
+    {
+        int w, h;
+        glfwGetWindowSize(m_window.get_glfw_window(), &w, &h);
+        window_reshape_callback(m_window.get_glfw_window(), w, h);
+    }
+
+    {
+        int w, h;
+        glfwGetFramebufferSize(m_window.get_glfw_window(), &w, &h);
+        framebuffer_size_callback(m_window.get_glfw_window(), w, h);
+    }
 }
 
 void App::handle_argument(int argc, char** argv) {
@@ -582,13 +595,22 @@ void App::window_focus_callback(GLFWwindow* window, int focused) {
     }
 }
 
-void App::window_reshape_callback(GLFWwindow* window, int, int) {
+void App::window_reshape_callback(GLFWwindow* window, int width, int height) {
 
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
-    app->m_window.update_viewport();
-}
 
+    app->dispatch_event(WindowResizeEvent{width, height});
+
+    Logger::info("Window Reshape W: {} H: {}", width, height);
+}
+void App::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    ASSERT_MSG(app, "nullptr");
+    app->dispatch_event(FrameBufferResizeEvent{width, height});
+
+    Logger::info("Frame Buffer Reshape W: {} H: {}", width, height);
+}
 void App::mouse_scroll_callback(GLFWwindow* window, double xoffset,
                                 double yoffset) {
     ImGuiIO& io = ImGui::GetIO();
@@ -629,7 +651,6 @@ void App::render() {
     }
     m_renderer.begin_frame();
     m_scene_manager.render(m_renderer);
-    m_renderer.render();
     m_renderer.end_frame();
     glfwSwapBuffers(m_window.get_glfw_window());
 }
@@ -652,6 +673,14 @@ void App::run() {
 // static Gait player_gait = Gait::WALK;
 void App::update() {
     glfwPollEvents();
+
+    int w, h;
+    glfwGetFramebufferSize(m_window.get_glfw_window(), &w, &h);
+
+    if (w != m_renderer.frame_width() || h != m_renderer.frame_height()) {
+        dispatch_event(FrameBufferResizeEvent{w, h});
+    }
+
     current_time = glfwGetTime();
     dt = current_time - last_time;
     last_time = current_time;
@@ -682,9 +711,15 @@ void App::dispatch_event(const Event& e) {
     if (m_window.handle_event(e)) {
         return;
     }
+
     if (m_texture_manager.handle_event(e)) {
         return;
     }
+
+    if (m_renderer.handle_event(e)) {
+        return;
+    }
+
     if (m_scene_manager.handle_event(e)) {
         return;
     }

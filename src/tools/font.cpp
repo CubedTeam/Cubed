@@ -59,7 +59,7 @@ void Font::setup_font_character() {
         load_character(c);
     }
     m_text_texture->set_linear();
-    m_text_texture->set_clamp_to_edge(false, true, true);
+    m_text_texture->set_repeat(false, true, true);
 }
 
 std::vector<Vertex2D> Font::vertices(const std::string& text) {

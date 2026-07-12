@@ -2,6 +2,7 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/constants.hpp"
+#include "Cubed/input/event.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/player_renderer.hpp"
 #include "Cubed/render/shader_manager.hpp"
@@ -29,15 +30,16 @@ public:
     const Shader& get_shader(const std::string& name) const;
     void begin_frame();
     void end_frame();
-    void render();
     void render_world(ClientWorld& world);
     void render_lable(const Label& label);
     void render_image(const Image& image);
 
+    void begin_render_ui();
+    void end_render_ui();
+
     void update(float delta_time);
     void update_fov(float fov);
-    void update_proj_matrix(float aspect, float width, float height);
-    void updata_framebuffer(int width, int height);
+
     float& ambient_strength();
 
     bool& discard_transparent();
@@ -65,12 +67,16 @@ public:
     const TextureManager& texture_mamger() const;
     float delta_time() const;
 
-    float height() const;
-    float width() const;
+    float window_height() const;
+    float window_width() const;
+    float frame_height() const;
+    float frame_width() const;
     const glm::mat4& p_mat() const;
 
     const std::vector<VertexArray>& vao() const;
     void render_dev_panel(DevPanel& dev_panel);
+
+    bool handle_event(const Event& e);
 
 private:
     TextureManager& m_texture_manager;
@@ -82,8 +88,11 @@ private:
 
     float m_delta_time = 0.0f;
 
-    float m_width = 0.0f;
-    float m_height = 0.0f;
+    float m_frame_width = 0.0f;
+    float m_frame_height = 0.0f;
+
+    float m_window_width = 0.0f;
+    float m_window_height = 0.0f;
 
     glm::mat4 m_world_proj_matrix;
 
@@ -93,8 +102,6 @@ private:
     std::unique_ptr<VertexBuffer> m_ui_vbo;
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
-
-    std::unique_ptr<Image> m_crosshair_image;
 
     glm::mat4 m_ui_proj_matrix;
     ShaderManager m_shaders;
@@ -111,11 +118,12 @@ private:
 
     WorldRenderer m_world_renderer;
     Config& m_config;
+
+    bool handle_window_resize_event(const WindowResizeEvent& e);
+    bool handle_frame_buffer_resize_event(const FrameBufferResizeEvent& e);
+    void updata_framebuffer(int width, int height);
     void init_quad();
     void init_text();
-
-    void render_ui();
-    void render_crosshair();
 };
 
 } // namespace Cubed

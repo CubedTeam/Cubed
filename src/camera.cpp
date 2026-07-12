@@ -124,15 +124,20 @@ bool Camera::handle_event(const Event& e) {
 
                        return false;
                    },
-                   [](const MouseButtonEvent& e) { return false; },
-                   [](const MouseWheelEvent& e) { return false; },
+                   [](const MouseButtonEvent&) { return false; },
+                   [](const MouseWheelEvent&) { return false; },
                    [this](const KeyEvent& e) {
                        if (handle_key_event(e)) {
                            return true;
                        }
                        return false;
                    },
-                   [](const TextInputEvent& e) { return false; }},
+                   [](const TextInputEvent&) { return false; },
+                   [](const WindowResizeEvent&) { return false; },
+                   [](const FrameBufferResizeEvent&) { return false; }
+
+        } // namespace Cubed
+        ,
         e);
 }
 

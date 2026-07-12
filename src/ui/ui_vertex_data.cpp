@@ -28,7 +28,7 @@ void UIVertexData::upload() {
     m_vbo->buffer_data(m_vertices.data(), m_vertices.size() * sizeof(Vertex2D),
                        BufferUsage::DYNAMIC_DRAW);
 
-    m_vao->attribute(0, 3, GL_FLOAT, sizeof(Vertex2D), (void*)0);
+    m_vao->attribute(0, 2, GL_FLOAT, sizeof(Vertex2D), (void*)0);
     m_vao->attribute(1, 2, GL_FLOAT, sizeof(Vertex2D),
                      (void*)offsetof(Vertex2D, s));
     m_vao->attribute(2, 1, GL_FLOAT, sizeof(Vertex2D),

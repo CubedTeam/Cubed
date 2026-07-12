@@ -65,4 +65,5 @@ target_sources(${PROJECT_NAME}
         ui/button.cpp
         scene/world_scene.cpp
         scene/scene_manager.cpp
+        ui/world_ui_manager.cpp
 )

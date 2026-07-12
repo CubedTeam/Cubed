@@ -114,12 +114,6 @@ void Renderer::init(bool debug_on) {
     VertexArray::unbind();
     VertexBuffer::unbind();
 
-    m_crosshair_image = std::make_unique<Image>();
-    m_crosshair_image->set_image("texture/ui/0.png", m_texture_manager);
-    m_crosshair_image
-        ->set_position(m_width / 2 + m_crosshair_image->width() / 2,
-                       m_height / 2 + m_crosshair_image->height() / 2)
-        .set_scale(3.0f);
     m_init = true;
 }
 
@@ -149,17 +143,14 @@ void Renderer::begin_frame() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 void Renderer::end_frame() {}
-void Renderer::render() {
 
+void Renderer::begin_render_ui() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glDisable(GL_DEPTH_TEST);
-
-    render_ui();
-
-    glEnable(GL_DEPTH_TEST);
 }
+void Renderer::end_render_ui() { glEnable(GL_DEPTH_TEST); }
 
 void Renderer::render_world(ClientWorld& world) {
     m_world_renderer.render(world);
@@ -213,15 +204,6 @@ void Renderer::render_image(const Image& image) {
     Tools::check_opengl_error();
 }
 
-void Renderer::render_ui() {
-
-    auto& widget = DebugCollector::get().get_widget();
-    widget.render(*this);
-    render_crosshair();
-}
-
-void Renderer::render_crosshair() { m_crosshair_image->render(*this); }
-
 void Renderer::update(float delta_time) { m_delta_time = delta_time; }
 
 void Renderer::update_fov(float fov) {
@@ -231,19 +213,6 @@ void Renderer::update_fov(float fov) {
         glm::perspective(glm::radians(fov), m_aspect, NEAR_PLANE, FAR_PLANE);
 }
 
-void Renderer::update_proj_matrix(float aspect, float width, float height) {
-    m_aspect = aspect;
-
-    m_world_proj_matrix =
-        glm::perspective(glm::radians(m_fov), aspect, NEAR_PLANE, FAR_PLANE);
-
-    m_ui_proj_matrix = glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
-    // scale and then translate
-    m_crosshair_image->set_position(
-        width / 2.0f + m_crosshair_image->width() / 2,
-        height / 2.0f + m_crosshair_image->height() / 2);
-}
-
 void Renderer::updata_framebuffer(int width, int height) {
     if (width <= 0 || height <= 0)
         return;
@@ -251,9 +220,6 @@ void Renderer::updata_framebuffer(int width, int height) {
     m_world_renderer.updata_framebuffer(width, height);
 
     FrameBuffer::unbind();
-
-    m_width = width;
-    m_height = height;
 }
 
 void Renderer::render_dev_panel(DevPanel& dev_panel) {
@@ -262,6 +228,45 @@ void Renderer::render_dev_panel(DevPanel& dev_panel) {
     glDisable(GL_DEPTH_TEST);
     dev_panel.render();
     glEnable(GL_DEPTH_TEST);
+}
+
+bool Renderer::handle_event(const Event& e) {
+    return std::visit(Overloaded{[](const MouseMoveEvent&) { return false; },
+                                 [](const MouseButtonEvent&) { return false; },
+                                 [](const MouseWheelEvent&) { return false; },
+                                 [](const KeyEvent&) { return false; },
+                                 [](const TextInputEvent&) { return false; },
+                                 [this](const WindowResizeEvent& e) {
+                                     handle_window_resize_event(e);
+                                     return false;
+                                 },
+                                 [this](const FrameBufferResizeEvent& e) {
+                                     handle_frame_buffer_resize_event(e);
+                                     return false;
+                                 }
+
+                      },
+                      e);
+}
+bool Renderer::handle_window_resize_event(const WindowResizeEvent& e) {
+    m_window_width = static_cast<float>(e.width);
+    m_window_height = static_cast<float>(e.height);
+    m_ui_proj_matrix =
+        glm::ortho(0.0f, m_window_width, m_window_height, 0.0f, -1.0f, 1.0f);
+    return false;
+}
+bool Renderer::handle_frame_buffer_resize_event(
+    const FrameBufferResizeEvent& e) {
+    int frame_height = e.height;
+    int frame_width = e.width;
+    m_frame_width = static_cast<float>(e.width);
+    m_frame_height = static_cast<float>(e.height);
+    m_aspect = m_frame_width / m_frame_height;
+    glViewport(0, 0, frame_width, frame_height);
+    m_world_proj_matrix =
+        glm::perspective(glm::radians(m_fov), m_aspect, NEAR_PLANE, FAR_PLANE);
+    updata_framebuffer(frame_width, frame_height);
+    return false;
 }
 
 float& Renderer::ambient_strength() {
@@ -310,8 +315,10 @@ const TextureManager& Renderer::texture_mamger() const {
 
 float Renderer::delta_time() const { return m_delta_time; }
 
-float Renderer::height() const { return m_height; }
-float Renderer::width() const { return m_width; }
+float Renderer::window_height() const { return m_window_height; }
+float Renderer::window_width() const { return m_window_width; }
+float Renderer::frame_height() const { return m_frame_height; }
+float Renderer::frame_width() const { return m_frame_width; }
 const glm::mat4& Renderer::p_mat() const { return m_world_proj_matrix; }
 const std::vector<VertexArray>& Renderer::vao() const { return m_vao; }
 } // namespace Cubed

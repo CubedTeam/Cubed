@@ -215,8 +215,8 @@ void WorldRenderer::render_world(ClientWorld& world) {
 
     // shader map
 
-    auto m_height = m_renderer.height();
-    auto m_width = m_renderer.width();
+    auto height = m_renderer.frame_height();
+    auto width = m_renderer.frame_width();
 
     glm::mat4 model_mat =
         glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -232,7 +232,7 @@ void WorldRenderer::render_world(ClientWorld& world) {
     m_world_fbo->bind();
 
     glCullFace(GL_BACK);
-    glViewport(0, 0, m_width, m_height);
+    glViewport(0, 0, width, height);
 
     render_normal_block(model_mat, mv_mat, norm_mat, world);
 
@@ -241,7 +241,7 @@ void WorldRenderer::render_world(ClientWorld& world) {
 
     m_oit_fbo->bind(FrameBufferType::DRAW_FRAMEBUFFER);
 
-    glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height,
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
                       GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     m_oit_fbo->bind(FrameBufferType::DRAW_FRAMEBUFFER);
 

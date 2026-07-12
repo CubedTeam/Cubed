@@ -41,8 +41,17 @@ struct TextInputEvent {
     TextInputEvent(std::string t) : text(std::move(t)) {}
 };
 
-using Event = std::variant<MouseMoveEvent, MouseButtonEvent, MouseWheelEvent,
-                           KeyEvent, TextInputEvent>;
+struct WindowResizeEvent {
+    int width;
+    int height;
+};
+struct FrameBufferResizeEvent {
+    int width;
+    int height;
+};
+using Event =
+    std::variant<MouseMoveEvent, MouseButtonEvent, MouseWheelEvent, KeyEvent,
+                 TextInputEvent, WindowResizeEvent, FrameBufferResizeEvent>;
 
 template <class... T> struct Overloaded : T... {
     using T::operator()...;

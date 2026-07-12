@@ -914,7 +914,7 @@ bool ClientWorld::handle_event(const Event& e) {
                        }
                        return false;
                    },
-                   [](const MouseMoveEvent& e) { return false; },
+                   [](const MouseMoveEvent&) { return false; },
                    [this](const MouseWheelEvent& e) {
                        if (m_player.handle_mouse_wheel_event(e)) {
                            return true;
@@ -928,7 +928,9 @@ bool ClientWorld::handle_event(const Event& e) {
 
                        return false;
                    },
-                   [](const TextInputEvent& e) { return false; }
+                   [](const TextInputEvent&) { return false; },
+                   [](const WindowResizeEvent&) { return false; },
+                   [](const FrameBufferResizeEvent&) { return false; }
 
         },
         e);

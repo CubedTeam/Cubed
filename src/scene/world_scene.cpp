@@ -8,7 +8,7 @@ WorldScene::WorldScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_dev_panel(*this),
       m_client_world(scene_manager.app().audio(), scene_manager.app().config(),
                      *this),
-      m_argument(scene_manager.app().argument()) {}
+      m_ui_manager(*this), m_argument(scene_manager.app().argument()) {}
 
 WorldScene::~WorldScene() {
     if (m_client) {
@@ -22,6 +22,7 @@ void WorldScene::update(float dt) {
     m_client_world.get_audio().update_listener(m_camera.get_camera_pos(),
                                                m_camera.get_camera_front(),
                                                glm::vec3(0, 1, 0));
+
     /*
     const auto& player = m_client_world.get_player();
     if (player_gait != player.get_gait()) {
@@ -34,16 +35,21 @@ void WorldScene::update(float dt) {
             m_renderer.update_fov(fov + 5.0f);
         }
     }*/
+    m_ui_manager.update(dt);
 }
 
 void WorldScene::render(Renderer& renderer) {
-    Logger::info("World Scene Render Start !");
+
     renderer.render_world(m_client_world);
-    Logger::info("Client World Render Finish");
+
     renderer.render_dev_panel(m_dev_panel);
-    Logger::info("DevPanel Render Finish!");
+
+    m_ui_manager.render(renderer);
 }
 bool WorldScene::handle_event(const Event& e) {
+    if (m_ui_manager.handle_event(e)) {
+        return true;
+    }
     if (m_camera.handle_event(e)) {
         return true;
     }
@@ -65,6 +71,7 @@ void WorldScene::on_enter() {
     m_camera.camera_init(&m_client_world.get_player());
     m_scene_manager.app().window().set_camera(&m_camera);
     m_dev_panel.init();
+    m_ui_manager.init();
 }
 void WorldScene::on_leave() {
     m_client_world.request_exit();

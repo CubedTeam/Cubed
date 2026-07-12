@@ -4,6 +4,7 @@
 #include "Cubed/dev_panel.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/scene/scene.hpp"
+#include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
 class SceneManager;
 class WorldScene : public Scene {
@@ -32,7 +33,7 @@ private:
     Camera m_camera;
     std::shared_ptr<NetworkClient> m_client;
     ClientWorld m_client_world;
-
+    WorldUIManager m_ui_manager;
     const Argument& m_argument;
 };
 } // namespace Cubed

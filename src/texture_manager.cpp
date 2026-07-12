@@ -307,16 +307,20 @@ int TextureManager::max_aniso() const { return static_cast<int>(m_max_aniso); }
 
 bool TextureManager::handle_event(const Event& e) {
     return std::visit(
-        Overloaded{[](const MouseMoveEvent& e) { return false; },
-                   [](const MouseButtonEvent& e) { return false; },
-                   [](const MouseWheelEvent& e) { return false; },
+        Overloaded{[](const MouseMoveEvent&) { return false; },
+                   [](const MouseButtonEvent&) { return false; },
+                   [](const MouseWheelEvent&) { return false; },
                    [this](const KeyEvent& e) {
                        if (handle_key_event(e)) {
                            return true;
                        }
                        return false;
                    },
-                   [](const TextInputEvent& e) { return false; }},
+                   [](const TextInputEvent&) { return false; },
+                   [](const WindowResizeEvent&) { return false; },
+                   [](const FrameBufferResizeEvent&) { return false; }
+
+        },
         e);
 }
 

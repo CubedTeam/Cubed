@@ -10,7 +10,7 @@ class Camera;
 class Renderer;
 class Window {
 public:
-    Window(Renderer& renderer, Config& config);
+    Window(Config& config);
     ~Window();
 
     bool is_mouse_enable() const;
@@ -18,7 +18,7 @@ public:
     GLFWwindow* get_glfw_window();
     void init();
     void imgui_init();
-    void update_viewport();
+
     // end of frame to reload!
     bool handle_event(const Event& e);
 
@@ -33,14 +33,13 @@ public:
 private:
     bool m_mouse_enable = false;
     bool m_imgui_init = false;
-    float m_aspect;
     GLFWwindow* m_window;
-    int m_width;
-    int m_height;
-    Renderer& m_renderer;
+    int m_window_width;
+    int m_window_height;
     Config& m_config;
     Camera* m_camera = nullptr;
     bool handle_key_event(const KeyEvent& e);
+    bool handle_window_resize_event(const WindowResizeEvent& e);
     bool handle_mouse_button_event(const MouseButtonEvent& e);
 };
 
