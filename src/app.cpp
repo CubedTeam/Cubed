@@ -521,10 +521,12 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
         return;
     }
 
-    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+    if (action == GLFW_PRESS) {
         act = KeyAction::PRESS;
-    } else {
+    } else if (action == GLFW_RELEASE) {
         act = KeyAction::RELEASE;
+    } else {
+        act = KeyAction::REPEAT;
     }
 
     app->dispatch_event(KeyEvent{pkey, act});
@@ -570,10 +572,12 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action,
         Logger::error("Unknown Mouse Button {}", button);
         return;
     }
-    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+    if (action == GLFW_PRESS) {
         act = KeyAction::PRESS;
-    } else {
+    } else if (action == GLFW_RELEASE) {
         act = KeyAction::RELEASE;
+    } else {
+        act = KeyAction::REPEAT;
     }
 
     app->dispatch_event(MouseButtonEvent{key, act});

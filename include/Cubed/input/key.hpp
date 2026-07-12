@@ -123,5 +123,5 @@ enum class Key {
     NUMPAD_DECIMAL,  // .
     NUMPAD_ENTER
 };
-enum class KeyAction { PRESS, RELEASE };
+enum class KeyAction { PRESS, RELEASE, REPEAT };
 } // namespace Cubed
