@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/renderer.hpp"
+#include "Cubed/scene/world_scene.hpp"
 #include "Cubed/texture_manager.hpp"
 
 #include <glm/glm.hpp>
@@ -188,24 +189,24 @@ void PlayerRenderer::init() {
     m_inited = true;
 }
 
-void PlayerRenderer::render(const Shader& shader) {
+void PlayerRenderer::render(const Shader& shader, ClientWorld& world) {
     if (!m_inited) {
         Logger::error("Player Renderer isn't init");
         return;
     }
-    auto& m_camera = m_renderer.camera();
-    auto& m_world = m_renderer.world();
-    auto& m_player = m_world.get_player();
-    glm::mat4 m_v_mat = m_camera.get_camera_lookat();
+
+    auto& camera = world.world_scene().camera();
+    auto& m_player = world.get_player();
+    glm::mat4 m_v_mat = camera.get_camera_lookat();
     glm::mat4 m_p_mat = m_renderer.world_proj_matrix();
 
-    auto& players = m_world.render_player_data();
+    auto& players = world.render_player_data();
     shader.set_loc("proj_matrix", m_p_mat);
 
     for (auto& player : players) {
 
         if (player.uuid == m_player.get_uuid()) {
-            if (m_camera.is_first_person()) {
+            if (camera.is_first_person()) {
                 continue;
             }
         }
@@ -302,15 +303,15 @@ void PlayerRenderer::render(const Shader& shader) {
 }
 
 void PlayerRenderer::shadow_render(const Shader& shader,
-                                   glm::mat4& light_matrix) {
+                                   glm::mat4& light_matrix,
+                                   ClientWorld& world) {
     if (!m_inited) {
         Logger::error("Player Renderer isn't init");
         return;
     }
     shader.use();
     shader.set_loc("lightSpaceMatrix", light_matrix);
-    auto& m_world = m_renderer.world();
-    auto& players = m_world.render_player_data();
+    auto& players = world.render_player_data();
 
     for (auto& player : players) {
         glm::mat4 model(1.0f);

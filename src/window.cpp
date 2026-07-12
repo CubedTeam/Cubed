@@ -1,5 +1,6 @@
 #include "Cubed/window.hpp"
 
+#include "Cubed/camera.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/font.hpp"
@@ -49,6 +50,52 @@ void Window::update_viewport() {
     m_renderer.updata_framebuffer(m_width, m_height);
     m_config.set("window.width", windowed_width);
     m_config.set("window.height", windowed_height);
+}
+
+bool Window::handle_event(const Event& e) {
+    return std::visit(Overloaded{[](const MouseMoveEvent& e) { return false; },
+                                 [this](const MouseButtonEvent& e) {
+                                     if (handle_mouse_button_event(e)) {
+                                         return true;
+                                     }
+                                     return false;
+                                 },
+                                 [](const MouseWheelEvent& e) { return false; },
+                                 [this](const KeyEvent& e) {
+                                     if (handle_key_event(e)) {
+                                         return true;
+                                     }
+                                     return false;
+                                 },
+                                 [](const TextInputEvent& e) { return false; }},
+                      e);
+}
+
+bool Window::handle_key_event(const KeyEvent& e) {
+    if (e.key == Key::F11 && e.action == KeyAction::PRESS) {
+        toggle_fullscreen();
+        return true;
+    }
+    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+        return true;
+    }
+    if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
+        toggle_mouse_able();
+        return true;
+    }
+
+    return false;
+}
+
+bool Window::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (e.key == MouseKey::LEFT_BUTTON && e.action == KeyAction::PRESS) {
+        if (is_mouse_enable()) {
+            toggle_mouse_able();
+            return true;
+        }
+    }
+    return false;
 }
 
 void Window::init() {
@@ -166,8 +213,13 @@ void Window::toggle_mouse_able() {
         glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         m_mouse_enable = true;
     }
-}
 
+    if (m_camera) {
+        m_camera->reset_camera();
+    }
+}
+void Window::set_camera(Camera* camera) { m_camera = camera; }
+Camera* Window::camera() { return m_camera; }
 void Window::imgui_init() {
     float dpi_scale_x, dpi_scale_y;
     glfwGetWindowContentScale(m_window, &dpi_scale_x, &dpi_scale_y);

@@ -15,8 +15,6 @@
 #include <glm/glm.hpp>
 #include <vector>
 namespace Cubed {
-
-class Camera;
 class TextureManager;
 class ClientWorld;
 class DevPanel;
@@ -24,15 +22,15 @@ class Renderer {
 public:
     constexpr static int NUM_VAO = 7;
 
-    Renderer(const Camera& camera, ClientWorld& world,
-             const TextureManager& texture_manager, DevPanel& dev_panel,
-             Config& config);
+    Renderer(TextureManager& texture_manager, Config& config);
     ~Renderer();
     void hot_reload();
     void init(bool debug_on);
     const Shader& get_shader(const std::string& name) const;
+    void begin_frame();
+    void end_frame();
     void render();
-
+    void render_world(ClientWorld& world);
     void render_lable(const Label& label);
     void render_image(const Image& image);
 
@@ -63,9 +61,6 @@ public:
     float& underwater_fog_density();
     float& water_density();
 
-    const Camera& camera() const;
-    const ClientWorld& world() const;
-    ClientWorld& world();
     const glm::mat4& world_proj_matrix() const;
     const TextureManager& texture_mamger() const;
     float delta_time() const;
@@ -75,12 +70,10 @@ public:
     const glm::mat4& p_mat() const;
 
     const std::vector<VertexArray>& vao() const;
+    void render_dev_panel(DevPanel& dev_panel);
 
 private:
-    const Camera& m_camera;
-    DevPanel& m_dev_panel;
-    const TextureManager& m_texture_manager;
-    ClientWorld& m_world;
+    TextureManager& m_texture_manager;
 
     bool m_init = false;
 
@@ -121,13 +114,8 @@ private:
     void init_quad();
     void init_text();
 
-    void day_night_calculation();
-
-    void render_sky();
-
     void render_ui();
     void render_crosshair();
-    void render_dev_panel();
 };
 
 } // namespace Cubed

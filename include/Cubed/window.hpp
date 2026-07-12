@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Cubed/config.hpp"
+#include "Cubed/input/event.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 namespace Cubed {
-
+class Camera;
 class Renderer;
 class Window {
 public:
@@ -19,10 +20,15 @@ public:
     void imgui_init();
     void update_viewport();
     // end of frame to reload!
+    bool handle_event(const Event& e);
+
     void hot_reload();
 
     void toggle_fullscreen();
     void toggle_mouse_able();
+
+    void set_camera(Camera* camera);
+    Camera* camera();
 
 private:
     bool m_mouse_enable = false;
@@ -33,6 +39,9 @@ private:
     int m_height;
     Renderer& m_renderer;
     Config& m_config;
+    Camera* m_camera = nullptr;
+    bool handle_key_event(const KeyEvent& e);
+    bool handle_mouse_button_event(const MouseButtonEvent& e);
 };
 
 } // namespace Cubed

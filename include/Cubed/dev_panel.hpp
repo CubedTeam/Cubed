@@ -6,8 +6,9 @@
 
 namespace Cubed {
 
-class App;
+class WorldScene;
 class ClientPlayer;
+class App;
 class DevPanel {
     struct ConfigView {
         float fov = 70.0f;
@@ -32,12 +33,13 @@ class DevPanel {
     };
 
 public:
-    DevPanel(App& app);
+    DevPanel(WorldScene& app);
     void init();
     void render();
 
 private:
     App& m_app;
+    WorldScene& m_world_scene;
     Config& m_config;
     ConfigView m_config_view;
     ClientPlayer* m_player;

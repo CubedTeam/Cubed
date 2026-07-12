@@ -11,7 +11,6 @@ constexpr int BLOCK_SIZE = 16;
 constexpr int BLOCK_NORMAL_SIZE = 128;
 constexpr int CROSS_PLANE_SIZE = 16;
 constexpr int BLOCK_ITEM_SIZE = 16;
-constexpr int UI_SIZE = 16;
 constexpr int BLOCK_STATUS_SIZE = 16;
 constexpr int SKIN_SIZE = 64;
 
@@ -58,7 +57,13 @@ const Texture* TextureManager::get_texture_array() const {
 const Texture* TextureManager::get_cross_plane_array() const {
     return m_cross_plane_array.get();
 }
-const Texture* TextureManager::get_ui_array() const { return m_ui_array.get(); }
+const Texture* TextureManager::get_image_texture(const std::string& path) {
+    auto it = m_ui_map.find(path);
+    if (it != m_ui_map.end()) {
+        return it->second.get();
+    }
+    return load_image_texture(path);
+}
 
 const Texture* TextureManager::get_pbr_texture() const {
     return m_normal_texture_array.get();
@@ -146,13 +151,19 @@ void TextureManager::load_cross_plane_texture(unsigned id) {
                                           CROSS_PLANE_SIZE, CROSS_PLANE_SIZE);
 }
 
-void TextureManager::load_ui_texture(unsigned id) {
-    ASSERT_MSG(id < MAX_UI_NUM, "Exceed the max ui sum limit");
+const Texture* TextureManager::load_image_texture(const std::string& path) {
 
-    std::string path = "texture/ui/" + std::to_string(id) + ".png";
     auto image_data = (Tools::load_image_data(path));
-    m_ui_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
-                                 image_data.data, 0, 0, id, UI_SIZE, UI_SIZE);
+    std::unique_ptr<Texture> image =
+        std::make_unique<Texture>(TextureType::TEXTURE_2D);
+    image->tex_image_2d(RGBA, RGBA, GL_UNSIGNED_BYTE, image_data.data,
+                        image_data.width, image_data.height);
+    image->set_nearest();
+    auto [it, inserted] = m_ui_map.try_emplace(path, std::move(image));
+    if (!inserted) {
+        Logger::error("Path {} already exist!", path);
+    }
+    return it->second.get();
 }
 
 void TextureManager::load_pbr_texture(unsigned id) {
@@ -232,17 +243,7 @@ void TextureManager::init_block() {
 
     Logger::info("Block Texture Load Success");
 }
-void TextureManager::init_ui() {
-    m_ui_array = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
-    m_ui_array->tex_image_3d(TextureFormat::RGBA, TextureFormat::RGBA,
-                             GL_UNSIGNED_BYTE, nullptr, UI_SIZE, UI_SIZE,
-                             MAX_UI_NUM);
-    for (int i = 0; i < MAX_UI_NUM; i++) {
-        load_ui_texture(i);
-    }
-
-    m_ui_array->set_nearest();
-}
+void TextureManager::init_ui() {}
 
 void TextureManager::init_skin() {
     m_skin = std::make_unique<Texture>(TextureType::TEXTURE_2D);
@@ -304,4 +305,27 @@ void TextureManager::hot_reload() {
 
 int TextureManager::max_aniso() const { return static_cast<int>(m_max_aniso); }
 
+bool TextureManager::handle_event(const Event& e) {
+    return std::visit(
+        Overloaded{[](const MouseMoveEvent& e) { return false; },
+                   [](const MouseButtonEvent& e) { return false; },
+                   [](const MouseWheelEvent& e) { return false; },
+                   [this](const KeyEvent& e) {
+                       if (handle_key_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const TextInputEvent& e) { return false; }},
+        e);
+}
+
+bool TextureManager::handle_key_event(const KeyEvent& e) {
+    if (e.key == Key::R && e.action == KeyAction::PRESS) {
+        need_reload();
+        return true;
+    }
+
+    return false;
+}
 } // namespace Cubed

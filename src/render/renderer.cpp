@@ -1,11 +1,8 @@
 #include "Cubed/render/renderer.hpp"
 
-#include "Cubed/camera.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/gameplay/client_player.hpp"
-#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/renderer_constants.hpp"
 #include "Cubed/texture_manager.hpp"
@@ -19,12 +16,9 @@
 
 namespace Cubed {
 
-Renderer::Renderer(const Camera& camera, ClientWorld& world,
-                   const TextureManager& texture_manager, DevPanel& dev_panel,
-                   Config& config)
-    : m_camera(camera), m_dev_panel(dev_panel),
-      m_texture_manager(texture_manager), m_world(world),
-      m_world_renderer(*this), m_config(config) {}
+Renderer::Renderer(TextureManager& texture_manager, Config& config)
+    : m_texture_manager(texture_manager), m_world_renderer(*this),
+      m_config(config) {}
 
 Renderer::~Renderer() {
     if (m_init) {
@@ -121,7 +115,7 @@ void Renderer::init(bool debug_on) {
     VertexBuffer::unbind();
 
     m_crosshair_image = std::make_unique<Image>();
-    m_crosshair_image->set_image("texture/ui/0.png");
+    m_crosshair_image->set_image("texture/ui/0.png", m_texture_manager);
     m_crosshair_image
         ->set_position(m_width / 2 + m_crosshair_image->width() / 2,
                        m_height / 2 + m_crosshair_image->height() / 2)
@@ -148,14 +142,14 @@ void Renderer::init_text() {
 
     DebugCollector::get().init_text();
 }
-
-void Renderer::render() {
+void Renderer::begin_frame() {
     glDisable(GL_FRAMEBUFFER_SRGB);
     // clear screen
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    m_world_renderer.render();
+}
+void Renderer::end_frame() {}
+void Renderer::render() {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -164,8 +158,11 @@ void Renderer::render() {
 
     render_ui();
 
-    render_dev_panel();
     glEnable(GL_DEPTH_TEST);
+}
+
+void Renderer::render_world(ClientWorld& world) {
+    m_world_renderer.render(world);
 }
 
 void Renderer::render_lable(const Label& label) {
@@ -194,6 +191,10 @@ void Renderer::render_lable(const Label& label) {
 }
 
 void Renderer::render_image(const Image& image) {
+    if (!image.texture()) {
+        Logger::error("Image id {} not set image!", image.id());
+        return;
+    }
     const auto& shader = get_shader("image");
     shader.use();
     auto& pos = image.pos();
@@ -206,7 +207,8 @@ void Renderer::render_image(const Image& image) {
     shader.set_loc("proj_matrix", m_ui_proj_matrix);
 
     m_vao[3].bind();
-    image.texture().bind(0);
+
+    image.texture()->bind(0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     Tools::check_opengl_error();
 }
@@ -254,10 +256,11 @@ void Renderer::updata_framebuffer(int width, int height) {
     m_height = height;
 }
 
-void Renderer::render_dev_panel() {
-
+void Renderer::render_dev_panel(DevPanel& dev_panel) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
-    m_dev_panel.render();
+    dev_panel.render();
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -298,9 +301,6 @@ float& Renderer::underwater_fog_density() {
 }
 float& Renderer::water_density() { return m_world_renderer.water_density(); }
 
-const Camera& Renderer::camera() const { return m_camera; }
-const ClientWorld& Renderer::world() const { return m_world; }
-ClientWorld& Renderer::world() { return m_world; }
 const glm::mat4& Renderer::world_proj_matrix() const {
     return m_world_proj_matrix;
 }

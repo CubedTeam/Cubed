@@ -60,12 +60,12 @@ public:
 
     void tex_image_2d(TextureFormat internalformat, TextureFormat format,
                       GLenum type, const void* data, GLsizei width,
-                      GLsizei height, GLint level = 0, GLint border = 0) const;
+                      GLsizei height, GLint level = 0, GLint border = 0);
 
     void tex_image_3d(TextureFormat internalformat, TextureFormat format,
                       GLenum type, const void* data, GLsizei width,
                       GLsizei height, GLsizei depth, GLint level = 0,
-                      GLint border = 0) const;
+                      GLint border = 0);
 
     void tex_sub_image_3d(TextureFormat format, GLenum type, const void* data,
                           GLint xoffset, GLint yoffset, GLint zoffset,
@@ -84,9 +84,13 @@ public:
     void set_clamp_to_edge(bool r = true, bool s = true, bool t = true) const;
 
     TextureType type() const;
+    float width() const;
+    float height() const;
 
 private:
     GLuint m_id = 0;
+    float m_width = 0;
+    float m_height = 0;
     const TextureType M_TYPE;
     GLenum get_gl_texture_type() const;
 };

@@ -62,4 +62,7 @@ target_sources(${PROJECT_NAME}
         ui/label.cpp
         ui/ui_vertex_data.cpp
         ui/image.cpp
+        ui/button.cpp
+        scene/world_scene.cpp
+        scene/scene_manager.cpp
 )

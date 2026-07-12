@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/cave_path.hpp"
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/river.path.hpp"
+#include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <imgui.h>
@@ -46,10 +47,12 @@ constexpr float DELTA_ANGLE_MAX = 30.0f;
 constexpr int PATH_STEP_MIN = 1;
 constexpr int PATH_STEP_MAX = 1000;
 
-DevPanel::DevPanel(App& app) : m_app(app), m_config(app.config()) {}
+DevPanel::DevPanel(WorldScene& world_scene)
+    : m_app(world_scene.scene_manager().app()), m_world_scene(world_scene),
+      m_config(m_app.config()) {}
 
 void DevPanel::init() {
-    m_player = &m_app.client_world().get_player();
+    m_player = &m_world_scene.client_world().get_player();
     update_config_view();
     update_player_profile();
 }
@@ -383,7 +386,7 @@ void DevPanel::show_settings_tab_item() {
                              128)) {
             m_config.set("world.rendering_distance",
                          m_config_view.rendering_distance);
-            m_app.client_world().hot_reload();
+            m_world_scene.client_world().hot_reload();
         }
         if (ImGui::Checkbox("Fullscreen", &m_config_view.fullscreen)) {
             m_config.set("window.fullscreen", m_config_view.fullscreen);
@@ -551,20 +554,23 @@ void DevPanel::show_server_world_table_bar() {
 }
 void DevPanel::show_client_world_table_bar() {
 
-    static int rendering_distance = m_app.client_world().rendering_distance();
+    static int rendering_distance =
+        m_world_scene.client_world().rendering_distance();
     if (ImGui::SliderInt("Render Distance", &rendering_distance, 2, 128)) {
-        m_app.client_world().rendering_distance(rendering_distance);
+        m_world_scene.client_world().rendering_distance(rendering_distance);
         // Config::get().set("world.rendering_distance", rendering_distance);
     }
     if (ImGui::Button("Rebuild World")) {
-        m_app.client_world().rebuild_world();
+        m_world_scene.client_world().rebuild_world();
     }
     ImGui::SameLine();
     if (ImGui::Button("Spawn Point")) {
         m_player->set_player_pos({0.0f, 255.0f, 0.0f});
     }
-    ImGui::Text("Chunk Task Id %d", m_app.client_world().get_chunk_task_id());
-    ImGui::Text("Client World Chunk %d", m_app.client_world().chunk_size());
+    ImGui::Text("Chunk Task Id %d",
+                m_world_scene.client_world().get_chunk_task_id());
+    ImGui::Text("Client World Chunk %d",
+                m_world_scene.client_world().chunk_size());
 }
 
 void DevPanel::show_player_tab_item() {

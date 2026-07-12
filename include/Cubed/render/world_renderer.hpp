@@ -39,7 +39,7 @@ public:
     WorldRenderer& operator=(const WorldRenderer&) = delete;
     WorldRenderer& operator=(WorldRenderer&&) = delete;
     void init();
-    void render();
+    void render(ClientWorld& world);
     void updata_framebuffer(int width, int height);
 
     float& ambient_strength();
@@ -121,27 +121,26 @@ private:
 
     glm::mat4 view_matrix;
 
-    ClientWorld& m_world;
-    const Camera& m_camera;
     const TextureManager& m_texture_manager;
-    void day_night_calculation();
+    void day_night_calculation(ClientWorld& world);
 
-    void render_sky();
+    void render_sky(ClientWorld& world);
 
-    void render_world();
+    void render_world(ClientWorld& world);
 
-    void shadow_map_generate();
+    void shadow_map_generate(ClientWorld& world);
 
-    void render_underwater();
-    void render_outline();
-    void render_player();
+    void render_underwater(ClientWorld& world);
+    void render_outline(ClientWorld& world);
+    void render_player(ClientWorld& world);
 
     void render_normal_block(const glm::mat4& model_mat,
-                             const glm::mat4& mv_mat,
-                             const glm::mat4& norm_mat);
+                             const glm::mat4& mv_mat, const glm::mat4& norm_mat,
+                             ClientWorld& world);
 
     void render_transparent_block(const glm::mat4& mv_mat,
-                                  const glm::mat4& norm_mat);
+                                  const glm::mat4& norm_mat,
+                                  ClientWorld& world);
 
     glm::vec3 quantize_sun_direction(const glm::vec3& sundir,
                                      float angle_step_deg) const;

@@ -141,48 +141,42 @@ void ClientPlayer::update(float delta_time) {
     DebugCollector::get().report("speed",
                                  std::format("Speed: {:.2} m/s", m_xz_speed));
 }
-void ClientPlayer::update_player_move_state(int key, int action) {
-    switch (key) {
-    case GLFW_KEY_W:
-        if (action == GLFW_PRESS) {
+bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
+    if (key == Key::W) {
+        if (action == KeyAction::PRESS) {
             m_move_state.forward = true;
         }
-        if (action == GLFW_RELEASE) {
+        if (action == KeyAction::RELEASE) {
             m_move_state.forward = false;
-
             m_sprinting = false;
         }
-        break;
-    case GLFW_KEY_S:
-        if (action == GLFW_PRESS) {
+    } else if (key == Key::S) {
+        if (action == KeyAction::PRESS) {
             m_move_state.back = true;
         }
-        if (action == GLFW_RELEASE) {
+        if (action == KeyAction::RELEASE) {
             m_move_state.back = false;
         }
-        break;
-    case GLFW_KEY_A:
-        if (action == GLFW_PRESS) {
+    } else if (key == Key::A) {
+        if (action == KeyAction::PRESS) {
             m_move_state.left = true;
         }
-        if (action == GLFW_RELEASE) {
+        if (action == KeyAction::RELEASE) {
             m_move_state.left = false;
         }
-        break;
-    case GLFW_KEY_D:
-        if (action == GLFW_PRESS) {
+    } else if (key == Key::D) {
+        if (action == KeyAction::PRESS) {
             m_move_state.right = true;
         }
-        if (action == GLFW_RELEASE) {
+        if (action == KeyAction::RELEASE) {
             m_move_state.right = false;
         }
-        break;
-    case GLFW_KEY_SPACE:
-        if (action == GLFW_PRESS) {
+    } else if (key == Key::SPACE) {
+        if (action == KeyAction::PRESS) {
             m_move_state.up = true;
             if (space_on) {
                 if (m_game_mode == CREATIVE) {
-                    is_fly = !is_fly ? true : false;
+                    is_fly = !is_fly;
                     m_y_speed = 0.0f;
                 }
                 space_on = false;
@@ -191,35 +185,39 @@ void ClientPlayer::update_player_move_state(int key, int action) {
                 space_on = true;
             }
         }
-        if (action == GLFW_RELEASE) {
+        if (action == KeyAction::RELEASE) {
             m_move_state.up = false;
         }
-        break;
-    case GLFW_KEY_LEFT_SHIFT:
-        if (action == GLFW_PRESS) {
+    } else if (key == Key::LEFT_SHIFT) {
+        if (action == KeyAction::PRESS) {
             m_move_state.down = true;
         }
-        if (action == GLFW_RELEASE) {
+        if (action == KeyAction::RELEASE) {
             m_move_state.down = false;
         }
-        break;
-    case GLFW_KEY_LEFT_CONTROL:
-        if (action == GLFW_PRESS) {
+    } else if (key == Key::LEFT_CTRL) {
+        if (action == KeyAction::PRESS) {
             m_sprinting = true;
         }
-        break;
-    case GLFW_KEY_F4:
-        if (action == GLFW_PRESS) {
+        /*
+        if (action == KeyAction::RELEASE) {
+            m_sprinting = false;
+        }*/
+    } else if (key == Key::F4) {
+        if (action == KeyAction::PRESS) {
             if (m_game_mode == CREATIVE) {
                 change_mode(SPECTATOR);
             } else {
                 change_mode(CREATIVE);
             }
         }
-        break;
+    } else {
+        return false;
     }
+
     m_moving = m_move_state.forward || m_move_state.back || m_move_state.left ||
                m_move_state.right;
+    return true;
 }
 
 void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
@@ -275,28 +273,32 @@ void ClientPlayer::update_lookup_block() {
     } else {
         m_look_block = std::nullopt;
     }
+}
+bool ClientPlayer::place_block(MouseKey key) {
 
-    if (m_look_block != std::nullopt) {
-        if (Input::get_input_state().mouse_state.left) {
-            if (m_world.is_solid(m_look_block->pos)) {
-                m_world.report_block_change(m_look_block->pos, 0);
-            }
-            Input::get_input_state().mouse_state.left = false;
-        }
-        if (Input::get_input_state().mouse_state.right) {
-            glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
-            if (!m_world.is_solid(near_pos)) {
-                AABB block_box = ClientWorld::get_block_aabb(near_pos);
-                AABB player_box = get_aabb(get_player_pos());
-                if (!player_box.intersects(block_box)) {
-                    m_world.report_block_change(near_pos, m_place_block);
-                }
-            }
-            Input::get_input_state().mouse_state.right = false;
+    if (m_look_block == std::nullopt) {
+        return false;
+    }
+    bool placeed = false;
+    if (key == MouseKey::LEFT_BUTTON) {
+        if (m_world.is_solid(m_look_block->pos)) {
+            m_world.report_block_change(m_look_block->pos, 0);
+            placeed = true;
         }
     }
+    if (key == MouseKey::RIGHT_BUTTON) {
+        glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
+        if (!m_world.is_solid(near_pos)) {
+            AABB block_box = ClientWorld::get_block_aabb(near_pos);
+            AABB player_box = get_aabb(get_player_pos());
+            if (!player_box.intersects(block_box)) {
+                m_world.report_block_change(near_pos, m_place_block);
+                placeed = true;
+            }
+        }
+    }
+    return placeed;
 }
-
 void ClientPlayer::update_move(float delta_time) {
     // if frame rate less than 1 frame per second, don't update
     if (delta_time > 1.0f) {
@@ -523,7 +525,7 @@ Gait ClientPlayer::compute_gait() const {
     return Gait::WALK;
 }
 
-void ClientPlayer::update_scroll(double yoffset) {
+bool ClientPlayer::update_scroll(float yoffset) {
     if (m_game_mode == SPECTATOR) {
         if (yoffset > 0) {
             if (m_max_speed < 500.0f) {
@@ -548,6 +550,28 @@ void ClientPlayer::update_scroll(double yoffset) {
             }
         }
     }
+    return true;
+}
+
+bool ClientPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (e.action == KeyAction::PRESS) {
+        return place_block(e.key);
+    }
+    return false;
+}
+
+bool ClientPlayer::handle_key_event(const KeyEvent& e) {
+    if (update_player_move_state(e.key, e.action)) {
+        return true;
+    }
+
+    return false;
+}
+bool ClientPlayer::handle_mouse_wheel_event(const MouseWheelEvent& e) {
+    if (update_scroll(e.offset)) {
+        return true;
+    }
+    return false;
 }
 
 void ClientPlayer::update_chunk_set(const ChunkPosSet& set) {

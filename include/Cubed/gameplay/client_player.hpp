@@ -7,6 +7,7 @@
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/player.hpp"
 #include "Cubed/input.hpp"
+#include "Cubed/input/event.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <glm/glm.hpp>
@@ -22,6 +23,14 @@ public:
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     ClientPlayer(ClientWorld& world);
     ~ClientPlayer();
+
+    bool handle_mouse_button_event(const MouseButtonEvent& e);
+    bool handle_key_event(const KeyEvent& e);
+    bool handle_mouse_wheel_event(const MouseWheelEvent& e);
+
+    void update_front_vec(float offset_x, float offset_y);
+    bool update_player_move_state(Key key, KeyAction action);
+    bool update_scroll(float yoffset);
 
     void update_chunk_set(const ChunkPosSet& set);
     const ChunkPosSet& get_chunk_pos_set() const;
@@ -40,9 +49,6 @@ public:
     void set_player_pos(const glm::vec3& pos);
     void set_place_block(unsigned id);
     void update(float delta_time);
-    void update_front_vec(float offset_x, float offset_y);
-    void update_player_move_state(int key, int action);
-    void update_scroll(double yoffset);
 
     float& max_walk_speed();
     float& max_run_speed();
@@ -137,11 +143,17 @@ private:
 
     void update_direction();
     void update_lookup_block();
+
+    bool place_block(MouseKey key);
+
     void update_move(float delta_time);
+
     void update_x_move(glm::vec3& player_pos);
     void update_y_move(glm::vec3& player_pos);
     void update_z_move(glm::vec3& player_pos);
+
     void update_player_chunk();
+
     void play_walk_sound(float dt);
     Gait compute_gait() const;
 };

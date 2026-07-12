@@ -21,8 +21,8 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld(AudioEngine& auido, Config& config)
-    : m_player(*this), m_audio(auido), m_config(config) {}
+ClientWorld::ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene)
+    : m_player(*this), m_audio(auido), m_config(config), m_world_scene(scene) {}
 
 ClientWorld::~ClientWorld() {
     m_client->close();
@@ -718,6 +718,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
+WorldScene& ClientWorld::world_scene() { return m_world_scene; }
 
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
@@ -903,6 +904,34 @@ void ClientWorld::update(float delta_time) {
     for (auto& [pos, timer] : m_timers) {
         timer.update(delta_time);
     }
+}
+
+bool ClientWorld::handle_event(const Event& e) {
+    return std::visit(
+        Overloaded{[this](const MouseButtonEvent& e) {
+                       if (m_player.handle_mouse_button_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const MouseMoveEvent& e) { return false; },
+                   [this](const MouseWheelEvent& e) {
+                       if (m_player.handle_mouse_wheel_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const KeyEvent& e) {
+                       if (m_player.handle_key_event(e)) {
+                           return true;
+                       }
+
+                       return false;
+                   },
+                   [](const TextInputEvent& e) { return false; }
+
+        },
+        e);
 }
 
 glm::vec3 ClientWorld::sunlight_dir() const {

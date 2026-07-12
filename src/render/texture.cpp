@@ -48,8 +48,10 @@ void Texture::parameterfv(TexturePname pname, const float* param) const {
 }
 void Texture::tex_image_2d(TextureFormat internalformat, TextureFormat format,
                            GLenum type, const void* data, GLsizei width,
-                           GLsizei height, GLint level, GLint border) const {
+                           GLsizei height, GLint level, GLint border) {
     bind();
+    m_width = static_cast<float>(width);
+    m_height = static_cast<float>(height);
     glTexImage2D(get_gl_texture_type(), level,
                  std::to_underlying(internalformat), width, height, border,
                  std::to_underlying(format), type, data);
@@ -58,8 +60,10 @@ void Texture::tex_image_2d(TextureFormat internalformat, TextureFormat format,
 void Texture::tex_image_3d(TextureFormat internalformat, TextureFormat format,
                            GLenum type, const void* data, GLsizei width,
                            GLsizei height, GLsizei depth, GLint level,
-                           GLint border) const {
+                           GLint border) {
     bind();
+    m_width = static_cast<float>(width);
+    m_height = static_cast<float>(height);
     glTexImage3D(get_gl_texture_type(), level,
                  std::to_underlying(internalformat), width, height, depth,
                  border, std::to_underlying(format), type, data);
@@ -135,7 +139,8 @@ void Texture::set_clamp_to_edge(bool r, bool s, bool t) const {
 }
 
 TextureType Texture::type() const { return M_TYPE; }
-
+float Texture::width() const { return m_width; }
+float Texture::height() const { return m_height; }
 void Texture::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);

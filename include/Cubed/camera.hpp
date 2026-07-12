@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/input/event.hpp"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -28,6 +29,9 @@ private:
     glm::vec3 camera_collision(glm::vec3 start, glm::vec3 end,
                                float radius = 0.2f);
 
+    bool handle_key_event(const KeyEvent& e);
+    bool handle_mouse_move_event(const MouseMoveEvent& e);
+
 public:
     Camera();
 
@@ -45,6 +49,7 @@ public:
     glm::vec3 get_camera_front() const;
     void change_perspective();
     bool is_first_person() const;
+    bool handle_event(const Event& e);
 };
 
 } // namespace Cubed

@@ -7,6 +7,7 @@
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/input/event.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 
@@ -41,14 +42,15 @@ struct PlayerRenderData {
     Gait gait;
     float angle;
 };
-
+class WorldScene;
 class ClientWorld {
 public:
-    ClientWorld(AudioEngine& auido, Config& config);
+    ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene);
     ~ClientWorld();
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client);
     void update(float delta_time);
+    bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
     ClientPlayer& get_player();
     const ClientPlayer& get_player() const;
@@ -97,6 +99,7 @@ public:
     static AABB get_block_aabb(const glm::ivec3& pos);
     AudioEngine& get_audio();
     Config& get_config();
+    WorldScene& world_scene();
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -133,6 +136,7 @@ private:
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;
+    WorldScene& m_world_scene;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 

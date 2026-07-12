@@ -19,6 +19,7 @@ public:
     virtual Widget& set_scale(float scale);
     virtual const glm::vec2& pos() const;
     virtual float scale() const;
+
     template <typename T, typename... Args> T& add_child(Args&&... args) {
         auto widget = std::make_unique<T>(std::forward<Args>(args)...);
         T& ref = *widget;
