@@ -35,6 +35,7 @@ enum TextureFormat : GLenum {
     RGBA16F = GL_RGBA16F,
     RED = GL_RED,
     RGBA = GL_RGBA,
+    R8 = GL_R8,
     RGB = GL_RGB,
     RGBA8 = GL_RGBA8,
 

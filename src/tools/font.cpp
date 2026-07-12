@@ -38,9 +38,9 @@ void Font::load_character(char8_t c) {
                                      static_cast<int>(c), width, height);
 
     Character character = {
-        glm::vec2{0.0f, 0.0f},
-        glm::vec2{static_cast<float>(width) / m_texture_width,
-                  static_cast<float>(height) / m_texture_height},
+        glm::vec2{0.5f / m_texture_width, 0.5f / m_texture_height},
+        glm::vec2{(width - 0.5f) / m_texture_width,
+                  (height - 0.5f) / m_texture_height},
         glm::ivec2(m_face->glyph->bitmap.width, m_face->glyph->bitmap.rows),
         glm::ivec2(m_face->glyph->bitmap_left, m_face->glyph->bitmap_top),
         static_cast<GLuint>(m_face->glyph->advance.x)};
@@ -51,7 +51,7 @@ void Font::load_character(char8_t c) {
 void Font::setup_font_character() {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     m_text_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
-    m_text_texture->tex_image_3d(TextureFormat::RED, TextureFormat::RED,
+    m_text_texture->tex_image_3d(TextureFormat::R8, TextureFormat::RED,
                                  GL_UNSIGNED_BYTE, nullptr, m_texture_width,
                                  m_texture_height, MAX_CHARACTER);
 
@@ -59,7 +59,7 @@ void Font::setup_font_character() {
         load_character(c);
     }
     m_text_texture->set_linear();
-    m_text_texture->set_repeat(false, true, true);
+    m_text_texture->set_clamp_to_edge(false, true, true);
 }
 
 std::vector<Vertex2D> Font::vertices(const std::string& text) {
