@@ -193,8 +193,7 @@ void Renderer::render_image(const Image& image) {
     glm::mat4 model_matrix =
         glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
         glm::scale(glm::mat4(1.0f),
-                   glm::vec3(image.width() * image.scale(),
-                             image.height() * image.scale(), 1.0f));
+                   glm::vec3(image.width(), image.height(), 1.0f));
     shader.set_loc("model_matrix", model_matrix);
     shader.set_loc("proj_matrix", m_ui_proj_matrix);
 
