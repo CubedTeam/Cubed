@@ -24,6 +24,11 @@ public:
 
     const TextStyle& text_style() const;
 
+    float width() const override;
+    float height() const override;
+    float offset_x() const;
+    float offset_y() const;
+
 protected:
     virtual void on_update(float dt) override;
     virtual void on_render(Renderer& renderer) override;
@@ -31,7 +36,10 @@ protected:
 private:
     TextStyle m_text;
     UIVertexData m_data;
-    bool m_dirty = false;
+    float m_width = 0.0f;
+    float m_height = 0.0f;
+    float m_offset_x = 0.0f;
+    float m_offset_y = 0.0f;
     void update_vertices();
 };
 } // namespace Cubed

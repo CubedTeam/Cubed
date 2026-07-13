@@ -62,10 +62,15 @@ void Font::setup_font_character() {
     m_text_texture->set_clamp_to_edge(false, true, true);
 }
 
-std::vector<Vertex2D> Font::vertices(const std::string& text) {
+TextMesh Font::vertices(const std::string& text) {
     static Font font;
 
     std::vector<Vertex2D> vertices;
+
+    float min_x = std::numeric_limits<float>::max();
+    float min_y = std::numeric_limits<float>::max();
+    float max_x = std::numeric_limits<float>::lowest();
+    float max_y = std::numeric_limits<float>::lowest();
 
     float pen_x = 0.0f;
     float pen_y = 0.0f;
@@ -85,6 +90,12 @@ std::vector<Vertex2D> Font::vertices(const std::string& text) {
         float w = ch.size.x;
         float h = ch.size.y;
 
+        min_x = std::min(min_x, xpos);
+        min_y = std::min(min_y, ypos);
+
+        max_x = std::max(max_x, xpos + w);
+        max_y = std::max(max_y, ypos + h);
+
         vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
                               static_cast<float>(c));
         vertices.emplace_back(xpos, ypos, ch.uv_min.x, ch.uv_min.y,
@@ -101,8 +112,13 @@ std::vector<Vertex2D> Font::vertices(const std::string& text) {
 
         pen_x += (ch.advance >> 6);
     }
+    // Top-left anchor point
+    for (auto& v : vertices) {
+        v.x -= min_x;
+        v.y -= min_y;
+    }
 
-    return vertices;
+    return {std::move(vertices), max_x - min_x, max_y - min_y, 0, 0};
 }
 
 const Texture* Font::text_texture() { return m_text_texture.get(); }

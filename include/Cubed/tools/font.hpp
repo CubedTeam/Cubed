@@ -22,6 +22,16 @@ struct Character {
     GLuint advance;
 };
 
+struct TextMesh {
+    std::vector<Vertex2D> vertices;
+
+    float width;
+    float height;
+
+    float min_x;
+    float min_y;
+};
+
 class Shader;
 
 class Font {
@@ -29,7 +39,7 @@ public:
     Font();
     ~Font();
 
-    static std::vector<Vertex2D> vertices(const std::string& text);
+    static TextMesh vertices(const std::string& text);
     static const Texture* text_texture();
     static const std::string& font_path();
 

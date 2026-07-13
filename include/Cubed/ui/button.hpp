@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Cubed/ui/image.hpp"
+#include "Cubed/ui/label.hpp"
 #include "Cubed/ui/widget.hpp"
 
 #include <functional>
@@ -47,8 +49,8 @@ public:
 
 private:
     std::function<void()> m_clicked;
-    std::unique_ptr<Widget> m_background;
-    std::unique_ptr<Widget> m_foreground;
+    std::unique_ptr<Image> m_background;
+    std::unique_ptr<Label> m_foreground;
     bool m_hovered = false;
     glm::vec2 m_min_pos;
     glm::vec2 m_max_pos;
