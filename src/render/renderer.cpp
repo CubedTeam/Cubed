@@ -135,7 +135,7 @@ void Renderer::init_quad() {
 void Renderer::init_text() {
     m_vao[4].bind();
 
-    DebugCollector::get().init_text();
+    DebugCollector::get().init(m_window_width, m_window_height);
 }
 void Renderer::begin_frame() {
     glDisable(GL_FRAMEBUFFER_SRGB);
@@ -167,7 +167,7 @@ void Renderer::render_lable(const Label& label) {
 
     Font::text_texture()->bind(0);
     auto& data = label.data();
-    auto& pos = label.pos();
+    auto pos = label.pos();
     auto& text_style = label.text_style();
     auto color = color_value(text_style.color);
     data.m_vao->bind();
@@ -189,7 +189,7 @@ void Renderer::render_image(const Image& image) {
     }
     const auto& shader = get_shader("image");
     shader.use();
-    auto& pos = image.pos();
+    auto pos = image.pos();
     glm::mat4 model_matrix =
         glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
         glm::scale(glm::mat4(1.0f),

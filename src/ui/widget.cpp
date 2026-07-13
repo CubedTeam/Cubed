@@ -1,7 +1,11 @@
 #include "Cubed/ui/widget.hpp"
 
+#include "Cubed/tools/log.hpp"
+
 namespace Cubed {
-Widget::Widget(const std::string& id) : m_id(id) {}
+Widget::Widget(const std::string& id, Widget* parent)
+    : m_parent(parent), m_id(id) {}
+Widget::Widget(Widget* parent) : m_parent(parent) {}
 void Widget::update(float dt) {
     on_update(dt);
 
@@ -21,20 +25,82 @@ void Widget::render(Renderer& renderer) {
 void Widget::on_update(float) {}
 void Widget::on_render(Renderer&) {}
 
-Widget& Widget::set_position(const glm::vec2& pos) {
-    return set_position(pos.x, pos.y);
+glm::vec2 Widget::compute_position() const {
+    glm::vec2 pos{0, 0};
+    float parent_w;
+    float parent_h;
+    if (!m_parent) {
+        if (m_window_height == 0 || m_window_width == 0) {
+            Logger::error("Window Size is 0 !");
+        }
+        parent_h = m_window_height;
+        parent_w = m_window_width;
+    } else {
+        parent_h = m_parent->height();
+        parent_w = m_parent->width();
+    }
+    const float W = width();
+    const float H = height();
+    switch (m_anchor) {
+    case Anchor::TOP_LEFT:
+        pos = {0, 0};
+        break;
+
+    case Anchor::TOP_CENTER:
+        pos = {(parent_w - W) / 2, 0};
+        break;
+
+    case Anchor::TOP_RIGHT:
+        pos = {parent_w - W, 0};
+        break;
+
+    case Anchor::CENTER_LEFT:
+        pos = {0, (parent_h - H) / 2};
+        break;
+
+    case Anchor::CENTER:
+        pos = {(parent_w - W) / 2, (parent_h - H) / 2};
+        break;
+
+    case Anchor::CENTER_RIGHT:
+        pos = {parent_w - W, (parent_h - H) / 2};
+        break;
+
+    case Anchor::BOTTOM_LEFT:
+        pos = {0, parent_h - H};
+        break;
+
+    case Anchor::BOTTOM_CENTER:
+        pos = {(parent_w - W) / 2, parent_h - H};
+        break;
+
+    case Anchor::BOTTOM_RIGHT:
+        pos = {parent_w - W, parent_h - H};
+        break;
+    }
+    if (m_parent) {
+        pos += m_parent->pos();
+    }
+    pos += m_offset;
+    return pos;
 }
 
-Widget& Widget::set_position(float x, float y) {
-    m_pos.x = x;
-    m_pos.y = y;
+Widget& Widget::set_anchor(Anchor anchor) {
+    m_anchor = anchor;
     return *this;
 }
+Widget& Widget::set_offset(glm::ivec2 offset) {
+    m_offset = offset;
+    return *this;
+}
+void Widget::set_window_size(int width, int height) {
+    m_window_height = height;
+    m_window_width = width;
+}
+float Widget::width() const { return m_window_width; }
+float Widget::height() const { return m_window_height; }
 
-float Widget::width() const { return 0.0f; }
-float Widget::height() const { return 0.0f; }
-
-const glm::vec2& Widget::pos() const { return m_pos; }
+glm::vec2 Widget::pos() const { return compute_position(); }
 const std::string& Widget::id() const { return m_id; }
 
 bool Widget::handle_key_event(const KeyEvent& e) {
@@ -63,6 +129,9 @@ bool Widget::handle_mouse_wheel_event(const MouseWheelEvent& e) {
     return false;
 }
 bool Widget::handle_window_resize_event(const WindowResizeEvent& e) {
+
+    set_window_size(e.width, e.height);
+
     for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
         if ((*it)->handle_window_resize_event(e)) {
             return true;

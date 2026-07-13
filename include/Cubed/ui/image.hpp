@@ -8,7 +8,7 @@ namespace Cubed {
 class TextureManager;
 class Image : public Widget {
 public:
-    Image();
+    Image(Widget* parent);
     void update(float dt) override;
     void render(Renderer& renderer) override;
 

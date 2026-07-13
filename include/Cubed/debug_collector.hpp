@@ -13,8 +13,9 @@ public:
     DebugCollector();
 
     void report(const std::string& name, std::string_view content);
-    void init_text();
+    void init(int width, int height);
     Widget& get_widget();
+    bool handle_event(const Event& e);
 
 private:
     Widget m_widget;

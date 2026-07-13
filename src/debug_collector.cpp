@@ -5,16 +5,18 @@
 
 namespace Cubed {
 
-DebugCollector::DebugCollector() {}
+DebugCollector::DebugCollector() : m_widget(nullptr) {}
 
 DebugCollector& DebugCollector::get() {
     static DebugCollector instance;
     return instance;
 }
 
-void DebugCollector::init_text() {
+void DebugCollector::init(int width, int height) {
+    constexpr int SPACE = 50;
     // version_text
-    auto& version_text = m_widget.add_child<Label>("version");
+    m_widget.set_window_size(width, height);
+    auto& version_text = m_widget.add_child<Label>("version", &m_widget);
     std::string version{"Version: " CUBED_VERSION};
 #ifdef DEBUG_MODE
     version.append("-debug");
@@ -24,37 +26,48 @@ void DebugCollector::init_text() {
     version_text.set_color(Color::WHITE)
         .set_text(version)
         .set_scale(0.8f)
-        .set_position(0.0f, 100.0f);
+        .set_anchor(Anchor::TOP_LEFT);
+    version_text.set_offset({0, SPACE});
     m_component.try_emplace(version_text.id(), &version_text);
 
     // fps
-    auto& fps_text = m_widget.add_child<Label>("fps");
-    fps_text.set_text("FPS: 0").set_position(0.0f, 50.0f);
+    auto& fps_text = m_widget.add_child<Label>("fps", &version_text);
+    fps_text.set_text("FPS: 0")
+        .set_scale(0.8f)
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(fps_text.id(), &fps_text);
 
     // player_pos
-    auto& player_pos_text = m_widget.add_child<Label>("player_pos");
+    auto& player_pos_text = m_widget.add_child<Label>("player_pos", &fps_text);
     player_pos_text.set_text("x: 0.00 y: 0.00 z: 0.00")
         .set_scale(0.8f)
-        .set_position(0.0f, 150.0f);
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(player_pos_text.id(), &player_pos_text);
 
     // rendered_chunk
-    auto& rendered_chunk_text = m_widget.add_child<Label>("rendered_chunk");
+    auto& rendered_chunk_text =
+        m_widget.add_child<Label>("rendered_chunk", &player_pos_text);
     rendered_chunk_text.set_text("Rendered Chunk: 0")
         .set_scale(0.8f)
-        .set_position(0.0f, 200.0f);
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(rendered_chunk_text.id(), &rendered_chunk_text);
 
     // rss
-    auto& rss_text = m_widget.add_child<Label>("rss");
-    rss_text.set_text("RSS: 0mb").set_scale(0.8f).set_position(0.0f, 300.0f);
+    auto& rss_text = m_widget.add_child<Label>("rss", &rendered_chunk_text);
+    rss_text.set_text("RSS: 0mb")
+        .set_scale(0.8f)
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
+
     m_component.try_emplace(rss_text.id(), &rss_text);
 
     // os
     std::string os;
-    auto& os_text = m_widget.add_child<Label>("os");
-    os_text.set_scale(0.8f).set_position(0.0f, 250.0f);
+    auto& os_text = m_widget.add_child<Label>("os", &rss_text);
+    os_text.set_scale(0.8f).set_anchor(Anchor::TOP_LEFT).set_offset({0, SPACE});
     if (Tools::get_os_version(os)) {
         os_text.set_text("OS: " + os);
         Logger::info("System: {}", os);
@@ -64,44 +77,89 @@ void DebugCollector::init_text() {
     m_component.try_emplace(os_text.id(), &os_text);
 
     // cpu
-    auto& cpu_text = m_widget.add_child<Label>("cpu");
+    auto& cpu_text = m_widget.add_child<Label>("cpu", &os_text);
     cpu_text.set_text("CPU: " + Tools::get_cpu_info())
-        .set_scale(0.7f)
-        .set_position(0.0f, 350.0f);
+        .set_scale(0.8f)
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(cpu_text.id(), &cpu_text);
 
     // gpu
-    auto& gpu_text = m_widget.add_child<Label>("gpu");
+    auto& gpu_text = m_widget.add_child<Label>("gpu", &cpu_text);
     gpu_text
         .set_text(std::string{"GPU: "} +
                   reinterpret_cast<const char*>(glGetString(GL_RENDERER)))
         .set_scale(0.7f)
-        .set_position(0.0f, 400.0f);
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(gpu_text.id(), &gpu_text);
 
     // opengl_version
-    auto& opengl_version_text = m_widget.add_child<Label>("opengl_version");
+    auto& opengl_version_text =
+        m_widget.add_child<Label>("opengl_version", &gpu_text);
     opengl_version_text
         .set_text("OpenGL: " + std::to_string(GLVersion.major) + "." +
                   std::to_string(GLVersion.minor))
         .set_scale(0.7f)
-        .set_position(0.0f, 450.0f);
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(opengl_version_text.id(), &opengl_version_text);
 
     // biome
-    auto& biome_text = m_widget.add_child<Label>("biome");
-    biome_text.set_text("Biome: ").set_scale(0.8f).set_position(0.0f, 500.0f);
+    auto& biome_text = m_widget.add_child<Label>("biome", &opengl_version_text);
+    biome_text.set_text("Biome: ")
+        .set_scale(0.8f)
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(biome_text.id(), &biome_text);
 
     // speed
-    auto& speed_text = m_widget.add_child<Label>("speed");
+    auto& speed_text = m_widget.add_child<Label>("speed", &biome_text);
     speed_text.set_text("Speed: 0 m/s")
         .set_scale(0.8f)
-        .set_position(0.0f, 550.0f);
+        .set_anchor(Anchor::TOP_LEFT)
+        .set_offset({0, SPACE});
     m_component.try_emplace(speed_text.id(), &speed_text);
 }
 
 Widget& DebugCollector::get_widget() { return m_widget; }
+
+bool DebugCollector::handle_event(const Event& e) {
+    return std::visit(
+        Overloaded{[this](const MouseMoveEvent& e) {
+                       if (m_widget.handle_mouse_move_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const MouseButtonEvent& e) {
+                       if (m_widget.handle_mouse_button_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const MouseWheelEvent& e) {
+                       if (m_widget.handle_mouse_wheel_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const KeyEvent& e) {
+                       if (m_widget.handle_key_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const TextInputEvent&) { return false; },
+                   [this](const WindowResizeEvent& e) {
+                       m_widget.handle_window_resize_event(e);
+                       return false;
+                   },
+                   [](const FrameBufferResizeEvent&) { return false; }
+
+        },
+        e);
+}
 
 void DebugCollector::report(const std::string& name, std::string_view content) {
     auto t = m_component.find(name);

@@ -12,23 +12,21 @@ MainMenuUIManager::~MainMenuUIManager() {}
 
 void MainMenuUIManager::init() {
 
-    auto start_game_button = std::make_unique<Button>();
+    auto start_game_button = std::make_unique<Button>(nullptr);
+
     auto& back = start_game_button->set_background<Image>();
     back.set_image("texture/ui/button001.png",
                    m_scene.scene_manager().app().texture_manager());
     auto& fore = start_game_button->set_foreground<Label>();
     fore.set_text("Start Game");
     fore.set_scale(0.6f);
-
+    start_game_button->set_window_size(
+        m_scene.scene_manager().app().renderer().window_width(),
+        m_scene.scene_manager().app().renderer().window_height());
     start_game_button->set_clicked(
         [this]() { m_scene.scene_manager().request_push(SceneType::WORLD); });
     start_game_button->set_scale(3.0f);
-    start_game_button->set_position(
-        m_scene.scene_manager().app().renderer().window_width() / 2.0f -
-            back.width() / 2.0f,
-        m_scene.scene_manager().app().renderer().window_height() / 2.0f -
-            back.height() / 2.0f);
-
+    start_game_button->set_anchor(Anchor::CENTER);
     m_widgets.try_emplace("start game", std::move(start_game_button));
 }
 
@@ -100,14 +98,6 @@ bool MainMenuUIManager::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 bool MainMenuUIManager::handle_window_resize_event(const WindowResizeEvent& e) {
-    auto it = m_widgets.find("start game");
-    if (it != m_widgets.end()) {
-        auto* start_game = dynamic_cast<Button*>(it->second.get());
-        if (start_game) {
-            start_game->set_position(e.width / 2 - start_game->width() / 2,
-                                     e.height / 2 - start_game->height() / 2);
-        }
-    }
     for (auto& w : m_widgets) {
         if (w.second->handle_window_resize_event(e)) {
             return true;

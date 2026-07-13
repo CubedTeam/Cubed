@@ -1,7 +1,7 @@
 #include "Cubed/ui/button.hpp"
 
 namespace Cubed {
-Button::Button() {}
+Button::Button(Widget* parent) : Widget(parent) {}
 
 void Button::update(float dt) {
     if (m_background) {
@@ -22,13 +22,13 @@ void Button::render(Renderer& renderer) {
 }
 
 bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
+    auto pos = m_background->pos();
 
-    if (e.xpos >= m_min_pos.x && e.xpos <= m_max_pos.x) {
-        if (e.ypos >= m_min_pos.y && e.ypos <= m_max_pos.y) {
-            m_hovered = true;
+    if (e.xpos >= pos.x && e.xpos <= pos.x + width() && e.ypos >= pos.y &&
+        e.ypos <= pos.y + height()) {
+        m_hovered = true;
 
-            return true;
-        }
+        return true;
     }
     m_hovered = false;
 
@@ -45,26 +45,24 @@ bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 
-Widget& Button::set_position(const glm::vec2& pos) {
-    m_pos = pos;
-    m_background->set_position(pos);
-    m_foreground->set_position(pos.x, pos.y + m_foreground->height() / 2.0f);
-    m_min_pos = pos;
-
-    m_max_pos.x = m_min_pos.x + width();
-    m_max_pos.y = m_min_pos.y + height();
-
-    return *this;
-}
-Widget& Button::set_position(float x, float y) {
-    return set_position(glm::vec2{x, y});
-}
 Button& Button::set_scale(float scale) {
     m_background->set_scale(scale);
-    m_max_pos.x = m_min_pos.x + width();
-    m_max_pos.y = m_min_pos.y + height();
     return *this;
 }
+void Button::set_window_size(int width, int height) {
+    m_background->set_window_size(width, height);
+}
+Widget& Button::set_anchor(Anchor anchor) {
+    m_background->set_anchor(anchor);
+
+    return *this;
+}
+Widget& Button::set_offset(glm::ivec2 offset) {
+    m_background->set_offset(offset);
+
+    return *this;
+}
+glm::vec2 Button::pos() const { return m_background->pos(); }
 
 float Button::scale() const { return m_background->scale(); }
 

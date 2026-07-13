@@ -4,7 +4,7 @@
 #include "Cubed/texture_manager.hpp"
 
 namespace Cubed {
-Image::Image() {}
+Image::Image(Widget* parent) : Widget(parent) {}
 void Image::update(float dt) { (void)dt; }
 void Image::render(Renderer& renderer) { renderer.render_image(*this); }
 

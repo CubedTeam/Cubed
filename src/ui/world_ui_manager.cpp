@@ -11,16 +11,15 @@ WorldUIManager::WorldUIManager(WorldScene& scene) : m_scene(scene) {}
 WorldUIManager::~WorldUIManager() {}
 
 void WorldUIManager::init() {
-    auto crosshair = std::make_unique<Image>();
+    auto crosshair = std::make_unique<Image>(nullptr);
 
     crosshair->set_image("texture/ui/0.png",
                          m_scene.scene_manager().app().texture_manager());
     auto& renderer = m_scene.scene_manager().app().renderer();
-
-    crosshair->set_scale(3.0f).set_position(
-        renderer.window_width() / 2 - crosshair->width() / 2,
-        renderer.window_height() / 2 - crosshair->height() / 2);
-
+    crosshair->set_window_size(renderer.window_width(),
+                               renderer.window_height());
+    crosshair->set_anchor(Anchor::CENTER);
+    crosshair->set_scale(3.0f);
     m_widgets.try_emplace("crosshair", std::move(crosshair));
 }
 void WorldUIManager::update(float dt) {
@@ -93,15 +92,6 @@ bool WorldUIManager::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 bool WorldUIManager::handle_window_resize_event(const WindowResizeEvent& e) {
-    auto it = m_widgets.find("crosshair");
-    if (it != m_widgets.end()) {
-        auto* crosshair = dynamic_cast<Image*>(it->second.get());
-        if (crosshair) {
-            crosshair->set_position(e.width / 2.0f - crosshair->width() / 2.0f,
-                                    e.height / 2.0f -
-                                        crosshair->height() / 2.0f);
-        }
-    }
     for (auto& w : m_widgets) {
         if (w.second->handle_window_resize_event(e)) {
             return true;
