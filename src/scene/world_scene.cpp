@@ -72,11 +72,14 @@ void WorldScene::on_enter() {
     m_scene_manager.app().window().set_camera(&m_camera);
     m_dev_panel.init();
     m_ui_manager.init();
+
+    m_scene_manager.app().window().set_game_running(true);
 }
 void WorldScene::on_leave() {
     m_client_world.request_exit();
 
     m_scene_manager.app().window().set_camera(nullptr);
+    m_scene_manager.app().window().set_game_running(false);
 }
 
 Camera& WorldScene::camera() { return m_camera; }

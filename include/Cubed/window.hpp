@@ -30,9 +30,12 @@ public:
     void set_camera(Camera* camera);
     Camera* camera();
 
+    void set_game_running(bool running);
+
 private:
     bool m_mouse_enable = false;
     bool m_imgui_init = false;
+    bool m_game_running = false;
     GLFWwindow* m_window;
     int m_window_width;
     int m_window_height;

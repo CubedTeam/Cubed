@@ -77,7 +77,7 @@ void App::init(int argc, char** argv) {
         m_server.start_server(m_argument.port);
     }
 
-    m_scene_manager.request_push(SceneType::WORLD);
+    m_scene_manager.request_push(SceneType::MAIN_MENU);
 
     {
         int w, h;

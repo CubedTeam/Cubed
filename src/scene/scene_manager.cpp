@@ -1,5 +1,6 @@
 #include "Cubed/scene/scene_manager.hpp"
 
+#include "Cubed/scene/main_menu_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
 
 namespace Cubed {
@@ -8,11 +9,10 @@ SceneManager::~SceneManager() {}
 
 void SceneManager::update(float dt) {
     m_pending_delete_scene.clear();
-
+    process_operation();
     if (!m_scenes.empty()) {
         m_scenes.top()->update(dt);
     }
-    process_operation();
 }
 void SceneManager::render(Renderer& renderer) {
     if (m_scenes.empty()) {
@@ -87,7 +87,7 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
     case SceneType::WORLD:
         return std::make_unique<WorldScene>(*this);
     case SceneType::MAIN_MENU:
-        return nullptr;
+        return std::make_unique<MainMenuScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");

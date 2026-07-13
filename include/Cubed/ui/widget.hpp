@@ -1,10 +1,12 @@
 #pragma once
+#include "Cubed/input/event.hpp"
 #include "glm/ext/vector_float2.hpp"
 
 #include <memory>
 #include <vector>
 namespace Cubed {
 class Renderer;
+
 class Widget {
 
 public:
@@ -17,8 +19,16 @@ public:
     virtual Widget& set_position(const glm::vec2& pos);
     virtual Widget& set_position(float x, float y);
     virtual Widget& set_scale(float scale);
+    virtual float width() const;
+    virtual float height() const;
     virtual const glm::vec2& pos() const;
     virtual float scale() const;
+
+    virtual bool handle_key_event(const KeyEvent& e);
+    virtual bool handle_mouse_button_event(const MouseButtonEvent& e);
+    virtual bool handle_mouse_wheel_event(const MouseWheelEvent& e);
+    virtual bool handle_window_resize_event(const WindowResizeEvent& e);
+    virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
 
     template <typename T, typename... Args> T& add_child(Args&&... args) {
         auto widget = std::make_unique<T>(std::forward<Args>(args)...);

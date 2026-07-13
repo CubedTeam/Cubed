@@ -129,8 +129,10 @@ void Window::init() {
     } else {
         glfwSwapInterval(0);
     }
+    if (m_game_running) {
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
 
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (glfwRawMouseMotionSupported()) {
         glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     } else {
@@ -206,6 +208,9 @@ void Window::toggle_fullscreen() {
 }
 
 void Window::toggle_mouse_able() {
+    if (!m_game_running) {
+        m_mouse_enable = true;
+    }
     // auto& io = ImGui::GetIO();
     if (m_mouse_enable) {
         // io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
@@ -227,6 +232,11 @@ void Window::toggle_mouse_able() {
 }
 void Window::set_camera(Camera* camera) { m_camera = camera; }
 Camera* Window::camera() { return m_camera; }
+void Window::set_game_running(bool running) {
+    m_game_running = running;
+    m_mouse_enable = running;
+    toggle_mouse_able();
+}
 void Window::imgui_init() {
     float dpi_scale_x, dpi_scale_y;
     glfwGetWindowContentScale(m_window, &dpi_scale_x, &dpi_scale_y);

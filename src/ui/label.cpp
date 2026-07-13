@@ -4,7 +4,7 @@
 #include "Cubed/tools/font.hpp"
 namespace Cubed {
 Label::Label(const std::string& id) : Widget(id) {}
-
+Label::Label() {}
 Label& Label::set_text(std::string_view text) {
     m_text.text = text;
     m_dirty = true;

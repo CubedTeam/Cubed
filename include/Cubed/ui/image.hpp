@@ -13,8 +13,8 @@ public:
     void render(Renderer& renderer) override;
 
     Image& set_image(const std::string& path, TextureManager& texture_manager);
-    float width() const;
-    float height() const;
+    float width() const override;
+    float height() const override;
     const Texture* texture() const;
 
 private:

@@ -12,6 +12,7 @@ public:
     Label& operator=(Label&&) = delete;
 
     Label(const std::string& id);
+    Label();
     virtual ~Label() = default;
 
     Label& set_text(std::string_view text);

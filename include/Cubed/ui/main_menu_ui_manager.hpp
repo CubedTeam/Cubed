@@ -3,27 +3,28 @@
 #include "Cubed/input/event.hpp"
 #include "Cubed/ui/widget.hpp"
 
-#include <string>
+#include <memory>
 #include <unordered_map>
 namespace Cubed {
-class WorldScene;
-class WorldUIManager {
+class Renderer;
+class MainMenuScene;
+class MainMenuUIManager {
 public:
-    WorldUIManager(const WorldUIManager&) = delete;
-    WorldUIManager(WorldUIManager&&) = delete;
-    WorldUIManager& operator=(const WorldUIManager&) = delete;
-    WorldUIManager& operator=(WorldUIManager&&) = delete;
-
-    WorldUIManager(WorldScene& scene);
-    ~WorldUIManager();
+    MainMenuUIManager(MainMenuScene& m_scene);
+    MainMenuUIManager(const MainMenuUIManager&) = delete;
+    MainMenuUIManager(MainMenuUIManager&&) = delete;
+    MainMenuUIManager& operator=(const MainMenuUIManager&) = delete;
+    MainMenuUIManager& operator=(MainMenuUIManager&&) = delete;
+    ~MainMenuUIManager();
 
     void init();
-    void update(float dt);
     void render(Renderer& renderer);
+    void update(float dt);
+
     bool handle_event(const Event& e);
 
 private:
-    WorldScene& m_scene;
+    MainMenuScene& m_scene;
     std::unordered_map<std::string, std::unique_ptr<Widget>> m_widgets;
     bool handle_mouse_move_event(const MouseMoveEvent& e);
     bool handle_mouse_button_event(const MouseButtonEvent& e);
