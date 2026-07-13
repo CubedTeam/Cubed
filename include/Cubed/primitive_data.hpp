@@ -188,13 +188,14 @@ constexpr float CUBE_VER[24] = {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
 constexpr int OUTLINE_CUBE_INDICES[24] = {0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6,
                                           6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7};
 
-constexpr float SQUARE_VERTICES[6][2] = {
-    {-0.5f, -0.5f}, // bottom left
-    {-0.5f, 0.5f},  // top left
-    {0.5f, 0.5f},   // top right
-    {0.5f, 0.5f},   // top right
-    {0.5f, -0.5f},  // bottom right
-    {-0.5f, -0.5f}  // bottom left
+constexpr float SQUARE_VERTICES_TOP_LEFT[6][2] = {
+    {0.0f, 0.0f}, // top left
+    {0.0f, 1.0f}, // bottom left
+    {1.0f, 1.0f}, // bottom right
+
+    {1.0f, 1.0f}, // bottom right
+    {1.0f, 0.0f}, // top right
+    {0.0f, 0.0f}  // top left
 };
 
 constexpr float SQUARE_TEXTURE_POS[6][2] = {

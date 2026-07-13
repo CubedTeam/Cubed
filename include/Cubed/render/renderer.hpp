@@ -107,10 +107,10 @@ private:
     ShaderManager m_shaders;
 
     /*
-    0 - quad vao
+    0 - quad vao (center)
     1 - sky vao
     2 - outline vao
-    3 - ui vao
+    3 - ui vao (top-left)
     4 - text vao
     */
     std::vector<VertexArray> m_vao;

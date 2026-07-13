@@ -22,7 +22,7 @@ public:
 
     Widget& set_position(const glm::vec2& pos) override;
     Widget& set_position(float x, float y) override;
-
+    Widget& set_scale(float scale) override;
     float width() const override;
     float height() const override;
 

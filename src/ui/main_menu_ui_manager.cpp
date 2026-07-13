@@ -16,7 +16,6 @@ void MainMenuUIManager::init() {
     auto& back = start_game_button->set_background<Image>();
     back.set_image("texture/ui/button001.png",
                    m_scene.scene_manager().app().texture_manager());
-    back.set_scale(3.0f);
     auto& fore = start_game_button->set_foreground<Label>();
     fore.set_text("Start Game");
 
@@ -27,7 +26,7 @@ void MainMenuUIManager::init() {
             back.width() / 2.0f,
         m_scene.scene_manager().app().renderer().window_width() / 2.0f +
             back.height() / 2.0f);
-
+    start_game_button->set_scale(3.0f);
     m_widgets.try_emplace("start game", std::move(start_game_button));
 }
 void MainMenuUIManager::update(float dt) {

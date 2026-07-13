@@ -93,8 +93,9 @@ void Renderer::init(bool debug_on) {
     m_vao[3].bind();
 
     for (int i = 0; i < 6; i++) {
-        Vertex2D vex{SQUARE_VERTICES[i][0], SQUARE_VERTICES[i][1],
-                     SQUARE_TEXTURE_POS[i][0], SQUARE_TEXTURE_POS[i][1], 0};
+        Vertex2D vex{SQUARE_VERTICES_TOP_LEFT[i][0],
+                     SQUARE_VERTICES_TOP_LEFT[i][1], SQUARE_TEXTURE_POS[i][0],
+                     SQUARE_TEXTURE_POS[i][1], 0};
         m_ui.emplace_back(vex);
     }
     m_ui_vbo->buffer_data(m_ui.data(), m_ui.size() * sizeof(Vertex2D));

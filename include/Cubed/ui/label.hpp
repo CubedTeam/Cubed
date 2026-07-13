@@ -2,7 +2,6 @@
 #include "Cubed/ui/text.hpp"
 #include "Cubed/ui/ui_vertex_data.hpp"
 #include "Cubed/ui/widget.hpp"
-#include "glm/ext/vector_float2.hpp"
 namespace Cubed {
 class Label : public Widget {
 public:
@@ -30,8 +29,6 @@ protected:
     virtual void on_render(Renderer& renderer) override;
 
 private:
-    float m_scale = 1.0f;
-    glm::vec2 m_pos{0.0f, 0.0f};
     TextStyle m_text;
     UIVertexData m_data;
     bool m_dirty = false;

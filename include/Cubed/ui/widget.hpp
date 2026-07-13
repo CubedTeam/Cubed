@@ -42,6 +42,7 @@ protected:
     virtual void on_render(Renderer& renderer);
     std::string m_id;
     float m_scale = 1.0f;
+    // Center is at the top-left corner, position is at the top-left corner
     glm::vec2 m_pos{0.0f, 0.0f};
 
 private:
