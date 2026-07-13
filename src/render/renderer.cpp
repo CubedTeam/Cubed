@@ -157,6 +157,26 @@ void Renderer::render_world(ClientWorld& world) {
     m_world_renderer.render(world);
 }
 
+void Renderer::render_rect(const Rect& rect) {
+
+    auto& shader = get_shader("rect");
+    shader.use();
+    shader.set_loc("proj_matrix", m_ui_proj_matrix);
+    auto pos = rect.pos();
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
+        glm::scale(glm::mat4(1.0f),
+                   glm::vec3(rect.width(), rect.height(), 1.0f));
+    shader.set_loc("model_matrix", model_matrix);
+
+    auto color = color_value(rect.color());
+    shader.set_loc("inColor",
+                   glm::vec4(color.x, color.y, color.z, rect.alpha()));
+
+    m_vao[3].bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
 void Renderer::render_lable(const Label& label) {
 
     const auto& shader = get_shader("text");

@@ -40,6 +40,9 @@ public:
         } else if constexpr (is_same_v<dT, glm::mat4>) {
             glUniformMatrix4fv(loc(location), 1, GL_FALSE,
                                glm::value_ptr(value));
+
+        } else if constexpr (is_same_v<dT, glm::vec4>) {
+            glUniform4fv(loc(location), 1, glm::value_ptr(value));
         } else {
             static_assert(always_false<dT>::value, "Unknown Type");
         }

@@ -33,6 +33,8 @@ void ShaderManager::init() {
                     "shaders/player_f_shader.glsl");
     register_shader("player_depth", "shaders/depth_player_shader.glsl",
                     "shaders/depth_player_fragment_shader.glsl");
+    register_shader("rect", "shaders/rect_v_shader.glsl",
+                    "shaders/rect_f_shader.glsl");
 }
 
 void ShaderManager::register_shader(const std::string& name,

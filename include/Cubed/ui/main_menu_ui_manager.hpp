@@ -25,7 +25,8 @@ public:
 
 private:
     MainMenuScene& m_scene;
-    std::unordered_map<std::string, std::unique_ptr<Widget>> m_widgets;
+    std::unique_ptr<Widget> m_root_widget;
+    std::unordered_map<std::string, Widget*> m_widgets;
     bool handle_mouse_move_event(const MouseMoveEvent& e);
     bool handle_mouse_button_event(const MouseButtonEvent& e);
     bool handle_window_resize_event(const WindowResizeEvent& e);

@@ -103,8 +103,18 @@ void Widget::set_window_size(int width, int height) {
     m_window_height = height;
     m_window_width = width;
 }
-float Widget::width() const { return m_window_width; }
-float Widget::height() const { return m_window_height; }
+float Widget::width() const {
+    if (m_parent) {
+        return m_parent->width();
+    }
+    return m_window_width;
+}
+float Widget::height() const {
+    if (m_parent) {
+        return m_parent->height();
+    }
+    return m_window_height;
+}
 
 glm::vec2 Widget::pos() const { return compute_position(); }
 const std::string& Widget::id() const { return m_id; }

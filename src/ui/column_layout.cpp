@@ -9,6 +9,19 @@ void ColumnLayout::update(float dt) {
     layout();
 }
 
+float ColumnLayout::width() const {
+    if (m_parent) {
+        return m_parent->width();
+    }
+    return m_window_width;
+}
+float ColumnLayout::height() const {
+    if (m_parent) {
+        return m_parent->height();
+    }
+    return m_window_height;
+}
+
 void ColumnLayout::set_spacing(int spacing) { m_spacing = spacing; }
 
 void ColumnLayout::layout() {

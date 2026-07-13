@@ -21,8 +21,8 @@ public:
     virtual Widget& set_offset(glm::ivec2 offset);
     virtual void set_window_size(int width, int height);
     // Returns the final display size
-    virtual float width() const;
-    virtual float height() const;
+    virtual float width() const = 0;
+    virtual float height() const = 0;
     virtual glm::vec2 pos() const;
 
     virtual bool handle_key_event(const KeyEvent& e);

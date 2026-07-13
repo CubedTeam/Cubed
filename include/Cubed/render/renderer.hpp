@@ -12,6 +12,7 @@
 #include "Cubed/shader.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/label.hpp"
+#include "Cubed/ui/rect.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -33,7 +34,7 @@ public:
     void render_world(ClientWorld& world);
     void render_lable(const Label& label);
     void render_image(const Image& image);
-
+    void render_rect(const Rect& rect);
     void begin_render_ui();
     void end_render_ui();
 

@@ -12,13 +12,21 @@ MainMenuUIManager::MainMenuUIManager(MainMenuScene& scene) : m_scene(scene) {}
 MainMenuUIManager::~MainMenuUIManager() {}
 
 void MainMenuUIManager::init() {
+
+    auto rect = std::make_unique<Rect>(nullptr);
+
+    rect->set_fill(true);
+    rect->set_anchor(Anchor::TOP_LEFT);
+    rect->set_color(Color::WHITE);
     auto& renderer = m_scene.scene_manager().app().renderer();
-    auto layout = std::make_unique<ColumnLayout>(nullptr);
-    layout->set_spacing(20);
-    layout->set_anchor(Anchor::CENTER);
-    layout->set_window_size(renderer.window_width(), renderer.window_height());
+    rect->set_window_size(renderer.window_width(), renderer.window_height());
+
+    auto& layout = rect->add_child<ColumnLayout>();
+    layout.set_spacing(20);
+    layout.set_anchor(Anchor::CENTER);
+    layout.set_window_size(renderer.window_width(), renderer.window_height());
     {
-        auto& start_game_button = layout->add_child<Button>();
+        auto& start_game_button = layout.add_child<Button>();
 
         auto& back = start_game_button.set_background<Image>();
         back.set_image("texture/ui/button001.png",
@@ -32,7 +40,7 @@ void MainMenuUIManager::init() {
         start_game_button.set_scale(4.0f);
     }
 
-    auto& exit_game = layout->add_child<Button>();
+    auto& exit_game = layout.add_child<Button>();
 
     {
         auto& back = exit_game.set_background<Image>();
@@ -45,22 +53,17 @@ void MainMenuUIManager::init() {
             m_scene.scene_manager().app().window().should_close_window();
         });
     }
-
-    m_widgets.try_emplace("main menu layout", std::move(layout));
+    m_widgets.try_emplace("background", rect.get());
+    m_widgets.try_emplace("main menu layout", &layout);
+    m_root_widget = std::move(rect);
 }
 
-void MainMenuUIManager::update(float dt) {
-    for (auto& w : m_widgets) {
-        w.second->update(dt);
-    }
-}
+void MainMenuUIManager::update(float dt) { m_root_widget->update(dt); }
 
 void MainMenuUIManager::render(Renderer& renderer) {
     renderer.begin_render_ui();
 
-    for (auto& widget : m_widgets) {
-        widget.second->render(renderer);
-    }
+    m_root_widget->render(renderer);
 
     renderer.end_render_ui();
 }
@@ -101,42 +104,39 @@ bool MainMenuUIManager::handle_event(const Event& e) {
         e);
 }
 bool MainMenuUIManager::handle_mouse_move_event(const MouseMoveEvent& e) {
-    for (auto& w : m_widgets) {
-        if (w.second->handle_mouse_move_event(e)) {
-            return true;
-        }
+    if (m_root_widget->handle_mouse_move_event(e)) {
+        return true;
     }
     return false;
 }
 bool MainMenuUIManager::handle_mouse_button_event(const MouseButtonEvent& e) {
-    for (auto& w : m_widgets) {
-        if (w.second->handle_mouse_button_event(e)) {
-            return true;
-        }
+
+    if (m_root_widget->handle_mouse_button_event(e)) {
+        return true;
     }
+
     return false;
 }
 bool MainMenuUIManager::handle_window_resize_event(const WindowResizeEvent& e) {
-    for (auto& w : m_widgets) {
-        if (w.second->handle_window_resize_event(e)) {
-            return true;
-        }
+
+    if (m_root_widget->handle_window_resize_event(e)) {
+        return true;
     }
+
     return false;
 }
 bool MainMenuUIManager::handle_mouse_wheel_event(const MouseWheelEvent& e) {
-    for (auto& w : m_widgets) {
-        if (w.second->handle_mouse_wheel_event(e)) {
-            return true;
-        }
+
+    if (m_root_widget->handle_mouse_wheel_event(e)) {
+        return true;
     }
+
     return false;
 }
 bool MainMenuUIManager::handle_key_event(const KeyEvent& e) {
-    for (auto& w : m_widgets) {
-        if (w.second->handle_key_event(e)) {
-            return true;
-        }
+
+    if (m_root_widget->handle_key_event(e)) {
+        return true;
     }
 
     return false;
