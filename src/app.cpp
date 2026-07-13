@@ -677,12 +677,21 @@ void App::run() {
 // static Gait player_gait = Gait::WALK;
 void App::update() {
     glfwPollEvents();
+    {
+        int w, h;
+        glfwGetFramebufferSize(m_window.get_glfw_window(), &w, &h);
 
-    int w, h;
-    glfwGetFramebufferSize(m_window.get_glfw_window(), &w, &h);
+        if (w != m_renderer.frame_width() || h != m_renderer.frame_height()) {
+            dispatch_event(FrameBufferResizeEvent{w, h});
+        }
+    }
+    {
+        int w, h;
+        glfwGetWindowSize(m_window.get_glfw_window(), &w, &h);
 
-    if (w != m_renderer.frame_width() || h != m_renderer.frame_height()) {
-        dispatch_event(FrameBufferResizeEvent{w, h});
+        if (w != m_renderer.window_width() || h != m_renderer.window_height()) {
+            dispatch_event(WindowResizeEvent{w, h});
+        }
     }
 
     current_time = glfwGetTime();

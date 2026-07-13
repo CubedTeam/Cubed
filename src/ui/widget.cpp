@@ -31,16 +31,10 @@ Widget& Widget::set_position(float x, float y) {
     return *this;
 }
 
-Widget& Widget::set_scale(float scale) {
-    m_scale = scale;
-    return *this;
-}
-
 float Widget::width() const { return 0.0f; }
 float Widget::height() const { return 0.0f; }
 
 const glm::vec2& Widget::pos() const { return m_pos; }
-float Widget::scale() const { return m_scale; }
 const std::string& Widget::id() const { return m_id; }
 
 bool Widget::handle_key_event(const KeyEvent& e) {

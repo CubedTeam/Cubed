@@ -15,7 +15,10 @@ Label& Label::set_color(Color color) {
     m_text.color = color;
     return *this;
 }
-
+Label& Label::set_scale(float scale) {
+    m_scale = scale;
+    return *this;
+}
 void Label::update(float dt) { on_update(dt); }
 
 void Label::on_update(float dt) { (void)dt; }
@@ -43,5 +46,5 @@ float Label::width() const { return m_real_width * m_scale; }
 float Label::height() const { return m_real_height * m_scale; }
 float Label::offset_x() const { return m_offset_x; }
 float Label::offset_y() const { return m_offset_y; }
-
+float Label::scale() const { return m_scale; }
 } // namespace Cubed

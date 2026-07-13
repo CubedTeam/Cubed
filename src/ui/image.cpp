@@ -13,7 +13,11 @@ Image& Image::set_image(const std::string& path,
     m_texture = texture_manager.get_image_texture(path);
     return *this;
 }
-
+Image& Image::set_scale(float scale) {
+    m_scale = scale;
+    return *this;
+}
+float Image::scale() const { return m_scale; }
 float Image::height() const {
     if (!m_texture) {
         Logger::error("Image id {} not set image!", m_id);

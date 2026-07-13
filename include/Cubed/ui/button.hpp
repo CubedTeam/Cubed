@@ -24,10 +24,10 @@ public:
 
     Widget& set_position(const glm::vec2& pos) override;
     Widget& set_position(float x, float y) override;
-    Widget& set_scale(float scale) override;
+    Button& set_scale(float scale);
     float width() const override;
     float height() const override;
-
+    float scale() const;
     template <typename F> Button& set_clicked(F&& f) {
         m_clicked = std::forward<F>(f);
         return *this;

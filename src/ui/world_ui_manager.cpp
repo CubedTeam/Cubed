@@ -16,10 +16,11 @@ void WorldUIManager::init() {
     crosshair->set_image("texture/ui/0.png",
                          m_scene.scene_manager().app().texture_manager());
     auto& renderer = m_scene.scene_manager().app().renderer();
-    crosshair
-        ->set_position(renderer.window_width() / 2 + crosshair->width() / 2,
-                       renderer.window_height() / 2 + crosshair->height() / 2)
-        .set_scale(3.0f);
+
+    crosshair->set_scale(3.0f).set_position(
+        renderer.window_width() / 2 - crosshair->width() / 2,
+        renderer.window_height() / 2 - crosshair->height() / 2);
+
     m_widgets.try_emplace("crosshair", std::move(crosshair));
 }
 void WorldUIManager::update(float dt) {
@@ -96,8 +97,9 @@ bool WorldUIManager::handle_window_resize_event(const WindowResizeEvent& e) {
     if (it != m_widgets.end()) {
         auto* crosshair = dynamic_cast<Image*>(it->second.get());
         if (crosshair) {
-            crosshair->set_position(e.width / 2 + crosshair->width() / 2,
-                                    e.height / 2 + crosshair->height() / 2);
+            crosshair->set_position(e.width / 2.0f - crosshair->width() / 2.0f,
+                                    e.height / 2.0f -
+                                        crosshair->height() / 2.0f);
         }
     }
     for (auto& w : m_widgets) {

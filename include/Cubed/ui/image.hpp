@@ -16,6 +16,8 @@ public:
     float width() const override;
     float height() const override;
     const Texture* texture() const;
+    Image& set_scale(float scale);
+    float scale() const;
 
 private:
     const Texture* m_texture = nullptr;

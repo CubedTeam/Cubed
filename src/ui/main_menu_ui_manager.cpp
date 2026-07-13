@@ -22,19 +22,22 @@ void MainMenuUIManager::init() {
 
     start_game_button->set_clicked(
         [this]() { m_scene.scene_manager().request_push(SceneType::WORLD); });
-    start_game_button->set_position(
-        m_scene.scene_manager().app().renderer().window_width() / 2.0f +
-            back.width() / 2.0f,
-        m_scene.scene_manager().app().renderer().window_width() / 2.0f +
-            back.height() / 2.0f);
     start_game_button->set_scale(3.0f);
+    start_game_button->set_position(
+        m_scene.scene_manager().app().renderer().window_width() / 2.0f -
+            back.width() / 2.0f,
+        m_scene.scene_manager().app().renderer().window_height() / 2.0f -
+            back.height() / 2.0f);
+
     m_widgets.try_emplace("start game", std::move(start_game_button));
 }
+
 void MainMenuUIManager::update(float dt) {
     for (auto& w : m_widgets) {
         w.second->update(dt);
     }
 }
+
 void MainMenuUIManager::render(Renderer& renderer) {
     renderer.begin_render_ui();
 
@@ -101,8 +104,8 @@ bool MainMenuUIManager::handle_window_resize_event(const WindowResizeEvent& e) {
     if (it != m_widgets.end()) {
         auto* start_game = dynamic_cast<Button*>(it->second.get());
         if (start_game) {
-            start_game->set_position(e.width / 2 + start_game->width() / 2,
-                                     e.height / 2 + start_game->height() / 2);
+            start_game->set_position(e.width / 2 - start_game->width() / 2,
+                                     e.height / 2 - start_game->height() / 2);
         }
     }
     for (auto& w : m_widgets) {

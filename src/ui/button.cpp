@@ -59,14 +59,16 @@ Widget& Button::set_position(const glm::vec2& pos) {
 Widget& Button::set_position(float x, float y) {
     return set_position(glm::vec2{x, y});
 }
-Widget& Button::set_scale(float scale) {
-    m_scale = scale;
+Button& Button::set_scale(float scale) {
     m_background->set_scale(scale);
     m_max_pos.x = m_min_pos.x + width();
     m_max_pos.y = m_min_pos.y + height();
     return *this;
 }
-float Button::width() const { return m_background->width() * m_scale; }
-float Button::height() const { return m_background->height() * m_scale; }
+
+float Button::scale() const { return m_background->scale(); }
+
+float Button::width() const { return m_background->width(); }
+float Button::height() const { return m_background->height(); }
 
 } // namespace Cubed

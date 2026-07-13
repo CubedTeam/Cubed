@@ -23,8 +23,8 @@ void DebugCollector::init_text() {
 #endif
     version_text.set_color(Color::WHITE)
         .set_text(version)
-        .set_position(0.0f, 100.0f)
-        .set_scale(0.8f);
+        .set_scale(0.8f)
+        .set_position(0.0f, 100.0f);
     m_component.try_emplace(version_text.id(), &version_text);
 
     // fps
@@ -35,8 +35,8 @@ void DebugCollector::init_text() {
     // player_pos
     auto& player_pos_text = m_widget.add_child<Label>("player_pos");
     player_pos_text.set_text("x: 0.00 y: 0.00 z: 0.00")
-        .set_position(0.0f, 150.0f)
-        .set_scale(0.8f);
+        .set_scale(0.8f)
+        .set_position(0.0f, 150.0f);
     m_component.try_emplace(player_pos_text.id(), &player_pos_text);
 
     // rendered_chunk

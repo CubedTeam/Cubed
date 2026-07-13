@@ -17,6 +17,7 @@ public:
     Label& set_text(std::string_view text);
 
     Label& set_color(Color color);
+    Label& set_scale(float scale);
     virtual void update(float dt) override;
     virtual void render(Renderer& renderer) override;
 
@@ -28,6 +29,7 @@ public:
     float height() const override;
     float offset_x() const;
     float offset_y() const;
+    float scale() const;
 
 protected:
     virtual void on_update(float dt) override;
@@ -40,6 +42,7 @@ private:
     float m_real_height = 0.0f;
     float m_offset_x = 0.0f;
     float m_offset_y = 0.0f;
+    float m_scale = 1.0f;
     void update_vertices();
 };
 } // namespace Cubed

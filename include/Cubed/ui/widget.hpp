@@ -18,11 +18,10 @@ public:
     virtual const std::string& id() const;
     virtual Widget& set_position(const glm::vec2& pos);
     virtual Widget& set_position(float x, float y);
-    virtual Widget& set_scale(float scale);
+    // Returns the final display size
     virtual float width() const;
     virtual float height() const;
     virtual const glm::vec2& pos() const;
-    virtual float scale() const;
 
     virtual bool handle_key_event(const KeyEvent& e);
     virtual bool handle_mouse_button_event(const MouseButtonEvent& e);
@@ -41,7 +40,6 @@ protected:
     virtual void on_update(float dt);
     virtual void on_render(Renderer& renderer);
     std::string m_id;
-    float m_scale = 1.0f;
     // Center is at the top-left corner, position is at the top-left corner
     glm::vec2 m_pos{0.0f, 0.0f};
 
