@@ -16,7 +16,7 @@ void ColumnLayout::layout() {
     int y = 0;
     for (auto& child : children) {
         child->set_offset({0, y});
-        child->set_anchor(Anchor::TOP_LEFT);
+        child->set_anchor(m_anchor);
         y += child->height() + m_spacing;
     }
 }

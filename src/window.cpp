@@ -73,8 +73,10 @@ bool Window::handle_key_event(const KeyEvent& e) {
         return true;
     }
     if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
-        glfwSetWindowShouldClose(m_window, GLFW_TRUE);
-        return true;
+        if (!m_game_running) {
+            glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+            return true;
+        }
     }
     if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
         toggle_mouse_able();
@@ -237,6 +239,9 @@ void Window::set_game_running(bool running) {
     m_mouse_enable = running;
     toggle_mouse_able();
 }
+
+void Window::should_close_window() { glfwSetWindowShouldClose(m_window, true); }
+
 void Window::imgui_init() {
     float dpi_scale_x, dpi_scale_y;
     glfwGetWindowContentScale(m_window, &dpi_scale_x, &dpi_scale_y);

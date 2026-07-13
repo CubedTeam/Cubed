@@ -32,6 +32,8 @@ public:
 
     void set_game_running(bool running);
 
+    void should_close_window();
+
 private:
     bool m_mouse_enable = false;
     bool m_imgui_init = false;
