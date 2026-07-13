@@ -36,8 +36,8 @@ protected:
 private:
     TextStyle m_text;
     UIVertexData m_data;
-    float m_width = 0.0f;
-    float m_height = 0.0f;
+    float m_real_width = 0.0f;
+    float m_real_height = 0.0f;
     float m_offset_x = 0.0f;
     float m_offset_y = 0.0f;
     void update_vertices();

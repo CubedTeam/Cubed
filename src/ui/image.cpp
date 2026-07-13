@@ -19,7 +19,7 @@ float Image::height() const {
         Logger::error("Image id {} not set image!", m_id);
         return 0.0f;
     }
-    return m_texture->height();
+    return m_texture->height() * m_scale;
 }
 
 float Image::width() const {
@@ -27,7 +27,7 @@ float Image::width() const {
         Logger::error("Image id {} not set image!", m_id);
         return 0.0f;
     }
-    return m_texture->width();
+    return m_texture->width() * m_scale;
 }
 
 const Texture* Image::texture() const { return m_texture; }

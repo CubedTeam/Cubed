@@ -30,8 +30,8 @@ void Label::update_vertices() {
 
     m_offset_x = textmesh.min_x;
     m_offset_y = textmesh.min_y;
-    m_width = textmesh.width;
-    m_height = textmesh.height;
+    m_real_width = textmesh.width;
+    m_real_height = textmesh.height;
 
     m_data.update_sum();
     m_data.upload();
@@ -39,8 +39,8 @@ void Label::update_vertices() {
 
 const UIVertexData& Label::data() const { return m_data; }
 const TextStyle& Label::text_style() const { return m_text; }
-float Label::width() const { return m_width; }
-float Label::height() const { return m_height; }
+float Label::width() const { return m_real_width * m_scale; }
+float Label::height() const { return m_real_height * m_scale; }
 float Label::offset_x() const { return m_offset_x; }
 float Label::offset_y() const { return m_offset_y; }
 

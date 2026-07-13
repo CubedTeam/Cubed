@@ -48,7 +48,7 @@ bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
 Widget& Button::set_position(const glm::vec2& pos) {
     m_pos = pos;
     m_background->set_position(pos);
-    m_foreground->set_position(pos);
+    m_foreground->set_position(pos.x, pos.y + m_foreground->height() / 2.0f);
     m_min_pos = pos;
 
     m_max_pos.x = m_min_pos.x + width();

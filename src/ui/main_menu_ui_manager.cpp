@@ -18,6 +18,7 @@ void MainMenuUIManager::init() {
                    m_scene.scene_manager().app().texture_manager());
     auto& fore = start_game_button->set_foreground<Label>();
     fore.set_text("Start Game");
+    fore.set_scale(0.6f);
 
     start_game_button->set_clicked(
         [this]() { m_scene.scene_manager().request_push(SceneType::WORLD); });
