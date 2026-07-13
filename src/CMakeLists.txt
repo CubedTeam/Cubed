@@ -67,4 +67,5 @@ target_sources(${PROJECT_NAME}
         ui/world_ui_manager.cpp
         ui/main_menu_ui_manager.cpp
         scene/main_menu_scene.cpp
+        ui/column_layout.cpp
 )

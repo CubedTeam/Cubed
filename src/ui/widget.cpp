@@ -25,6 +25,12 @@ void Widget::render(Renderer& renderer) {
 void Widget::on_update(float) {}
 void Widget::on_render(Renderer&) {}
 
+std::vector<std::unique_ptr<Widget>>& Widget::children() { return m_children; }
+
+const std::vector<std::unique_ptr<Widget>>& Widget::children() const {
+    return m_children;
+}
+
 glm::vec2 Widget::compute_position() const {
     glm::vec2 pos{0, 0};
     float parent_w;

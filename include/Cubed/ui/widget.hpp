@@ -32,16 +32,13 @@ public:
     virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
 
     template <typename T, typename... Args> T& add_child(Args&&... args) {
-        auto widget = std::make_unique<T>(std::forward<Args>(args)...);
+        auto widget = std::make_unique<T>(std::forward<Args>(args)..., this);
         T& ref = *widget;
         m_children.emplace_back(std::move(widget));
         return ref;
     };
 
 protected:
-    virtual void on_update(float dt);
-    virtual void on_render(Renderer& renderer);
-    virtual glm::vec2 compute_position() const;
     Widget* m_parent = nullptr;
     std::string m_id;
     float m_window_height = 0;
@@ -49,6 +46,14 @@ protected:
     // Center is at the top-left corner, position is at the top-left corner
     Anchor m_anchor = Anchor::TOP_LEFT;
     glm::ivec2 m_offset{0, 0};
+
+    std::vector<std::unique_ptr<Widget>>& children();
+
+    const std::vector<std::unique_ptr<Widget>>& children() const;
+
+    virtual void on_update(float dt);
+    virtual void on_render(Renderer& renderer);
+    virtual glm::vec2 compute_position() const;
 
 private:
     std::vector<std::unique_ptr<Widget>> m_children;

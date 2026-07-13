@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/widget.hpp"
 
@@ -18,7 +19,7 @@ public:
     bool handle_event(const Event& e);
 
 private:
-    Widget m_widget;
+    ColumnLayout m_widget;
     std::unordered_map<std::string, Label*> m_component;
 };
 

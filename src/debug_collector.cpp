@@ -13,61 +13,50 @@ DebugCollector& DebugCollector::get() {
 }
 
 void DebugCollector::init(int width, int height) {
-    constexpr int SPACE = 50;
-    // version_text
+    constexpr float SCALE = 0.6f;
+
     m_widget.set_window_size(width, height);
-    auto& version_text = m_widget.add_child<Label>("version", &m_widget);
+    m_widget.set_spacing(15);
+    m_widget.set_anchor(Anchor::TOP_LEFT);
+    m_widget.set_offset({0, 5});
+
+    // version_text
+    auto& version_text = m_widget.add_child<Label>("version");
     std::string version{"Version: " CUBED_VERSION};
+
 #ifdef DEBUG_MODE
     version.append("-debug");
 #else
     version.append("-release");
 #endif
-    version_text.set_color(Color::WHITE)
-        .set_text(version)
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT);
-    version_text.set_offset({0, SPACE});
+
+    version_text.set_color(Color::WHITE).set_text(version).set_scale(SCALE);
     m_component.try_emplace(version_text.id(), &version_text);
 
     // fps
-    auto& fps_text = m_widget.add_child<Label>("fps", &version_text);
-    fps_text.set_text("FPS: 0")
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+    auto& fps_text = m_widget.add_child<Label>("fps");
+    fps_text.set_text("FPS: 0").set_scale(SCALE);
     m_component.try_emplace(fps_text.id(), &fps_text);
 
     // player_pos
-    auto& player_pos_text = m_widget.add_child<Label>("player_pos", &fps_text);
-    player_pos_text.set_text("x: 0.00 y: 0.00 z: 0.00")
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+    auto& player_pos_text = m_widget.add_child<Label>("player_pos");
+    player_pos_text.set_text("x: 0.00 y: 0.00 z: 0.00").set_scale(SCALE);
     m_component.try_emplace(player_pos_text.id(), &player_pos_text);
 
     // rendered_chunk
-    auto& rendered_chunk_text =
-        m_widget.add_child<Label>("rendered_chunk", &player_pos_text);
-    rendered_chunk_text.set_text("Rendered Chunk: 0")
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+    auto& rendered_chunk_text = m_widget.add_child<Label>("rendered_chunk");
+    rendered_chunk_text.set_text("Rendered Chunk: 0").set_scale(SCALE);
     m_component.try_emplace(rendered_chunk_text.id(), &rendered_chunk_text);
 
     // rss
-    auto& rss_text = m_widget.add_child<Label>("rss", &rendered_chunk_text);
-    rss_text.set_text("RSS: 0mb")
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
-
+    auto& rss_text = m_widget.add_child<Label>("rss");
+    rss_text.set_text("RSS: 0mb").set_scale(SCALE);
     m_component.try_emplace(rss_text.id(), &rss_text);
 
     // os
     std::string os;
-    auto& os_text = m_widget.add_child<Label>("os", &rss_text);
-    os_text.set_scale(0.8f).set_anchor(Anchor::TOP_LEFT).set_offset({0, SPACE});
+    auto& os_text = m_widget.add_child<Label>("os");
+    os_text.set_scale(SCALE);
     if (Tools::get_os_version(os)) {
         os_text.set_text("OS: " + os);
         Logger::info("System: {}", os);
@@ -77,48 +66,34 @@ void DebugCollector::init(int width, int height) {
     m_component.try_emplace(os_text.id(), &os_text);
 
     // cpu
-    auto& cpu_text = m_widget.add_child<Label>("cpu", &os_text);
-    cpu_text.set_text("CPU: " + Tools::get_cpu_info())
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+    auto& cpu_text = m_widget.add_child<Label>("cpu");
+    cpu_text.set_text("CPU: " + Tools::get_cpu_info()).set_scale(SCALE);
     m_component.try_emplace(cpu_text.id(), &cpu_text);
 
     // gpu
-    auto& gpu_text = m_widget.add_child<Label>("gpu", &cpu_text);
+    auto& gpu_text = m_widget.add_child<Label>("gpu");
     gpu_text
         .set_text(std::string{"GPU: "} +
                   reinterpret_cast<const char*>(glGetString(GL_RENDERER)))
-        .set_scale(0.7f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+        .set_scale(SCALE);
     m_component.try_emplace(gpu_text.id(), &gpu_text);
 
     // opengl_version
-    auto& opengl_version_text =
-        m_widget.add_child<Label>("opengl_version", &gpu_text);
+    auto& opengl_version_text = m_widget.add_child<Label>("opengl_version");
     opengl_version_text
         .set_text("OpenGL: " + std::to_string(GLVersion.major) + "." +
                   std::to_string(GLVersion.minor))
-        .set_scale(0.7f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+        .set_scale(SCALE);
     m_component.try_emplace(opengl_version_text.id(), &opengl_version_text);
 
     // biome
-    auto& biome_text = m_widget.add_child<Label>("biome", &opengl_version_text);
-    biome_text.set_text("Biome: ")
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+    auto& biome_text = m_widget.add_child<Label>("biome");
+    biome_text.set_text("Biome: ").set_scale(SCALE);
     m_component.try_emplace(biome_text.id(), &biome_text);
 
     // speed
-    auto& speed_text = m_widget.add_child<Label>("speed", &biome_text);
-    speed_text.set_text("Speed: 0 m/s")
-        .set_scale(0.8f)
-        .set_anchor(Anchor::TOP_LEFT)
-        .set_offset({0, SPACE});
+    auto& speed_text = m_widget.add_child<Label>("speed");
+    speed_text.set_text("Speed: 0 m/s").set_scale(SCALE);
     m_component.try_emplace(speed_text.id(), &speed_text);
 }
 
