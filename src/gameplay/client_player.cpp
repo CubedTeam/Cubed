@@ -4,7 +4,6 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
-#include "Cubed/scene/world_scene.hpp"
 
 namespace {} // namespace
 
@@ -583,11 +582,6 @@ bool ClientPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
 }
 
 bool ClientPlayer::handle_key_event(const KeyEvent& e) {
-
-    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
-        m_world.world_scene().set_pause(true);
-        return true;
-    }
 
     if (update_player_move_state(e.key, e.action)) {
         return true;

@@ -56,25 +56,41 @@ void WorldScene::render(Renderer& renderer) {
     }
 }
 bool WorldScene::handle_event(const Event& e) {
-    if (m_paused) {
 
-        if (m_pasue_menu.handle_event(e)) {
+    return std::visit(
+        Overloaded{[this](const MouseMoveEvent& e) {
+                       if (handle_mouse_move_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const MouseButtonEvent& e) {
+                       if (handle_mouse_button_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const MouseWheelEvent& e) {
+                       if (handle_mouse_wheel_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const KeyEvent& e) {
+                       if (handle_key_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const TextInputEvent&) { return false; },
+                   [this](const WindowResizeEvent& e) {
+                       handle_window_resize_event(e);
+                       return false;
+                   },
+                   [](const FrameBufferResizeEvent&) { return false; }
 
-            return true;
-        }
-    } else {
-        if (m_ui_manager.handle_event(e)) {
-            return true;
-        }
-        if (m_camera.handle_event(e)) {
-            return true;
-        }
-        // world event needs to be processed last
-        if (m_client_world.handle_event(e)) {
-            return true;
-        }
-    }
-    return false;
+        },
+        e);
 }
 void WorldScene::on_enter() {
 
@@ -107,6 +123,109 @@ void WorldScene::on_leave() {
     if (!m_argument.is_client) {
         m_server.server_world().stop();
     }
+}
+
+bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
+    if (m_paused) {
+        if (m_pasue_menu.handle_event(e)) {
+            return true;
+        }
+    } else {
+        if (m_ui_manager.handle_event(e)) {
+            return true;
+        }
+        if (m_camera.handle_event(e)) {
+            return true;
+        }
+        // world event needs to be processed last
+        if (m_client_world.handle_event(e)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (m_paused) {
+        if (m_pasue_menu.handle_event(e)) {
+            return true;
+        }
+    } else {
+        if (m_ui_manager.handle_event(e)) {
+            return true;
+        }
+        if (m_camera.handle_event(e)) {
+            return true;
+        }
+        // world event needs to be processed last
+        if (m_client_world.handle_event(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+bool WorldScene::handle_window_resize_event(const WindowResizeEvent& e) {
+
+    if (m_pasue_menu.handle_event(e)) {
+        return true;
+    }
+    if (m_ui_manager.handle_event(e)) {
+        return true;
+    }
+    if (m_camera.handle_event(e)) {
+        return true;
+    }
+    // world event needs to be processed last
+    if (m_client_world.handle_event(e)) {
+        return true;
+    }
+
+    return false;
+}
+bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
+    if (m_paused) {
+        if (m_pasue_menu.handle_event(e)) {
+            return true;
+        }
+    } else {
+        if (m_ui_manager.handle_event(e)) {
+            return true;
+        }
+        if (m_camera.handle_event(e)) {
+            return true;
+        }
+        // world event needs to be processed last
+        if (m_client_world.handle_event(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+bool WorldScene::handle_key_event(const KeyEvent& e) {
+
+    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        bool pasued = pause();
+        pasued = !pasued;
+        set_pause(pasued);
+        return true;
+    }
+    if (m_paused) {
+        if (m_pasue_menu.handle_event(e)) {
+            return true;
+        }
+    } else {
+        if (m_ui_manager.handle_event(e)) {
+            return true;
+        }
+        if (m_camera.handle_event(e)) {
+            return true;
+        }
+        // world event needs to be processed last
+        if (m_client_world.handle_event(e)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 Camera& WorldScene::camera() { return m_camera; }

@@ -14,7 +14,5 @@ public:
 
 private:
     WorldScene& m_scene;
-
-    bool handle_key_event(const KeyEvent& e) override;
 };
 } // namespace Cubed

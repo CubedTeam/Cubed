@@ -30,12 +30,4 @@ void PauseMenuUIManager::init() {
     m_root_widget = std::move(rect);
 }
 
-bool PauseMenuUIManager::handle_key_event(const KeyEvent& e) {
-    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
-        m_scene.set_pause(false);
-        return true;
-    }
-    return UIManager::handle_key_event(e);
-}
-
 } // namespace Cubed

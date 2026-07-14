@@ -20,5 +20,20 @@ public:
     virtual bool handle_event(const Event& e) = 0;
     virtual void on_enter() {};
     virtual void on_leave() {};
+
+protected:
+    virtual bool handle_mouse_move_event(const MouseMoveEvent&) {
+        return false;
+    }
+    virtual bool handle_mouse_button_event(const MouseButtonEvent&) {
+        return false;
+    }
+    virtual bool handle_window_resize_event(const WindowResizeEvent&) {
+        return false;
+    }
+    virtual bool handle_mouse_wheel_event(const MouseWheelEvent&) {
+        return false;
+    }
+    virtual bool handle_key_event(const KeyEvent&) { return false; }
 };
 } // namespace Cubed

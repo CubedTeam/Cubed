@@ -33,6 +33,12 @@ public:
     void set_pause(bool pause);
 
 private:
+    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
+    bool handle_mouse_button_event(const MouseButtonEvent& e) override;
+    bool handle_window_resize_event(const WindowResizeEvent& e) override;
+    bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
+    bool handle_key_event(const KeyEvent& e) override;
+
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;
     Camera m_camera;
