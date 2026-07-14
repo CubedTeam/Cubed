@@ -22,7 +22,10 @@ float ColumnLayout::height() const {
     return m_window_height;
 }
 
-void ColumnLayout::set_spacing(int spacing) { m_spacing = spacing; }
+ColumnLayout& ColumnLayout::set_spacing(int spacing) {
+    m_spacing = spacing;
+    return *this;
+}
 
 void ColumnLayout::layout() {
     auto& children = Widget::children();

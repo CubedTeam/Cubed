@@ -6,6 +6,8 @@
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
+#include "version.hpp"
+
 namespace Cubed {
 
 MainMenuUIManager::MainMenuUIManager(MainMenuScene& scene) : m_scene(scene) {}
@@ -40,10 +42,22 @@ void MainMenuUIManager::init() {
         });
         start_game_button.set_scale(4.0f);
     }
-
-    auto& exit_game = layout.add_child<Button>();
-
     {
+        auto& button = layout.add_child<Button>();
+
+        auto& back = button.set_background<Image>();
+        back.set_image("texture/ui/button001.png",
+                       m_scene.scene_manager().app().texture_manager());
+        auto& fore = button.set_foreground<Label>();
+        fore.set_text("Credits");
+        fore.set_scale(0.6f);
+        button.set_clicked([this]() {
+            m_scene.scene_manager().request_push(SceneType::CREDITS);
+        });
+        button.set_scale(4.0f);
+    }
+    {
+        auto& exit_game = layout.add_child<Button>();
         auto& back = exit_game.set_background<Image>();
         back.set_image("texture/ui/button001.png",
                        m_scene.scene_manager().app().texture_manager());
@@ -56,6 +70,21 @@ void MainMenuUIManager::init() {
     }
     m_widgets.try_emplace("background", image.get());
     m_widgets.try_emplace("main menu layout", &layout);
+    {
+        auto& info_layout = image->add_child<ColumnLayout>();
+        info_layout.set_anchor(Anchor::BOTTOM_LEFT);
+        info_layout.set_spacing(10);
+        auto& version = info_layout.add_child<Label>();
+        version.set_scale(0.5f);
+        std::string version_str = "Cubed: " CUBED_VERSION;
+#ifdef DEBUG_MODE
+        version_str.append("-debug");
+#else
+        version_str.append("-release");
+#endif
+        version.set_text(version_str);
+    }
+
     m_root_widget = std::move(image);
 }
 

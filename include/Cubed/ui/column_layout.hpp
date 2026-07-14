@@ -15,7 +15,7 @@ public:
     float width() const override;
     float height() const override;
 
-    void set_spacing(int spacing);
+    ColumnLayout& set_spacing(int spacing);
     // No need for parent node pointer; do not modify children's anchors and
     // scale.
 

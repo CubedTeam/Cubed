@@ -1,5 +1,6 @@
 #include "Cubed/scene/scene_manager.hpp"
 
+#include "Cubed/scene/credits_scene.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
 
@@ -88,6 +89,8 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<WorldScene>(*this);
     case SceneType::MAIN_MENU:
         return std::make_unique<MainMenuScene>(*this);
+    case SceneType::CREDITS:
+        return std::make_unique<CreditsScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");
