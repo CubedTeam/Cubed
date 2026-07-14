@@ -73,4 +73,5 @@ target_sources(${PROJECT_NAME}
         ui/pause_menu_ui_manager.cpp
         scene/credits_scene.cpp
         ui/credits_ui.cpp
+        ui/slider.cpp
 )

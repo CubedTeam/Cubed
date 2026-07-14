@@ -30,11 +30,7 @@ bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
     }
     m_hovered = false;
 
-    if (Widget::handle_mouse_move_event(e)) {
-        return true;
-    }
-
-    return false;
+    return Widget::handle_mouse_move_event(e);
 }
 bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
@@ -45,11 +41,7 @@ bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
         }
     }
 
-    if (Widget::handle_mouse_button_event(e)) {
-        return true;
-    }
-
-    return false;
+    return Widget::handle_mouse_button_event(e);
 }
 
 Button& Button::set_scale(float scale) {
