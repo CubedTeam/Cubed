@@ -11,6 +11,7 @@ public:
     void init() override;
 
 private:
+    bool handle_key_event(const KeyEvent& e) override;
     CreditsScene& m_scene;
 };
 } // namespace Cubed

@@ -74,4 +74,12 @@ void CreditsUI::init() {
     m_root_widget = std::move(image);
 }
 
+bool CreditsUI::handle_key_event(const KeyEvent& e) {
+    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        m_scene.scene_manager().request_pop();
+        return true;
+    }
+    return UIManager::handle_key_event(e);
+}
+
 } // namespace Cubed

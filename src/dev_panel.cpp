@@ -80,47 +80,12 @@ void DevPanel::render() {
         show_player_tab_item();
         show_items_tab_item();
         show_shader_tab_item();
-        show_about_table_bar();
 
         ImGui::EndTabBar();
     }
     ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-void DevPanel::show_about_table_bar() {
-    if (ImGui::BeginTabItem("about")) {
-        ImGui::Text(
-            "Cubed - A cube game like Minecraft, using C++ and OpenGL.");
-        ImGui::Text("Author: zhenyan121");
-        ImGui::Separator();
-        ImGui::Text("Libraries Used");
-        ImGui::Text("glad");
-        ImGui::Text("GLFW");
-        ImGui::Text("SOIL2");
-        ImGui::Text("GLM");
-        ImGui::Text("FreeType");
-        ImGui::Text("toml++");
-        ImGui::Text("Dear ImGui");
-        ImGui::Text("Tbb");
-        ImGui::Text("Asio");
-        ImGui::Text("protobuf");
-        ImGui::Text("zstd");
-        ImGui::Text("OpenAl Soft");
-        ImGui::Text("dr_libs");
-        ImGui::Separator();
-        ImGui::Text("Music");
-        ImGui::Text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), "
-                    "CC BY 4.0.");
-        ImGui::Separator();
-        ImGui::Text("Special Thanks");
-        ImGui::Text("TANGERIME");
-        ImGui::Text("SkyOnPole");
-        ImGui::Text("free_w_cloud");
-        ImGui::Text("Last but not least, thanks to you");
-        ImGui::EndTabItem();
-    }
 }
 
 void DevPanel::show_biome_table_bar() {

@@ -53,7 +53,6 @@ private:
     int m_samples_idx = 1;
     int m_threads = 1;
     int m_chunk_style = 0;
-    void show_about_table_bar();
     void show_biome_table_bar();
     void show_time_table_bar();
     void show_cave_table_bar();
