@@ -23,12 +23,10 @@ App::App()
 App::~App() {}
 void App::cursor_position_callback(GLFWwindow* window, double xpos,
                                    double ypos) {
-    ImGuiIO& io = ImGui::GetIO();
-
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
 
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
+    if (app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
         return;
     }
