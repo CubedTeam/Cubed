@@ -69,4 +69,5 @@ target_sources(${PROJECT_NAME}
         scene/main_menu_scene.cpp
         ui/column_layout.cpp
         ui/rect.cpp
+        ui/ui_manager.cpp
 )
