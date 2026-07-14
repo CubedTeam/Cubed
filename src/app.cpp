@@ -65,17 +65,12 @@ void App::init(int argc, char** argv) {
     glfwSetCharCallback(m_window.get_glfw_window(), char_callback);
 
     m_audio.init();
-
-    ChunkGenerator::init();
     BlockManager::init();
     m_renderer.init(m_argument.debug_on);
     Logger::info("Renderer Init Success");
     // MapTable::init_map();
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");
-    if (!m_argument.is_client) {
-        m_server.start_server(m_argument.port);
-    }
 
     m_scene_manager.request_push(SceneType::MAIN_MENU);
 
@@ -669,10 +664,6 @@ void App::run() {
         update();
         render();
     }
-
-    if (!m_argument.is_client) {
-        m_server.server_world().stop();
-    }
 }
 // static Gait player_gait = Gait::WALK;
 void App::update() {
@@ -733,6 +724,10 @@ void App::dispatch_event(const Event& e) {
         return;
     }
 
+    if (DebugCollector::get().handle_event(e)) {
+        return;
+    }
+
     if (m_scene_manager.handle_event(e)) {
         return;
     }
@@ -764,7 +759,7 @@ float App::get_fps() { return fps; }
 Renderer& App::renderer() { return m_renderer; }
 TextureManager& App::texture_manager() { return m_texture_manager; }
 Window& App::window() { return m_window; }
-ServerWorld& App::server_world() { return m_server.server_world(); }
+
 Config& App::config() { return m_game_config; }
 const Argument& App::argument() const { return m_argument; }
 AudioEngine& App::audio() { return m_audio; }

@@ -9,8 +9,6 @@ class TextureManager;
 class Image : public Widget {
 public:
     Image(Widget* parent);
-    void update(float dt) override;
-    void render(Renderer& renderer) override;
 
     Image& set_image(const std::string& path, TextureManager& texture_manager);
     float width() const override;
@@ -20,6 +18,8 @@ public:
     float scale() const;
 
 private:
+    void on_render(Renderer& renderer) override;
+
     const Texture* m_texture = nullptr;
     glm::vec2 m_pos{0.0f, 0.0f};
     float m_scale = 1.0f;

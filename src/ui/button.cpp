@@ -3,7 +3,7 @@
 namespace Cubed {
 Button::Button(Widget* parent) : Widget(parent) {}
 
-void Button::update(float dt) {
+void Button::on_update(float dt) {
     if (m_background) {
         m_background->update(dt);
     }
@@ -12,7 +12,7 @@ void Button::update(float dt) {
     }
 }
 
-void Button::render(Renderer& renderer) {
+void Button::on_render(Renderer& renderer) {
     if (m_background) {
         m_background->render(renderer);
     }
@@ -32,6 +32,10 @@ bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
     }
     m_hovered = false;
 
+    if (Widget::handle_mouse_move_event(e)) {
+        return true;
+    }
+
     return false;
 }
 bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
@@ -42,6 +46,11 @@ bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
             return true;
         }
     }
+
+    if (Widget::handle_mouse_button_event(e)) {
+        return true;
+    }
+
     return false;
 }
 
@@ -51,6 +60,7 @@ Button& Button::set_scale(float scale) {
 }
 void Button::set_window_size(int width, int height) {
     m_background->set_window_size(width, height);
+    Widget::set_window_size(width, height);
 }
 Widget& Button::set_anchor(Anchor anchor) {
     m_background->set_anchor(anchor);

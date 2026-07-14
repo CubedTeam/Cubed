@@ -5,8 +5,8 @@
 
 namespace Cubed {
 Image::Image(Widget* parent) : Widget(parent) {}
-void Image::update(float) {}
-void Image::render(Renderer& renderer) { renderer.render_image(*this); }
+
+void Image::on_render(Renderer& renderer) { renderer.render_image(*this); }
 
 Image& Image::set_image(const std::string& path,
                         TextureManager& texture_manager) {

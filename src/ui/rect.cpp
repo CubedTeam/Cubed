@@ -8,7 +8,8 @@ Rect::Rect(Widget* parent)
       };
 
 Rect::~Rect() {}
-void Rect::update(float dt) {
+
+void Rect::on_update(float) {
     if (m_fill) {
         if (!m_parent) {
             m_width = m_window_width;
@@ -18,12 +19,8 @@ void Rect::update(float dt) {
             m_height = m_parent->height();
         }
     }
-    Widget::update(dt);
 }
-void Rect::render(Renderer& renderer) {
-    renderer.render_rect(*this);
-    Widget::render(renderer);
-}
+void Rect::on_render(Renderer& renderer) { renderer.render_rect(*this); }
 
 float Rect::width() const { return m_width * m_scale; }
 float Rect::height() const { return m_height * m_scale; }

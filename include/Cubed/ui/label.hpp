@@ -18,8 +18,6 @@ public:
 
     Label& set_color(Color color);
     Label& set_scale(float scale);
-    virtual void update(float dt) override;
-    virtual void render(Renderer& renderer) override;
 
     const UIVertexData& data() const;
 

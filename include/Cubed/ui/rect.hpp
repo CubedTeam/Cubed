@@ -12,9 +12,6 @@ public:
     Rect(Widget* parent);
     ~Rect();
 
-    void update(float dt) override;
-    void render(Renderer& renderer) override;
-
     float width() const override;
     float height() const override;
     float alpha() const;
@@ -31,6 +28,9 @@ public:
     Color color() const;
 
 private:
+    void on_update(float dt) override;
+    void on_render(Renderer& renderer) override;
+
     Color m_color = Color::WHITE;
     float m_width = 0.0f;
     float m_height = 0.0f;

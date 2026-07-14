@@ -16,9 +16,6 @@ public:
     Button& operator=(const Button&) = delete;
     Button& operator=(Button&&) = delete;
 
-    void render(Renderer& renderer) override;
-    void update(float dt) override;
-
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     void set_window_size(int width, int height) override;
@@ -54,5 +51,8 @@ private:
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;
     bool m_hovered = false;
+
+    void on_render(Renderer& renderer) override;
+    void on_update(float dt) override;
 };
 } // namespace Cubed

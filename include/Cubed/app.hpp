@@ -1,7 +1,5 @@
 #pragma once
 #include "Cubed/audio/audio_engine.hpp"
-#include "Cubed/gameplay/network_server.hpp"
-#include "Cubed/gameplay/server_world.hpp"
 #define GLFW_INCLUDE_NONE
 #include "Cubed/argument.hpp"
 #include "Cubed/config.hpp"
@@ -40,7 +38,7 @@ public:
     Renderer& renderer();
     TextureManager& texture_manager();
     Window& window();
-    ServerWorld& server_world();
+
     Config& config();
     const Argument& argument() const;
     AudioEngine& audio();
@@ -49,7 +47,7 @@ private:
     Config m_game_config;
 
     TextureManager m_texture_manager;
-    NetworkServer m_server;
+
     AudioEngine m_audio;
 
     Renderer m_renderer;

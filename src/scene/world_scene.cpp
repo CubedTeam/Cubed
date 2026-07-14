@@ -61,6 +61,11 @@ bool WorldScene::handle_event(const Event& e) {
 }
 void WorldScene::on_enter() {
 
+    ChunkGenerator::init();
+
+    if (!m_argument.is_client) {
+        m_server.start_server(m_argument.port);
+    }
     m_client = std::make_shared<NetworkClient>(m_client_world);
 
     m_client->start(m_argument.ip, m_argument.port);
@@ -80,9 +85,14 @@ void WorldScene::on_leave() {
 
     m_scene_manager.app().window().set_camera(nullptr);
     m_scene_manager.app().window().set_game_running(false);
+
+    if (!m_argument.is_client) {
+        m_server.server_world().stop();
+    }
 }
 
 Camera& WorldScene::camera() { return m_camera; }
 SceneManager& WorldScene::scene_manager() { return m_scene_manager; }
 ClientWorld& WorldScene::client_world() { return m_client_world; }
+ServerWorld& WorldScene::server_world() { return m_server.server_world(); }
 } // namespace Cubed

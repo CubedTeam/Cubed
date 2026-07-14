@@ -19,11 +19,8 @@ Label& Label::set_scale(float scale) {
     m_scale = scale;
     return *this;
 }
-void Label::update(float dt) { on_update(dt); }
 
 void Label::on_update(float dt) { (void)dt; }
-
-void Label::render(Renderer& renderer) { on_render(renderer); }
 
 void Label::on_render(Renderer& renderer) { renderer.render_lable(*this); }
 

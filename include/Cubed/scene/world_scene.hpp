@@ -3,6 +3,7 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/dev_panel.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/network_server.hpp"
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
@@ -26,11 +27,13 @@ public:
     Camera& camera();
     SceneManager& scene_manager();
     ClientWorld& client_world();
+    ServerWorld& server_world();
 
 private:
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;
     Camera m_camera;
+    NetworkServer m_server;
     std::shared_ptr<NetworkClient> m_client;
     ClientWorld m_client_world;
     WorldUIManager m_ui_manager;
