@@ -13,15 +13,16 @@ MainMenuUIManager::~MainMenuUIManager() {}
 
 void MainMenuUIManager::init() {
 
-    auto rect = std::make_unique<Rect>(nullptr);
+    auto image = std::make_unique<Image>(nullptr);
 
-    rect->set_fill(true);
-    rect->set_anchor(Anchor::TOP_LEFT);
-    rect->set_color(Color::WHITE);
+    image->set_fill(true);
+    image->set_anchor(Anchor::TOP_LEFT);
+    image->set_image("texture/ui/background.png",
+                     m_scene.scene_manager().app().texture_manager());
     auto& renderer = m_scene.scene_manager().app().renderer();
-    rect->set_window_size(renderer.window_width(), renderer.window_height());
+    image->set_window_size(renderer.window_width(), renderer.window_height());
 
-    auto& layout = rect->add_child<ColumnLayout>();
+    auto& layout = image->add_child<ColumnLayout>();
     layout.set_spacing(20);
     layout.set_anchor(Anchor::CENTER);
     layout.set_window_size(renderer.window_width(), renderer.window_height());
@@ -53,9 +54,9 @@ void MainMenuUIManager::init() {
             m_scene.scene_manager().app().window().should_close_window();
         });
     }
-    m_widgets.try_emplace("background", rect.get());
+    m_widgets.try_emplace("background", image.get());
     m_widgets.try_emplace("main menu layout", &layout);
-    m_root_widget = std::move(rect);
+    m_root_widget = std::move(image);
 }
 
 } // namespace Cubed

@@ -21,8 +21,17 @@ public:
     Image& set_scale(float scale);
     float scale() const;
 
+    Image& set_height(float height);
+    Image& set_width(float width);
+
+    Image& set_fill(bool fill);
+
 private:
     void on_render(Renderer& renderer) override;
+    void on_update(float dt) override;
+    float m_width = 0.0f;
+    float m_height = 0.0f;
+    bool m_fill = false;
 
     const Texture* m_texture = nullptr;
     glm::vec2 m_pos{0.0f, 0.0f};

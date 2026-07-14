@@ -46,8 +46,10 @@ private:
     std::shared_ptr<NetworkClient> m_client;
     ClientWorld m_client_world;
     bool m_paused = false;
+    bool m_show_hud = true;
+    bool m_show_dev_pannel = true;
     PauseMenuUIManager m_pasue_menu;
-    WorldUIManager m_ui_manager;
+    WorldUIManager m_hud_ui;
     const Argument& m_argument;
 };
 } // namespace Cubed
