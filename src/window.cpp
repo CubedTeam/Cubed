@@ -73,14 +73,18 @@ bool Window::handle_key_event(const KeyEvent& e) {
         return true;
     }
     if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
-        if (!m_game_running) {
-            glfwSetWindowShouldClose(m_window, GLFW_TRUE);
-            return true;
-        }
     }
     if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
-        toggle_mouse_able();
-        return true;
+        if (m_game_running) {
+            if (m_mouse_enable) {
+                disable_mouse();
+                set_imgui_enabled(false);
+            } else {
+                enable_mouse();
+                set_imgui_enabled(true);
+            }
+            return true;
+        }
     }
 
     return false;
@@ -94,9 +98,12 @@ bool Window::handle_window_resize_event(const WindowResizeEvent& e) {
 
 bool Window::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.key == MouseKey::LEFT_BUTTON && e.action == KeyAction::PRESS) {
-        if (is_mouse_enable()) {
-            toggle_mouse_able();
-            return true;
+        if (m_game_running) {
+            if (m_mouse_enable) {
+                disable_mouse();
+                set_imgui_enabled(false);
+                return true;
+            }
         }
     }
     return false;
@@ -209,38 +216,36 @@ void Window::toggle_fullscreen() {
     m_config.set("window.height", windowed_height);
 }
 
-void Window::toggle_mouse_able() {
-    if (!m_game_running) {
-        m_mouse_enable = true;
-    }
-    // auto& io = ImGui::GetIO();
-    if (m_mouse_enable) {
-        // io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-        // Logger::info("ImGuiConfigFlags_NoMouseCursorChange");
-        // ImGui::SetMouseCursor(ImGuiMouseCursor_None);
-        // glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        m_mouse_enable = false;
-    } else {
-        // io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
-        // Logger::info("Disable ImGuiConfigFlags_NoMouseCursorChange");
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        m_mouse_enable = true;
-    }
-
+void Window::enable_mouse() {
+    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    m_mouse_enable = true;
+}
+void Window::disable_mouse() {
+    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (m_camera) {
         m_camera->reset_camera();
     }
+    m_mouse_enable = false;
 }
+
 void Window::set_camera(Camera* camera) { m_camera = camera; }
 Camera* Window::camera() { return m_camera; }
 void Window::set_game_running(bool running) {
     m_game_running = running;
-    m_mouse_enable = running;
-    toggle_mouse_able();
+    if (running) {
+        disable_mouse();
+    } else {
+        enable_mouse();
+    }
+    set_imgui_enabled(false);
+    Logger::info("Window Set Game Running {}", m_game_running);
 }
 
 void Window::should_close_window() { glfwSetWindowShouldClose(m_window, true); }
+
+bool Window::is_enable_imgui() const { return m_imgui_enable; }
+
+void Window::set_imgui_enabled(bool enable) { m_imgui_enable = enable; }
 
 void Window::imgui_init() {
     float dpi_scale_x, dpi_scale_y;

@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/network_server.hpp"
 #include "Cubed/scene/scene.hpp"
+#include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
 class SceneManager;
@@ -28,6 +29,8 @@ public:
     SceneManager& scene_manager();
     ClientWorld& client_world();
     ServerWorld& server_world();
+    bool pause() const;
+    void set_pause(bool pause);
 
 private:
     SceneManager& m_scene_manager;
@@ -36,6 +39,8 @@ private:
     NetworkServer m_server;
     std::shared_ptr<NetworkClient> m_client;
     ClientWorld m_client_world;
+    bool m_paused = false;
+    PauseMenuUIManager m_pasue_menu;
     WorldUIManager m_ui_manager;
     const Argument& m_argument;
 };

@@ -28,14 +28,13 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos,
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
 
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
         return;
     }
-    if (!app->m_window.is_mouse_enable()) {
-        app->m_scene_manager.handle_event(
-            MouseMoveEvent{static_cast<float>(xpos), static_cast<float>(ypos)});
-    }
+
+    app->m_scene_manager.handle_event(
+        MouseMoveEvent{static_cast<float>(xpos), static_cast<float>(ypos)});
 }
 void App::init(int argc, char** argv) {
     handle_toml();
@@ -173,7 +172,7 @@ void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
     ASSERT_MSG(app, "nullptr");
     // ImGui_ImplGlfw_CursorEnterCallback(window,
     // !app->m_window.is_mouse_enable());
-    if (io.WantCaptureKeyboard && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureKeyboard && app->m_window.is_enable_imgui()) {
         if ((key == GLFW_KEY_LEFT_ALT) && action == GLFW_PRESS) {
             app->dispatch_event(KeyEvent{Key::LEFT_ALT, KeyAction::PRESS});
             return;
@@ -532,7 +531,7 @@ void App::mouse_button_callback(GLFWwindow* window, int button, int action,
     ImGuiIO& io = ImGui::GetIO();
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
         return;
     }
@@ -582,7 +581,7 @@ void App::window_focus_callback(GLFWwindow* window, int focused) {
     ImGuiIO& io = ImGui::GetIO();
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_WindowFocusCallback(window, focused);
         return;
     }
@@ -616,7 +615,7 @@ void App::mouse_scroll_callback(GLFWwindow* window, double xoffset,
 
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
         return;
     }
@@ -627,7 +626,7 @@ void App::cursor_enter_callback(GLFWwindow* window, int entered) {
     ImGuiIO& io = ImGui::GetIO();
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_CursorEnterCallback(window, entered);
         return;
     }
@@ -637,8 +636,9 @@ void App::char_callback(GLFWwindow* window, unsigned int c) {
     ImGuiIO& io = ImGui::GetIO();
     App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
     ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureKeyboard && app->m_window.is_mouse_enable()) {
+    if (io.WantCaptureKeyboard && app->m_window.is_enable_imgui()) {
         ImGui_ImplGlfw_CharCallback(window, c);
+        return;
     }
 }
 

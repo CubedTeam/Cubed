@@ -8,6 +8,10 @@ namespace Cubed {
 class TextureManager;
 class Image : public Widget {
 public:
+    Image(const Image&) = delete;
+    Image(Image&&) = delete;
+    Image& operator=(const Image&) = delete;
+    Image& operator=(Image&&) = delete;
     Image(Widget* parent);
 
     Image& set_image(const std::string& path, TextureManager& texture_manager);

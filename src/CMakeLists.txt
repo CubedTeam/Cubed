@@ -70,4 +70,5 @@ target_sources(${PROJECT_NAME}
         ui/column_layout.cpp
         ui/rect.cpp
         ui/ui_manager.cpp
+        ui/pause_menu_ui_manager.cpp
 )

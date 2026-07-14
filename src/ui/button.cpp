@@ -23,11 +23,9 @@ void Button::on_render(Renderer& renderer) {
 
 bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
     auto pos = m_background->pos();
-
     if (e.xpos >= pos.x && e.xpos <= pos.x + width() && e.ypos >= pos.y &&
         e.ypos <= pos.y + height()) {
         m_hovered = true;
-
         return true;
     }
     m_hovered = false;

@@ -25,7 +25,9 @@ public:
     void hot_reload();
 
     void toggle_fullscreen();
-    void toggle_mouse_able();
+
+    void enable_mouse();
+    void disable_mouse();
 
     void set_camera(Camera* camera);
     Camera* camera();
@@ -33,6 +35,10 @@ public:
     void set_game_running(bool running);
 
     void should_close_window();
+
+    bool is_enable_imgui() const;
+
+    void set_imgui_enabled(bool enable);
 
 private:
     bool m_mouse_enable = false;
@@ -43,6 +49,7 @@ private:
     int m_window_height;
     Config& m_config;
     Camera* m_camera = nullptr;
+    bool m_imgui_enable = false;
     bool handle_key_event(const KeyEvent& e);
     bool handle_window_resize_event(const WindowResizeEvent& e);
     bool handle_mouse_button_event(const MouseButtonEvent& e);
