@@ -10,15 +10,13 @@ public:
 
     Slider& set_slider(float* value, const float& min, const float& max);
 
-    Image& set_track();
-
-    Image& set_thumb();
+    Image& get_track();
+    Image& get_thumb();
 
     float width() const override;
     float height() const override;
 
     Slider& set_scale(float scale);
-
     Slider& set_width(float width);
     Slider& set_height(float h);
 
@@ -26,6 +24,11 @@ public:
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
 
 private:
+    static constexpr float THUMB_WIDTH = 5.0f;
+
+    void init_track();
+    void init_thumb();
+
     void update_value(float mouse_x);
 
     void on_update(float) override;

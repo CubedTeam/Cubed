@@ -6,7 +6,10 @@
 #include <algorithm>
 namespace Cubed {
 
-Slider::Slider(Widget* parent) : Widget(parent) {}
+Slider::Slider(Widget* parent) : Widget(parent) {
+    init_thumb();
+    init_track();
+}
 
 Slider& Slider::set_slider(float* value, const float& min, const float& max) {
     m_value = value;
@@ -15,20 +18,27 @@ Slider& Slider::set_slider(float* value, const float& min, const float& max) {
     return *this;
 }
 
-Image& Slider::set_track() {
+Image& Slider::get_track() { return *m_track; }
+Image& Slider::get_thumb() { return *m_thumb; }
+
+void Slider::init_track() {
     m_track = std::make_unique<Image>(this);
+
     m_track->set_fill(true);
+
     m_track->set_anchor(Anchor::TOP_LEFT);
-    return *m_track;
 }
 
-Image& Slider::set_thumb() {
+void Slider::init_thumb() {
     m_thumb = std::make_unique<Image>(this);
+
     m_thumb->set_height(height());
-    m_thumb->set_width(10.0f);
+
+    m_thumb->set_width(THUMB_WIDTH);
+
     m_thumb->set_anchor(Anchor::TOP_LEFT);
+
     m_thumb->set_scale(m_scale);
-    return *m_thumb;
 }
 
 float Slider::width() const { return m_width * m_scale; }
@@ -43,6 +53,8 @@ Slider& Slider::set_scale(float scale) {
 
 Slider& Slider::set_width(float width) {
     if (!m_thumb || width < m_thumb->width()) {
+        Logger::error("Width is too small set failed!");
+        ASSERT(false);
         return *this;
     }
     m_width = width;
@@ -51,9 +63,8 @@ Slider& Slider::set_width(float width) {
 
 Slider& Slider::set_height(float h) {
     m_height = h;
-    if (m_thumb) {
-        m_thumb->set_height(height());
-    }
+    ASSERT_MSG(m_thumb, "Thumb is nullptr !");
+    m_thumb->set_height(height());
     return *this;
 }
 
