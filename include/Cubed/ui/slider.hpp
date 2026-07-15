@@ -5,12 +5,18 @@
 #include "Cubed/ui/widget.hpp"
 
 namespace Cubed {
+
+enum class ValueType {
+    FLOAT,
+    INT,
+};
+
 class Slider : public Widget {
 public:
     Slider(Widget* parent);
 
     Slider& set_slider(float* value, const float& min, const float& max);
-
+    Slider& set_slider(int* value, const int& min, const int& max);
     float width() const override;
     float height() const override;
 
@@ -33,16 +39,19 @@ private:
     std::unique_ptr<Image> m_track;
     std::unique_ptr<Image> m_thumb;
     std::unique_ptr<Label> m_label;
+    ValueType m_type = ValueType::FLOAT;
     float m_scale = DEFAULT_SCALE;
     float m_width = NORMAL_SLIDER_WIDTH;
     float m_height = NORMAL_SLIDER_HEIGHT;
     float m_xpos = 0.0f;
     bool m_dragging = false;
     bool m_inside = false;
-    float* m_value = nullptr;
+    float* m_float_value = nullptr;
+    int* m_int_value = nullptr;
     float m_min = 0;
     float m_max = 0;
     std::string m_text;
+
     void init_track();
     void init_thumb();
 
