@@ -103,7 +103,10 @@ Slider& Slider::set_default_image(TextureManager& texture_manager) {
     set_thumb_image(DEFAULT_THUMB_IMAGE, texture_manager);
     return set_track_image(DEFAULT_TRACK_IMAGE, texture_manager);
 }
-
+Slider& Slider::set_auto_scale(bool auto_scale) {
+    m_auto_scale = auto_scale;
+    return *this;
+}
 bool Slider::handle_mouse_move_event(const MouseMoveEvent& e) {
     auto p = pos();
     m_xpos = e.xpos;
@@ -212,6 +215,10 @@ void Slider::on_render(Renderer& renderer) {
 }
 
 void Slider::update_text_scale() {
+    if (!m_auto_scale) {
+        m_label->set_scale(TEXT_SCALE);
+        return;
+    }
     float text_w = m_label->real_width();
     float text_h = m_label->real_height();
 

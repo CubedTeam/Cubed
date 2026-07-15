@@ -30,12 +30,13 @@ public:
                             TextureManager& texture_manager);
 
     Slider& set_default_image(TextureManager& texture_manager);
-
+    Slider& set_auto_scale(bool auto_scale);
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
 
 private:
     static constexpr float PADDING = 5.0f;
+    static constexpr float TEXT_SCALE = 0.6f;
     static constexpr float DEFAULT_SCALE = 3.0f;
     static constexpr const char* DEFAULT_TRACK_IMAGE =
         "texture/ui/slider_track001.png";
@@ -51,6 +52,7 @@ private:
     float m_xpos = 0.0f;
     bool m_dragging = false;
     bool m_inside = false;
+    bool m_auto_scale = false;
     float* m_float_value = nullptr;
     int* m_int_value = nullptr;
     float m_min = 0;

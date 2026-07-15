@@ -30,6 +30,8 @@ public:
     Button& set_default_image(TextureManager& texture_manager);
     Button& set_text(const std::string& text);
 
+    Button& set_auto_scale(bool auto_scale);
+
     float scale() const;
     template <typename F> Button& set_clicked(F&& f) {
         m_clicked = std::forward<F>(f);
@@ -39,6 +41,8 @@ public:
 private:
     static constexpr float PADDING = 5.0f;
     static constexpr float DEFAULT_SCALE = 3.0f;
+    static constexpr float TEXT_SCALE = 0.6f;
+
     static constexpr const char* DEFAULT_BUTTON_IMAGE =
         "texture/ui/button001.png";
     std::function<void()> m_clicked;
@@ -48,6 +52,7 @@ private:
     float m_width = NORMAL_BUTTON_WIDTH;
     float m_height = NORMAL_BUTTON_HEIGHT;
     float m_scale = DEFAULT_SCALE;
+    bool m_auto_scale = false;
     void on_render(Renderer& renderer) override;
     void on_update(float dt) override;
     void update_text_scale();

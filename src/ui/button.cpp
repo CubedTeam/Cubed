@@ -87,7 +87,16 @@ Button& Button::set_text(const std::string& text) {
     return *this;
 }
 
+Button& Button::set_auto_scale(bool auto_scale) {
+    m_auto_scale = auto_scale;
+    return *this;
+}
+
 void Button::update_text_scale() {
+    if (!m_auto_scale) {
+        m_foreground->set_scale(TEXT_SCALE);
+        return;
+    }
     float text_w = m_foreground->real_width();
     float text_h = m_foreground->real_height();
 
