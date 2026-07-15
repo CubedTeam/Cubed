@@ -32,9 +32,11 @@ void PauseMenuUIManager::init() {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
         button.set_text("Settings");
-        button.set_clicked([this]() {
+        button.set_clicked([this, &button]() {
+            button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::SETTINGS);
         });
+        m_pending_enable.emplace_back(&button);
     }
 
     {
@@ -43,11 +45,18 @@ void PauseMenuUIManager::init() {
         back_main.set_background_image("texture/ui/button001.png",
                                        texture_manager);
         back_main.set_text("Return to Menu");
-        back_main.set_clicked(
-            [this]() { m_scene.scene_manager().request_pop(); });
+        back_main.set_clicked([this, &back_main]() {
+            back_main.set_enable(false);
+            m_scene.scene_manager().request_pop();
+        });
+        m_pending_enable.emplace_back(&back_main);
     }
 
     m_root_widget = std::move(rect);
 }
-
+void PauseMenuUIManager::on_re_enter() {
+    for (Button* b : m_pending_enable) {
+        b->set_enable(true);
+    }
+}
 } // namespace Cubed

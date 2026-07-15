@@ -28,11 +28,13 @@ void Button::on_render(Renderer& renderer) {
 }
 
 bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
-    auto p = pos();
-    if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&
-        e.ypos <= p.y + height()) {
-        m_hovered = true;
-        return true;
+    if (m_enable) {
+        auto p = pos();
+        if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&
+            e.ypos <= p.y + height()) {
+            m_hovered = true;
+            return true;
+        }
     }
     m_hovered = false;
 
@@ -40,7 +42,7 @@ bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
 }
 bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
-        if (m_hovered && m_clicked) {
+        if (m_hovered && m_clicked && m_enable) {
             m_clicked();
 
             return true;
@@ -91,7 +93,10 @@ Button& Button::set_auto_scale(bool auto_scale) {
     m_auto_scale = auto_scale;
     return *this;
 }
-
+Button& Button::set_enable(bool enable) {
+    m_enable = enable;
+    return *this;
+}
 void Button::update_text_scale() {
     if (!m_auto_scale) {
         m_foreground->set_scale(TEXT_SCALE);

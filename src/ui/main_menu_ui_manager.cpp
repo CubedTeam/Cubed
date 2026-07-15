@@ -33,18 +33,22 @@ void MainMenuUIManager::init() {
         start_game_button.set_background_image("texture/ui/button001.png",
                                                texture_manager);
         start_game_button.set_text("Start Game");
-        start_game_button.set_clicked([this]() {
+        start_game_button.set_clicked([this, &start_game_button]() {
+            start_game_button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::WORLD);
         });
+        m_pending_enable.emplace_back(&start_game_button);
     }
 
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
         button.set_text("Settings");
-        button.set_clicked([this]() {
+        button.set_clicked([this, &button]() {
+            button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::SETTINGS);
         });
+        m_pending_enable.emplace_back(&button);
     }
 
     {
@@ -53,9 +57,11 @@ void MainMenuUIManager::init() {
         button.set_background_image("texture/ui/button001.png",
                                     texture_manager);
         button.set_text("Credits");
-        button.set_clicked([this]() {
+        button.set_clicked([this, &button]() {
+            button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::CREDITS);
         });
+        m_pending_enable.emplace_back(&button);
     }
     {
         auto& exit_game = layout.add_child<Button>();
@@ -85,6 +91,12 @@ void MainMenuUIManager::init() {
     }
 
     m_root_widget = std::move(image);
+}
+
+void MainMenuUIManager::on_re_enter() {
+    for (Button* b : m_pending_enable) {
+        b->set_enable(true);
+    }
 }
 
 } // namespace Cubed

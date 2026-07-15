@@ -31,7 +31,7 @@ public:
     Button& set_text(const std::string& text);
 
     Button& set_auto_scale(bool auto_scale);
-
+    Button& set_enable(bool enable);
     float scale() const;
     template <typename F> Button& set_clicked(F&& f) {
         m_clicked = std::forward<F>(f);
@@ -49,6 +49,7 @@ private:
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;
     bool m_hovered = false;
+    bool m_enable = true;
     float m_width = NORMAL_BUTTON_WIDTH;
     float m_height = NORMAL_BUTTON_HEIGHT;
     float m_scale = DEFAULT_SCALE;

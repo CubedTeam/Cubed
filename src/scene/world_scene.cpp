@@ -131,6 +131,7 @@ void WorldScene::on_leave() {
 }
 
 void WorldScene::on_re_enter() {
+    m_pasue_menu.on_re_enter();
     m_client_world.reload_config();
     auto width = m_scene_manager.app().renderer().window_width();
     auto height = m_scene_manager.app().renderer().window_height();

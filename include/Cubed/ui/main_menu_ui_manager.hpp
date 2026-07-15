@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/ui/button.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 
 namespace Cubed {
@@ -15,8 +16,10 @@ public:
     ~MainMenuUIManager();
 
     void init() override;
+    void on_re_enter();
 
 private:
     MainMenuScene& m_scene;
+    std::vector<Button*> m_pending_enable;
 };
 } // namespace Cubed

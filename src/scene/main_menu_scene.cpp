@@ -21,6 +21,7 @@ bool MainMenuScene::handle_event(const Event& e) {
 void MainMenuScene::on_enter() { m_ui_manager.init(); }
 void MainMenuScene::on_leave() {}
 void MainMenuScene::on_re_enter() {
+    m_ui_manager.on_re_enter();
     auto width = m_scene_manager.app().renderer().window_width();
     auto height = m_scene_manager.app().renderer().window_height();
 
