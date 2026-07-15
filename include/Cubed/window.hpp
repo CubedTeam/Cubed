@@ -41,7 +41,7 @@ public:
     void set_imgui_enabled(bool enable);
 
 private:
-    bool m_mouse_enable = false;
+    bool m_mouse_enable = true;
     bool m_imgui_init = false;
     bool m_game_running = false;
     GLFWwindow* m_window;

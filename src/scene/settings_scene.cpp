@@ -30,7 +30,13 @@ void SettingsScene::on_enter() {
     m_slider_variable.rendering_distance = config.get(
         "world.rendering_distance", m_slider_variable.rendering_distance);
 }
-void SettingsScene::on_leave() { save_and_apply(); }
+void SettingsScene::on_leave() {
+    save_and_apply();
+
+    if (m_need_texture_reload) {
+        m_scene_manager.app().texture_manager().need_reload();
+    }
+}
 
 void SettingsScene::on_re_enter() {
     auto width = m_scene_manager.app().renderer().window_width();
@@ -56,4 +62,7 @@ void SettingsScene::save_and_apply() {
 
 SceneManager& SettingsScene::scene_manager() { return m_scene_manager; }
 SliderVariable& SettingsScene::slider_variable() { return m_slider_variable; }
+void SettingsScene::set_texture_reload(bool reload) {
+    m_need_texture_reload = reload;
+}
 } // namespace Cubed

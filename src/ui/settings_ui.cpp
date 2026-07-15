@@ -6,6 +6,7 @@
 #include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
+#include "Cubed/ui/combo_button.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/slider.hpp"
 namespace Cubed {
@@ -63,7 +64,86 @@ void SettingsUI::init() {
         set_default_slider_image(sfx);
         sfx.set_text("SFX");
     }
+    auto& config = m_scene.scene_manager().app().config();
+    {
 
+        bool full = config.get("window.fullscreen", false);
+        auto& fullscreen = layout.add_child<ComboButton>();
+        fullscreen.set_index(!full ? 0 : 1);
+        fullscreen.set_text("Fullscreen");
+        std::vector<std::pair<std::string, std::function<void()>>> comb;
+        comb.emplace_back("off", [&config, this]() {
+            config.set("window.fullscreen", false);
+            m_scene.scene_manager().app().window().reload_config();
+        });
+        comb.emplace_back("on", [&config, this]() {
+            config.set("window.fullscreen", true);
+            m_scene.scene_manager().app().window().reload_config();
+        });
+        fullscreen.set_default_image(texture_manager);
+        fullscreen.set_combos(comb);
+    }
+
+    {
+        bool enable_vsync = config.get("window.V-Sync", true);
+        auto& vsync = layout.add_child<ComboButton>();
+        vsync.set_default_image(texture_manager);
+        vsync.set_text("V-Sync");
+        std::vector<ComboPair> combos;
+        combos.emplace_back("off", [this, &config]() {
+            config.set("window.V-Sync", false);
+            m_scene.scene_manager().app().window().reload_config();
+        });
+        combos.emplace_back("on", [this, &config]() {
+            config.set("window.V-Sync", true);
+            m_scene.scene_manager().app().window().reload_config();
+        });
+
+        vsync.set_combos(combos);
+        vsync.set_index(!enable_vsync ? 0 : 1);
+    }
+    {
+        int max_aniso = texture_manager.max_aniso();
+        int config_aniso = config.get("texture.aniso", 1);
+        int aniso = (config_aniso > max_aniso) ? max_aniso : config_aniso;
+        int max_sum = 1;
+        for (int temp = max_aniso; temp > 1; temp /= 2) {
+            ++max_sum;
+        }
+
+        int cur_index = 0;
+        for (int i = 0, temp = 1; i < max_sum; i++) {
+            if (temp == aniso) {
+                cur_index = i;
+            }
+            temp *= 2;
+        }
+
+        auto& aniso_button = layout.add_child<ComboButton>();
+        aniso_button.set_default_image(texture_manager);
+        aniso_button.set_text("Aniso");
+        aniso_button.set_index(cur_index);
+        std::vector<ComboPair> combos;
+        auto get_suffix = [](int i) -> std::pair<std::string, int> {
+            if (i == 0) {
+                return {"off", 1};
+            }
+            int n = 1;
+            for (int j = 0; j < i; j++) {
+                n *= 2;
+            }
+
+            return {std::to_string(n) + "x", n};
+        };
+        for (int i = 0; i < max_sum; i++) {
+            auto [str, n] = get_suffix(i);
+            combos.emplace_back(str, [&config, this, n]() {
+                config.set("texture.aniso", n);
+                m_scene.set_texture_reload(true);
+            });
+        }
+        aniso_button.set_combos(combos);
+    }
     auto& return_button = layout.add_child<Button>();
     return_button.set_background_image("texture/ui/button001.png",
                                        texture_manager);

@@ -76,4 +76,5 @@ target_sources(${PROJECT_NAME}
         ui/slider.cpp
         ui/settings_ui.cpp
         scene/settings_scene.cpp
+        ui/combo_button.cpp
 )

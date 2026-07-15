@@ -29,11 +29,13 @@ public:
     void on_re_enter() override;
     SceneManager& scene_manager();
     SliderVariable& slider_variable();
+    void set_texture_reload(bool reload);
 
 private:
     void save_and_apply();
     SceneManager& m_scene_manager;
     SliderVariable m_slider_variable;
     SettingsUI m_settings_ui;
+    bool m_need_texture_reload = false;
 };
 } // namespace Cubed

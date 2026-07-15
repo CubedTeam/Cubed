@@ -17,7 +17,7 @@ public:
     Button& operator=(Button&&) = delete;
 
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
-    bool handle_mouse_button_event(const MouseButtonEvent& e) override;
+    virtual bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     Button& set_scale(float scale);
 
     float width() const override;
@@ -28,7 +28,7 @@ public:
     Button& set_background_image(const std::string& path,
                                  TextureManager& texture_manager);
     Button& set_default_image(TextureManager& texture_manager);
-    Button& set_text(const std::string& text);
+    virtual Button& set_text(const std::string& text);
 
     Button& set_auto_scale(bool auto_scale);
     Button& set_enable(bool enable);
@@ -38,6 +38,13 @@ public:
         return *this;
     }
 
+protected:
+    std::unique_ptr<Image> m_background;
+    std::unique_ptr<Label> m_foreground;
+    bool m_hovered = false;
+    bool m_enable = true;
+    void update_text_scale();
+
 private:
     static constexpr float PADDING = 5.0f;
     static constexpr float DEFAULT_SCALE = 3.0f;
@@ -46,16 +53,12 @@ private:
     static constexpr const char* DEFAULT_BUTTON_IMAGE =
         "texture/ui/button001.png";
     std::function<void()> m_clicked;
-    std::unique_ptr<Image> m_background;
-    std::unique_ptr<Label> m_foreground;
-    bool m_hovered = false;
-    bool m_enable = true;
+
     float m_width = NORMAL_BUTTON_WIDTH;
     float m_height = NORMAL_BUTTON_HEIGHT;
     float m_scale = DEFAULT_SCALE;
     bool m_auto_scale = false;
     void on_render(Renderer& renderer) override;
     void on_update(float dt) override;
-    void update_text_scale();
 };
 } // namespace Cubed
