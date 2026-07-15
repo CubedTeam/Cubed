@@ -31,39 +31,32 @@ void MainMenuUIManager::init() {
     {
         auto& start_game_button = layout.add_child<Button>();
 
-        auto& back = start_game_button.set_background<Image>();
-        back.set_image("texture/ui/button001.png",
-                       m_scene.scene_manager().app().texture_manager());
-        auto& fore = start_game_button.set_foreground<Label>();
-        fore.set_text("Start Game");
-        fore.set_scale(0.6f);
+        start_game_button.set_background_image(
+            "texture/ui/button001.png",
+            m_scene.scene_manager().app().texture_manager());
+        start_game_button.set_text("Start Game");
         start_game_button.set_clicked([this]() {
             m_scene.scene_manager().request_push(SceneType::WORLD);
         });
-        start_game_button.set_scale(4.0f);
     }
     {
         auto& button = layout.add_child<Button>();
 
-        auto& back = button.set_background<Image>();
-        back.set_image("texture/ui/button001.png",
-                       m_scene.scene_manager().app().texture_manager());
-        auto& fore = button.set_foreground<Label>();
-        fore.set_text("Credits");
-        fore.set_scale(0.6f);
+        button.set_background_image(
+            "texture/ui/button001.png",
+            m_scene.scene_manager().app().texture_manager());
+        button.set_text("Credits");
         button.set_clicked([this]() {
             m_scene.scene_manager().request_push(SceneType::CREDITS);
         });
-        button.set_scale(4.0f);
     }
     {
         auto& exit_game = layout.add_child<Button>();
-        auto& back = exit_game.set_background<Image>();
-        back.set_image("texture/ui/button001.png",
-                       m_scene.scene_manager().app().texture_manager());
-        auto& fore = exit_game.set_foreground<Label>();
-        fore.set_scale(0.6f).set_text("Exit");
-        exit_game.set_scale(4.0f);
+        exit_game.set_background_image(
+            "texture/ui/button001.png",
+            m_scene.scene_manager().app().texture_manager());
+        exit_game.set_text("Exit");
+
         exit_game.set_clicked([this]() {
             m_scene.scene_manager().app().window().should_close_window();
         });

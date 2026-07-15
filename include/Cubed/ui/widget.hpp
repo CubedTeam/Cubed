@@ -8,6 +8,11 @@
 namespace Cubed {
 class Renderer;
 
+constexpr float NORMAL_BUTTON_WIDTH = 225.0f;
+constexpr float NORMAL_BUTTON_HEIGHT = 20.0f;
+constexpr float NORMAL_SLIDER_WIDTH = 225.0f;
+constexpr float NORMAL_SLIDER_HEIGHT = 20.0f;
+
 class Widget {
 
 public:

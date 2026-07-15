@@ -18,13 +18,10 @@ void PauseMenuUIManager::init() {
     rect->set_window_size(renderer.window_width(), renderer.window_height());
     auto& back_main = rect->add_child<Button>();
 
-    auto& bg = back_main.set_background<Image>();
-    bg.set_image("texture/ui/button001.png",
-                 m_scene.scene_manager().app().texture_manager());
-    auto& fg = back_main.set_foreground<Label>();
-    fg.set_text("return to main menu");
-    fg.set_scale(0.5f);
-    back_main.set_scale(5.0f);
+    back_main.set_background_image(
+        "texture/ui/button001.png",
+        m_scene.scene_manager().app().texture_manager());
+    back_main.set_text("return to main menu");
     back_main.set_anchor(Anchor::CENTER);
     back_main.set_clicked([this]() { m_scene.scene_manager().request_pop(); });
     m_root_widget = std::move(rect);

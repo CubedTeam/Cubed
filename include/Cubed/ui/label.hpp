@@ -25,9 +25,12 @@ public:
 
     float width() const override;
     float height() const override;
+    float real_width() const;
+    float real_height() const;
     float offset_x() const;
     float offset_y() const;
     float scale() const;
+    const std::string& text() const;
 
 protected:
     virtual void on_update(float dt) override;

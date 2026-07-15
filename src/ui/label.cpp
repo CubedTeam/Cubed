@@ -41,7 +41,10 @@ const UIVertexData& Label::data() const { return m_data; }
 const TextStyle& Label::text_style() const { return m_text; }
 float Label::width() const { return m_real_width * m_scale; }
 float Label::height() const { return m_real_height * m_scale; }
+float Label::real_width() const { return m_real_width; }
+float Label::real_height() const { return m_real_height; }
 float Label::offset_x() const { return m_offset_x; }
 float Label::offset_y() const { return m_offset_y; }
 float Label::scale() const { return m_scale; }
+const std::string& Label::text() const { return m_text.text; }
 } // namespace Cubed

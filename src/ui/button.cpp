@@ -1,7 +1,13 @@
 #include "Cubed/ui/button.hpp"
 
 namespace Cubed {
-Button::Button(Widget* parent) : Widget(parent) {}
+Button::Button(Widget* parent) : Widget(parent) {
+    m_background = std::make_unique<Image>(this);
+    m_background->set_fill(true);
+    m_background->set_anchor(Anchor::TOP_LEFT);
+    m_foreground = std::make_unique<Label>(this);
+    m_foreground->set_anchor(Anchor::CENTER);
+}
 
 void Button::on_update(float dt) {
     if (m_background) {
@@ -22,9 +28,9 @@ void Button::on_render(Renderer& renderer) {
 }
 
 bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
-    auto pos = m_background->pos();
-    if (e.xpos >= pos.x && e.xpos <= pos.x + width() && e.ypos >= pos.y &&
-        e.ypos <= pos.y + height()) {
+    auto p = pos();
+    if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&
+        e.ypos <= p.y + height()) {
         m_hovered = true;
         return true;
     }
@@ -45,28 +51,53 @@ bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
 }
 
 Button& Button::set_scale(float scale) {
-    m_background->set_scale(scale);
+    m_scale = scale;
+    update_text_scale();
     return *this;
 }
-void Button::set_window_size(int width, int height) {
-    m_background->set_window_size(width, height);
-    Widget::set_window_size(width, height);
-}
-Widget& Button::set_anchor(Anchor anchor) {
-    m_background->set_anchor(anchor);
 
+float Button::scale() const { return m_scale; }
+
+float Button::width() const { return m_width * m_scale; }
+float Button::height() const { return m_height * m_scale; }
+Button& Button::set_width(float width) {
+    m_width = width;
+    update_text_scale();
     return *this;
 }
-Widget& Button::set_offset(glm::ivec2 offset) {
-    m_background->set_offset(offset);
-
+Button& Button::set_height(float height) {
+    m_height = height;
+    update_text_scale();
     return *this;
 }
-glm::vec2 Button::pos() const { return m_background->pos(); }
 
-float Button::scale() const { return m_background->scale(); }
+Button& Button::set_background_image(const std::string& path,
+                                     TextureManager& texture_manager) {
+    m_background->set_image(path, texture_manager);
+    return *this;
+}
+Button& Button::set_text(const std::string& text) {
+    m_foreground->set_text(text);
+    update_text_scale();
+    return *this;
+}
 
-float Button::width() const { return m_background->width(); }
-float Button::height() const { return m_background->height(); }
+void Button::update_text_scale() {
+    float text_w = m_foreground->real_width();
+    float text_h = m_foreground->real_height();
+
+    if (text_w <= 0.0f || text_h <= 0.0f)
+        return;
+
+    float available_w = std::max(0.0f, width() - 2.0f * PADDING * m_scale);
+    float available_h = std::max(0.0f, height() - 2.0f * PADDING * m_scale);
+
+    float scale_x = available_w / text_w;
+    float scale_y = available_h / text_h;
+
+    float scale = std::max(0.0f, std::min(scale_x, scale_y));
+    scale = std::clamp(scale, 0.01f, 100.0f);
+    m_foreground->set_scale(scale);
+}
 
 } // namespace Cubed

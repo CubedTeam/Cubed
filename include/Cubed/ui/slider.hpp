@@ -38,8 +38,8 @@ private:
     std::unique_ptr<Image> m_track;
     std::unique_ptr<Image> m_thumb;
     float m_scale = 1.0f;
-    float m_width = 0.0f;
-    float m_height = 0.0f;
+    float m_width = NORMAL_SLIDER_WIDTH;
+    float m_height = NORMAL_SLIDER_HEIGHT;
     float m_xpos = 0.0f;
     bool m_dragging = false;
     bool m_inside = false;
