@@ -39,7 +39,18 @@ void MainMenuUIManager::init() {
         });
         m_pending_enable.emplace_back(&start_game_button);
     }
+    {
+        auto& start_game_button = layout.add_child<Button>();
 
+        start_game_button.set_background_image("texture/ui/button001.png",
+                                               texture_manager);
+        start_game_button.set_text("Join Game");
+        start_game_button.set_clicked([this, &start_game_button]() {
+            start_game_button.set_enable(false);
+            m_scene.scene_manager().request_push(SceneType::JOIN_GAME);
+        });
+        m_pending_enable.emplace_back(&start_game_button);
+    }
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);

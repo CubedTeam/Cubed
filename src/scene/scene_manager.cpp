@@ -2,6 +2,7 @@
 
 #include "Cubed/scene/credits_scene.hpp"
 #include "Cubed/scene/host_game_scene.hpp"
+#include "Cubed/scene/join_game_scene.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
 #include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -100,6 +101,8 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<SettingsScene>(*this);
     case SceneType::HOST_GAME:
         return std::make_unique<HostGameScene>(*this);
+    case SceneType::JOIN_GAME:
+        return std::make_unique<JoinGameScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");
