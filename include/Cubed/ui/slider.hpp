@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Cubed/ui/image.hpp"
+#include "Cubed/ui/label.hpp"
 #include "Cubed/ui/widget.hpp"
 
 namespace Cubed {
@@ -10,34 +11,29 @@ public:
 
     Slider& set_slider(float* value, const float& min, const float& max);
 
-    Image& get_track();
-    Image& get_thumb();
-
     float width() const override;
     float height() const override;
 
     Slider& set_scale(float scale);
     Slider& set_width(float width);
     Slider& set_height(float h);
+    Slider& set_text(const std::string& text);
+    Slider& set_track_image(const std::string& path,
+                            TextureManager& texture_manager);
+    Slider& set_thumb_image(const std::string& path,
+                            TextureManager& texture_manager);
 
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
 
 private:
-    static constexpr float THUMB_WIDTH = 5.0f;
-
-    void init_track();
-    void init_thumb();
-
-    void update_value(float mouse_x);
-
-    void on_update(float) override;
-
-    void on_render(Renderer& renderer) override;
+    static constexpr float PADDING = 5.0f;
+    static constexpr float DEFAULT_SCALE = 3.0f;
 
     std::unique_ptr<Image> m_track;
     std::unique_ptr<Image> m_thumb;
-    float m_scale = 1.0f;
+    std::unique_ptr<Label> m_label;
+    float m_scale = DEFAULT_SCALE;
     float m_width = NORMAL_SLIDER_WIDTH;
     float m_height = NORMAL_SLIDER_HEIGHT;
     float m_xpos = 0.0f;
@@ -46,5 +42,15 @@ private:
     float* m_value = nullptr;
     float m_min = 0;
     float m_max = 0;
+    std::string m_text;
+    void init_track();
+    void init_thumb();
+
+    void update_value(float mouse_x);
+
+    void on_update(float) override;
+
+    void on_render(Renderer& renderer) override;
+    void update_text_scale();
 };
 } // namespace Cubed
