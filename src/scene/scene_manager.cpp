@@ -1,6 +1,7 @@
 #include "Cubed/scene/scene_manager.hpp"
 
 #include "Cubed/scene/credits_scene.hpp"
+#include "Cubed/scene/host_game_scene.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
 #include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -97,6 +98,8 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<CreditsScene>(*this);
     case SceneType::SETTINGS:
         return std::make_unique<SettingsScene>(*this);
+    case SceneType::HOST_GAME:
+        return std::make_unique<HostGameScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");
@@ -105,4 +108,5 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
 }
 
 App& SceneManager::app() { return m_app; }
+WorldSceneParam& SceneManager::world_scene_param() { return m_world_param; }
 } // namespace Cubed

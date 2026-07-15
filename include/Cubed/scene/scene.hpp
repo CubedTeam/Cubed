@@ -3,7 +3,7 @@
 namespace Cubed {
 class Renderer;
 
-enum class SceneType { MAIN_MENU, WORLD, CREDITS, SETTINGS };
+enum class SceneType { MAIN_MENU, WORLD, CREDITS, SETTINGS, HOST_GAME };
 
 class Scene {
 public:

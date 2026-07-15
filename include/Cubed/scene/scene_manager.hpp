@@ -6,6 +6,14 @@
 #include <vector>
 namespace Cubed {
 class App;
+
+struct WorldSceneParam {
+    bool host_game = true;
+    std::optional<unsigned> seed = std::nullopt;
+    std::string ip{"127.0.0.1"};
+    int port = 25530;
+};
+
 class SceneManager {
 public:
     SceneManager(const SceneManager&) = delete;
@@ -25,6 +33,7 @@ public:
     void request_pop();
 
     App& app();
+    WorldSceneParam& world_scene_param();
 
 private:
     enum class OperationType { PUSH, POP, CHANGE };
@@ -34,6 +43,7 @@ private:
     };
 
     App& m_app;
+    WorldSceneParam m_world_param;
     std::vector<std::unique_ptr<Scene>> m_pending_delete_scene;
     std::optional<SceneOperation> m_operation;
     std::stack<std::unique_ptr<Scene>> m_scenes;

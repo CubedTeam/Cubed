@@ -97,15 +97,20 @@ bool WorldScene::handle_event(const Event& e) {
         e);
 }
 void WorldScene::on_enter() {
+    auto& param = m_scene_manager.world_scene_param();
+    if (param.seed) {
+        ChunkGenerator::init(*param.seed);
+        param.seed = std::nullopt;
+    } else {
+        ChunkGenerator::init();
+    }
 
-    ChunkGenerator::init();
-
-    if (!m_argument.is_client) {
-        m_server.start_server(m_argument.port);
+    if (param.host_game) {
+        m_server.start_server(param.port);
     }
     m_client = std::make_shared<NetworkClient>(m_client_world);
 
-    m_client->start(m_argument.ip, m_argument.port);
+    m_client->start(param.ip, param.port);
     // init will send packet
     m_client_world.init(m_argument.player, m_client);
 

@@ -32,10 +32,10 @@ void MainMenuUIManager::init() {
 
         start_game_button.set_background_image("texture/ui/button001.png",
                                                texture_manager);
-        start_game_button.set_text("Start Game");
+        start_game_button.set_text("Host Game");
         start_game_button.set_clicked([this, &start_game_button]() {
             start_game_button.set_enable(false);
-            m_scene.scene_manager().request_push(SceneType::WORLD);
+            m_scene.scene_manager().request_push(SceneType::HOST_GAME);
         });
         m_pending_enable.emplace_back(&start_game_button);
     }
@@ -67,7 +67,7 @@ void MainMenuUIManager::init() {
         auto& exit_game = layout.add_child<Button>();
         exit_game.set_background_image("texture/ui/button001.png",
                                        texture_manager);
-        exit_game.set_text("Exit");
+        exit_game.set_text("Quit");
 
         exit_game.set_clicked([this]() {
             m_scene.scene_manager().app().window().should_close_window();
@@ -76,11 +76,18 @@ void MainMenuUIManager::init() {
     m_widgets.try_emplace("background", image.get());
     m_widgets.try_emplace("main menu layout", &layout);
     {
+        constexpr float SCALE = 0.5f;
         auto& info_layout = image->add_child<ColumnLayout>();
         info_layout.set_anchor(Anchor::BOTTOM_LEFT);
         info_layout.set_spacing(10);
+        info_layout.set_child_anchor(ColumnLayoutAnchor::LEFT);
+        auto& player_name = info_layout.add_child<Label>();
+        player_name.set_scale(SCALE);
+        player_name.set_text(std::format(
+            "Player: {}", m_scene.scene_manager().app().argument().player));
+
         auto& version = info_layout.add_child<Label>();
-        version.set_scale(0.5f);
+        version.set_scale(SCALE);
         std::string version_str = "Cubed: " CUBED_VERSION;
 #ifdef DEBUG_MODE
         version_str.append("-debug");
