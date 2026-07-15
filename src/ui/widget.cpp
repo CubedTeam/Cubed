@@ -155,6 +155,7 @@ bool Widget::handle_window_resize_event(const WindowResizeEvent& e) {
     }
     return false;
 }
+
 bool Widget::handle_mouse_move_event(const MouseMoveEvent& e) {
     for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
         if ((*it)->handle_mouse_move_event(e)) {
@@ -163,4 +164,14 @@ bool Widget::handle_mouse_move_event(const MouseMoveEvent& e) {
     }
     return false;
 }
+
+bool Widget::handle_text_input_event(const TextInputEvent& e) {
+    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+        if ((*it)->handle_text_input_event(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace Cubed

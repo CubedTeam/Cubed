@@ -53,7 +53,12 @@ bool UIManager::handle_event(const Event& e) {
                        }
                        return false;
                    },
-                   [](const TextInputEvent&) { return false; },
+                   [this](const TextInputEvent& e) {
+                       if (handle_text_input_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
                    [this](const WindowResizeEvent& e) {
                        handle_window_resize_event(e);
                        return false;
@@ -101,4 +106,12 @@ bool UIManager::handle_key_event(const KeyEvent& e) {
 
     return false;
 }
+
+bool UIManager::handle_text_input_event(const TextInputEvent& e) {
+    if (m_root_widget->handle_text_input_event(e)) {
+        return true;
+    }
+    return false;
+}
+
 } // namespace Cubed

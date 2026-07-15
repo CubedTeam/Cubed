@@ -7,6 +7,7 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
+#include "Cubed/tools/text_tools.hpp"
 #include "version.hpp"
 
 #include <exception>
@@ -638,6 +639,7 @@ void App::char_callback(GLFWwindow* window, unsigned int c) {
         ImGui_ImplGlfw_CharCallback(window, c);
         return;
     }
+    app->dispatch_event(TextInputEvent{codepoint_to_utf8(c)});
 }
 
 void App::render() {

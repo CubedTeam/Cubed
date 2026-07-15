@@ -12,10 +12,16 @@ constexpr float NORMAL_BUTTON_WIDTH = 225.0f;
 constexpr float NORMAL_BUTTON_HEIGHT = 20.0f;
 constexpr float NORMAL_SLIDER_WIDTH = 225.0f;
 constexpr float NORMAL_SLIDER_HEIGHT = 20.0f;
-
+constexpr float NORMAL_TEXTFIELD_WIDTH = 225.0f;
+constexpr float NORMAL_TEXTFIELD_HEIGHT = 20.0f;
 class Widget {
 
 public:
+    Widget(const Widget&) = delete;
+    Widget(Widget&&) = delete;
+    Widget& operator=(const Widget&) = delete;
+    Widget& operator=(Widget&&) = delete;
+
     Widget(const std::string& id, Widget* parent);
     Widget(Widget* parent);
     virtual ~Widget() = default;
@@ -35,7 +41,7 @@ public:
     virtual bool handle_mouse_wheel_event(const MouseWheelEvent& e);
     virtual bool handle_window_resize_event(const WindowResizeEvent& e);
     virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
-
+    virtual bool handle_text_input_event(const TextInputEvent& e);
     template <typename T, typename... Args> T& add_child(Args&&... args) {
         auto widget = std::make_unique<T>(std::forward<Args>(args)..., this);
         T& ref = *widget;

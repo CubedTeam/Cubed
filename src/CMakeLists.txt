@@ -77,4 +77,5 @@ target_sources(${PROJECT_NAME}
         ui/settings_ui.cpp
         scene/settings_scene.cpp
         ui/combo_button.cpp
+        ui/text_field.cpp
 )

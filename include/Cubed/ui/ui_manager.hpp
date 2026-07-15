@@ -26,6 +26,7 @@ public:
     virtual bool handle_window_resize_event(const WindowResizeEvent& e);
     virtual bool handle_mouse_wheel_event(const MouseWheelEvent& e);
     virtual bool handle_key_event(const KeyEvent& e);
+    virtual bool handle_text_input_event(const TextInputEvent& e);
 
 protected:
     std::unique_ptr<Widget> m_root_widget;

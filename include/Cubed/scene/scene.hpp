@@ -36,5 +36,8 @@ protected:
         return false;
     }
     virtual bool handle_key_event(const KeyEvent&) { return false; }
+    virtual bool handle_text_input_event(const TextInputEvent&) {
+        return false;
+    }
 };
 } // namespace Cubed
