@@ -37,7 +37,10 @@ void SettingsUI::init() {
         slider.set_track_image("texture/ui/slider_track001.png",
                                texture_manager);
     };
-
+    {
+        auto& title = layout.add_child<Label>();
+        title.set_text("Setting");
+    }
     {
         auto& fov = layout.add_child<Slider>();
         fov.set_slider(&v.fov, 20.0f, 120.0f);

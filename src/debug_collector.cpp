@@ -19,7 +19,7 @@ void DebugCollector::init(int width, int height) {
     m_widget.set_spacing(15);
     m_widget.set_anchor(Anchor::TOP_LEFT);
     m_widget.set_offset({0, 5});
-
+    m_widget.set_child_anchor(ColumnLayoutAnchor::LEFT);
     // version_text
     auto& version_text = m_widget.add_child<Label>("version");
     std::string version{"Version: " CUBED_VERSION};

@@ -22,6 +22,11 @@ void PauseMenuUIManager::init() {
     layout.set_anchor(Anchor::CENTER);
     layout.set_spacing(20);
     {
+        auto& title = layout.add_child<Label>();
+        title.set_text("Pause Menu");
+        title.set_scale(0.75f);
+    }
+    {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
         button.set_text("Back to Game");
