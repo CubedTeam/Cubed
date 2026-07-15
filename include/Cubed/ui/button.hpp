@@ -27,6 +27,7 @@ public:
     Button& set_height(float height);
     Button& set_background_image(const std::string& path,
                                  TextureManager& texture_manager);
+    Button& set_default_image(TextureManager& texture_manager);
     Button& set_text(const std::string& text);
 
     float scale() const;
@@ -38,6 +39,8 @@ public:
 private:
     static constexpr float PADDING = 5.0f;
     static constexpr float DEFAULT_SCALE = 3.0f;
+    static constexpr const char* DEFAULT_BUTTON_IMAGE =
+        "texture/ui/button001.png";
     std::function<void()> m_clicked;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;

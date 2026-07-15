@@ -127,6 +127,16 @@ void WorldScene::on_leave() {
     if (!m_argument.is_client) {
         m_server.server_world().stop();
     }
+    m_scene_manager.app().audio().stop_bgm();
+}
+
+void WorldScene::on_re_enter() {
+    m_client_world.reload_config();
+    auto width = m_scene_manager.app().renderer().window_width();
+    auto height = m_scene_manager.app().renderer().window_height();
+
+    handle_event(
+        WindowResizeEvent{static_cast<int>(width), static_cast<int>(height)});
 }
 
 bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {

@@ -120,7 +120,7 @@ void ClientPlayer::change_mode(GameMode mode) {
         m_max_speed = m_max_run_speed;
     }
 }
-void ClientPlayer::hot_reload() {
+void ClientPlayer::reload_config() {
     auto& config = m_world.get_config();
     m_sensitivity = config.get("player.mouse_sensitivity", 0.15f);
 }

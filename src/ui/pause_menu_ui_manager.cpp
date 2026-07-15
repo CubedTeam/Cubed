@@ -3,6 +3,7 @@
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/button.hpp"
+#include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/rect.hpp"
 namespace Cubed {
@@ -16,14 +17,36 @@ void PauseMenuUIManager::init() {
     rect->set_anchor(Anchor::TOP_LEFT);
     auto& renderer = m_scene.scene_manager().app().renderer();
     rect->set_window_size(renderer.window_width(), renderer.window_height());
-    auto& back_main = rect->add_child<Button>();
+    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
+    auto& layout = rect->add_child<ColumnLayout>();
+    layout.set_anchor(Anchor::CENTER);
+    layout.set_spacing(20);
+    {
+        auto& button = layout.add_child<Button>();
+        button.set_default_image(texture_manager);
+        button.set_text("Back to Game");
+        button.set_clicked([this]() { m_scene.set_pause(false); });
+    }
 
-    back_main.set_background_image(
-        "texture/ui/button001.png",
-        m_scene.scene_manager().app().texture_manager());
-    back_main.set_text("return to main menu");
-    back_main.set_anchor(Anchor::CENTER);
-    back_main.set_clicked([this]() { m_scene.scene_manager().request_pop(); });
+    {
+        auto& button = layout.add_child<Button>();
+        button.set_default_image(texture_manager);
+        button.set_text("Settings");
+        button.set_clicked([this]() {
+            m_scene.scene_manager().request_push(SceneType::SETTINGS);
+        });
+    }
+
+    {
+        auto& back_main = layout.add_child<Button>();
+
+        back_main.set_background_image("texture/ui/button001.png",
+                                       texture_manager);
+        back_main.set_text("Return to Menu");
+        back_main.set_clicked(
+            [this]() { m_scene.scene_manager().request_pop(); });
+    }
+
     m_root_widget = std::move(rect);
 }
 

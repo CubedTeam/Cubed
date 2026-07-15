@@ -33,7 +33,9 @@ Renderer::~Renderer() {
     }
 }
 
-void Renderer::hot_reload() { update_fov(m_config.get("player.fov", 70.0f)); }
+void Renderer::reload_config() {
+    update_fov(m_config.get("player.fov", 70.0f));
+}
 
 void Renderer::init(bool debug_on) {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -108,7 +110,7 @@ void Renderer::init(bool debug_on) {
 
     init_quad();
     init_text();
-    hot_reload();
+    reload_config();
 
     m_world_renderer.init();
 

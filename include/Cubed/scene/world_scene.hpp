@@ -24,7 +24,7 @@ public:
     bool handle_event(const Event& e) override;
     void on_enter() override;
     void on_leave() override;
-
+    void on_re_enter() override;
     Camera& camera();
     SceneManager& scene_manager();
     ClientWorld& client_world();

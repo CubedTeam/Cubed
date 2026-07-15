@@ -325,42 +325,42 @@ void DevPanel::show_settings_tab_item() {
     if (ImGui::BeginTabItem("settings")) {
         if (ImGui::SliderFloat("FOV", &m_config_view.fov, 1.0f, 140.0f)) {
             m_config.set("player.fov", static_cast<double>(m_config_view.fov));
-            m_app.renderer().hot_reload();
+            m_app.renderer().reload_config();
         }
         ImGui::SameLine();
         if (ImGui::Button("default##1")) {
             m_config_view.fov = DEFAULT_FOV;
             m_config.set("player.fov", static_cast<double>(m_config_view.fov));
-            m_app.renderer().hot_reload();
+            m_app.renderer().reload_config();
         }
         if (ImGui::SliderFloat("Sensitivity", &m_config_view.mouse_sensitivity,
                                0.01f, 1.0f)) {
             m_config.set("player.mouse_sensitivity",
                          static_cast<double>(m_config_view.mouse_sensitivity));
-            m_player->hot_reload();
+            m_player->reload_config();
         }
         ImGui::SameLine();
         if (ImGui::Button("default##2")) {
             m_config_view.mouse_sensitivity = 0.15f;
             m_config.set("player.mouse_sensitivity",
                          static_cast<double>(m_config_view.mouse_sensitivity));
-            m_player->hot_reload();
+            m_player->reload_config();
         }
 
         if (ImGui::SliderInt("Distance", &m_config_view.rendering_distance, 2,
                              128)) {
             m_config.set("world.rendering_distance",
                          m_config_view.rendering_distance);
-            m_world_scene.client_world().hot_reload();
+            m_world_scene.client_world().reload_config();
         }
         if (ImGui::Checkbox("Fullscreen", &m_config_view.fullscreen)) {
             m_config.set("window.fullscreen", m_config_view.fullscreen);
-            m_app.window().hot_reload();
+            m_app.window().reload_config();
         }
         ImGui::SameLine();
         if (ImGui::Checkbox("V-Sync", &m_config_view.v_sync)) {
             m_config.set("window.V-Sync", m_config_view.v_sync);
-            m_app.window().hot_reload();
+            m_app.window().reload_config();
         }
         if (ImGui::Checkbox("Aniso", &m_config_view.is_enable_aniso)) {
             m_config_view.is_reload = false;

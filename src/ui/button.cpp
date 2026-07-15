@@ -76,6 +76,11 @@ Button& Button::set_background_image(const std::string& path,
     m_background->set_image(path, texture_manager);
     return *this;
 }
+
+Button& Button::set_default_image(TextureManager& texture_manager) {
+    return set_background_image(DEFAULT_BUTTON_IMAGE, texture_manager);
+}
+
 Button& Button::set_text(const std::string& text) {
     m_foreground->set_text(text);
     update_text_scale();

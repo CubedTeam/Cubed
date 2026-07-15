@@ -154,7 +154,7 @@ void Window::init() {
                      static_cast<int>(mode->height / 2.0f) - 300);
 }
 
-void Window::hot_reload() {
+void Window::reload_config() {
     // V-Sync
     if (m_config.get("window.V-Sync", true)) {
         glfwSwapInterval(1);

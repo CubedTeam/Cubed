@@ -2,6 +2,7 @@
 
 #include "Cubed/scene/credits_scene.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
+#include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
 
 namespace Cubed {
@@ -63,7 +64,7 @@ void SceneManager::process_operation() {
 
 void SceneManager::change(SceneType type) {
     if (!m_scenes.empty()) {
-        pop();
+        pop(false);
     }
 
     push(type);
@@ -73,7 +74,7 @@ void SceneManager::push(SceneType type) {
     scene->on_enter();
     m_scenes.push(std::move(scene));
 }
-void SceneManager::pop() {
+void SceneManager::pop(bool re_enter) {
     if (m_scenes.empty()) {
         return;
     }
@@ -81,6 +82,9 @@ void SceneManager::pop() {
     m_scenes.pop();
     scene->on_leave();
     m_pending_delete_scene.push_back(std::move(scene));
+    if (!m_scenes.empty() && re_enter) {
+        m_scenes.top()->on_re_enter();
+    }
 }
 
 std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
@@ -91,6 +95,8 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<MainMenuScene>(*this);
     case SceneType::CREDITS:
         return std::make_unique<CreditsScene>(*this);
+    case SceneType::SETTINGS:
+        return std::make_unique<SettingsScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");

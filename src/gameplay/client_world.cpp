@@ -398,6 +398,9 @@ void ClientWorld::init(std::string_view player_name,
                        std::shared_ptr<NetworkClient> client) {
     m_player.init(player_name);
     m_client = client;
+
+    reload_config(false);
+
     m_random.init(ChunkGenerator::seed());
 
     // timer
@@ -522,11 +525,15 @@ void ClientWorld::change_pool_threads(int threads) {
     m_thread_pool.store(std::make_shared<PriorityThreadPool>(used_thread));
 }
 
-void ClientWorld::hot_reload() {
+void ClientWorld::reload_config(bool chunk_build) {
     int dist = m_config.get<int>("world.rendering_distance", PRE_LOAD_DISTANCE);
     Logger::info("Get Config Randering dist {}", dist);
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
-    request_chunk();
+    if (chunk_build) {
+        request_chunk();
+    }
+
+    m_player.reload_config();
 }
 
 void ClientWorld::client_run(std::stop_token stoken) {

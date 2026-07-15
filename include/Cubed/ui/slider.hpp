@@ -29,13 +29,18 @@ public:
     Slider& set_thumb_image(const std::string& path,
                             TextureManager& texture_manager);
 
+    Slider& set_default_image(TextureManager& texture_manager);
+
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
 
 private:
     static constexpr float PADDING = 5.0f;
     static constexpr float DEFAULT_SCALE = 3.0f;
-
+    static constexpr const char* DEFAULT_TRACK_IMAGE =
+        "texture/ui/slider_track001.png";
+    static constexpr const char* DEFAULT_THUMB_IMAGE =
+        "texture/ui/slider_thumb001.png";
     std::unique_ptr<Image> m_track;
     std::unique_ptr<Image> m_thumb;
     std::unique_ptr<Label> m_label;

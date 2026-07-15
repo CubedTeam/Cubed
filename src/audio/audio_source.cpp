@@ -79,7 +79,13 @@ void AudioSource::set_pitch(float pitch) {
     alSourcef(m_source, AL_PITCH, pitch);
 }
 
-void AudioSource::play() { alSourcePlay(m_source); }
+void AudioSource::play() {
+
+    if (state() != AudioState::INITIAL) {
+        stop();
+    }
+    alSourcePlay(m_source);
+}
 
 void AudioSource::play_2d(const AudioBuffer& buffer) {
     set_buffer_2d(buffer);

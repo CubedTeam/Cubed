@@ -40,7 +40,7 @@ private:
     void process_operation();
     void change(SceneType type);
     void push(SceneType type);
-    void pop();
+    void pop(bool re_enter = true);
 
     std::unique_ptr<Scene> create_scene(SceneType);
 };

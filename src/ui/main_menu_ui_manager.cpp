@@ -16,11 +16,10 @@ MainMenuUIManager::~MainMenuUIManager() {}
 void MainMenuUIManager::init() {
 
     auto image = std::make_unique<Image>(nullptr);
-
+    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     image->set_fill(true);
     image->set_anchor(Anchor::TOP_LEFT);
-    image->set_image("texture/ui/background.png",
-                     m_scene.scene_manager().app().texture_manager());
+    image->set_image("texture/ui/background.png", texture_manager);
     auto& renderer = m_scene.scene_manager().app().renderer();
     image->set_window_size(renderer.window_width(), renderer.window_height());
 
@@ -31,20 +30,28 @@ void MainMenuUIManager::init() {
     {
         auto& start_game_button = layout.add_child<Button>();
 
-        start_game_button.set_background_image(
-            "texture/ui/button001.png",
-            m_scene.scene_manager().app().texture_manager());
+        start_game_button.set_background_image("texture/ui/button001.png",
+                                               texture_manager);
         start_game_button.set_text("Start Game");
         start_game_button.set_clicked([this]() {
             m_scene.scene_manager().request_push(SceneType::WORLD);
         });
     }
+
+    {
+        auto& button = layout.add_child<Button>();
+        button.set_default_image(texture_manager);
+        button.set_text("Settings");
+        button.set_clicked([this]() {
+            m_scene.scene_manager().request_push(SceneType::SETTINGS);
+        });
+    }
+
     {
         auto& button = layout.add_child<Button>();
 
-        button.set_background_image(
-            "texture/ui/button001.png",
-            m_scene.scene_manager().app().texture_manager());
+        button.set_background_image("texture/ui/button001.png",
+                                    texture_manager);
         button.set_text("Credits");
         button.set_clicked([this]() {
             m_scene.scene_manager().request_push(SceneType::CREDITS);
@@ -52,9 +59,8 @@ void MainMenuUIManager::init() {
     }
     {
         auto& exit_game = layout.add_child<Button>();
-        exit_game.set_background_image(
-            "texture/ui/button001.png",
-            m_scene.scene_manager().app().texture_manager());
+        exit_game.set_background_image("texture/ui/button001.png",
+                                       texture_manager);
         exit_game.set_text("Exit");
 
         exit_game.set_clicked([this]() {

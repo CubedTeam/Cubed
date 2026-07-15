@@ -45,7 +45,7 @@ public:
     const MoveState& get_move_state() const;
 
     void change_mode(GameMode mode);
-    void hot_reload();
+    void reload_config();
     void set_player_pos(const glm::vec3& pos);
     void set_place_block(unsigned id);
     void update(float delta_time);

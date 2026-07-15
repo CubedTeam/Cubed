@@ -26,7 +26,7 @@ public:
 
     Renderer(TextureManager& texture_manager, Config& config);
     ~Renderer();
-    void hot_reload();
+    void reload_config();
     void init(bool debug_on);
     const Shader& get_shader(const std::string& name) const;
     void begin_frame();

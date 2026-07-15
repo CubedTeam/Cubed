@@ -83,7 +83,7 @@ public:
     void start_thread_pool();
     void stop_thread_pool();
     void change_pool_threads(int threads);
-    void hot_reload();
+    void reload_config(bool chunk_build = true);
     void request_chunk();
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;

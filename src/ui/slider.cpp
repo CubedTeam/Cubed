@@ -99,6 +99,11 @@ Slider& Slider::set_thumb_image(const std::string& path,
     return *this;
 }
 
+Slider& Slider::set_default_image(TextureManager& texture_manager) {
+    set_thumb_image(DEFAULT_THUMB_IMAGE, texture_manager);
+    return set_track_image(DEFAULT_TRACK_IMAGE, texture_manager);
+}
+
 bool Slider::handle_mouse_move_event(const MouseMoveEvent& e) {
     auto p = pos();
     m_xpos = e.xpos;
@@ -156,7 +161,7 @@ void Slider::on_update(float dt) {
     }
     float range = m_max - m_min;
     if (range <= 0.0f) {
-        Logger::error("Range {} is <= 0.0f", range);
+        Logger::error("Slider {} Range {} is <= 0.0f", m_text, range);
         ASSERT(false);
         return;
     }

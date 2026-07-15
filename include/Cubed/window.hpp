@@ -22,7 +22,7 @@ public:
     // end of frame to reload!
     bool handle_event(const Event& e);
 
-    void hot_reload();
+    void reload_config();
 
     void toggle_fullscreen();
 

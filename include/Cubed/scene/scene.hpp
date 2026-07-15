@@ -3,7 +3,7 @@
 namespace Cubed {
 class Renderer;
 
-enum class SceneType { MAIN_MENU, WORLD, CREDITS };
+enum class SceneType { MAIN_MENU, WORLD, CREDITS, SETTINGS };
 
 class Scene {
 public:
@@ -20,6 +20,7 @@ public:
     virtual bool handle_event(const Event& e) = 0;
     virtual void on_enter() {};
     virtual void on_leave() {};
+    virtual void on_re_enter() {};
 
 protected:
     virtual bool handle_mouse_move_event(const MouseMoveEvent&) {
