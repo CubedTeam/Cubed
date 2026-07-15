@@ -634,6 +634,18 @@ std::string ClientPlayer::get_uuid() const {
     return m_uuid;
 }
 const std::string& ClientPlayer::get_name() const { return m_name; }
+
+void ClientPlayer::reset_key_status() {
+    m_mouse_state.left = false;
+    m_mouse_state.right = false;
+    m_move_state.left = false;
+    m_move_state.right = false;
+    m_move_state.back = false;
+    m_move_state.forward = false;
+    m_move_state.down = false;
+    m_move_state.up = false;
+}
+
 void ClientPlayer::init(std::string_view name) {
 
     m_name = name;

@@ -68,7 +68,7 @@ public:
     void set_uuid(std::string_view uuid);
     std::string get_uuid() const;
     const std::string& get_name() const;
-
+    void reset_key_status();
     void init(std::string_view name);
 
     float yaw() const;

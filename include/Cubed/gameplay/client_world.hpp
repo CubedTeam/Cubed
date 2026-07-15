@@ -85,6 +85,7 @@ public:
     void change_pool_threads(int threads);
     void reload_config(bool chunk_build = true);
     void request_chunk();
+    void reset_key_status();
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
     const std::vector<PlayerRenderData>& render_player_data() const;

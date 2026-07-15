@@ -261,5 +261,8 @@ void WorldScene::set_pause(bool pause) {
     auto& window = m_scene_manager.app().window();
     Logger::info("pause {}", m_paused);
     window.set_game_running(!m_paused);
+    if (m_paused) {
+        m_client_world.reset_key_status();
+    }
 }
 } // namespace Cubed

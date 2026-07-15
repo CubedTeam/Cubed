@@ -670,7 +670,7 @@ void ClientWorld::request_chunk() {
     Logger::info("Send Chunk Request Success");
     m_requesting_chunk = false;
 }
-
+void ClientWorld::reset_key_status() { m_player.reset_key_status(); }
 void ClientWorld::receive_chunk(std::vector<uint8_t> raw_data,
                                 PacketHeader header) {
 
