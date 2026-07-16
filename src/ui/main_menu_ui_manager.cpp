@@ -1,6 +1,7 @@
 #include "Cubed/ui/main_menu_ui_manager.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
@@ -32,7 +33,7 @@ void MainMenuUIManager::init() {
 
         start_game_button.set_background_image("texture/ui/button001.png",
                                                texture_manager);
-        start_game_button.set_text("Host Game");
+        start_game_button.set_text(tr("menu.main.host_game"));
         start_game_button.set_clicked([this, &start_game_button]() {
             start_game_button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::HOST_GAME);
@@ -44,7 +45,7 @@ void MainMenuUIManager::init() {
 
         start_game_button.set_background_image("texture/ui/button001.png",
                                                texture_manager);
-        start_game_button.set_text("Join Game");
+        start_game_button.set_text(tr("menu.main.join_game"));
         start_game_button.set_clicked([this, &start_game_button]() {
             start_game_button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::JOIN_GAME);
@@ -54,7 +55,7 @@ void MainMenuUIManager::init() {
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Settings");
+        button.set_text(tr("menu.settings"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::SETTINGS);
@@ -67,7 +68,7 @@ void MainMenuUIManager::init() {
 
         button.set_background_image("texture/ui/button001.png",
                                     texture_manager);
-        button.set_text("Credits");
+        button.set_text(tr("menu.main.credits"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::CREDITS);
@@ -78,7 +79,7 @@ void MainMenuUIManager::init() {
         auto& exit_game = layout.add_child<Button>();
         exit_game.set_background_image("texture/ui/button001.png",
                                        texture_manager);
-        exit_game.set_text("Quit");
+        exit_game.set_text(tr("menu.main.quit"));
 
         exit_game.set_clicked([this]() {
             m_scene.scene_manager().app().window().should_close_window();
@@ -94,18 +95,21 @@ void MainMenuUIManager::init() {
         info_layout.set_child_anchor(ColumnLayoutAnchor::LEFT);
         auto& player_name = info_layout.add_child<Label>();
         player_name.set_scale(SCALE);
-        player_name.set_text(std::format(
-            "Player: {}", m_scene.scene_manager().app().argument().player));
+
+        player_name.set_text(
+            tr("menu.main.player_name",
+               arg("name", m_scene.scene_manager().app().argument().player)));
 
         auto& version = info_layout.add_child<Label>();
         version.set_scale(SCALE);
-        std::string version_str = "Cubed: " CUBED_VERSION;
+        std::string version_str = CUBED_VERSION;
 #ifdef DEBUG_MODE
         version_str.append("-debug");
 #else
         version_str.append("-release");
 #endif
-        version.set_text(version_str);
+        version.set_text(
+            tr("menu.main.cubed_version", arg("version", version_str)));
     }
 
     m_root_widget = std::move(image);

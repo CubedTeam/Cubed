@@ -3,6 +3,7 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
@@ -38,6 +39,8 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos,
 void App::init(int argc, char** argv) {
     handle_toml();
     handle_argument(argc, argv);
+
+    Localization::instance().load_language("zh_CN");
 
     m_window.init();
     m_window.imgui_init();

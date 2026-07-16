@@ -1,6 +1,7 @@
 #include "Cubed/ui/credits_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/scene/credits_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/ui/button.hpp"
@@ -30,7 +31,7 @@ void CreditsUI::init() {
             "texture/ui/button001.png",
             m_scene.scene_manager().app().texture_manager());
 
-        button.set_text("Return");
+        button.set_text(tr("button.return"));
         button.set_anchor(Anchor::BOTTOM_CENTER).set_offset({0, -20});
         button.set_clicked([this]() { m_scene.scene_manager().request_pop(); });
     }

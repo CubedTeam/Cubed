@@ -1,4 +1,5 @@
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -23,20 +24,20 @@ void PauseMenuUIManager::init() {
     layout.set_spacing(20);
     {
         auto& title = layout.add_child<Label>();
-        title.set_text("Pause Menu");
+        title.set_text(tr("menu.pause.pause_menu"));
         title.set_scale(0.75f);
     }
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Back to Game");
+        button.set_text(tr("menu.pause.back_to_game"));
         button.set_clicked([this]() { m_scene.set_pause(false); });
     }
 
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Settings");
+        button.set_text(tr("menu.settings"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_push(SceneType::SETTINGS);
@@ -49,7 +50,7 @@ void PauseMenuUIManager::init() {
 
         back_main.set_background_image("texture/ui/button001.png",
                                        texture_manager);
-        back_main.set_text("Return to Menu");
+        back_main.set_text(tr("menu.pause.return_to_main_menu"));
         back_main.set_clicked([this, &back_main]() {
             back_main.set_enable(false);
             m_scene.scene_manager().request_pop();

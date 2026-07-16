@@ -1,6 +1,7 @@
 #include "Cubed/ui/error_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/image.hpp"
@@ -38,7 +39,7 @@ void ErrorUI::init() {
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Return");
+        button.set_text(tr("button.return"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_pop();

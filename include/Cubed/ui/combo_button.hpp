@@ -13,7 +13,9 @@ public:
     ComboButton& operator=(ComboButton&&) = delete;
 
     ComboButton(Widget* parent);
-    Button& set_text(const std::string& text) override;
+    ComboButton& set_combo_text(const std::string& key,
+                                const std::string& variable);
+    Button& set_text(const std::string& key) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     ComboButton& set_combos(std::span<ComboPair> combos);
     ComboButton& set_index(int index);
@@ -23,7 +25,8 @@ private:
 
     std::vector<std::string> m_suffix;
     std::vector<std::function<void()>> m_funs;
-    std::string m_text;
+    std::string m_key;
+    std::string m_variable;
     int m_index = 0;
     int m_sum = 0;
 };

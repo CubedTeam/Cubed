@@ -1,6 +1,7 @@
 #include "Cubed/ui/join_game_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/scene/join_game_scene.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
@@ -30,7 +31,7 @@ void JoinGameUI::init() {
     param.host_game = false;
     {
         auto& label = layout.add_child<Label>();
-        label.set_text("Join A World");
+        label.set_text(tr("joingame.join_a_world"));
         label.set_scale(0.7f);
     }
     {
@@ -43,7 +44,7 @@ void JoinGameUI::init() {
     }
     {
         auto& text_ip = layout.add_child<TextField>();
-        text_ip.set_show_text("Server Ip");
+        text_ip.set_show_text(tr("joingame.server_ip"));
         text_ip.set_default_image(texture_manager);
         text_ip.set_app(&m_scene.scene_manager().app());
         text_ip.set_on_finish([this, &text_ip]() {
@@ -96,7 +97,7 @@ void JoinGameUI::init() {
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Join Game");
+        button.set_text(tr("joingame.join_world"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_change(SceneType::WORLD);
@@ -105,7 +106,7 @@ void JoinGameUI::init() {
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Return");
+        button.set_text(tr("button.return"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_pop();
