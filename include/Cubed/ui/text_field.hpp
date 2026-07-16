@@ -2,6 +2,7 @@
 
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/label.hpp"
+#include "Cubed/ui/rect.hpp"
 #include "Cubed/ui/widget.hpp"
 namespace Cubed {
 class App;
@@ -42,12 +43,16 @@ private:
     static constexpr float PADDING = 5.0f;
     static constexpr float DEFAULT_SCALE = 3.0f;
     static constexpr float TEXT_SCALE = 0.6f;
-
+    static constexpr float CURSOR_INTERVAL = 0.5f;
     static constexpr const char* DEFAULT_TEXT_FIELD_IMAGE =
         "texture/ui/textfield001.png";
+
     App* m_app;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;
+    std::unique_ptr<Rect> m_cursor;
+    float m_cursor_timer = 0.0f;
+    bool m_cursor_visible = true;
     bool m_inside = false;
     bool m_typing = false;
     bool m_auto_scale = false;

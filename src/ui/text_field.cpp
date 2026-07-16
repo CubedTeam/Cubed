@@ -2,6 +2,11 @@
 
 #include "Cubed/app.hpp"
 #include "Cubed/tools/text_tools.hpp"
+
+namespace {
+constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
+}
+
 namespace Cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
 
@@ -12,6 +17,13 @@ TextField::TextField(Widget* parent) : Widget(parent) {
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER_LEFT);
     m_foreground->set_offset({10, 0});
+
+    m_cursor = std::make_unique<Rect>(this);
+    m_cursor->set_width(3.0f);
+    m_cursor->set_height(std::max(1.0f, height() - DELTA_CUROUR_HEIGHT));
+    m_cursor->set_anchor(Anchor::CENTER_LEFT);
+    m_cursor->set_offset({10, 0});
+    m_cursor->set_color(Color::WHITE);
     update_text_scale();
 }
 
@@ -43,13 +55,24 @@ void TextField::on_render(Renderer& renderer) {
     if (m_foreground) {
         m_foreground->render(renderer);
     }
+    if (m_cursor_visible && m_cursor && m_typing) {
+        m_cursor->render(renderer);
+    }
 }
 void TextField::on_update(float dt) {
+    m_cursor_timer += dt;
+    if (m_cursor_timer >= CURSOR_INTERVAL) {
+        m_cursor_timer = 0.0f;
+        m_cursor_visible = !m_cursor_visible;
+    }
     if (m_background) {
         m_background->update(dt);
     }
     if (m_foreground) {
         m_foreground->update(dt);
+    }
+    if (m_cursor) {
+        m_cursor->update(dt);
     }
 }
 
@@ -67,6 +90,8 @@ void TextField::update_show_text() {
         m_foreground->set_color(Color::WHITE);
     }
     update_text_scale();
+
+    m_cursor->set_offset({13.0f + m_foreground->width(), 0.0f});
 }
 
 TextField& TextField::set_scale(float scale) {
@@ -82,9 +107,10 @@ TextField& TextField::set_width(float width) {
     update_text_scale();
     return *this;
 }
-TextField& TextField::set_height(float height) {
-    m_height = height;
+TextField& TextField::set_height(float h) {
+    m_height = h;
     update_text_scale();
+    m_cursor->set_height(std::max(1.0f, height() - DELTA_CUROUR_HEIGHT));
     return *this;
 }
 TextField& TextField::set_show_text(const std::string& text) {
