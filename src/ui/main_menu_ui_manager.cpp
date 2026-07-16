@@ -98,7 +98,9 @@ void MainMenuUIManager::init() {
 
         player_name.set_text(
             tr("menu.main.player_name",
-               arg("name", m_scene.scene_manager().app().argument().player)));
+               arg("name",
+                   m_scene.scene_manager().app().argument().player.value_or(
+                       "Unknown"))));
 
         auto& version = info_layout.add_child<Label>();
         version.set_scale(SCALE);

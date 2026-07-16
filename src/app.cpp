@@ -38,16 +38,20 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos,
         MouseMoveEvent{static_cast<float>(xpos), static_cast<float>(ypos)});
 }
 void App::init(int argc, char** argv) {
-    handle_toml();
     handle_argument(argc, argv);
 
-    auto locate = get_system_locale();
-    std::string default_value = "en_US";
-    if (locate.country == "CN") {
-        default_value = "zh_CN";
+    if (m_argument.language) {
+        Localization::instance().load_language(*m_argument.language);
+        m_game_config.set("language", *m_argument.language);
+    } else {
+        auto locate = get_system_locale();
+        std::string default_value = "en_US";
+        if (locate.country == "CN") {
+            default_value = "zh_CN";
+        }
+        Localization::instance().load_language(
+            m_game_config.get("language", default_value));
     }
-    Localization::instance().load_language(
-        m_game_config.get("language", default_value));
 
     m_window.init();
     m_window.imgui_init();
@@ -74,7 +78,9 @@ void App::init(int argc, char** argv) {
 
     m_audio.init();
     BlockManager::init();
-    m_renderer.init(m_argument.debug_on);
+    if (m_argument.debug_on) {
+        m_renderer.init(*m_argument.debug_on);
+    }
     Logger::info("Renderer Init Success");
     // MapTable::init_map();
     m_texture_manager.init_texture();
@@ -101,17 +107,13 @@ void App::handle_argument(int argc, char** argv) {
                                     std::function<void(ArgParser&)>>
         HANDLERS{
 
-            {"--client", [&](ArgParser&) { m_argument.is_client = true; }},
-
-            {"--host", [&](ArgParser&) { m_argument.is_client = false; }},
-
             {"-p",
              [&](ArgParser& p) {
                  auto arg = p.require_next("-p");
-
-                 auto r = std::from_chars(arg.data(), arg.data() + arg.size(),
-                                          m_argument.port);
-
+                 int port;
+                 auto r =
+                     std::from_chars(arg.data(), arg.data() + arg.size(), port);
+                 m_argument.port = port;
                  if (r.ec != std::errc{} || r.ptr != arg.data() + arg.size()) {
                      throw std::runtime_error(
                          std::format("Invalid port: {}", arg));
@@ -119,7 +121,7 @@ void App::handle_argument(int argc, char** argv) {
 
                  if (m_argument.port > 65535) {
                      throw std::runtime_error(
-                         std::format("Port {} out of range", m_argument.port));
+                         std::format("Port {} out of range", *m_argument.port));
                  }
              }},
 
@@ -143,7 +145,14 @@ void App::handle_argument(int argc, char** argv) {
              [&](ArgParser) {
                  m_argument.debug_on = false;
                  Logger::info("Switch off opengl debug out put");
-             }}
+             }},
+            {"--language",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--language");
+                 m_argument.language = arg;
+             }
+
+            }
 
         };
     ArgParser parser(argc, argv);
@@ -156,21 +165,6 @@ void App::handle_argument(int argc, char** argv) {
             Logger::warn("Unknown argument: {}", arg);
         }
     }
-}
-
-void App::handle_toml() {
-    toml::table server;
-    try {
-        server = toml::parse_file("server.toml");
-    } catch (const toml::parse_error& e) {
-        // Logger::warn("Ip toml parse error {}", e.what());
-        return;
-    }
-
-    m_argument.ip =
-        *TOML::safe_get_value(server, "ip", std::string("127.0.01"));
-    m_argument.port = *TOML::safe_get_value(server, "port", 25530);
-    m_argument.is_client = *TOML::safe_get_value(server, "client", false);
 }
 
 void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
@@ -749,7 +743,7 @@ int App::start_cubed_application(int argc, char** argv) {
 
     try {
         app.init(argc, argv);
-        Logger::info("Game Init Finish Start Run...");
+        Logger::info("Init Finish Start Run...");
         app.run();
 
         return 0;
