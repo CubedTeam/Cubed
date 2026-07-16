@@ -763,4 +763,7 @@ Window& App::window() { return m_window; }
 Config& App::config() { return m_game_config; }
 const Argument& App::argument() const { return m_argument; }
 AudioEngine& App::audio() { return m_audio; }
+const char* App::get_clipboard_text() {
+    return glfwGetClipboardString(m_window.get_glfw_window());
+}
 } // namespace Cubed

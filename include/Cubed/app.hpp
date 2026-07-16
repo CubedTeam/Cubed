@@ -43,6 +43,8 @@ public:
     const Argument& argument() const;
     AudioEngine& audio();
 
+    const char* get_clipboard_text();
+
 private:
     Config m_game_config;
 

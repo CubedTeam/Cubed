@@ -4,6 +4,7 @@
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/widget.hpp"
 namespace Cubed {
+class App;
 class TextField : public Widget {
 public:
     TextField(const TextField&) = delete;
@@ -24,6 +25,7 @@ public:
                                     TextureManager& texture_manager);
     TextField& set_default_image(TextureManager& texture_manager);
     TextField& set_auto_scale(bool auto_scale);
+    TextField& set_app(App* app);
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;
@@ -43,12 +45,13 @@ private:
 
     static constexpr const char* DEFAULT_TEXT_FIELD_IMAGE =
         "texture/ui/textfield001.png";
+    App* m_app;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;
     bool m_inside = false;
     bool m_typing = false;
     bool m_auto_scale = false;
-
+    bool m_ctrl_press = false;
     float m_width = NORMAL_TEXTFIELD_WIDTH;
     float m_height = NORMAL_TEXTFIELD_HEIGHT;
     float m_scale = DEFAULT_SCALE;

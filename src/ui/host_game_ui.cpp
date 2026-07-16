@@ -33,6 +33,7 @@ void HostGameUI::init() {
     {
         auto& text_seed = layout.add_child<TextField>();
         text_seed.set_show_text("WorldSeed");
+        text_seed.set_app(&m_scene.scene_manager().app());
         text_seed.set_default_image(texture_manager);
         text_seed.set_on_finish([this, &text_seed]() {
             unsigned seed = 0;
@@ -51,6 +52,7 @@ void HostGameUI::init() {
         auto& text_port = layout.add_child<TextField>();
         text_port.set_default_image(texture_manager);
         text_port.set_show_text("Port");
+        text_port.set_app(&m_scene.scene_manager().app());
         text_port.set_on_finish([this, &text_port]() {
             int port = 25530;
             auto& text = text_port.input_text();

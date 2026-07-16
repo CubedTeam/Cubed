@@ -1,7 +1,7 @@
 #include "Cubed/ui/text_field.hpp"
 
+#include "Cubed/app.hpp"
 #include "Cubed/tools/text_tools.hpp"
-
 namespace Cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
 
@@ -107,7 +107,10 @@ TextField& TextField::set_auto_scale(bool auto_scale) {
     update_text_scale();
     return *this;
 }
-
+TextField& TextField::set_app(App* app) {
+    m_app = app;
+    return *this;
+}
 const std::string& TextField::input_text() const { return m_input_text; }
 
 bool TextField::handle_mouse_move_event(const MouseMoveEvent& e) {
@@ -165,6 +168,24 @@ bool TextField::handle_key_event(const KeyEvent& e) {
             return true;
         }
     }
+    if (e.key == Key::LEFT_CTRL) {
+        if (e.action == KeyAction::PRESS) {
+            m_ctrl_press = true;
+            return true;
+        } else if (e.action == KeyAction::RELEASE) {
+            m_ctrl_press = false;
+            return true;
+        }
+    }
+
+    if (e.key == Key::V && e.action == KeyAction::PRESS && m_ctrl_press) {
+        if (m_app && m_typing) {
+            m_input_text.append(m_app->get_clipboard_text());
+            update_show_text();
+            return true;
+        }
+    }
+
     return false;
 }
 } // namespace Cubed

@@ -32,6 +32,7 @@ void JoinGameUI::init() {
         auto& text_ip = layout.add_child<TextField>();
         text_ip.set_show_text("Server Ip");
         text_ip.set_default_image(texture_manager);
+        text_ip.set_app(&m_scene.scene_manager().app());
         text_ip.set_on_finish([this, &text_ip]() {
             auto& ip = text_ip.input_text();
             auto p = ip.find(":");
