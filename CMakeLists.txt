@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
+
+if(APPLE)
+    message(FATAL_ERROR "This game does not support macOS")
+endif()
+
 project(Cubed LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
