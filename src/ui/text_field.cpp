@@ -5,7 +5,6 @@
 
 #include <algorithm>
 
-
 namespace {
 constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 }
