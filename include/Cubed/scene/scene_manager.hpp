@@ -2,8 +2,10 @@
 #include "Cubed/scene/scene.hpp"
 
 #include <memory>
+#include <optional>
 #include <stack>
 #include <vector>
+
 namespace Cubed {
 class App;
 

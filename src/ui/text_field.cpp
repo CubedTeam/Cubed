@@ -3,6 +3,9 @@
 #include "Cubed/app.hpp"
 #include "Cubed/tools/text_tools.hpp"
 
+#include <algorithm>
+
+
 namespace {
 constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 }

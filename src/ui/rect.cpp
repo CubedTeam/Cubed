@@ -1,6 +1,9 @@
 #include "Cubed/ui/rect.hpp"
 
 #include "Cubed/render/renderer.hpp"
+
+#include <algorithm>
+
 namespace Cubed {
 Rect::Rect(Widget* parent)
     : Widget(parent) {

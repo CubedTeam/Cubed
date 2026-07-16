@@ -1,5 +1,7 @@
 #include "Cubed/ui/button.hpp"
 
+#include <algorithm>
+
 namespace Cubed {
 Button::Button(Widget* parent) : Widget(parent) {
     m_background = std::make_unique<Image>(this);

@@ -1,5 +1,7 @@
 #pragma once
-
+#ifdef DELETE
+#undef DELETE
+#endif
 namespace Cubed {
 enum class Key {
     // Letter keys
