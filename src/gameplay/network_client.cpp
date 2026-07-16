@@ -2,6 +2,7 @@
 
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/net_error.hpp"
 
 #include <utility>
 
@@ -44,8 +45,12 @@ asio::awaitable<void> NetworkClient::connect(std::string ip, int port) {
         Logger::info("NetworkClient Read Loop Started");
         m_connected = true;
         co_return;
-
+    } catch (const asio::system_error& e) {
+        std::string_view error = net_error_message(e.code());
+        Logger::error("Client Error: {}, code {}", error, e.code().value());
+        set_error(error);
     } catch (const std::exception& e) {
+
         Logger::error("Client Error {}", e.what());
         set_error(e.what());
     }
@@ -133,21 +138,17 @@ asio::awaitable<void> NetworkClient::read_loop() {
             }
         }
     } catch (const asio::system_error& e) {
-        auto ec = e.code();
-        set_error(e.what());
-        if (ec == asio::error::eof || ec == asio::error::operation_aborted) {
-            Logger::info("Client disconnected");
-        } else {
-            Logger::warn("Asio Error {}", e.what());
-        }
+        std::string_view error = net_error_message(e.code());
+        Logger::error("Client Error: {}, code {}", error, e.code().value());
+        set_error(error);
         close();
     } catch (const std::exception& e) {
-        Logger::error("Session Error {}", e.what());
+        Logger::error("Client Error {}", e.what());
         set_error(e.what());
         close();
     } catch (...) {
         Logger::error("Unknown Error");
-        set_error("Unhnown Error");
+        set_error("Unknown Error");
         close();
     }
     co_return;
@@ -179,7 +180,10 @@ void NetworkClient::do_write() {
         m_socket, asio::buffer(*packet),
         asio::bind_executor(m_strand, [self](std::error_code ec, size_t) {
             if (ec) {
-                Logger::warn("Write Ec {}", ec.message());
+                std::string_view error = net_error_message(ec);
+                Logger::error("Cleint Write Error: {}, code {}", error,
+                              ec.value());
+                self->set_error(error);
                 self->close();
                 return;
             }
