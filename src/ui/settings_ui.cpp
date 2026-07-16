@@ -5,6 +5,7 @@
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/settings_scene.hpp"
+#include "Cubed/tools/system_locate.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/combo_button.hpp"
@@ -149,6 +150,42 @@ void SettingsUI::init() {
         }
         aniso_button.set_combos(combos);
     }
+
+    {
+        auto& lang_button = layout.add_child<ComboButton>();
+        auto& label = layout.add_child<Label>();
+        label.set_text(tr("settings.restart_game_info"));
+        label.set_scale(0.7f);
+        label.set_color(Color::RED);
+        label.set_visible(false);
+        lang_button.set_default_image(texture_manager);
+        lang_button.set_combo_text("settings.language", "lang");
+        auto locate = get_system_locale();
+        std::string default_value = "en_US";
+        if (locate.country == "CN") {
+            default_value = "zh_CN";
+        }
+        auto lang = config.get("language", default_value);
+        int index = 0;
+        if (lang == "en_US") {
+            index = 0;
+        } else if (lang == "zh_CN") {
+            index = 1;
+        }
+        lang_button.set_index(index);
+        std::vector<ComboPair> combos;
+
+        combos.emplace_back("English", [&label, &config]() {
+            config.set("language", std::string("en_US"));
+            label.set_visible(true);
+        });
+        combos.emplace_back("简体中文", [&label, &config]() {
+            config.set("language", std::string("zh_CN"));
+            label.set_visible(true);
+        });
+        lang_button.set_combos(combos);
+    }
+
     auto& return_button = layout.add_child<Button>();
     return_button.set_background_image("texture/ui/button001.png",
                                        texture_manager);

@@ -20,6 +20,8 @@
     "settings.fullscreen": "全屏：{state}",
     "settings.aniso": "各向异性过滤：{aniso}",
     "settings.vsync": "垂直同步: {state}",
+    "settings.language": "语言: {lang}",
+    "settings.restart_game_info": "您需要重启游戏以应用这些更改。",
     "common.on": "开",
     "common.off": "关",
     "hostgame.create_a_new_world": "创建新世界",

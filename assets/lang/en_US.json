@@ -20,6 +20,8 @@
     "settings.fullscreen": "fullscreen: {state}",
     "settings.aniso": "Aniso: {aniso}",
     "settings.vsync": "V-Sync: {state}",
+    "settings.language": "Language: {lang}",
+    "settings.restart_game_info": "You need to restart the game to apply this changes.",
     "common.on": "on",
     "common.off": "off",
     "hostgame.create_a_new_world": "Create A New World",
