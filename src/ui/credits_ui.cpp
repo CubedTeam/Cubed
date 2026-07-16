@@ -59,6 +59,7 @@ void CreditsUI::init() {
         add_text("zstd");
         add_text("OpenAl Soft");
         add_text("dr_libs");
+        add_text("nlohmann/json");
         add_text("Music", 0.8f);
         add_text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), CC "
                  "BY 4.0.");
