@@ -31,6 +31,11 @@ void HostGameUI::init() {
     auto& param = m_scene.scene_manager().world_scene_param();
     param.host_game = true;
     {
+        auto& label = layout.add_child<Label>();
+        label.set_text("Create A New World");
+        label.set_scale(0.7f);
+    }
+    {
         auto& text_seed = layout.add_child<TextField>();
         text_seed.set_show_text("WorldSeed");
         text_seed.set_app(&m_scene.scene_manager().app());

@@ -18,6 +18,9 @@ WorldScene::~WorldScene() {
 }
 
 void WorldScene::update(float dt) {
+    if (m_client->is_connect_error()) {
+        set_error(m_client->get_error_string());
+    }
     if (m_error_ui.has_error()) {
         m_error_ui.update(dt);
         return;
@@ -277,7 +280,6 @@ bool WorldScene::pause() const { return m_paused; }
 void WorldScene::set_pause(bool pause) {
     m_paused = pause;
     auto& window = m_scene_manager.app().window();
-    Logger::info("pause {}", m_paused);
     window.set_game_running(!m_paused);
     if (m_paused) {
         m_client_world.reset_key_status();

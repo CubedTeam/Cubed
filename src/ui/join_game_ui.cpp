@@ -29,6 +29,11 @@ void JoinGameUI::init() {
     auto& param = m_scene.scene_manager().world_scene_param();
     param.host_game = false;
     {
+        auto& label = layout.add_child<Label>();
+        label.set_text("Join A World");
+        label.set_scale(0.7f);
+    }
+    {
         auto& text_ip = layout.add_child<TextField>();
         text_ip.set_show_text("Server Ip");
         text_ip.set_default_image(texture_manager);

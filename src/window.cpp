@@ -238,7 +238,6 @@ void Window::set_game_running(bool running) {
         enable_mouse();
     }
     set_imgui_enabled(false);
-    Logger::info("Window Set Game Running {}", m_game_running);
 }
 
 void Window::should_close_window() { glfwSetWindowShouldClose(m_window, true); }

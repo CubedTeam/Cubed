@@ -752,11 +752,6 @@ void ClientWorld::request_exit() {
 
 void ClientWorld::update(float delta_time) {
 
-    if (m_client->is_connect_error()) {
-        m_world_scene.set_error(m_client->get_error_string());
-        return;
-    }
-
     m_player.update(delta_time);
     {
         std::lock_guard lk(m_delete_vbo_mutex);
