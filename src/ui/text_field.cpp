@@ -155,14 +155,14 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
         if (m_inside) {
             m_typing = true;
             update_show_text();
-            return true;
+            return false;
         } else {
             if (m_typing) {
                 m_typing = false;
                 if (m_on_finished) {
                     m_on_finished();
                 }
-                return true;
+                return false;
             }
         }
     }

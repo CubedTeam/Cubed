@@ -14,6 +14,9 @@ constexpr float NORMAL_SLIDER_WIDTH = 225.0f;
 constexpr float NORMAL_SLIDER_HEIGHT = 20.0f;
 constexpr float NORMAL_TEXTFIELD_WIDTH = 225.0f;
 constexpr float NORMAL_TEXTFIELD_HEIGHT = 20.0f;
+
+enum class TraversalOrder { FRONT_TO_BACK, BACK_TO_FRONT };
+
 class Widget {
 
 public:
@@ -43,6 +46,9 @@ public:
     virtual bool handle_window_resize_event(const WindowResizeEvent& e);
     virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
     virtual bool handle_text_input_event(const TextInputEvent& e);
+
+    void set_order(TraversalOrder order);
+
     template <typename T, typename... Args> T& add_child(Args&&... args) {
         auto widget = std::make_unique<T>(std::forward<Args>(args)..., this);
         T& ref = *widget;
@@ -58,6 +64,7 @@ protected:
     // Center is at the top-left corner, position is at the top-left corner
     Anchor m_anchor = Anchor::TOP_LEFT;
     bool m_visible = true;
+
     glm::ivec2 m_offset{0, 0};
 
     std::vector<std::unique_ptr<Widget>>& children();
@@ -70,5 +77,6 @@ protected:
 
 private:
     std::vector<std::unique_ptr<Widget>> m_children;
+    TraversalOrder m_order = TraversalOrder::BACK_TO_FRONT;
 };
 } // namespace Cubed

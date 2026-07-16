@@ -1,7 +1,9 @@
 #include "Cubed/ui/column_layout.hpp"
 
 namespace Cubed {
-ColumnLayout::ColumnLayout(Widget* parent) : Widget(parent) {}
+ColumnLayout::ColumnLayout(Widget* parent) : Widget(parent) {
+    Widget::set_order(TraversalOrder::FRONT_TO_BACK);
+}
 ColumnLayout::~ColumnLayout() {}
 
 void ColumnLayout::update(float dt) {

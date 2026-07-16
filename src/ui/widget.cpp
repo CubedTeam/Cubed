@@ -130,26 +130,51 @@ glm::vec2 Widget::pos() const { return compute_position(); }
 const std::string& Widget::id() const { return m_id; }
 
 bool Widget::handle_key_event(const KeyEvent& e) {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->handle_key_event(e)) {
-            return true;
+    if (m_order == TraversalOrder::BACK_TO_FRONT) {
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            if ((*it)->handle_key_event(e)) {
+                return true;
+            }
+        }
+    } else if (m_order == TraversalOrder::FRONT_TO_BACK) {
+        for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+            if ((*it)->handle_key_event(e)) {
+                return true;
+            }
         }
     }
 
     return false;
 }
 bool Widget::handle_mouse_button_event(const MouseButtonEvent& e) {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->handle_mouse_button_event(e)) {
-            return true;
+    if (m_order == TraversalOrder::BACK_TO_FRONT) {
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            if ((*it)->handle_mouse_button_event(e)) {
+                return true;
+            }
+        }
+    } else if (m_order == TraversalOrder::FRONT_TO_BACK) {
+        for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+            if ((*it)->handle_mouse_button_event(e)) {
+                return true;
+            }
         }
     }
+
     return false;
 }
 bool Widget::handle_mouse_wheel_event(const MouseWheelEvent& e) {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->handle_mouse_wheel_event(e)) {
-            return true;
+    if (m_order == TraversalOrder::BACK_TO_FRONT) {
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            if ((*it)->handle_mouse_wheel_event(e)) {
+                return true;
+            }
+        }
+    } else if (m_order == TraversalOrder::FRONT_TO_BACK) {
+        for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+            if ((*it)->handle_mouse_wheel_event(e)) {
+                return true;
+            }
         }
     }
     return false;
@@ -158,30 +183,54 @@ bool Widget::handle_window_resize_event(const WindowResizeEvent& e) {
 
     set_window_size(e.width, e.height);
 
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->handle_window_resize_event(e)) {
-            return true;
+    if (m_order == TraversalOrder::BACK_TO_FRONT) {
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            if ((*it)->handle_window_resize_event(e)) {
+                return true;
+            }
+        }
+    } else if (m_order == TraversalOrder::FRONT_TO_BACK) {
+        for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+            if ((*it)->handle_window_resize_event(e)) {
+                return true;
+            }
         }
     }
     return false;
 }
 
 bool Widget::handle_mouse_move_event(const MouseMoveEvent& e) {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->handle_mouse_move_event(e)) {
-            return true;
+    if (m_order == TraversalOrder::BACK_TO_FRONT) {
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            if ((*it)->handle_mouse_move_event(e)) {
+                return true;
+            }
+        }
+    } else if (m_order == TraversalOrder::FRONT_TO_BACK) {
+        for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+            if ((*it)->handle_mouse_move_event(e)) {
+                return true;
+            }
         }
     }
     return false;
 }
 
 bool Widget::handle_text_input_event(const TextInputEvent& e) {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->handle_text_input_event(e)) {
-            return true;
+    if (m_order == TraversalOrder::BACK_TO_FRONT) {
+        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+            if ((*it)->handle_text_input_event(e)) {
+                return true;
+            }
+        }
+    } else if (m_order == TraversalOrder::FRONT_TO_BACK) {
+        for (auto it = m_children.begin(); it != m_children.end(); ++it) {
+            if ((*it)->handle_text_input_event(e)) {
+                return true;
+            }
         }
     }
     return false;
 }
-
+void Widget::set_order(TraversalOrder order) { m_order = order; }
 } // namespace Cubed
