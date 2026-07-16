@@ -82,7 +82,7 @@ public:
     void set_nearest() const;
     void set_repeat(bool r = true, bool s = true, bool t = true) const;
     void set_clamp_to_border(bool r = true, bool s = true, bool t = true) const;
-    void set_clamp_to_edge(bool r = true, bool s = true, bool t = true) const;
+    void set_clamp_to_edge(bool r = false, bool s = true, bool t = true) const;
 
     TextureType type() const;
     float width() const;

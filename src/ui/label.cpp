@@ -25,7 +25,7 @@ void Label::on_update(float dt) { (void)dt; }
 void Label::on_render(Renderer& renderer) { renderer.render_lable(*this); }
 
 void Label::update_vertices() {
-    auto textmesh = Font::vertices(m_text.text);
+    auto textmesh = Font::get().vertices(m_text.text);
     m_data.m_vertices = std::move(textmesh.vertices);
 
     m_offset_x = textmesh.min_x;

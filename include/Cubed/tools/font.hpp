@@ -9,6 +9,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <hb-ft.h>
 #include <string>
 #include <unordered_map>
 
@@ -20,6 +21,16 @@ struct Character {
     glm::ivec2 size;
     glm::ivec2 bearing;
     GLuint advance;
+};
+
+struct Glyph {
+    glm::vec2 uv_min;
+    glm::vec2 uv_max;
+
+    glm::ivec2 size;
+    glm::ivec2 bearing;
+
+    int layer = 0;
 };
 
 struct TextMesh {
@@ -36,27 +47,29 @@ class Shader;
 
 class Font {
 public:
+    static constexpr int CELL_SIZE = 64;
     Font();
     ~Font();
-
-    static TextMesh vertices(const std::string& text);
-    static const Texture* text_texture();
+    static Font& get();
+    TextMesh vertices(const std::string& text);
+    const Texture* text_texture();
     static const std::string& font_path();
 
 private:
     FT_Library m_ft;
     FT_Face m_face;
-
+    hb_font_t* m_hb_font;
+    int m_next_layer = 0;
     float m_texture_width = 64;
     float m_texture_height = 64;
 
-    static inline std::unique_ptr<Texture> m_text_texture;
+    std::unique_ptr<Texture> m_text_texture;
     static inline std::string m_font_path{ASSETS_PATH
-                                          "fonts/IBMPlexSans-Regular.ttf"};
-    std::unordered_map<char8_t, Character> m_characters;
-
-    void load_character(char8_t c);
-    void setup_font_character();
+                                          "fonts/unifont_t-17.0.05.otf"};
+    std::unordered_map<uint32_t, Glyph> m_cache;
+    int m_max_layers = 0;
+    Glyph& load_glyph(uint32_t glyph_index);
+    void upload_glyph(Glyph& glyph, const unsigned char* buffer);
 };
 
 } // namespace Cubed
