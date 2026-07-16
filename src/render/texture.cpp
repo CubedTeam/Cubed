@@ -50,6 +50,7 @@ void Texture::tex_image_2d(TextureFormat internalformat, TextureFormat format,
                            GLenum type, const void* data, GLsizei width,
                            GLsizei height, GLint level, GLint border) {
     bind();
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     m_width = static_cast<float>(width);
     m_height = static_cast<float>(height);
     glTexImage2D(get_gl_texture_type(), level,
@@ -62,6 +63,7 @@ void Texture::tex_image_3d(TextureFormat internalformat, TextureFormat format,
                            GLsizei height, GLsizei depth, GLint level,
                            GLint border) {
     bind();
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     m_width = static_cast<float>(width);
     m_height = static_cast<float>(height);
     glTexImage3D(get_gl_texture_type(), level,
@@ -73,6 +75,7 @@ void Texture::tex_sub_image_3d(TextureFormat format, GLenum type,
                                GLint zoffset, GLsizei width, GLsizei height,
                                GLsizei depth, GLint level) const {
     bind();
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexSubImage3D(get_gl_texture_type(), level, xoffset, yoffset, zoffset,
                     width, height, depth, std::to_underlying(format), type,
                     data);

@@ -23,7 +23,8 @@ public:
     Slider& set_scale(float scale);
     Slider& set_width(float width);
     Slider& set_height(float h);
-    Slider& set_text(const std::string& text);
+    Slider& set_slider_text(const std::string& key,
+                            const std::string& variable);
     Slider& set_track_image(const std::string& path,
                             TextureManager& texture_manager);
     Slider& set_thumb_image(const std::string& path,
@@ -57,8 +58,8 @@ private:
     int* m_int_value = nullptr;
     float m_min = 0;
     float m_max = 0;
-    std::string m_text;
-
+    std::string m_key;
+    std::string m_variable;
     void init_track();
     void init_thumb();
 

@@ -1,6 +1,7 @@
 #include "Cubed/ui/credits_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/scene/credits_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/ui/button.hpp"
@@ -30,7 +31,7 @@ void CreditsUI::init() {
             "texture/ui/button001.png",
             m_scene.scene_manager().app().texture_manager());
 
-        button.set_text("Return");
+        button.set_text(tr("button.return"));
         button.set_anchor(Anchor::BOTTOM_CENTER).set_offset({0, -20});
         button.set_clicked([this]() { m_scene.scene_manager().request_pop(); });
     }
@@ -59,6 +60,8 @@ void CreditsUI::init() {
         add_text("zstd");
         add_text("OpenAl Soft");
         add_text("dr_libs");
+        add_text("nlohmann/json");
+        add_text("HarfBuzz");
         add_text("Music", 0.8f);
         add_text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), CC "
                  "BY 4.0.");

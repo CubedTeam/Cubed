@@ -6,8 +6,9 @@ find_package(Protobuf REQUIRED)
 find_package(absl REQUIRED)
 find_package(zstd REQUIRED)
 find_package(OpenAL REQUIRED)
+find_package(harfbuzz REQUIRED)
+find_package(Freetype REQUIRED)
 if (UNIX AND NOT APPLE)
-    find_package(Freetype REQUIRED)
     find_package(glfw3 REQUIRED)   
 endif()
 
@@ -51,15 +52,6 @@ if (WIN32)
 
     FetchContent_MakeAvailable(glfw)
 
-    FetchContent_Declare(
-        freetype
-        GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
-        GIT_TAG VER-2-14-3
-    )
-    FetchContent_MakeAvailable(freetype)
-    if(TARGET freetype)
-    add_library(Freetype::Freetype ALIAS freetype)
-    endif()
     set(_BUILD_SHARED_LIBS_SAVED ${BUILD_SHARED_LIBS})
     set(BUILD_SHARED_LIBS ON)
 

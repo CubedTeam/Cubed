@@ -1,6 +1,7 @@
 #include "Cubed/ui/host_game_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/scene/host_game_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/ui/button.hpp"
@@ -32,7 +33,7 @@ void HostGameUI::init() {
     param.host_game = true;
     {
         auto& label = layout.add_child<Label>();
-        label.set_text("Create A New World");
+        label.set_text(tr("hostgame.create_a_new_world"));
         label.set_scale(0.7f);
     }
     {
@@ -45,7 +46,7 @@ void HostGameUI::init() {
     }
     {
         auto& text_seed = layout.add_child<TextField>();
-        text_seed.set_show_text("WorldSeed");
+        text_seed.set_show_text(tr("hostgame.world_seed"));
         text_seed.set_app(&m_scene.scene_manager().app());
         text_seed.set_default_image(texture_manager);
         text_seed.set_on_finish([this, &text_seed]() {
@@ -67,7 +68,7 @@ void HostGameUI::init() {
     {
         auto& text_port = layout.add_child<TextField>();
         text_port.set_default_image(texture_manager);
-        text_port.set_show_text("Port: 25530");
+        text_port.set_show_text(tr("hostgame.port"));
         text_port.set_app(&m_scene.scene_manager().app());
         text_port.set_on_finish([this, &text_port]() {
             int port = 25530;
@@ -93,7 +94,7 @@ void HostGameUI::init() {
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Start Game");
+        button.set_text(tr("hostgame.create_world"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_change(SceneType::WORLD);
@@ -102,7 +103,7 @@ void HostGameUI::init() {
     {
         auto& button = layout.add_child<Button>();
         button.set_default_image(texture_manager);
-        button.set_text("Return");
+        button.set_text(tr("button.return"));
         button.set_clicked([this, &button]() {
             button.set_enable(false);
             m_scene.scene_manager().request_pop();

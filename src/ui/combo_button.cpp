@@ -1,13 +1,23 @@
 #include "Cubed/ui/combo_button.hpp"
 
+#include "Cubed/localization.hpp"
+
 namespace Cubed {
 ComboButton::ComboButton(Widget* parent) : Button(parent) {}
 
-Button& ComboButton::set_text(const std::string& text) {
-    m_text = text;
+ComboButton& ComboButton::set_combo_text(const std::string& key,
+                                         const std::string& variable) {
+    m_key = key;
+    m_variable = variable;
     update_text();
     return *this;
 }
+Button& ComboButton::set_text(const std::string&) {
+    ASSERT_MSG(false,
+               "don't use this function, use, set_combo_button instead.");
+    return *this;
+}
+
 bool ComboButton::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
         if (m_hovered && m_enable) {
@@ -47,8 +57,7 @@ void ComboButton::update_text() {
     if (m_suffix.empty()) {
         return;
     }
-    auto text = m_text + ": " + m_suffix[m_index];
-    m_foreground->set_text(text);
+    m_foreground->set_text(tr(m_key, arg(m_variable, m_suffix[m_index])));
     update_text_scale();
 }
 

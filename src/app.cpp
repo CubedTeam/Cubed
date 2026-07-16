@@ -3,10 +3,12 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
+#include "Cubed/tools/system_locate.hpp"
 #include "Cubed/tools/text_tools.hpp"
 #include "version.hpp"
 
@@ -38,6 +40,14 @@ void App::cursor_position_callback(GLFWwindow* window, double xpos,
 void App::init(int argc, char** argv) {
     handle_toml();
     handle_argument(argc, argv);
+
+    auto locate = get_system_locale();
+    std::string default_value = "en_US";
+    if (locate.country == "CN") {
+        default_value = "zh_CN";
+    }
+    Localization::instance().load_language(
+        m_game_config.get("language", default_value));
 
     m_window.init();
     m_window.imgui_init();

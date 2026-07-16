@@ -1,14 +1,12 @@
 #include "Cubed/tools/font.hpp"
 
-#include "Cubed/constants.hpp"
+#include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
-
 namespace fs = std::filesystem;
 
 namespace Cubed {
 
 Font::Font() {
-
     if (FT_Init_FreeType(&m_ft)) {
         Logger::error("FREETYPE: Could not init FreeType Library");
     }
@@ -17,54 +15,84 @@ Font::Font() {
     }
 
     FT_Set_Pixel_Sizes(m_face, 0, 48);
-    setup_font_character();
+
+    GLint max_layers;
+    glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_layers);
+
+    m_max_layers = std::min(max_layers, 2048);
+    Logger::info("Font Max Layers {}", m_max_layers);
+    m_hb_font = hb_ft_font_create_referenced(m_face);
+    m_text_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
+    m_text_texture->tex_image_3d(TextureFormat::R8, TextureFormat::RED,
+                                 GL_UNSIGNED_BYTE, nullptr, CELL_SIZE,
+                                 CELL_SIZE, m_max_layers);
+    m_text_texture->set_linear();
+    m_text_texture->set_clamp_to_edge();
 }
 
 Font::~Font() {
-
+    hb_font_destroy(m_hb_font);
     FT_Done_Face(m_face);
     FT_Done_FreeType(m_ft);
 }
 
-void Font::load_character(char8_t c) {
-    if (FT_Load_Char(m_face, c, FT_LOAD_RENDER)) {
-        Logger::error("FREETYTPE: Failed to load Glyph");
-        return;
+Glyph& Font::load_glyph(uint32_t glyph_index) {
+    auto it = m_cache.find(glyph_index);
+    if (it != m_cache.end()) {
+        return it->second;
     }
-    const auto& width = m_face->glyph->bitmap.width;
-    const auto& height = m_face->glyph->bitmap.rows;
-    m_text_texture->tex_sub_image_3d(TextureFormat::RED, GL_UNSIGNED_BYTE,
-                                     m_face->glyph->bitmap.buffer, 0, 0,
-                                     static_cast<int>(c), width, height);
+    if (FT_Load_Glyph(m_face, glyph_index, FT_LOAD_RENDER)) {
+        Logger::error("Failed to load glyph {}", glyph_index);
+    }
 
-    Character character = {
-        glm::vec2{0.5f / m_texture_width, 0.5f / m_texture_height},
-        glm::vec2{(width - 0.5f) / m_texture_width,
-                  (height - 0.5f) / m_texture_height},
-        glm::ivec2(m_face->glyph->bitmap.width, m_face->glyph->bitmap.rows),
-        glm::ivec2(m_face->glyph->bitmap_left, m_face->glyph->bitmap_top),
-        static_cast<GLuint>(m_face->glyph->advance.x)};
+    Glyph glyph;
 
-    m_characters.insert({c, std::move(character)});
+    glyph.size.x = m_face->glyph->bitmap.width;
+    glyph.size.y = m_face->glyph->bitmap.rows;
+    glyph.bearing.x = m_face->glyph->bitmap_left;
+    glyph.bearing.y = m_face->glyph->bitmap_top;
+
+    upload_glyph(glyph, m_face->glyph->bitmap.buffer);
+    auto [iter, _] = m_cache.try_emplace(glyph_index, std::move(glyph));
+    return iter->second;
 }
 
-void Font::setup_font_character() {
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    m_text_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
-    m_text_texture->tex_image_3d(TextureFormat::R8, TextureFormat::RED,
-                                 GL_UNSIGNED_BYTE, nullptr, m_texture_width,
-                                 m_texture_height, MAX_CHARACTER);
+void Font::upload_glyph(Glyph& glyph, const unsigned char* buffer) {
+    ASSERT(glyph.size.x <= CELL_SIZE);
+    ASSERT(glyph.size.y <= CELL_SIZE);
+    ASSERT(m_next_layer < m_max_layers);
 
-    for (char8_t c = 0; c < 128; c++) {
-        load_character(c);
-    }
-    m_text_texture->set_linear();
-    m_text_texture->set_clamp_to_edge(false, true, true);
+    m_text_texture->tex_sub_image_3d(RED, GL_UNSIGNED_BYTE, buffer, 0, 0,
+                                     m_next_layer, glyph.size.x, glyph.size.y);
+
+    glyph.layer = m_next_layer++;
+
+    glyph.uv_min = {0, 0};
+    glyph.uv_max = {glyph.size.x / float(CELL_SIZE),
+                    glyph.size.y / float(CELL_SIZE)};
 }
 
-TextMesh Font::vertices(const std::string& text) {
+Font& Font::get() {
     static Font font;
+    return font;
+}
+TextMesh Font::vertices(const std::string& text) {
 
+    hb_buffer_t* buffer = hb_buffer_create();
+    hb_buffer_add_utf8(buffer, text.c_str(), text.size(), 0, text.size());
+    hb_buffer_guess_segment_properties(buffer);
+    hb_shape(m_hb_font, buffer, nullptr, 0);
+
+    unsigned int count;
+
+    hb_glyph_info_t* infos = hb_buffer_get_glyph_infos(buffer, &count);
+
+    hb_glyph_position_t* positions =
+        hb_buffer_get_glyph_positions(buffer, &count);
+    if (count == 0) {
+        hb_buffer_destroy(buffer);
+        return {};
+    }
     std::vector<Vertex2D> vertices;
 
     float min_x = std::numeric_limits<float>::max();
@@ -75,20 +103,18 @@ TextMesh Font::vertices(const std::string& text) {
     float pen_x = 0.0f;
     float pen_y = 0.0f;
 
-    for (char8_t c : text) {
-        auto it = font.m_characters.find(c);
-        if (it == font.m_characters.end()) {
-            Logger::error("Can't find character {}", static_cast<char>(c));
-            continue;
-        }
+    for (unsigned i = 0; i < count; i++) {
 
-        Character& ch = it->second;
+        uint32_t glyph_index = infos[i].codepoint;
 
-        float xpos = pen_x + ch.bearing.x;
-        float ypos = pen_y - ch.bearing.y;
+        Glyph& glyph = load_glyph(glyph_index);
 
-        float w = ch.size.x;
-        float h = ch.size.y;
+        float xpos = pen_x + positions[i].x_offset / 64.0f + glyph.bearing.x;
+
+        float ypos = pen_y - positions[i].y_offset / 64.0f - glyph.bearing.y;
+
+        float w = glyph.size.x;
+        float h = glyph.size.y;
 
         min_x = std::min(min_x, xpos);
         min_y = std::min(min_y, ypos);
@@ -96,28 +122,29 @@ TextMesh Font::vertices(const std::string& text) {
         max_x = std::max(max_x, xpos + w);
         max_y = std::max(max_y, ypos + h);
 
-        vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
-                              static_cast<float>(c));
-        vertices.emplace_back(xpos, ypos, ch.uv_min.x, ch.uv_min.y,
-                              static_cast<float>(c));
-        vertices.emplace_back(xpos + w, ypos, ch.uv_max.x, ch.uv_min.y,
-                              static_cast<float>(c));
+        vertices.emplace_back(xpos, ypos + h, glyph.uv_min.x, glyph.uv_max.y,
+                              static_cast<float>(glyph.layer));
+        vertices.emplace_back(xpos, ypos, glyph.uv_min.x, glyph.uv_min.y,
+                              static_cast<float>(glyph.layer));
+        vertices.emplace_back(xpos + w, ypos, glyph.uv_max.x, glyph.uv_min.y,
+                              static_cast<float>(glyph.layer));
 
-        vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
-                              static_cast<float>(c));
-        vertices.emplace_back(xpos + w, ypos, ch.uv_max.x, ch.uv_min.y,
-                              static_cast<float>(c));
-        vertices.emplace_back(xpos + w, ypos + h, ch.uv_max.x, ch.uv_max.y,
-                              static_cast<float>(c));
+        vertices.emplace_back(xpos, ypos + h, glyph.uv_min.x, glyph.uv_max.y,
+                              static_cast<float>(glyph.layer));
+        vertices.emplace_back(xpos + w, ypos, glyph.uv_max.x, glyph.uv_min.y,
+                              static_cast<float>(glyph.layer));
+        vertices.emplace_back(xpos + w, ypos + h, glyph.uv_max.x,
+                              glyph.uv_max.y, static_cast<float>(glyph.layer));
 
-        pen_x += (ch.advance >> 6);
+        pen_x += positions[i].x_advance / 64.0f;
+        pen_y += positions[i].y_advance / 64.0f;
     }
     // Top-left anchor point
     for (auto& v : vertices) {
         v.x -= min_x;
         v.y -= min_y;
     }
-
+    hb_buffer_destroy(buffer);
     return {std::move(vertices), max_x - min_x, max_y - min_y, 0, 0};
 }
 

@@ -1,5 +1,6 @@
 #include "Cubed/ui/slider.hpp"
 
+#include "Cubed/localization.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
@@ -84,8 +85,10 @@ Slider& Slider::set_height(float h) {
     update_text_scale();
     return *this;
 }
-Slider& Slider::set_text(const std::string& text) {
-    m_text = text;
+Slider& Slider::set_slider_text(const std::string& key,
+                                const std::string& variable) {
+    m_key = key;
+    m_variable = variable;
     return *this;
 }
 Slider& Slider::set_track_image(const std::string& path,
@@ -164,7 +167,7 @@ void Slider::on_update(float dt) {
     }
     float range = m_max - m_min;
     if (range <= 0.0f) {
-        Logger::error("Slider {} Range {} is <= 0.0f", m_text, range);
+        Logger::error("Slider {} Range {} is <= 0.0f", m_key, range);
         ASSERT(false);
         return;
     }
@@ -184,11 +187,12 @@ void Slider::on_update(float dt) {
     m_thumb->set_offset({offset, 0});
     if (m_label) {
         if (m_type == ValueType::FLOAT && m_float_value) {
-            m_label->set_text(
-                std::format("{}: {:.2f}", m_text, *m_float_value));
+
+            m_label->set_text(tr(
+                m_key, arg(m_variable, std::format("{:.2f}", *m_float_value))));
         }
         if (m_type == ValueType::INT && m_int_value) {
-            m_label->set_text(std::format("{}: {}", m_text, *m_int_value));
+            m_label->set_text(tr(m_key, arg(m_variable, *m_int_value)));
         }
     }
     if (m_track) {

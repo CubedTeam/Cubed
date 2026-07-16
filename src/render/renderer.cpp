@@ -187,7 +187,7 @@ void Renderer::render_lable(const Label& label) {
 
     shader.set_loc("projection", m_ui_proj_matrix);
 
-    Font::text_texture()->bind(0);
+    Font::get().text_texture()->bind(0);
     auto& data = label.data();
     auto pos = label.pos();
     auto& text_style = label.text_style();
