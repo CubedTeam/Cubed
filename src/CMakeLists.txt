@@ -82,4 +82,5 @@ target_sources(${PROJECT_NAME}
         scene/join_game_scene.cpp
         ui/host_game_ui.cpp
         ui/join_game_ui.cpp
+        ui/error_ui.cpp
 )

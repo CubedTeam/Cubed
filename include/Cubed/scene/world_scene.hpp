@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/network_server.hpp"
 #include "Cubed/scene/scene.hpp"
+#include "Cubed/ui/error_ui.hpp"
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
@@ -31,6 +32,7 @@ public:
     ServerWorld& server_world();
     bool pause() const;
     void set_pause(bool pause);
+    void set_error(std::string_view error);
 
 private:
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
@@ -50,6 +52,7 @@ private:
     bool m_show_dev_pannel = true;
     PauseMenuUIManager m_pasue_menu;
     WorldUIManager m_hud_ui;
+    ErrorUI m_error_ui;
     const Argument& m_argument;
 };
 } // namespace Cubed

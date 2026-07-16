@@ -27,7 +27,7 @@ void JoinGameUI::init() {
     layout.set_offset({0, 20});
     layout.set_spacing(20.0f);
     auto& param = m_scene.scene_manager().world_scene_param();
-    param.host_game = true;
+    param.host_game = false;
     {
         auto& text_ip = layout.add_child<TextField>();
         text_ip.set_show_text("Server Ip");

@@ -8,7 +8,7 @@ WorldScene::WorldScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_dev_panel(*this),
       m_client_world(scene_manager.app().audio(), scene_manager.app().config(),
                      *this),
-      m_pasue_menu(*this), m_hud_ui(*this),
+      m_pasue_menu(*this), m_hud_ui(*this), m_error_ui(*this),
       m_argument(scene_manager.app().argument()) {}
 
 WorldScene::~WorldScene() {
@@ -18,7 +18,10 @@ WorldScene::~WorldScene() {
 }
 
 void WorldScene::update(float dt) {
-
+    if (m_error_ui.has_error()) {
+        m_error_ui.update(dt);
+        return;
+    }
     m_client_world.update(dt);
     m_camera.update_move_camera();
     m_client_world.get_audio().update_listener(m_camera.get_camera_pos(),
@@ -46,7 +49,10 @@ void WorldScene::update(float dt) {
 }
 
 void WorldScene::render(Renderer& renderer) {
-
+    if (m_error_ui.has_error()) {
+        m_error_ui.render(renderer);
+        return;
+    }
     renderer.render_world(m_client_world);
     if (m_show_hud) {
         m_hud_ui.render(renderer);
@@ -60,7 +66,9 @@ void WorldScene::render(Renderer& renderer) {
     }
 }
 bool WorldScene::handle_event(const Event& e) {
-
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
     return std::visit(
         Overloaded{[this](const MouseMoveEvent& e) {
                        if (handle_mouse_move_event(e)) {
@@ -98,30 +106,34 @@ bool WorldScene::handle_event(const Event& e) {
 }
 void WorldScene::on_enter() {
     auto& param = m_scene_manager.world_scene_param();
-    if (param.seed) {
-        ChunkGenerator::init(*param.seed);
-        param.seed = std::nullopt;
-    } else {
-        ChunkGenerator::init();
-    }
-
+    m_error_ui.init();
     if (param.host_game) {
+        if (param.seed) {
+            ChunkGenerator::init(*param.seed);
+            param.seed = std::nullopt;
+        } else {
+            ChunkGenerator::init();
+        }
         m_server.start_server(param.port);
     }
     m_client = std::make_shared<NetworkClient>(m_client_world);
 
     m_client->start(param.ip, param.port);
     // init will send packet
-    m_client_world.init(m_argument.player, m_client);
+    try {
+        m_client_world.init(m_argument.player, m_client);
 
-    Logger::info("World Init Success");
-    m_camera.camera_init(&m_client_world.get_player());
-    m_scene_manager.app().window().set_camera(&m_camera);
-    m_dev_panel.init();
-    m_pasue_menu.init();
-    m_hud_ui.init();
+        Logger::info("World Init Success");
+        m_camera.camera_init(&m_client_world.get_player());
+        m_scene_manager.app().window().set_camera(&m_camera);
+        m_dev_panel.init();
+        m_pasue_menu.init();
+        m_hud_ui.init();
 
-    m_scene_manager.app().window().set_game_running(true);
+        m_scene_manager.app().window().set_game_running(true);
+    } catch (const std::exception& e) {
+        m_error_ui.set_error(e.what());
+    }
 }
 void WorldScene::on_leave() {
     m_client_world.request_exit();
@@ -136,6 +148,7 @@ void WorldScene::on_leave() {
 }
 
 void WorldScene::on_re_enter() {
+    m_error_ui.on_re_enter();
     m_pasue_menu.on_re_enter();
     m_client_world.reload_config();
     auto width = m_scene_manager.app().renderer().window_width();
@@ -270,4 +283,10 @@ void WorldScene::set_pause(bool pause) {
         m_client_world.reset_key_status();
     }
 }
+
+void WorldScene::set_error(std::string_view error) {
+    m_error_ui.set_error(error);
+    set_pause(true);
+}
+
 } // namespace Cubed

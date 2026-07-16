@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
+#include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/math_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
@@ -462,7 +463,7 @@ void ClientWorld::init(std::string_view player_name,
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
-            throw std::runtime_error("Can't connect to the server");
+            throw std::runtime_error(client->get_error_string());
         }
         std::this_thread::sleep_for(milliseconds(200));
     }
@@ -737,6 +738,9 @@ void ClientWorld::request_exit() {
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
+        if (m_client->is_connect_error()) {
+            break;
+        }
         std::this_thread::sleep_for(milliseconds(DEFAULT_PER_TICK_TIME));
         ++cnt;
         if (cnt >= WORLD_EXIT_TIMEOUT) {
@@ -747,6 +751,12 @@ void ClientWorld::request_exit() {
 }
 
 void ClientWorld::update(float delta_time) {
+
+    if (m_client->is_connect_error()) {
+        m_world_scene.set_error(m_client->get_error_string());
+        return;
+    }
+
     m_player.update(delta_time);
     {
         std::lock_guard lk(m_delete_vbo_mutex);

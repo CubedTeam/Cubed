@@ -19,6 +19,8 @@ public:
     void start(std::string ip, int port = 25530);
     bool is_connected() const;
     bool is_connect_error() const;
+    std::string get_error_string() const;
+    void clear_error();
 
 private:
     struct Task {
@@ -53,6 +55,8 @@ private:
     std::atomic<bool> m_closed{false};
     std::atomic<bool> m_connected{false};
     std::atomic<bool> m_connect_error{false};
+    mutable std::mutex m_error_string_mutex;
+    std::string m_error_string;
     // ClientWorld is managed by App
     ClientWorld& m_world;
     std::atomic_uint64_t m_sequence{0};
@@ -61,5 +65,6 @@ private:
     asio::awaitable<void> read_loop();
 
     void do_write();
+    void set_error(std::string_view error);
 };
 } // namespace Cubed
