@@ -141,6 +141,7 @@ target_link_libraries(${PROJECT_NAME}
         absl::flat_hash_map
         zstd::zstd
         OpenAL::OpenAL
+        harfbuzz::harfbuzz
         $<$<PLATFORM_ID:Windows>:ws2_32>
 
 )
