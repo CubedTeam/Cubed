@@ -2,6 +2,7 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/constants.hpp"
+#include "Cubed/input/event.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/player_renderer.hpp"
 #include "Cubed/render/shader_manager.hpp"
@@ -9,13 +10,13 @@
 #include "Cubed/render/vertex_buffer.hpp"
 #include "Cubed/render/world_renderer.hpp"
 #include "Cubed/shader.hpp"
-#include "Cubed/ui/text.hpp"
+#include "Cubed/ui/image.hpp"
+#include "Cubed/ui/label.hpp"
+#include "Cubed/ui/rect.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>
 namespace Cubed {
-
-class Camera;
 class TextureManager;
 class ClientWorld;
 class DevPanel;
@@ -23,18 +24,23 @@ class Renderer {
 public:
     constexpr static int NUM_VAO = 7;
 
-    Renderer(const Camera& camera, ClientWorld& world,
-             const TextureManager& texture_manager, DevPanel& dev_panel,
-             Config& config);
+    Renderer(TextureManager& texture_manager, Config& config);
     ~Renderer();
-    void hot_reload();
+    void reload_config();
     void init(bool debug_on);
     const Shader& get_shader(const std::string& name) const;
-    void render();
+    void begin_frame();
+    void end_frame();
+    void render_world(ClientWorld& world);
+    void render_lable(const Label& label);
+    void render_image(const Image& image);
+    void render_rect(const Rect& rect);
+    void begin_render_ui();
+    void end_render_ui();
+
     void update(float delta_time);
     void update_fov(float fov);
-    void update_proj_matrix(float aspect, float width, float height);
-    void updata_framebuffer(int width, int height);
+
     float& ambient_strength();
 
     bool& discard_transparent();
@@ -58,24 +64,23 @@ public:
     float& underwater_fog_density();
     float& water_density();
 
-    const Camera& camera() const;
-    const ClientWorld& world() const;
-    ClientWorld& world();
     const glm::mat4& world_proj_matrix() const;
     const TextureManager& texture_mamger() const;
     float delta_time() const;
 
-    float height() const;
-    float width() const;
+    float window_height() const;
+    float window_width() const;
+    float frame_height() const;
+    float frame_width() const;
     const glm::mat4& p_mat() const;
 
     const std::vector<VertexArray>& vao() const;
+    void render_dev_panel(DevPanel& dev_panel);
+
+    bool handle_event(const Event& e);
 
 private:
-    const Camera& m_camera;
-    DevPanel& m_dev_panel;
-    const TextureManager& m_texture_manager;
-    ClientWorld& m_world;
+    TextureManager& m_texture_manager;
 
     bool m_init = false;
 
@@ -84,8 +89,11 @@ private:
 
     float m_delta_time = 0.0f;
 
-    float m_width = 0.0f;
-    float m_height = 0.0f;
+    float m_frame_width = 0.0f;
+    float m_frame_height = 0.0f;
+
+    float m_window_width = 0.0f;
+    float m_window_height = 0.0f;
 
     glm::mat4 m_world_proj_matrix;
 
@@ -97,14 +105,13 @@ private:
     std::unique_ptr<VertexBuffer> m_quad_vbo;
 
     glm::mat4 m_ui_proj_matrix;
-    glm::mat4 m_ui_model_matrix;
     ShaderManager m_shaders;
 
     /*
-    0 - quad vao
+    0 - quad vao (center)
     1 - sky vao
     2 - outline vao
-    3 - ui vao
+    3 - ui vao (top-left)
     4 - text vao
     */
     std::vector<VertexArray> m_vao;
@@ -112,16 +119,12 @@ private:
 
     WorldRenderer m_world_renderer;
     Config& m_config;
+
+    bool handle_window_resize_event(const WindowResizeEvent& e);
+    bool handle_frame_buffer_resize_event(const FrameBufferResizeEvent& e);
+    void updata_framebuffer(int width, int height);
     void init_quad();
     void init_text();
-
-    void day_night_calculation();
-
-    void render_sky();
-    void render_text();
-    void render_ui();
-
-    void render_dev_panel();
 };
 
 } // namespace Cubed

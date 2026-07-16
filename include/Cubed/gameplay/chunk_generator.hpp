@@ -18,6 +18,7 @@ public:
     ChunkGenerator(ServerChunk& chunk);
 
     static void init();
+    static void init(unsigned seed);
     static void reload();
     static const unsigned& seed();
     static void seed(unsigned s);

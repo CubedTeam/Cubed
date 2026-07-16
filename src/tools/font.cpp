@@ -38,9 +38,9 @@ void Font::load_character(char8_t c) {
                                      static_cast<int>(c), width, height);
 
     Character character = {
-        glm::vec2{0.0f, 0.0f},
-        glm::vec2{static_cast<float>(width) / m_texture_width,
-                  static_cast<float>(height) / m_texture_height},
+        glm::vec2{0.5f / m_texture_width, 0.5f / m_texture_height},
+        glm::vec2{(width - 0.5f) / m_texture_width,
+                  (height - 0.5f) / m_texture_height},
         glm::ivec2(m_face->glyph->bitmap.width, m_face->glyph->bitmap.rows),
         glm::ivec2(m_face->glyph->bitmap_left, m_face->glyph->bitmap_top),
         static_cast<GLuint>(m_face->glyph->advance.x)};
@@ -51,7 +51,7 @@ void Font::load_character(char8_t c) {
 void Font::setup_font_character() {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     m_text_texture = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
-    m_text_texture->tex_image_3d(TextureFormat::RED, TextureFormat::RED,
+    m_text_texture->tex_image_3d(TextureFormat::R8, TextureFormat::RED,
                                  GL_UNSIGNED_BYTE, nullptr, m_texture_width,
                                  m_texture_height, MAX_CHARACTER);
 
@@ -62,11 +62,18 @@ void Font::setup_font_character() {
     m_text_texture->set_clamp_to_edge(false, true, true);
 }
 
-std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
-                                     float scale) {
+TextMesh Font::vertices(const std::string& text) {
     static Font font;
 
     std::vector<Vertex2D> vertices;
+
+    float min_x = std::numeric_limits<float>::max();
+    float min_y = std::numeric_limits<float>::max();
+    float max_x = std::numeric_limits<float>::lowest();
+    float max_y = std::numeric_limits<float>::lowest();
+
+    float pen_x = 0.0f;
+    float pen_y = 0.0f;
 
     for (char8_t c : text) {
         auto it = font.m_characters.find(c);
@@ -74,12 +81,20 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
             Logger::error("Can't find character {}", static_cast<char>(c));
             continue;
         }
-        Character& ch = it->second;
-        float xpos = x + ch.bearing.x * scale;
-        float ypos = y - ch.bearing.y * scale;
 
-        float w = ch.size.x * scale;
-        float h = ch.size.y * scale;
+        Character& ch = it->second;
+
+        float xpos = pen_x + ch.bearing.x;
+        float ypos = pen_y - ch.bearing.y;
+
+        float w = ch.size.x;
+        float h = ch.size.y;
+
+        min_x = std::min(min_x, xpos);
+        min_y = std::min(min_y, ypos);
+
+        max_x = std::max(max_x, xpos + w);
+        max_y = std::max(max_y, ypos + h);
 
         vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
                               static_cast<float>(c));
@@ -87,6 +102,7 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
                               static_cast<float>(c));
         vertices.emplace_back(xpos + w, ypos, ch.uv_max.x, ch.uv_min.y,
                               static_cast<float>(c));
+
         vertices.emplace_back(xpos, ypos + h, ch.uv_min.x, ch.uv_max.y,
                               static_cast<float>(c));
         vertices.emplace_back(xpos + w, ypos, ch.uv_max.x, ch.uv_min.y,
@@ -94,10 +110,15 @@ std::vector<Vertex2D> Font::vertices(const std::string& text, float x, float y,
         vertices.emplace_back(xpos + w, ypos + h, ch.uv_max.x, ch.uv_max.y,
                               static_cast<float>(c));
 
-        x += (ch.advance >> 6) * scale;
+        pen_x += (ch.advance >> 6);
+    }
+    // Top-left anchor point
+    for (auto& v : vertices) {
+        v.x -= min_x;
+        v.y -= min_y;
     }
 
-    return vertices;
+    return {std::move(vertices), max_x - min_x, max_y - min_y, 0, 0};
 }
 
 const Texture* Font::text_texture() { return m_text_texture.get(); }

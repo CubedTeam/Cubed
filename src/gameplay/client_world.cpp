@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
+#include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/math_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
@@ -21,8 +22,8 @@ struct ChunkRenderData {
 };
 } // namespace
 
-ClientWorld::ClientWorld(AudioEngine& auido, Config& config)
-    : m_player(*this), m_audio(auido), m_config(config) {}
+ClientWorld::ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene)
+    : m_player(*this), m_audio(auido), m_config(config), m_world_scene(scene) {}
 
 ClientWorld::~ClientWorld() {
     m_client->close();
@@ -398,6 +399,9 @@ void ClientWorld::init(std::string_view player_name,
                        std::shared_ptr<NetworkClient> client) {
     m_player.init(player_name);
     m_client = client;
+
+    reload_config(false);
+
     m_random.init(ChunkGenerator::seed());
 
     // timer
@@ -459,7 +463,7 @@ void ClientWorld::init(std::string_view player_name,
     req.set_name(m_player.get_name());
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
-            throw std::runtime_error("Can't connect to the server");
+            throw std::runtime_error(client->get_error_string());
         }
         std::this_thread::sleep_for(milliseconds(200));
     }
@@ -522,11 +526,15 @@ void ClientWorld::change_pool_threads(int threads) {
     m_thread_pool.store(std::make_shared<PriorityThreadPool>(used_thread));
 }
 
-void ClientWorld::hot_reload() {
+void ClientWorld::reload_config(bool chunk_build) {
     int dist = m_config.get<int>("world.rendering_distance", PRE_LOAD_DISTANCE);
     Logger::info("Get Config Randering dist {}", dist);
     m_rendering_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
-    request_chunk();
+    if (chunk_build) {
+        request_chunk();
+    }
+
+    m_player.reload_config();
 }
 
 void ClientWorld::client_run(std::stop_token stoken) {
@@ -663,7 +671,7 @@ void ClientWorld::request_chunk() {
     Logger::info("Send Chunk Request Success");
     m_requesting_chunk = false;
 }
-
+void ClientWorld::reset_key_status() { m_player.reset_key_status(); }
 void ClientWorld::receive_chunk(std::vector<uint8_t> raw_data,
                                 PacketHeader header) {
 
@@ -718,6 +726,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
+WorldScene& ClientWorld::world_scene() { return m_world_scene; }
 
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
@@ -729,6 +738,9 @@ void ClientWorld::request_exit() {
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
+        if (m_client->is_connect_error()) {
+            break;
+        }
         std::this_thread::sleep_for(milliseconds(DEFAULT_PER_TICK_TIME));
         ++cnt;
         if (cnt >= WORLD_EXIT_TIMEOUT) {
@@ -739,6 +751,7 @@ void ClientWorld::request_exit() {
 }
 
 void ClientWorld::update(float delta_time) {
+
     m_player.update(delta_time);
     {
         std::lock_guard lk(m_delete_vbo_mutex);
@@ -903,6 +916,36 @@ void ClientWorld::update(float delta_time) {
     for (auto& [pos, timer] : m_timers) {
         timer.update(delta_time);
     }
+}
+
+bool ClientWorld::handle_event(const Event& e) {
+    return std::visit(
+        Overloaded{[this](const MouseButtonEvent& e) {
+                       if (m_player.handle_mouse_button_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const MouseMoveEvent&) { return false; },
+                   [this](const MouseWheelEvent& e) {
+                       if (m_player.handle_mouse_wheel_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [this](const KeyEvent& e) {
+                       if (m_player.handle_key_event(e)) {
+                           return true;
+                       }
+
+                       return false;
+                   },
+                   [](const TextInputEvent&) { return false; },
+                   [](const WindowResizeEvent&) { return false; },
+                   [](const FrameBufferResizeEvent&) { return false; }
+
+        },
+        e);
 }
 
 glm::vec3 ClientWorld::sunlight_dir() const {

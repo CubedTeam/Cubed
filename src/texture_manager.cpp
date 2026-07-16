@@ -11,7 +11,6 @@ constexpr int BLOCK_SIZE = 16;
 constexpr int BLOCK_NORMAL_SIZE = 128;
 constexpr int CROSS_PLANE_SIZE = 16;
 constexpr int BLOCK_ITEM_SIZE = 16;
-constexpr int UI_SIZE = 16;
 constexpr int BLOCK_STATUS_SIZE = 16;
 constexpr int SKIN_SIZE = 64;
 
@@ -58,7 +57,13 @@ const Texture* TextureManager::get_texture_array() const {
 const Texture* TextureManager::get_cross_plane_array() const {
     return m_cross_plane_array.get();
 }
-const Texture* TextureManager::get_ui_array() const { return m_ui_array.get(); }
+const Texture* TextureManager::get_image_texture(const std::string& path) {
+    auto it = m_ui_map.find(path);
+    if (it != m_ui_map.end()) {
+        return it->second.get();
+    }
+    return load_image_texture(path);
+}
 
 const Texture* TextureManager::get_pbr_texture() const {
     return m_normal_texture_array.get();
@@ -77,15 +82,11 @@ void TextureManager::load_block_status(unsigned id) {
 
     std::string path = "texture/status/" + std::to_string(id) + ".png";
 
-    unsigned char* image_data = nullptr;
-
-    image_data = (Tools::load_image_data(path));
+    auto image_data = (Tools::load_image_data(path));
 
     m_block_status_array->tex_sub_image_3d(
-        TextureFormat::RGBA, GL_UNSIGNED_BYTE, image_data, 0, 0, id,
+        TextureFormat::RGBA, GL_UNSIGNED_BYTE, image_data.data, 0, 0, id,
         BLOCK_STATUS_SIZE, BLOCK_STATUS_SIZE);
-
-    Tools::delete_image_data(image_data);
 }
 
 void TextureManager::load_block_texture(unsigned id) {
@@ -101,7 +102,7 @@ void TextureManager::load_block_texture(unsigned id) {
         return;
     }
 
-    unsigned char* image_data[6];
+    std::array<ImageData, 6> image_data;
 
     std::string block_texture_path = "texture/block/" + name;
     image_data[0] = (Tools::load_image_data(block_texture_path + "/front.png"));
@@ -114,10 +115,9 @@ void TextureManager::load_block_texture(unsigned id) {
     Tools::check_opengl_error();
     for (int i = 0; i < 6; i++) {
         m_texture_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
-                                          image_data[i], 0, 0, id * 6 + i,
+                                          image_data[i].data, 0, 0, id * 6 + i,
                                           BLOCK_SIZE, BLOCK_SIZE);
         Tools::check_opengl_error();
-        Tools::delete_image_data(image_data[i]);
     }
 }
 
@@ -127,41 +127,43 @@ void TextureManager::load_block_item_texture(unsigned id) {
     std::string name{BlockManager::name_form_id(id)};
 
     std::string path = "texture/item/block/" + name + ".png";
-    unsigned char* data = nullptr;
-    data = Tools::load_image_data(path);
+
+    auto data = Tools::load_image_data(path);
     std::unique_ptr<Texture> texture =
         std::make_unique<Texture>(TextureType::TEXTURE_2D);
     texture->tex_image_2d(TextureFormat::RGBA8, TextureFormat::RGBA,
-                          GL_UNSIGNED_BYTE, data, BLOCK_ITEM_SIZE,
+                          GL_UNSIGNED_BYTE, data.data, BLOCK_ITEM_SIZE,
                           BLOCK_ITEM_SIZE);
 
     texture->set_nearest();
     texture->set_clamp_to_border();
 
     m_item_textures.push_back(std::move(texture));
-    Tools::delete_image_data(data);
 }
 
 void TextureManager::load_cross_plane_texture(unsigned id) {
     std::string path =
         "texture/block/" + BlockManager::name_form_id(id) + "/cross.png";
-    unsigned char* image_data = Tools::load_image_data(path);
+    auto image_data = Tools::load_image_data(path);
     m_cross_plane_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
-                                          image_data, 0, 0,
+                                          image_data.data, 0, 0,
                                           BlockManager::cross_plane_index(id),
                                           CROSS_PLANE_SIZE, CROSS_PLANE_SIZE);
-    Tools::delete_image_data(image_data);
 }
 
-void TextureManager::load_ui_texture(unsigned id) {
-    ASSERT_MSG(id < MAX_UI_NUM, "Exceed the max ui sum limit");
+const Texture* TextureManager::load_image_texture(const std::string& path) {
 
-    std::string path = "texture/ui/" + std::to_string(id) + ".png";
-    unsigned char* image_data = nullptr;
-    image_data = (Tools::load_image_data(path));
-    m_ui_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
-                                 image_data, 0, 0, id, UI_SIZE, UI_SIZE);
-    Tools::delete_image_data(image_data);
+    auto image_data = (Tools::load_image_data(path));
+    std::unique_ptr<Texture> image =
+        std::make_unique<Texture>(TextureType::TEXTURE_2D);
+    image->tex_image_2d(RGBA, RGBA, GL_UNSIGNED_BYTE, image_data.data,
+                        image_data.width, image_data.height);
+    image->set_nearest();
+    auto [it, inserted] = m_ui_map.try_emplace(path, std::move(image));
+    if (!inserted) {
+        Logger::error("Path {} already exist!", path);
+    }
+    return it->second.get();
 }
 
 void TextureManager::load_pbr_texture(unsigned id) {
@@ -177,7 +179,7 @@ void TextureManager::load_pbr_texture(unsigned id) {
 
     std::string path = "normal/block/" + BlockManager::name_form_id(id);
 
-    unsigned char* image_data[6];
+    std::array<ImageData, 6> image_data;
 
     image_data[0] = (Tools::load_image_data(path + "/front_n.png", false));
     image_data[1] = (Tools::load_image_data(path + "/right_n.png", false));
@@ -187,7 +189,7 @@ void TextureManager::load_pbr_texture(unsigned id) {
     image_data[5] = (Tools::load_image_data(path + "/base_n.png", false));
 
     for (int i = 0; i < 6; i++) {
-        unsigned char* data = image_data[i];
+        unsigned char* data = image_data[i].data;
         bool is_fallback = false;
         if (!data) {
             is_fallback = true;
@@ -200,7 +202,6 @@ void TextureManager::load_pbr_texture(unsigned id) {
         if (is_fallback) {
             delete[] data;
         } else {
-            Tools::delete_image_data(image_data[i]);
         }
     }
 }
@@ -242,26 +243,16 @@ void TextureManager::init_block() {
 
     Logger::info("Block Texture Load Success");
 }
-void TextureManager::init_ui() {
-    m_ui_array = std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
-    m_ui_array->tex_image_3d(TextureFormat::RGBA, TextureFormat::RGBA,
-                             GL_UNSIGNED_BYTE, nullptr, UI_SIZE, UI_SIZE,
-                             MAX_UI_NUM);
-    for (int i = 0; i < MAX_UI_NUM; i++) {
-        load_ui_texture(i);
-    }
-
-    m_ui_array->set_nearest();
-}
+void TextureManager::init_ui() {}
 
 void TextureManager::init_skin() {
     m_skin = std::make_unique<Texture>(TextureType::TEXTURE_2D);
     std::string path = "texture/skin/player001.png";
-    unsigned char* image_data = nullptr;
-    image_data = (Tools::load_image_data(path));
+
+    auto image_data = (Tools::load_image_data(path));
     m_skin->tex_image_2d(TextureFormat::RGBA, TextureFormat::RGBA,
-                         GL_UNSIGNED_BYTE, image_data, SKIN_SIZE, SKIN_SIZE);
-    Tools::delete_image_data(image_data);
+                         GL_UNSIGNED_BYTE, image_data.data, SKIN_SIZE,
+                         SKIN_SIZE);
     m_skin->set_nearest_and_minpmap();
     m_skin->set_aniso(m_aniso);
 }
@@ -314,4 +305,31 @@ void TextureManager::hot_reload() {
 
 int TextureManager::max_aniso() const { return static_cast<int>(m_max_aniso); }
 
+bool TextureManager::handle_event(const Event& e) {
+    return std::visit(
+        Overloaded{[](const MouseMoveEvent&) { return false; },
+                   [](const MouseButtonEvent&) { return false; },
+                   [](const MouseWheelEvent&) { return false; },
+                   [this](const KeyEvent& e) {
+                       if (handle_key_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const TextInputEvent&) { return false; },
+                   [](const WindowResizeEvent&) { return false; },
+                   [](const FrameBufferResizeEvent&) { return false; }
+
+        },
+        e);
+}
+
+bool TextureManager::handle_key_event(const KeyEvent& e) {
+    if (e.key == Key::R && e.action == KeyAction::PRESS) {
+        need_reload();
+        return true;
+    }
+
+    return false;
+}
 } // namespace Cubed

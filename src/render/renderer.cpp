@@ -1,11 +1,8 @@
 #include "Cubed/render/renderer.hpp"
 
-#include "Cubed/camera.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/gameplay/client_player.hpp"
-#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/renderer_constants.hpp"
 #include "Cubed/texture_manager.hpp"
@@ -19,12 +16,9 @@
 
 namespace Cubed {
 
-Renderer::Renderer(const Camera& camera, ClientWorld& world,
-                   const TextureManager& texture_manager, DevPanel& dev_panel,
-                   Config& config)
-    : m_camera(camera), m_dev_panel(dev_panel),
-      m_texture_manager(texture_manager), m_world(world),
-      m_world_renderer(*this), m_config(config) {}
+Renderer::Renderer(TextureManager& texture_manager, Config& config)
+    : m_texture_manager(texture_manager), m_world_renderer(*this),
+      m_config(config) {}
 
 Renderer::~Renderer() {
     if (m_init) {
@@ -39,7 +33,9 @@ Renderer::~Renderer() {
     }
 }
 
-void Renderer::hot_reload() { update_fov(m_config.get("player.fov", 70.0f)); }
+void Renderer::reload_config() {
+    update_fov(m_config.get("player.fov", 70.0f));
+}
 
 void Renderer::init(bool debug_on) {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -99,8 +95,9 @@ void Renderer::init(bool debug_on) {
     m_vao[3].bind();
 
     for (int i = 0; i < 6; i++) {
-        Vertex2D vex{SQUARE_VERTICES[i][0], SQUARE_VERTICES[i][1],
-                     SQUARE_TEXTURE_POS[i][0], SQUARE_TEXTURE_POS[i][1], 0};
+        Vertex2D vex{SQUARE_VERTICES_TOP_LEFT[i][0],
+                     SQUARE_VERTICES_TOP_LEFT[i][1], SQUARE_TEXTURE_POS[i][0],
+                     SQUARE_TEXTURE_POS[i][1], 0};
         m_ui.emplace_back(vex);
     }
     m_ui_vbo->buffer_data(m_ui.data(), m_ui.size() * sizeof(Vertex2D));
@@ -113,12 +110,13 @@ void Renderer::init(bool debug_on) {
 
     init_quad();
     init_text();
-    hot_reload();
+    reload_config();
 
     m_world_renderer.init();
 
     VertexArray::unbind();
     VertexBuffer::unbind();
+
     m_init = true;
 }
 
@@ -139,63 +137,93 @@ void Renderer::init_quad() {
 void Renderer::init_text() {
     m_vao[4].bind();
 
-    DebugCollector::get().init_text();
+    DebugCollector::get().init(m_window_width, m_window_height);
 }
-
-void Renderer::render() {
+void Renderer::begin_frame() {
     glDisable(GL_FRAMEBUFFER_SRGB);
     // clear screen
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+void Renderer::end_frame() {}
 
-    m_world_renderer.render();
+void Renderer::begin_render_ui() {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    render_ui();
+    glDisable(GL_DEPTH_TEST);
+}
+void Renderer::end_render_ui() { glEnable(GL_DEPTH_TEST); }
 
-    render_text();
-
-    render_dev_panel();
+void Renderer::render_world(ClientWorld& world) {
+    m_world_renderer.render(world);
 }
 
-void Renderer::render_text() {
+void Renderer::render_rect(const Rect& rect) {
+
+    auto& shader = get_shader("rect");
+    shader.use();
+    shader.set_loc("proj_matrix", m_ui_proj_matrix);
+    auto pos = rect.pos();
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
+        glm::scale(glm::mat4(1.0f),
+                   glm::vec3(rect.width(), rect.height(), 1.0f));
+    shader.set_loc("model_matrix", model_matrix);
+
+    auto color = color_value(rect.color());
+    shader.set_loc("inColor",
+                   glm::vec4(color.x, color.y, color.z, rect.alpha()));
+
+    m_vao[3].bind();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Renderer::render_lable(const Label& label) {
 
     const auto& shader = get_shader("text");
 
     shader.use();
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glDisable(GL_DEPTH_TEST);
-
     shader.set_loc("projection", m_ui_proj_matrix);
 
-    auto& texts = DebugCollector::get().all_texts();
-    for (auto& t : texts) {
-        t.second.render(shader);
-    }
+    Font::text_texture()->bind(0);
+    auto& data = label.data();
+    auto pos = label.pos();
+    auto& text_style = label.text_style();
+    auto color = color_value(text_style.color);
+    data.m_vao->bind();
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
+        glm::scale(glm::mat4(1.0f),
+                   glm::vec3(label.scale(), label.scale(), 1.0f));
 
-    glEnable(GL_DEPTH_TEST);
+    shader.set_loc("textColor", glm::vec3(color.x, color.y, color.z));
+    shader.set_loc("mv_matrix", model_matrix);
+
+    glDrawArrays(GL_TRIANGLES, 0, data.m_sum);
 }
 
-void Renderer::render_ui() {
-    const auto& shader = get_shader("ui");
+void Renderer::render_image(const Image& image) {
+    if (!image.texture()) {
+        Logger::error("Image id {} not set image!", image.id());
+        return;
+    }
+    const auto& shader = get_shader("image");
     shader.use();
-
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    shader.set_loc("m_matrix", m_ui_model_matrix);
+    auto pos = image.pos();
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f)) *
+        glm::scale(glm::mat4(1.0f),
+                   glm::vec3(image.width(), image.height(), 1.0f));
+    shader.set_loc("model_matrix", model_matrix);
     shader.set_loc("proj_matrix", m_ui_proj_matrix);
 
     m_vao[3].bind();
-    m_texture_manager.get_ui_array()->bind(0);
 
+    image.texture()->bind(0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     Tools::check_opengl_error();
-
-    glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::update(float delta_time) { m_delta_time = delta_time; }
@@ -207,20 +235,6 @@ void Renderer::update_fov(float fov) {
         glm::perspective(glm::radians(fov), m_aspect, NEAR_PLANE, FAR_PLANE);
 }
 
-void Renderer::update_proj_matrix(float aspect, float width, float height) {
-    m_aspect = aspect;
-
-    m_world_proj_matrix =
-        glm::perspective(glm::radians(m_fov), aspect, NEAR_PLANE, FAR_PLANE);
-
-    m_ui_proj_matrix = glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
-    // scale and then translate
-    m_ui_model_matrix =
-        glm::translate(glm::mat4(1.0f),
-                       glm::vec3(width / 2.0f, height / 2.0f, 0.0)) *
-        glm::scale(glm::mat4(1.0f), glm::vec3(50.0f, 50.0f, 1.0f));
-}
-
 void Renderer::updata_framebuffer(int width, int height) {
     if (width <= 0 || height <= 0)
         return;
@@ -228,16 +242,53 @@ void Renderer::updata_framebuffer(int width, int height) {
     m_world_renderer.updata_framebuffer(width, height);
 
     FrameBuffer::unbind();
-
-    m_width = width;
-    m_height = height;
 }
 
-void Renderer::render_dev_panel() {
-
+void Renderer::render_dev_panel(DevPanel& dev_panel) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
-    m_dev_panel.render();
+    dev_panel.render();
     glEnable(GL_DEPTH_TEST);
+}
+
+bool Renderer::handle_event(const Event& e) {
+    return std::visit(Overloaded{[](const MouseMoveEvent&) { return false; },
+                                 [](const MouseButtonEvent&) { return false; },
+                                 [](const MouseWheelEvent&) { return false; },
+                                 [](const KeyEvent&) { return false; },
+                                 [](const TextInputEvent&) { return false; },
+                                 [this](const WindowResizeEvent& e) {
+                                     handle_window_resize_event(e);
+                                     return false;
+                                 },
+                                 [this](const FrameBufferResizeEvent& e) {
+                                     handle_frame_buffer_resize_event(e);
+                                     return false;
+                                 }
+
+                      },
+                      e);
+}
+bool Renderer::handle_window_resize_event(const WindowResizeEvent& e) {
+    m_window_width = static_cast<float>(e.width);
+    m_window_height = static_cast<float>(e.height);
+    m_ui_proj_matrix =
+        glm::ortho(0.0f, m_window_width, m_window_height, 0.0f, -1.0f, 1.0f);
+    return false;
+}
+bool Renderer::handle_frame_buffer_resize_event(
+    const FrameBufferResizeEvent& e) {
+    int frame_height = e.height;
+    int frame_width = e.width;
+    m_frame_width = static_cast<float>(e.width);
+    m_frame_height = static_cast<float>(e.height);
+    m_aspect = m_frame_width / m_frame_height;
+    glViewport(0, 0, frame_width, frame_height);
+    m_world_proj_matrix =
+        glm::perspective(glm::radians(m_fov), m_aspect, NEAR_PLANE, FAR_PLANE);
+    updata_framebuffer(frame_width, frame_height);
+    return false;
 }
 
 float& Renderer::ambient_strength() {
@@ -277,9 +328,6 @@ float& Renderer::underwater_fog_density() {
 }
 float& Renderer::water_density() { return m_world_renderer.water_density(); }
 
-const Camera& Renderer::camera() const { return m_camera; }
-const ClientWorld& Renderer::world() const { return m_world; }
-ClientWorld& Renderer::world() { return m_world; }
 const glm::mat4& Renderer::world_proj_matrix() const {
     return m_world_proj_matrix;
 }
@@ -289,8 +337,10 @@ const TextureManager& Renderer::texture_mamger() const {
 
 float Renderer::delta_time() const { return m_delta_time; }
 
-float Renderer::height() const { return m_height; }
-float Renderer::width() const { return m_width; }
+float Renderer::window_height() const { return m_window_height; }
+float Renderer::window_width() const { return m_window_width; }
+float Renderer::frame_height() const { return m_frame_height; }
+float Renderer::frame_width() const { return m_frame_width; }
 const glm::mat4& Renderer::p_mat() const { return m_world_proj_matrix; }
 const std::vector<VertexArray>& Renderer::vao() const { return m_vao; }
 } // namespace Cubed

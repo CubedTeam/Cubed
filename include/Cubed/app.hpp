@@ -1,27 +1,17 @@
 #pragma once
 #include "Cubed/audio/audio_engine.hpp"
-#include "Cubed/gameplay/client_world.hpp"
-#include "Cubed/gameplay/network_server.hpp"
-#include "Cubed/gameplay/server_world.hpp"
 #define GLFW_INCLUDE_NONE
-#include "Cubed/camera.hpp"
+#include "Cubed/argument.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/dev_panel.hpp"
 #include "Cubed/render/renderer.hpp"
+#include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/window.hpp"
 namespace Cubed {
 
 class App {
 public:
-    struct Argument {
-        bool is_client = false;
-        int port = 25530;
-        std::string ip{"127.0.0.1"};
-        std::string player{"Unknown"};
-        bool debug_on = true;
-    };
-
     App();
     ~App();
     static void cursor_position_callback(GLFWwindow* window, double xpos,
@@ -33,6 +23,8 @@ public:
     static void window_focus_callback(GLFWwindow* window, int focused);
     static void window_reshape_callback(GLFWwindow* window, int new_width,
                                         int new_height);
+    static void framebuffer_size_callback(GLFWwindow* window, int new_width,
+                                          int new_height);
     static void mouse_scroll_callback(GLFWwindow* window, double xoffset,
                                       double yoffset);
     static void cursor_enter_callback(GLFWwindow* window, int entered);
@@ -43,30 +35,28 @@ public:
     static float delta_time();
     static float get_fps();
 
-    Camera& camera();
-    DevPanel& dev_panel();
     Renderer& renderer();
     TextureManager& texture_manager();
     Window& window();
-    ClientWorld& client_world();
-    ServerWorld& server_world();
+
     Config& config();
     const Argument& argument() const;
     AudioEngine& audio();
 
+    const char* get_clipboard_text();
+
 private:
     Config m_game_config;
-    Camera m_camera;
-    TextureManager m_texture_manager;
-    NetworkServer m_server;
-    std::shared_ptr<NetworkClient> m_client;
-    AudioEngine m_audio;
-    ClientWorld m_client_world;
 
-    DevPanel m_dev_panel;
+    TextureManager m_texture_manager;
+
+    AudioEngine m_audio;
+
     Renderer m_renderer;
 
     Window m_window;
+
+    SceneManager m_scene_manager;
 
     inline static double last_time = glfwGetTime();
     inline static double current_time = glfwGetTime();
@@ -86,6 +76,8 @@ private:
     void render();
     void run();
     void update();
+
+    void dispatch_event(const Event& e);
 };
 
 } // namespace Cubed

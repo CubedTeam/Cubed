@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/cave_path.hpp"
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/river.path.hpp"
+#include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <imgui.h>
@@ -46,10 +47,12 @@ constexpr float DELTA_ANGLE_MAX = 30.0f;
 constexpr int PATH_STEP_MIN = 1;
 constexpr int PATH_STEP_MAX = 1000;
 
-DevPanel::DevPanel(App& app) : m_app(app), m_config(app.config()) {}
+DevPanel::DevPanel(WorldScene& world_scene)
+    : m_app(world_scene.scene_manager().app()), m_world_scene(world_scene),
+      m_config(m_app.config()) {}
 
 void DevPanel::init() {
-    m_player = &m_app.client_world().get_player();
+    m_player = &m_world_scene.client_world().get_player();
     update_config_view();
     update_player_profile();
 }
@@ -77,47 +80,12 @@ void DevPanel::render() {
         show_player_tab_item();
         show_items_tab_item();
         show_shader_tab_item();
-        show_about_table_bar();
 
         ImGui::EndTabBar();
     }
     ImGui::End();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-void DevPanel::show_about_table_bar() {
-    if (ImGui::BeginTabItem("about")) {
-        ImGui::Text(
-            "Cubed - A cube game like Minecraft, using C++ and OpenGL.");
-        ImGui::Text("Author: zhenyan121");
-        ImGui::Separator();
-        ImGui::Text("Libraries Used");
-        ImGui::Text("glad");
-        ImGui::Text("GLFW");
-        ImGui::Text("SOIL2");
-        ImGui::Text("GLM");
-        ImGui::Text("FreeType");
-        ImGui::Text("toml++");
-        ImGui::Text("Dear ImGui");
-        ImGui::Text("Tbb");
-        ImGui::Text("Asio");
-        ImGui::Text("protobuf");
-        ImGui::Text("zstd");
-        ImGui::Text("OpenAl Soft");
-        ImGui::Text("dr_libs");
-        ImGui::Separator();
-        ImGui::Text("Music");
-        ImGui::Text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), "
-                    "CC BY 4.0.");
-        ImGui::Separator();
-        ImGui::Text("Special Thanks");
-        ImGui::Text("TANGERIME");
-        ImGui::Text("SkyOnPole");
-        ImGui::Text("free_w_cloud");
-        ImGui::Text("Last but not least, thanks to you");
-        ImGui::EndTabItem();
-    }
 }
 
 void DevPanel::show_biome_table_bar() {
@@ -267,7 +235,7 @@ void DevPanel::show_biome_table_bar() {
 }
 
 void DevPanel::show_time_table_bar() {
-    ServerWorld& world = m_app.server_world();
+    ServerWorld& world = m_world_scene.server_world();
     ImGui::Text("Game Tick %llu", world.game_tick());
     ImGui::SameLine();
     ImGui::Text("Day Tick %llu", world.day_tick());
@@ -357,42 +325,42 @@ void DevPanel::show_settings_tab_item() {
     if (ImGui::BeginTabItem("settings")) {
         if (ImGui::SliderFloat("FOV", &m_config_view.fov, 1.0f, 140.0f)) {
             m_config.set("player.fov", static_cast<double>(m_config_view.fov));
-            m_app.renderer().hot_reload();
+            m_app.renderer().reload_config();
         }
         ImGui::SameLine();
         if (ImGui::Button("default##1")) {
             m_config_view.fov = DEFAULT_FOV;
             m_config.set("player.fov", static_cast<double>(m_config_view.fov));
-            m_app.renderer().hot_reload();
+            m_app.renderer().reload_config();
         }
         if (ImGui::SliderFloat("Sensitivity", &m_config_view.mouse_sensitivity,
                                0.01f, 1.0f)) {
             m_config.set("player.mouse_sensitivity",
                          static_cast<double>(m_config_view.mouse_sensitivity));
-            m_player->hot_reload();
+            m_player->reload_config();
         }
         ImGui::SameLine();
         if (ImGui::Button("default##2")) {
             m_config_view.mouse_sensitivity = 0.15f;
             m_config.set("player.mouse_sensitivity",
                          static_cast<double>(m_config_view.mouse_sensitivity));
-            m_player->hot_reload();
+            m_player->reload_config();
         }
 
         if (ImGui::SliderInt("Distance", &m_config_view.rendering_distance, 2,
                              128)) {
             m_config.set("world.rendering_distance",
                          m_config_view.rendering_distance);
-            m_app.client_world().hot_reload();
+            m_world_scene.client_world().reload_config();
         }
         if (ImGui::Checkbox("Fullscreen", &m_config_view.fullscreen)) {
             m_config.set("window.fullscreen", m_config_view.fullscreen);
-            m_app.window().hot_reload();
+            m_app.window().reload_config();
         }
         ImGui::SameLine();
         if (ImGui::Checkbox("V-Sync", &m_config_view.v_sync)) {
             m_config.set("window.V-Sync", m_config_view.v_sync);
-            m_app.window().hot_reload();
+            m_app.window().reload_config();
         }
         if (ImGui::Checkbox("Aniso", &m_config_view.is_enable_aniso)) {
             m_config_view.is_reload = false;
@@ -492,40 +460,42 @@ void DevPanel::show_server_world_table_bar() {
     ImGui::Text("ChunkGenerator Seed: %u", ChunkGenerator::seed());
 
     ImGui::Text("Pool Threads %d  Max Support Threads %d  Reserved Threads %d",
-                m_app.server_world().gen_pool_threads(),
-                m_app.server_world().max_threads(), RESERVED_THREADS);
+                m_world_scene.server_world().gen_pool_threads(),
+                m_world_scene.server_world().max_threads(), RESERVED_THREADS);
     ImGui::SliderInt("Set Pool Threads", &m_threads, 1,
-                     m_app.server_world().max_threads());
+                     m_world_scene.server_world().max_threads());
     ImGui::SameLine();
     if (ImGui::Button("Set")) {
-        m_app.server_world().change_pool_threads(
+        m_world_scene.server_world().change_pool_threads(
             ServerWorld::ThreadPoolKind::GEN, m_threads);
     }
-    if (m_threads > m_app.server_world().max_threads() - RESERVED_THREADS) {
+    if (m_threads >
+        m_world_scene.server_world().max_threads() - RESERVED_THREADS) {
         ImGui::TextColored(
             ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
             "Waring: When the threads in the thread pool exceed \n(maximum "
             "threads minus reserved threads), \nit may cause stuttering.");
     }
 
-    m_chunk_style = m_app.server_world().chunk_load_style();
+    m_chunk_style = m_world_scene.server_world().chunk_load_style();
     if (ImGui::Combo("ChunkLoadStyle", &m_chunk_style, CHUNK_LOAD_STYLE,
                      IM_ARRAYSIZE(CHUNK_LOAD_STYLE))) {
-        m_app.server_world().set_chunk_load_style(m_chunk_style);
+        m_world_scene.server_world().set_chunk_load_style(m_chunk_style);
     }
 
     if (ImGui::Button("Request Chunk Build")) {
-        m_app.server_world().need_gen(m_player->get_uuid());
+        m_world_scene.server_world().need_gen(m_player->get_uuid());
     }
     ImGui::SameLine();
     if (ImGui::Checkbox("Gen Thread", &m_gen_thread_running)) {
         if (m_gen_thread_running) {
-            m_app.server_world().start_gen_thread();
+            m_world_scene.server_world().start_gen_thread();
         } else {
-            m_app.server_world().stop_gen_thread();
+            m_world_scene.server_world().stop_gen_thread();
         }
     }
-    ImGui::Text("Server Chunk Size %d", m_app.server_world().chunk_size());
+    ImGui::Text("Server Chunk Size %d",
+                m_world_scene.server_world().chunk_size());
 
     if (ImGui::BeginTabBar("World Settings")) {
         if (ImGui::BeginTabItem("Time")) {
@@ -551,20 +521,23 @@ void DevPanel::show_server_world_table_bar() {
 }
 void DevPanel::show_client_world_table_bar() {
 
-    static int rendering_distance = m_app.client_world().rendering_distance();
+    static int rendering_distance =
+        m_world_scene.client_world().rendering_distance();
     if (ImGui::SliderInt("Render Distance", &rendering_distance, 2, 128)) {
-        m_app.client_world().rendering_distance(rendering_distance);
+        m_world_scene.client_world().rendering_distance(rendering_distance);
         // Config::get().set("world.rendering_distance", rendering_distance);
     }
     if (ImGui::Button("Rebuild World")) {
-        m_app.client_world().rebuild_world();
+        m_world_scene.client_world().rebuild_world();
     }
     ImGui::SameLine();
     if (ImGui::Button("Spawn Point")) {
         m_player->set_player_pos({0.0f, 255.0f, 0.0f});
     }
-    ImGui::Text("Chunk Task Id %d", m_app.client_world().get_chunk_task_id());
-    ImGui::Text("Client World Chunk %d", m_app.client_world().chunk_size());
+    ImGui::Text("Chunk Task Id %d",
+                m_world_scene.client_world().get_chunk_task_id());
+    ImGui::Text("Client World Chunk %d",
+                m_world_scene.client_world().chunk_size());
 }
 
 void DevPanel::show_player_tab_item() {
@@ -649,7 +622,7 @@ void DevPanel::show_items_tab_item() {
     if (ImGui::BeginTabItem("item")) {
         ImGui::Text("Place Block ");
         ImGui::SameLine();
-        auto& place_texture = textures[m_player->place_block()];
+        auto& place_texture = textures[m_player->get_current_block()];
         if (place_texture) {
             ImGui::Image(static_cast<ImTextureID>(
                              static_cast<intptr_t>(place_texture->id())),

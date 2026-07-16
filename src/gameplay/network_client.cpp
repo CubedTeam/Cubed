@@ -25,6 +25,11 @@ void NetworkClient::start(std::string ip, int port) {
 
 bool NetworkClient::is_connected() const { return m_connected.load(); }
 bool NetworkClient::is_connect_error() const { return m_connect_error.load(); }
+std::string NetworkClient::get_error_string() const {
+    std::lock_guard lock(m_error_string_mutex);
+    return m_error_string;
+}
+void NetworkClient::clear_error() { m_connect_error = false; }
 asio::awaitable<void> NetworkClient::connect(std::string ip, int port) {
     Logger::info("Connect Begin");
     try {
@@ -42,7 +47,7 @@ asio::awaitable<void> NetworkClient::connect(std::string ip, int port) {
 
     } catch (const std::exception& e) {
         Logger::error("Client Error {}", e.what());
-        m_connect_error = true;
+        set_error(e.what());
     }
 }
 
@@ -129,20 +134,20 @@ asio::awaitable<void> NetworkClient::read_loop() {
         }
     } catch (const asio::system_error& e) {
         auto ec = e.code();
-
+        set_error(e.what());
         if (ec == asio::error::eof || ec == asio::error::operation_aborted) {
-
             Logger::info("Client disconnected");
         } else {
             Logger::warn("Asio Error {}", e.what());
         }
-
         close();
     } catch (const std::exception& e) {
         Logger::error("Session Error {}", e.what());
+        set_error(e.what());
         close();
     } catch (...) {
-        Logger::error("Unknow Error");
+        Logger::error("Unknown Error");
+        set_error("Unhnown Error");
         close();
     }
     co_return;
@@ -206,6 +211,12 @@ void NetworkClient::stop() {
     if (m_net_thread.joinable()) {
         m_net_thread.join();
     }
+}
+
+void NetworkClient::set_error(std::string_view error) {
+    std::lock_guard lock(m_error_string_mutex);
+    m_error_string = error;
+    m_connect_error = true;
 }
 
 } // namespace Cubed

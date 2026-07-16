@@ -174,8 +174,7 @@ void delete_image_data(unsigned char* data) {
     SOIL_free_image_data(data);
 }
 
-unsigned char* load_image_data(const std::string& tex_image_path,
-                               bool check_exist) {
+ImageData load_image_data(const std::string& tex_image_path, bool check_exist) {
     fs::path path = ASSETS_PATH + tex_image_path;
     if (check_exist) {
         ASSERT_MSG(fs::is_regular_file(path), path.c_str());
@@ -193,7 +192,7 @@ unsigned char* load_image_data(const std::string& tex_image_path,
         }
     }
 
-    return data;
+    return {data, width, height, channels};
 }
 
 } // namespace Tools

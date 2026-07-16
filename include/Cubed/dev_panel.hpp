@@ -6,8 +6,9 @@
 
 namespace Cubed {
 
-class App;
+class WorldScene;
 class ClientPlayer;
+class App;
 class DevPanel {
     struct ConfigView {
         float fov = 70.0f;
@@ -32,12 +33,13 @@ class DevPanel {
     };
 
 public:
-    DevPanel(App& app);
+    DevPanel(WorldScene& app);
     void init();
     void render();
 
 private:
     App& m_app;
+    WorldScene& m_world_scene;
     Config& m_config;
     ConfigView m_config_view;
     ClientPlayer* m_player;
@@ -51,7 +53,6 @@ private:
     int m_samples_idx = 1;
     int m_threads = 1;
     int m_chunk_style = 0;
-    void show_about_table_bar();
     void show_biome_table_bar();
     void show_time_table_bar();
     void show_cave_table_bar();

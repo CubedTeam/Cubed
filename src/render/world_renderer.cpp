@@ -5,12 +5,12 @@
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/render/renderer_constants.hpp"
+#include "Cubed/scene/world_scene.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/tools/math_tools.hpp"
 namespace Cubed {
 WorldRenderer::WorldRenderer(Renderer& renderer)
     : m_renderer(renderer), m_player_renderer(renderer),
-      m_world(renderer.world()), m_camera(renderer.camera()),
       m_texture_manager(renderer.texture_mamger()) {}
 WorldRenderer::~WorldRenderer() {
     m_accum_texture.reset();
@@ -30,21 +30,21 @@ WorldRenderer::~WorldRenderer() {
 
 void WorldRenderer::init() { m_player_renderer.init(); }
 
-void WorldRenderer::render() {
+void WorldRenderer::render(ClientWorld& world) {
     // update view matrix;
-    view_matrix = m_renderer.camera().get_camera_lookat();
+    view_matrix = world.world_scene().camera().get_camera_lookat();
 
     m_world_fbo->bind();
     // clear world framebuffer
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    day_night_calculation();
+    day_night_calculation(world);
 
-    render_sky();
-    render_world();
-    render_outline();
-    render_player();
+    render_sky(world);
+    render_world(world);
+    render_outline(world);
+    render_player(world);
 
     FrameBuffer::unbind();
 
@@ -55,13 +55,13 @@ void WorldRenderer::render() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    render_underwater();
+    render_underwater(world);
     glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
-void WorldRenderer::day_night_calculation() {
+void WorldRenderer::day_night_calculation(ClientWorld& world) {
 
-    m_parallel_light.sundir = glm::normalize(m_renderer.world().sunlight_dir());
+    m_parallel_light.sundir = glm::normalize(world.sunlight_dir());
     m_parallel_light.sun_height = (-m_parallel_light.sundir).y;
     m_parallel_light.lightdir = m_parallel_light.sundir;
 
@@ -92,7 +92,9 @@ void WorldRenderer::day_night_calculation() {
     m_ambient_strength = glm::mix(0.45f, 0.25f, day_factor);
 }
 
-void WorldRenderer::render_sky() {
+void WorldRenderer::render_sky(ClientWorld& world) {
+
+    auto& camera = world.world_scene().camera();
 
     glm::vec3 zenith = {0.20f, 0.45f, 0.95f};
 
@@ -142,9 +144,8 @@ void WorldRenderer::render_sky() {
 
     sky_shader.use();
 
-    glm::mat4 model_mat =
-        glm::translate(glm::mat4(1.0f),
-                       m_camera.get_camera_pos() - glm::vec3(0.5f, 0.5f, 0.5f));
+    glm::mat4 model_mat = glm::translate(
+        glm::mat4(1.0f), camera.get_camera_pos() - glm::vec3(0.5f, 0.5f, 0.5f));
 
     glm::mat4 mv_mat = view_matrix * model_mat;
 
@@ -195,25 +196,27 @@ void WorldRenderer::render_sky() {
         glDrawArrays(GL_TRIANGLES, 0, 6);
     };
     // draw sun
-    glm::vec3 sun_pos = m_camera.get_camera_pos() +
-                        normalize(-m_world.sunlight_dir()) * (FAR_PLANE * 0.9f);
+    glm::vec3 sun_pos =
+        camera.get_camera_pos() +
+        normalize(-m_parallel_light.sundir) * (FAR_PLANE * 0.9f);
     billboard_drawer(sun_pos, SUN_SIZE, SUN_COLOR);
 
     // draw moon
 
-    glm::vec3 moon_pos = m_camera.get_camera_pos() +
-                         normalize(m_world.sunlight_dir()) * (FAR_PLANE * 0.9f);
+    glm::vec3 moon_pos =
+        camera.get_camera_pos() +
+        normalize(m_parallel_light.sundir) * (FAR_PLANE * 0.9f);
     billboard_drawer(moon_pos, MOON_SIZE, MOON_COLOR);
 
     glDepthMask(GL_TRUE);
 }
 
-void WorldRenderer::render_world() {
+void WorldRenderer::render_world(ClientWorld& world) {
 
     // shader map
 
-    auto m_height = m_renderer.height();
-    auto m_width = m_renderer.width();
+    auto height = m_renderer.frame_height();
+    auto width = m_renderer.frame_width();
 
     glm::mat4 model_mat =
         glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -223,22 +226,22 @@ void WorldRenderer::render_world() {
     glm::mat4 norm_mat = glm::transpose(glm::inverse(mv_mat));
 
     if (m_shader_on) {
-        shadow_map_generate();
+        shadow_map_generate(world);
     }
 
     m_world_fbo->bind();
 
     glCullFace(GL_BACK);
-    glViewport(0, 0, m_width, m_height);
+    glViewport(0, 0, width, height);
 
-    render_normal_block(model_mat, mv_mat, norm_mat);
+    render_normal_block(model_mat, mv_mat, norm_mat, world);
 
     // copy depth buffer
     m_world_fbo->bind(FrameBufferType::READ_FRAMEBUFFER);
 
     m_oit_fbo->bind(FrameBufferType::DRAW_FRAMEBUFFER);
 
-    glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height,
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
                       GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     m_oit_fbo->bind(FrameBufferType::DRAW_FRAMEBUFFER);
 
@@ -256,14 +259,14 @@ void WorldRenderer::render_world() {
     glBlendFunci(0, GL_ONE, GL_ONE);
 
     glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-    render_transparent_block(mv_mat, norm_mat);
+    render_transparent_block(mv_mat, norm_mat, world);
 }
 
-void WorldRenderer::render_outline() {
+void WorldRenderer::render_outline(ClientWorld& world) {
     const auto& shader = m_renderer.get_shader("outline");
     shader.use();
 
-    const auto& block_pos = m_renderer.world().get_look_block_pos();
+    const auto& block_pos = world.get_look_block_pos();
 
     if (block_pos != std::nullopt) {
 
@@ -285,24 +288,24 @@ void WorldRenderer::render_outline() {
     }
 }
 
-void WorldRenderer::shadow_map_generate() {
+void WorldRenderer::shadow_map_generate(ClientWorld& world) {
     float texels_per_unit = 0.0f;
     const auto& lightdir = m_parallel_light.lightdir;
 
     auto m_delta_time = m_renderer.delta_time();
-
+    auto& camera = world.world_scene().camera();
     // shader map
     glm::mat4& light_space_matrix = m_parallel_light.light_space_matrix;
 
-    auto& m_render_snapshots = m_world.render_snapshots();
-    auto& camera_pos = m_camera.get_camera_pos();
+    auto& m_render_snapshots = world.render_snapshots();
+    auto& camera_pos = camera.get_camera_pos();
 
     const auto& depth_shader = m_renderer.get_shader("depth_shader");
 
     depth_shader.use();
 
-    glm::vec3 cam_pos = m_camera.get_camera_pos();
-    glm::vec3 cam_fwd = m_camera.get_camera_front();
+    glm::vec3 cam_pos = camera.get_camera_pos();
+    glm::vec3 cam_fwd = camera.get_camera_front();
     float half_extent = 128.0f;
 
     glm::vec3 center = cam_pos + cam_fwd * (half_extent * 0.5f);
@@ -389,13 +392,13 @@ void WorldRenderer::shadow_map_generate() {
     }
     // player
     auto& player_shadow = m_renderer.get_shader("player_depth");
-    m_player_renderer.shadow_render(player_shadow, light_space_matrix);
+    m_player_renderer.shadow_render(player_shadow, light_space_matrix, world);
 }
 
-void WorldRenderer::render_underwater() {
+void WorldRenderer::render_underwater(ClientWorld& world) {
 
     const auto& shader = m_renderer.get_shader("under_water");
-
+    auto& camera = world.world_scene().camera();
     shader.use();
 
     auto& m_vao = m_renderer.vao();
@@ -406,10 +409,10 @@ void WorldRenderer::render_underwater() {
 
     shader.set_loc("u_sceneTexture", 0);
     shader.set_loc("u_time", static_cast<float>(glfwGetTime()));
-    shader.set_loc("u_underwater", m_camera.is_under_water());
+    shader.set_loc("u_underwater", camera.is_under_water());
     shader.set_loc("u_waterColor", glm::vec3(0.1f, 0.25f, 0.35f));
     shader.set_loc("u_fogDensity", m_underwater_fog_density);
-    shader.set_loc("cameraPos", m_camera.get_camera_pos());
+    shader.set_loc("cameraPos", camera.get_camera_pos());
     shader.set_loc("sunDir", -m_parallel_light.sundir);
     shader.set_loc("waterDensity", m_water_density);
     shader.set_loc("InverseViewProjection",
@@ -427,13 +430,14 @@ void WorldRenderer::render_underwater() {
 
 void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
                                         const glm::mat4& mv_mat,
-                                        const glm::mat4& norm_mat) {
+                                        const glm::mat4& norm_mat,
+                                        ClientWorld& world) {
 
     // shader map
     glm::mat4& light_space_matrix = m_parallel_light.light_space_matrix;
-
-    auto& m_render_snapshots = m_world.render_snapshots();
-    auto& camera_pos = m_camera.get_camera_pos();
+    auto& camera = world.world_scene().camera();
+    auto& m_render_snapshots = world.render_snapshots();
+    auto& camera_pos = camera.get_camera_pos();
 
     const auto& lightdir = m_parallel_light.lightdir;
 
@@ -467,14 +471,14 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
     normal_block_shader.set_loc("maxRadius", m_max_radius);
     normal_block_shader.set_loc("samples", m_samples);
     normal_block_shader.set_loc("specularStrength", m_specular_strength);
-    normal_block_shader.set_loc("cameraPos", m_camera.get_camera_pos());
+    normal_block_shader.set_loc("cameraPos", camera.get_camera_pos());
     normal_block_shader.set_loc("flipY", m_flip_y);
-    normal_block_shader.set_loc("renderDistance", m_world.rendering_distance());
+    normal_block_shader.set_loc("renderDistance", world.rendering_distance());
     normal_block_shader.set_loc("skyColor", m_sky_uniform.sky_top);
 
     glm::mat4 mvp_mat = proj_mat * mv_mat;
 
-    auto& m_planes = m_world.planes();
+    auto& m_planes = world.planes();
 
     Math::extract_frustum_planes(mvp_mat, m_planes);
 
@@ -545,10 +549,11 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
 }
 
 void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
-                                             const glm::mat4& norm_mat) {
+                                             const glm::mat4& norm_mat,
+                                             ClientWorld& world) {
 
-    auto& m_render_snapshots = m_world.render_snapshots();
-
+    auto& m_render_snapshots = world.render_snapshots();
+    auto& camera = world.world_scene().camera();
     const auto& lightdir = m_parallel_light.lightdir;
     glm::vec3 light_dir_view =
         glm::normalize(glm::mat3(view_matrix) * lightdir);
@@ -573,11 +578,11 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     accum_shader.use();
 
     set_accum_loc(accum_shader);
-    accum_shader.set_loc("cameraPos", m_camera.get_camera_pos());
+    accum_shader.set_loc("cameraPos", camera.get_camera_pos());
 
     m_texture_manager.get_texture_array()->bind(0);
 
-    auto& m_planes = m_world.planes();
+    auto& m_planes = world.planes();
 
     for (const auto& snapshot : m_render_snapshots) {
         if (!snapshot) {
@@ -619,7 +624,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     water_shader.set_loc("cloudWhiteMix", m_sky_uniform.cloud_white_mix);
     water_shader.set_loc("cloudThresholdLow", m_cloud_threshold_low);
     water_shader.set_loc("cloudThresholdHigh", m_cloud_threshold_high);
-    water_shader.set_loc("underwater", m_camera.is_under_water());
+    water_shader.set_loc("underwater", camera.is_under_water());
     water_shader.set_loc("refractStrength", m_refract_strength);
     water_shader.set_loc("enablePerturb", m_water_perturb);
     water_shader.set_loc("enableDepthFade", m_water_depth_fade);
@@ -670,7 +675,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     glBindVertexArray(0);
 }
 
-void WorldRenderer::render_player() {
+void WorldRenderer::render_player(ClientWorld& world) {
     auto& shader = m_renderer.get_shader("player");
     shader.use();
     glm::vec3 light_dir_view =
@@ -692,7 +697,7 @@ void WorldRenderer::render_player() {
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);
 
     m_depth_map_texture->bind(0);
-    m_player_renderer.render(shader);
+    m_player_renderer.render(shader, world);
 }
 
 glm::vec3 WorldRenderer::quantize_sun_direction(const glm::vec3& lightdir,

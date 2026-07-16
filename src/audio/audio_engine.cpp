@@ -93,7 +93,7 @@ void AudioEngine::init() {
 }
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
-
+void AudioEngine::stop_bgm() { m_bgm->stop(); }
 void AudioEngine::change_bgm(const std::string& sound) {
     Logger::info("change bgm {}", sound);
     m_bgm->stop();

@@ -5,6 +5,7 @@
 #include <glad/glad.h>
 
 namespace Cubed {
+class ClientWorld;
 class Renderer;
 class PlayerRenderer {
 public:
@@ -12,8 +13,9 @@ public:
     PlayerRenderer(Renderer& renderer);
     ~PlayerRenderer();
     void init();
-    void render(const Shader& shader);
-    void shadow_render(const Shader& shader, glm::mat4& light_matrix);
+    void render(const Shader& shader, ClientWorld& world);
+    void shadow_render(const Shader& shader, glm::mat4& light_matrix,
+                       ClientWorld& world);
 
 private:
     struct PlayerVertex {

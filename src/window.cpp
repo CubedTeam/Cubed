@@ -1,6 +1,6 @@
 #include "Cubed/window.hpp"
 
-#include "Cubed/render/renderer.hpp"
+#include "Cubed/camera.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
@@ -14,8 +14,7 @@ namespace Cubed {
 static int windowed_xpos = 0, windowed_ypos = 0;
 static int windowed_width = 800, windowed_height = 600;
 
-Window::Window(Renderer& renderer, Config& config)
-    : m_renderer(renderer), m_config(config) {}
+Window::Window(Config& config) : m_config(config) {}
 
 Window::~Window() {
     if (m_imgui_init) {
@@ -41,14 +40,73 @@ const GLFWwindow* Window::get_glfw_window() const { return m_window; }
 
 GLFWwindow* Window::get_glfw_window() { return m_window; }
 
-void Window::update_viewport() {
-    glfwGetFramebufferSize(m_window, &m_width, &m_height);
-    m_aspect = (float)m_width / (float)m_height;
-    glViewport(0, 0, m_width, m_height);
-    m_renderer.update_proj_matrix(m_aspect, m_width, m_height);
-    m_renderer.updata_framebuffer(m_width, m_height);
-    m_config.set("window.width", windowed_width);
-    m_config.set("window.height", windowed_height);
+bool Window::handle_event(const Event& e) {
+    return std::visit(
+        Overloaded{[](const MouseMoveEvent&) { return false; },
+                   [this](const MouseButtonEvent& e) {
+                       if (handle_mouse_button_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const MouseWheelEvent&) { return false; },
+                   [this](const KeyEvent& e) {
+                       if (handle_key_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const TextInputEvent&) { return false; },
+                   [this](const WindowResizeEvent& e) {
+                       handle_window_resize_event(e);
+                       return false;
+                   },
+                   [](const FrameBufferResizeEvent&) { return false; }
+
+        },
+        e);
+}
+
+bool Window::handle_key_event(const KeyEvent& e) {
+    if (e.key == Key::F11 && e.action == KeyAction::PRESS) {
+        toggle_fullscreen();
+        return true;
+    }
+    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+    }
+    if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
+        if (m_game_running) {
+            if (m_mouse_enable) {
+                disable_mouse();
+                set_imgui_enabled(false);
+            } else {
+                enable_mouse();
+                set_imgui_enabled(true);
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Window::handle_window_resize_event(const WindowResizeEvent& e) {
+    m_window_height = e.height;
+    m_window_width = e.width;
+    return false;
+}
+
+bool Window::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (e.key == MouseKey::LEFT_BUTTON && e.action == KeyAction::PRESS) {
+        if (m_game_running) {
+            if (m_mouse_enable) {
+                disable_mouse();
+                set_imgui_enabled(false);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void Window::init() {
@@ -60,15 +118,18 @@ void Window::init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    m_width = m_config.get("window.width", 800);
-    m_height = m_config.get("window.height", 600);
+
+    m_window_width = m_config.get("window.width", 800);
+    m_window_height = m_config.get("window.height", 600);
+
     if (m_config.get("window.fullscreen", false)) {
         GLFWmonitor* primary_monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(primary_monitor);
         m_window = glfwCreateWindow(mode->width, mode->height, "Cubed",
                                     primary_monitor, NULL);
     } else {
-        m_window = glfwCreateWindow(m_width, m_height, "Cubed", NULL, NULL);
+        m_window = glfwCreateWindow(m_window_width, m_window_height, "Cubed",
+                                    NULL, NULL);
     }
 
     glfwMakeContextCurrent(m_window);
@@ -77,8 +138,10 @@ void Window::init() {
     } else {
         glfwSwapInterval(0);
     }
+    if (m_game_running) {
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
 
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (glfwRawMouseMotionSupported()) {
         glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     } else {
@@ -91,7 +154,7 @@ void Window::init() {
                      static_cast<int>(mode->height / 2.0f) - 300);
 }
 
-void Window::hot_reload() {
+void Window::reload_config() {
     // V-Sync
     if (m_config.get("window.V-Sync", true)) {
         glfwSwapInterval(1);
@@ -121,12 +184,13 @@ void Window::hot_reload() {
             Logger::error("Can't Find Monitor");
         }
     }
-    update_viewport();
     if (!m_mouse_enable) {
         glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     } else {
         glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
+    m_config.set("window.width", windowed_width);
+    m_config.set("window.height", windowed_height);
 }
 
 void Window::toggle_fullscreen() {
@@ -148,25 +212,39 @@ void Window::toggle_fullscreen() {
                              GL_DONT_CARE);
         m_config.set("window.fullscreen", true);
     }
-    update_viewport();
+    m_config.set("window.width", windowed_width);
+    m_config.set("window.height", windowed_height);
 }
 
-void Window::toggle_mouse_able() {
-    // auto& io = ImGui::GetIO();
-    if (m_mouse_enable) {
-        // io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-        // Logger::info("ImGuiConfigFlags_NoMouseCursorChange");
-        // ImGui::SetMouseCursor(ImGuiMouseCursor_None);
-        // glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        m_mouse_enable = false;
-    } else {
-        // io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
-        // Logger::info("Disable ImGuiConfigFlags_NoMouseCursorChange");
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        m_mouse_enable = true;
-    }
+void Window::enable_mouse() {
+    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    m_mouse_enable = true;
 }
+void Window::disable_mouse() {
+    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (m_camera) {
+        m_camera->reset_camera();
+    }
+    m_mouse_enable = false;
+}
+
+void Window::set_camera(Camera* camera) { m_camera = camera; }
+Camera* Window::camera() { return m_camera; }
+void Window::set_game_running(bool running) {
+    m_game_running = running;
+    if (running) {
+        disable_mouse();
+    } else {
+        enable_mouse();
+    }
+    set_imgui_enabled(false);
+}
+
+void Window::should_close_window() { glfwSetWindowShouldClose(m_window, true); }
+
+bool Window::is_enable_imgui() const { return m_imgui_enable; }
+
+void Window::set_imgui_enabled(bool enable) { m_imgui_enable = enable; }
 
 void Window::imgui_init() {
     float dpi_scale_x, dpi_scale_y;

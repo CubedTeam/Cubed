@@ -9,7 +9,6 @@ target_sources(${PROJECT_NAME}
         gameplay/biome.cpp
         gameplay/chunk_generator.cpp
         gameplay/tree.cpp
-        input.cpp
         render/renderer.cpp
         shader.cpp
         texture_manager.cpp
@@ -17,7 +16,6 @@ target_sources(${PROJECT_NAME}
         tools/shader_tools.cpp
         tools/font.cpp
         tools/perlin_noise.cpp
-        ui/text.cpp
         window.cpp
         gameplay/builders/biome_builder.cpp
         gameplay/builders/plain_builder.cpp
@@ -59,4 +57,30 @@ target_sources(${PROJECT_NAME}
         render/frame_buffer.cpp
         render/shader_manager.cpp
         render/world_renderer.cpp
+        ui/widget.cpp
+        ui/label.cpp
+        ui/ui_vertex_data.cpp
+        ui/image.cpp
+        ui/button.cpp
+        scene/world_scene.cpp
+        scene/scene_manager.cpp
+        ui/world_ui_manager.cpp
+        ui/main_menu_ui_manager.cpp
+        scene/main_menu_scene.cpp
+        ui/column_layout.cpp
+        ui/rect.cpp
+        ui/ui_manager.cpp
+        ui/pause_menu_ui_manager.cpp
+        scene/credits_scene.cpp
+        ui/credits_ui.cpp
+        ui/slider.cpp
+        ui/settings_ui.cpp
+        scene/settings_scene.cpp
+        ui/combo_button.cpp
+        ui/text_field.cpp
+        scene/host_game_scene.cpp
+        scene/join_game_scene.cpp
+        ui/host_game_ui.cpp
+        ui/join_game_ui.cpp
+        ui/error_ui.cpp
 )

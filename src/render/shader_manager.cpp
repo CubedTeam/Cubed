@@ -13,8 +13,8 @@ void ShaderManager::init() {
                     "shaders/outline_f_shader.glsl");
     register_shader("sky", "shaders/sky_v_shader.glsl",
                     "shaders/sky_f_shader.glsl");
-    register_shader("ui", "shaders/ui_v_shader.glsl",
-                    "shaders/ui_f_shader.glsl");
+    register_shader("image", "shaders/image_v_shader.glsl",
+                    "shaders/image_f_shader.glsl");
     register_shader("text", "shaders/text_v_shader.glsl",
                     "shaders/text_f_shader.glsl");
     register_shader("under_water", "shaders/under_water_v_shader.glsl",
@@ -33,6 +33,8 @@ void ShaderManager::init() {
                     "shaders/player_f_shader.glsl");
     register_shader("player_depth", "shaders/depth_player_shader.glsl",
                     "shaders/depth_player_fragment_shader.glsl");
+    register_shader("rect", "shaders/rect_v_shader.glsl",
+                    "shaders/rect_f_shader.glsl");
 }
 
 void ShaderManager::register_shader(const std::string& name,

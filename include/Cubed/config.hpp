@@ -25,7 +25,6 @@ public:
         }
 
         set(key, default_value);
-        save_to_file();
 
         return default_value;
     }

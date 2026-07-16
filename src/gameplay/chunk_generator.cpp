@@ -109,7 +109,11 @@ ChunkGenerator::ChunkGenerator(ServerChunk& chunk) : m_chunk(chunk) {
 
 void ChunkGenerator::init() {
     std::random_device d;
-    m_generator_seed = d();
+    init(d());
+}
+
+void ChunkGenerator::init(unsigned seed) {
+    m_generator_seed = seed;
     Logger::info("Chunk Generator Seed {}", m_generator_seed);
     PerlinNoise3D::init(m_generator_seed);
     PerlinNoise2D::init(m_generator_seed);

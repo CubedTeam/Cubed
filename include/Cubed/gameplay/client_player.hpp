@@ -6,7 +6,8 @@
 #include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/player.hpp"
-#include "Cubed/input.hpp"
+#include "Cubed/input/event.hpp"
+#include "Cubed/input/input.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <glm/glm.hpp>
@@ -23,6 +24,14 @@ public:
     ClientPlayer(ClientWorld& world);
     ~ClientPlayer();
 
+    bool handle_mouse_button_event(const MouseButtonEvent& e);
+    bool handle_key_event(const KeyEvent& e);
+    bool handle_mouse_wheel_event(const MouseWheelEvent& e);
+
+    void update_front_vec(float offset_x, float offset_y);
+    bool update_player_move_state(Key key, KeyAction action);
+    bool update_scroll(float yoffset);
+
     void update_chunk_set(const ChunkPosSet& set);
     const ChunkPosSet& get_chunk_pos_set() const;
     ChunkPosSet get_chunk_pos_set();
@@ -36,13 +45,10 @@ public:
     const MoveState& get_move_state() const;
 
     void change_mode(GameMode mode);
-    void hot_reload();
+    void reload_config();
     void set_player_pos(const glm::vec3& pos);
     void set_place_block(unsigned id);
     void update(float delta_time);
-    void update_front_vec(float offset_x, float offset_y);
-    void update_player_move_state(int key, int action);
-    void update_scroll(double yoffset);
 
     float& max_walk_speed();
     float& max_run_speed();
@@ -52,7 +58,7 @@ public:
     float& g();
     float& fly_y_speed();
 
-    unsigned place_block() const;
+    unsigned get_current_block() const;
 
     void set_gait(Gait gait);
     GameMode& game_mode();
@@ -62,7 +68,7 @@ public:
     void set_uuid(std::string_view uuid);
     std::string get_uuid() const;
     const std::string& get_name() const;
-
+    void reset_key_status();
     void init(std::string_view name);
 
     float yaw() const;
@@ -74,6 +80,7 @@ public:
                   float distance = 4.0f);
     bool is_underwater() const;
     void set_underwater(bool u);
+    void place_block(float dt);
 
 private:
     using enum GameMode;
@@ -83,7 +90,8 @@ private:
     float m_deceleration = DEFAULT_DECELERATION;
     float m_g = DEFAULT_G;
     constexpr static float MAX_SPACE_ON_TIME = 0.3f;
-
+    constexpr static float PLACE_BLOCK_INTERVAL = 0.2f;
+    float m_place_time = PLACE_BLOCK_INTERVAL;
     std::atomic<float> m_yaw = 0.0f;
     std::atomic<float> m_pitch = 0.0f;
 
@@ -119,6 +127,7 @@ private:
 
     std::atomic<Gait> m_gait = Gait::STOP;
     MoveState m_move_state{};
+    MouseState m_mouse_state{};
     GameMode m_game_mode = CREATIVE;
     std::optional<LookBlock> m_look_block = std::nullopt;
     std::string m_name{};
@@ -137,11 +146,15 @@ private:
 
     void update_direction();
     void update_lookup_block();
+
     void update_move(float delta_time);
+
     void update_x_move(glm::vec3& player_pos);
     void update_y_move(glm::vec3& player_pos);
     void update_z_move(glm::vec3& player_pos);
+
     void update_player_chunk();
+
     void play_walk_sound(float dt);
     Gait compute_gait() const;
 };
