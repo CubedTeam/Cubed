@@ -36,6 +36,14 @@ void HostGameUI::init() {
         label.set_scale(0.7f);
     }
     {
+        auto& label = layout.add_child<Label>();
+        label.set_text("NoError");
+        label.set_color(Color::RED);
+        label.set_scale(0.7f);
+        label.set_visible(false);
+        m_error_label = &label;
+    }
+    {
         auto& text_seed = layout.add_child<TextField>();
         text_seed.set_show_text("WorldSeed");
         text_seed.set_app(&m_scene.scene_manager().app());
@@ -47,16 +55,19 @@ void HostGameUI::init() {
                 std::from_chars(text.data(), text.data() + text.size(), seed);
 
             if (r.ec != std::errc{} || r.ptr != text.data() + text.size()) {
-                Logger::error("Invalid seed: {}", text);
+                std::string error = std::format("Invalid seed: {}", text);
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
+            clear_error();
             m_scene.scene_manager().world_scene_param().seed = seed;
         });
     }
     {
         auto& text_port = layout.add_child<TextField>();
         text_port.set_default_image(texture_manager);
-        text_port.set_show_text("Port");
+        text_port.set_show_text("Port: 25530");
         text_port.set_app(&m_scene.scene_manager().app());
         text_port.set_on_finish([this, &text_port]() {
             int port = 25530;
@@ -64,14 +75,18 @@ void HostGameUI::init() {
             auto r =
                 std::from_chars(text.data(), text.data() + text.size(), port);
             if (r.ec != std::errc{} || r.ptr != text.data() + text.size()) {
-                Logger::error("Invalid port: {}", text);
+                std::string error = std::format("Invalid port: {}", text);
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
             if (port > 65535 || port < 0) {
-
-                Logger::error("Port {} out of range", port);
+                std::string error = std::format("Port {} out of range", port);
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
+            clear_error();
             m_scene.scene_manager().world_scene_param().port = port;
         });
     }
@@ -96,4 +111,13 @@ void HostGameUI::init() {
     m_root_widget = std::move(bi);
 }
 void HostGameUI::on_re_enter() {}
+
+void HostGameUI::set_error(std::string_view error) {
+    if (!m_error_label) {
+        return;
+    }
+    m_error_label->set_text(error);
+    m_error_label->set_visible(true);
+}
+void HostGameUI::clear_error() { m_error_label->set_visible(false); }
 } // namespace Cubed

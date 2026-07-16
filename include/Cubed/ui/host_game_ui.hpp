@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/ui/label.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 namespace Cubed {
 class HostGameScene;
@@ -12,5 +13,8 @@ public:
 
 private:
     HostGameScene& m_scene;
+    Label* m_error_label;
+    void set_error(std::string_view error);
+    void clear_error();
 };
 } // namespace Cubed

@@ -15,6 +15,9 @@ void Widget::update(float dt) {
 }
 
 void Widget::render(Renderer& renderer) {
+    if (!m_visible) {
+        return;
+    }
     on_render(renderer);
 
     for (auto& child : m_children) {
@@ -99,10 +102,17 @@ Widget& Widget::set_offset(glm::ivec2 offset) {
     m_offset = offset;
     return *this;
 }
-void Widget::set_window_size(int width, int height) {
+Widget& Widget::set_window_size(int width, int height) {
     m_window_height = height;
     m_window_width = width;
+    return *this;
 }
+
+Widget& Widget::set_visible(bool visible) {
+    m_visible = visible;
+    return *this;
+}
+
 float Widget::width() const {
     if (m_parent) {
         return m_parent->width();

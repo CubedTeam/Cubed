@@ -34,6 +34,14 @@ void JoinGameUI::init() {
         label.set_scale(0.7f);
     }
     {
+        auto& label = layout.add_child<Label>();
+        label.set_text("NoError");
+        label.set_color(Color::RED);
+        label.set_scale(0.7f);
+        label.set_visible(false);
+        m_error_label = &label;
+    }
+    {
         auto& text_ip = layout.add_child<TextField>();
         text_ip.set_show_text("Server Ip");
         text_ip.set_default_image(texture_manager);
@@ -42,17 +50,23 @@ void JoinGameUI::init() {
             auto& ip = text_ip.input_text();
             auto p = ip.find(":");
             if (p == std::string::npos) {
-                Logger::error("Missing ':'");
+                std::string error = "Missing ':'";
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
             auto addr = ip.substr(0, p);
             if (addr.empty()) {
-                Logger::error("Empty address");
+                std::string error = "Empty address";
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
             auto port_str = ip.substr(p + 1);
             if (port_str.empty()) {
-                Logger::error("Missing port");
+                std::string error = "Missing port";
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
             int port = 25530;
@@ -60,14 +74,19 @@ void JoinGameUI::init() {
                                      port_str.data() + port_str.size(), port);
             if (r.ec != std::errc{} ||
                 r.ptr != port_str.data() + port_str.size()) {
-                Logger::error("Invalid port: {}", port_str);
+                std::string error = std::format("Invalid port: {}", port_str);
+                Logger::error("{}", error);
+                set_error(error);
                 return;
             }
             if (port > 65535 || port < 0) {
+                std::string error = std::format("Port {} out of range", port);
+                Logger::error("{}", error);
+                set_error(error);
 
-                Logger::error("Port {} out of range", port);
                 return;
             }
+            clear_error();
             auto& param = m_scene.scene_manager().world_scene_param();
             param.port = port;
             param.ip = addr;
@@ -96,4 +115,14 @@ void JoinGameUI::init() {
     m_root_widget = std::move(bi);
 }
 void JoinGameUI::on_re_enter() {}
+
+void JoinGameUI::set_error(std::string_view error) {
+    if (!m_error_label) {
+        return;
+    }
+    m_error_label->set_text(error);
+    m_error_label->set_visible(true);
+}
+void JoinGameUI::clear_error() { m_error_label->set_visible(false); }
+
 } // namespace Cubed

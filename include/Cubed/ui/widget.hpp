@@ -30,7 +30,8 @@ public:
     virtual const std::string& id() const;
     virtual Widget& set_anchor(Anchor anchor);
     virtual Widget& set_offset(glm::ivec2 offset);
-    virtual void set_window_size(int width, int height);
+    virtual Widget& set_window_size(int width, int height);
+    virtual Widget& set_visible(bool visible);
     // Returns the final display size
     virtual float width() const = 0;
     virtual float height() const = 0;
@@ -56,6 +57,7 @@ protected:
     float m_window_width = 0;
     // Center is at the top-left corner, position is at the top-left corner
     Anchor m_anchor = Anchor::TOP_LEFT;
+    bool m_visible = true;
     glm::ivec2 m_offset{0, 0};
 
     std::vector<std::unique_ptr<Widget>>& children();
