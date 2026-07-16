@@ -8,6 +8,7 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
+#include "Cubed/tools/system_locate.hpp"
 #include "Cubed/tools/text_tools.hpp"
 #include "version.hpp"
 
@@ -40,7 +41,13 @@ void App::init(int argc, char** argv) {
     handle_toml();
     handle_argument(argc, argv);
 
-    Localization::instance().load_language("zh_CN");
+    auto locate = get_system_locale();
+    std::string default_value = "en_US";
+    if (locate.country == "CN") {
+        default_value = "zh_CN";
+    }
+    Localization::instance().load_language(
+        m_game_config.get("language", default_value));
 
     m_window.init();
     m_window.imgui_init();

@@ -84,4 +84,5 @@ target_sources(${PROJECT_NAME}
         ui/join_game_ui.cpp
         ui/error_ui.cpp
         localization.cpp
+        tools/system_locate.cpp
 )
