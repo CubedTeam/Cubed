@@ -51,6 +51,8 @@ public:
     Font();
     ~Font();
     static Font& get();
+
+    static void destroy();
     TextMesh vertices(const std::string& text);
     const Texture* text_texture();
     static const std::string& font_path();
@@ -70,6 +72,7 @@ private:
     int m_max_layers = 0;
     Glyph& load_glyph(uint32_t glyph_index);
     void upload_glyph(Glyph& glyph, const unsigned char* buffer);
+    static std::unique_ptr<Font>& get_ptr();
 };
 
 } // namespace Cubed

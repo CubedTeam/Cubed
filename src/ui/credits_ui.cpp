@@ -49,6 +49,7 @@ void CreditsUI::init() {
         add_text("Libraries Used", 0.8f);
         add_text("glad");
         add_text("GLFW");
+        add_text("SDL3");
         add_text("SOIL2");
         add_text("GLM");
         add_text("FreeType");

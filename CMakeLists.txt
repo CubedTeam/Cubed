@@ -128,7 +128,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        glfw                                   
+        SDL3::SDL3                                 
         glad
         glm::glm
         OpenGL::GL

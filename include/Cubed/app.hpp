@@ -1,7 +1,6 @@
 #pragma once
-#include "Cubed/audio/audio_engine.hpp"
-#define GLFW_INCLUDE_NONE
 #include "Cubed/argument.hpp"
+#include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/dev_panel.hpp"
 #include "Cubed/render/renderer.hpp"
@@ -14,21 +13,15 @@ class App {
 public:
     App();
     ~App();
-    static void cursor_position_callback(GLFWwindow* window, double xpos,
-                                         double ypos);
-    static void key_callback(GLFWwindow* window, int key, int scancode,
-                             int action, int mods);
-    static void mouse_button_callback(GLFWwindow* window, int button,
-                                      int action, int mods);
-    static void window_focus_callback(GLFWwindow* window, int focused);
-    static void window_reshape_callback(GLFWwindow* window, int new_width,
-                                        int new_height);
-    static void framebuffer_size_callback(GLFWwindow* window, int new_width,
-                                          int new_height);
-    static void mouse_scroll_callback(GLFWwindow* window, double xoffset,
-                                      double yoffset);
-    static void cursor_enter_callback(GLFWwindow* window, int entered);
-    static void char_callback(GLFWwindow* window, unsigned int ch);
+    void handle_mouse_move(float xpos, float ypos, float xrel, float yrel);
+    void handle_sdl_key(SDL_Event& e);
+    void handle_sdl_mouse_button(SDL_Event& e);
+    void handle_window_focus(bool focused);
+    void handle_window_resize(int new_width, int new_height);
+    void handle_framebuffer_resize(int new_width, int new_height);
+    void handle_mouse_scroll(float xoffset, float yoffset);
+    void handle_text_input(const char* text);
+
     static int start_cubed_application(int argc, char** argv);
 
     static unsigned int seed();
@@ -43,10 +36,17 @@ public:
     const Argument& argument() const;
     AudioEngine& audio();
 
-    const char* get_clipboard_text();
+    std::string get_clipboard_text();
+
+    void start_text_input();
+    void stop_text_input();
+    void update_text_input_area(const glm::vec4& textbox,
+                                float cursor_position_x);
 
 private:
     Config m_game_config;
+
+    Window m_window;
 
     TextureManager m_texture_manager;
 
@@ -54,18 +54,16 @@ private:
 
     Renderer m_renderer;
 
-    Window m_window;
-
     SceneManager m_scene_manager;
 
-    inline static double last_time = glfwGetTime();
-    inline static double current_time = glfwGetTime();
-    inline static double dt = 0.0f;
-    inline static double fps_time_count = 0.0f;
+    inline static uint64_t last_tick = 0;
+    inline static uint64_t current_tick = 0;
+    inline static float dt = 0.0f;
+    inline static float fps_time_count = 0.0f;
     inline static int frame_count = 0;
     inline static int fps = 0;
     Argument m_argument;
-
+    bool m_running = true;
     void init(int argc, char** argv);
     void handle_argument(int argc, char** argv);
     auto init_camera();
@@ -75,6 +73,8 @@ private:
     void render();
     void run();
     void update();
+
+    void handle_sdl_event(SDL_Event& e);
 
     void dispatch_event(const Event& e);
 };

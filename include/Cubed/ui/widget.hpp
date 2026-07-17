@@ -25,12 +25,10 @@ public:
     Widget& operator=(const Widget&) = delete;
     Widget& operator=(Widget&&) = delete;
 
-    Widget(const std::string& id, Widget* parent);
     Widget(Widget* parent);
     virtual ~Widget() = default;
     virtual void update(float dt);
     virtual void render(Renderer& renderer);
-    virtual const std::string& id() const;
     virtual Widget& set_anchor(Anchor anchor);
     virtual Widget& set_offset(glm::ivec2 offset);
     virtual Widget& set_window_size(int width, int height);
@@ -58,7 +56,6 @@ public:
 
 protected:
     Widget* m_parent = nullptr;
-    std::string m_id;
     float m_window_height = 0;
     float m_window_width = 0;
     // Center is at the top-left corner, position is at the top-left corner

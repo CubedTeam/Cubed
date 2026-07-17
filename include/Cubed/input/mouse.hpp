@@ -9,7 +9,7 @@ enum class MouseKey {
 
     BACK_BUTTON,    // Side button back
     FORWARD_BUTTON, // Side button forward
-
+    /*
     WHEEL_UP,
     WHEEL_DOWN,
     WHEEL_LEFT,
@@ -20,6 +20,7 @@ enum class MouseKey {
     EXTRA_BUTTON_3,
     EXTRA_BUTTON_4,
     EXTRA_BUTTON_5
+    */
 };
 
 }

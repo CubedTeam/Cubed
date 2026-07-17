@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Cubed/input/event.hpp"
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -40,7 +39,7 @@ public:
     void camera_init(ClientPlayer* player);
     void hot_reload();
     void reset_camera();
-    void update_cursor_position_camera(double xpos, double ypos);
+    void update_cursor_position_camera(float offset_x, float offset_y);
 
     const glm::mat4 get_camera_lookat() const;
     const glm::vec3& get_camera_pos() const;
@@ -50,6 +49,7 @@ public:
     void change_perspective();
     bool is_first_person() const;
     bool handle_event(const Event& e);
+    ClientPlayer* player();
 };
 
 } // namespace Cubed

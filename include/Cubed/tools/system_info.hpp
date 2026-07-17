@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cubed/tools/log.hpp"
+#include "Cubed/tools/log.hpp" // IWYU pragma: keep
 
 #include <string>
 
@@ -155,6 +155,46 @@ inline std::string get_cpu_info() {
 #else
     return std::string{"Unkown"};
 #endif
+}
+
+inline std::string get_compiler_info() {
+    std::string result;
+
+#if defined(__clang__)
+    result = "Clang ";
+    result += __clang_version__;
+
+#elif defined(__GNUC__)
+    result = "GCC ";
+    result += std::to_string(__GNUC__);
+    result += ".";
+    result += std::to_string(__GNUC_MINOR__);
+    result += ".";
+    result += std::to_string(__GNUC_PATCHLEVEL__);
+
+#elif defined(_MSC_VER)
+    int major = _MSC_VER / 100;
+    int minor = _MSC_VER % 100;
+
+    result = "MSVC ";
+    result += std::to_string(major);
+    result += ".";
+    result += std::to_string(minor);
+
+#else
+    result = "Unknown Compiler";
+#endif
+    constexpr long CPP_VERSION =
+#ifdef _MSC_VER
+        _MSVC_LANG;
+#else
+        __cplusplus;
+#endif
+    result += " (C++";
+    result += std::to_string(CPP_VERSION);
+    result += ")";
+
+    return result;
 }
 
 } // namespace Tools

@@ -10,7 +10,6 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
 
-#include <GLFW/glfw3.h>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -38,10 +37,7 @@ void Renderer::reload_config() {
 }
 
 void Renderer::init(bool debug_on) {
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        Logger::error("Failed to initialize glad");
-        exit(EXIT_FAILURE);
-    }
+
     Logger::info("OpenGL Version: {}.{}", GLVersion.major, GLVersion.minor);
     Logger::info("Renderer: {}",
                  reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
@@ -206,7 +202,7 @@ void Renderer::render_lable(const Label& label) {
 
 void Renderer::render_image(const Image& image) {
     if (!image.texture()) {
-        Logger::error("Image id {} not set image!", image.id());
+        Logger::error("Image not set image!");
         return;
     }
     const auto& shader = get_shader("image");

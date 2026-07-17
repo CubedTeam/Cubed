@@ -1,10 +1,10 @@
 #pragma once
 
+#include "Cubed/argument.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/input/event.hpp"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 namespace Cubed {
 class Camera;
 class Renderer;
@@ -14,9 +14,9 @@ public:
     ~Window();
 
     bool is_mouse_enable() const;
-    const GLFWwindow* get_glfw_window() const;
-    GLFWwindow* get_glfw_window();
-    void init();
+    const SDL_Window* get_window() const;
+    SDL_Window* get_window();
+    void init(const Argument& argument);
     void imgui_init();
 
     // end of frame to reload!
@@ -25,7 +25,7 @@ public:
     void reload_config();
 
     void toggle_fullscreen();
-
+    void set_fullscreen(bool full);
     void enable_mouse();
     void disable_mouse();
 
@@ -40,19 +40,31 @@ public:
 
     void set_imgui_enabled(bool enable);
 
+    void set_vsync(bool enable);
+
+    int width() const;
+    int height() const;
+
 private:
     bool m_mouse_enable = true;
     bool m_imgui_init = false;
     bool m_game_running = false;
-    GLFWwindow* m_window;
-    int m_window_width;
-    int m_window_height;
+    bool m_enable_exclusive = false;
+    SDL_Window* m_window;
+    SDL_GLContext m_context;
+    int m_window_width = 0;
+    int m_window_height = 0;
+    SDL_DisplayID m_windowed_display = 0;
+    bool m_fullscreen = false;
     Config& m_config;
     Camera* m_camera = nullptr;
     bool m_imgui_enable = false;
     bool handle_key_event(const KeyEvent& e);
     bool handle_window_resize_event(const WindowResizeEvent& e);
     bool handle_mouse_button_event(const MouseButtonEvent& e);
+
+    void set_exclusive_fullscreen(bool full);
+    void set_borderless_fullscreen(bool full);
 };
 
 } // namespace Cubed

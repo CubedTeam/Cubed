@@ -10,7 +10,6 @@ public:
     Label& operator=(const Label&) = delete;
     Label& operator=(Label&&) = delete;
 
-    Label(const std::string& id, Widget* parent);
     Label(Widget* parent);
     virtual ~Label() = default;
 

@@ -4,7 +4,11 @@
     "zstd",
     "openal-soft",
     "harfbuzz",
-    "freetype"
+    "freetype",
+    {
+      "name": "sdl3",
+      "default-features": false
+    }
   ],
   "builtin-baseline": "a0400024711b283056538ac19ced80b91a83c24c"
 }

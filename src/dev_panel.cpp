@@ -9,8 +9,8 @@
 #include "Cubed/tools/log.hpp"
 
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl3.h>
 
 namespace Cubed {
 
@@ -59,17 +59,10 @@ void DevPanel::init() {
 
 void DevPanel::render() {
     ASSERT_MSG(m_player, "Player Is Null");
-    /*
-    if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
-        {
-            ImGui_ImplGlfw_Sleep(10);
-            continue;
-        }
-    */
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
     ImGui::Begin("DevPanel");
@@ -323,97 +316,13 @@ void DevPanel::show_chunk_table_bar() {
 
 void DevPanel::show_settings_tab_item() {
     if (ImGui::BeginTabItem("settings")) {
-        if (ImGui::SliderFloat("FOV", &m_config_view.fov, 1.0f, 140.0f)) {
-            m_config.set("player.fov", static_cast<double>(m_config_view.fov));
-            m_app.renderer().reload_config();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("default##1")) {
-            m_config_view.fov = DEFAULT_FOV;
-            m_config.set("player.fov", static_cast<double>(m_config_view.fov));
-            m_app.renderer().reload_config();
-        }
-        if (ImGui::SliderFloat("Sensitivity", &m_config_view.mouse_sensitivity,
-                               0.01f, 1.0f)) {
-            m_config.set("player.mouse_sensitivity",
-                         static_cast<double>(m_config_view.mouse_sensitivity));
-            m_player->reload_config();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("default##2")) {
-            m_config_view.mouse_sensitivity = 0.15f;
-            m_config.set("player.mouse_sensitivity",
-                         static_cast<double>(m_config_view.mouse_sensitivity));
-            m_player->reload_config();
-        }
 
-        if (ImGui::SliderInt("Distance", &m_config_view.rendering_distance, 2,
-                             128)) {
-            m_config.set("world.rendering_distance",
-                         m_config_view.rendering_distance);
-            m_world_scene.client_world().reload_config();
-        }
-        if (ImGui::Checkbox("Fullscreen", &m_config_view.fullscreen)) {
-            m_config.set("window.fullscreen", m_config_view.fullscreen);
-            m_app.window().reload_config();
-        }
-        ImGui::SameLine();
-        if (ImGui::Checkbox("V-Sync", &m_config_view.v_sync)) {
-            m_config.set("window.V-Sync", m_config_view.v_sync);
-            m_app.window().reload_config();
-        }
-        if (ImGui::Checkbox("Aniso", &m_config_view.is_enable_aniso)) {
-            m_config_view.is_reload = false;
-            if (m_config_view.is_enable_aniso) {
-                m_config_view.max_aniso = m_app.texture_manager().max_aniso();
-                if (m_config_view.max_aniso < 2) {
-                    m_config_view.is_support_aniso = false;
-                } else {
-                    m_config_view.aniso = 2;
-                }
-            } else {
-                m_config_view.aniso = 1;
-            }
-        }
-        if (m_config_view.is_enable_aniso) {
-            ImGui::SameLine();
-            if (!m_config_view.is_support_aniso) {
-                ImGui::Text("Not Support\n");
-            } else {
-                if (ImGui::SliderInt("##aniso", &m_config_view.aniso, 2,
-                                     m_config_view.max_aniso)) {
-                    m_config_view.is_reload = false;
-                    int log =
-                        static_cast<int>(std::log2(m_config_view.aniso) + 0.5f);
-                    m_config_view.aniso = static_cast<int>(std::pow(2, log));
-                    if (m_config_view.aniso < 2) {
-                        m_config_view.aniso = 2;
-                    }
-                    if (m_config_view.aniso > m_config_view.max_aniso) {
-                        m_config_view.aniso = m_config_view.max_aniso;
-                    }
-                }
-            }
-        }
         if (ImGui::Button("ReloadTexture")) {
             m_config.set("texture.aniso", m_config_view.aniso);
             m_app.texture_manager().need_reload();
             m_config_view.is_reload = true;
         }
-        if (!m_config_view.is_reload) {
-            ImGui::SameLine();
-            ImGui::Text("Your need to click this button to apply config\n");
-        }
 
-        if (ImGui::SliderFloat("Music", &m_config_view.volume_music, 0.0f,
-                               1.0f)) {
-            m_config.set("volume.music", m_config_view.volume_music);
-            m_app.audio().reload_config();
-        }
-        if (ImGui::SliderFloat("SFX", &m_config_view.volume_sfx, 0.0f, 1.0f)) {
-            m_config.set("volume.SFX", m_config_view.volume_sfx);
-            m_app.audio().reload_config();
-        }
         if (ImGui::Combo("Theme", &m_theme, THEMES, IM_ARRAYSIZE(THEMES))) {
             if (m_theme == 0) {
                 ImGui::StyleColorsDark();

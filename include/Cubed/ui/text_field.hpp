@@ -31,7 +31,7 @@ public:
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;
     bool handle_key_event(const KeyEvent& e) override;
-
+    bool handle_window_resize_event(const WindowResizeEvent& e) override;
     const std::string& input_text() const;
 
     template <typename F> TextField& set_on_finish(F&& f) {
@@ -47,7 +47,7 @@ private:
     static constexpr const char* DEFAULT_TEXT_FIELD_IMAGE =
         "texture/ui/textfield001.png";
 
-    App* m_app;
+    App* m_app = nullptr;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;
     std::unique_ptr<Rect> m_cursor;
@@ -69,5 +69,6 @@ private:
     void on_render(Renderer& renderer) override;
     void on_update(float dt) override;
     void update_show_text();
+    void update_input_area();
 };
 } // namespace Cubed

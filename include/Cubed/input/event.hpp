@@ -11,8 +11,10 @@ namespace Cubed {
 struct MouseMoveEvent {
     float xpos;
     float ypos;
-
-    MouseMoveEvent(float x, float y) : xpos(x), ypos(y) {}
+    float xrel;
+    float yrel;
+    MouseMoveEvent(float x, float y, float dx, float dy)
+        : xpos(x), ypos(y), xrel(dx), yrel(dy) {}
 };
 
 struct MouseButtonEvent {

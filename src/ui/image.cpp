@@ -34,7 +34,7 @@ Image& Image::set_scale(float scale) {
 float Image::scale() const { return m_scale; }
 float Image::height() const {
     if (!m_texture) {
-        Logger::error("Image id {} not set image!", m_id);
+        Logger::error("Image not set image!");
         return 0.0f;
     }
     return m_height * m_scale;
@@ -42,7 +42,7 @@ float Image::height() const {
 
 float Image::width() const {
     if (!m_texture) {
-        Logger::error("Image id {} not set image!", m_id);
+        Logger::error("Image not set image!");
         return 0.0f;
     }
     return m_width * m_scale;

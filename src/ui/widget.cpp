@@ -3,8 +3,6 @@
 #include "Cubed/tools/log.hpp"
 
 namespace Cubed {
-Widget::Widget(const std::string& id, Widget* parent)
-    : m_parent(parent), m_id(id) {}
 Widget::Widget(Widget* parent) : m_parent(parent) {}
 void Widget::update(float dt) {
     on_update(dt);
@@ -127,7 +125,6 @@ float Widget::height() const {
 }
 
 glm::vec2 Widget::pos() const { return compute_position(); }
-const std::string& Widget::id() const { return m_id; }
 
 bool Widget::handle_key_event(const KeyEvent& e) {
     if (m_order == TraversalOrder::BACK_TO_FRONT) {

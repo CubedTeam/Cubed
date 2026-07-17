@@ -8,9 +8,7 @@ find_package(zstd REQUIRED)
 find_package(OpenAL REQUIRED)
 find_package(harfbuzz REQUIRED)
 find_package(Freetype REQUIRED)
-if (UNIX AND NOT APPLE)
-    find_package(glfw3 REQUIRED)   
-endif()
+find_package(SDL3 REQUIRED)
 
 
 # Third-party libraries
@@ -37,20 +35,6 @@ FetchContent_MakeAvailable(tomlplusplus)
 
 
 if (WIN32)
-    FetchContent_Declare(
-        glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG 3.4  
-    )
-
-    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)         
-    set(GLFW_VULKAN_STATIC ON CACHE BOOL "" FORCE)             
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
-
-    FetchContent_MakeAvailable(glfw)
 
     set(_BUILD_SHARED_LIBS_SAVED ${BUILD_SHARED_LIBS})
     set(BUILD_SHARED_LIBS ON)
