@@ -47,8 +47,10 @@ void App::init(int argc, char** argv) {
 
     m_audio.init();
     BlockManager::init();
-    if (m_argument.debug_on) {
-        m_renderer.init(*m_argument.debug_on);
+    if (m_argument.no_debug) {
+        m_renderer.init(*m_argument.no_debug);
+    } else {
+        m_renderer.init(true);
     }
     Logger::info("Renderer Init Success");
     // MapTable::init_map();
@@ -113,7 +115,7 @@ void App::handle_argument(int argc, char** argv) {
 
             {"--no-debug",
              [&](ArgParser) {
-                 m_argument.debug_on = false;
+                 m_argument.no_debug = false;
                  Logger::info("Switch off opengl debug out put");
              }},
             {"--language",

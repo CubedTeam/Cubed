@@ -6,7 +6,7 @@ struct Argument {
     std::optional<int> port;
     std::optional<std::string> ip;
     std::optional<std::string> player;
-    std::optional<bool> debug_on;
+    std::optional<bool> no_debug;
     std::optional<std::string> language;
 };
 } // namespace Cubed
