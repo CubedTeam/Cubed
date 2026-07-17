@@ -3,6 +3,8 @@
 #include "Cubed/tools/system_info.hpp"
 #include "version.hpp"
 
+#include <SDL3/SDL_video.h>
+
 namespace Cubed {
 
 DebugCollector::DebugCollector() : m_widget(nullptr) {}
@@ -85,7 +87,13 @@ void DebugCollector::init(int width, int height) {
         .set_text("OpenGL: " + std::to_string(GLVersion.major) + "." +
                   std::to_string(GLVersion.minor))
         .set_scale(SCALE);
-
+    {
+        auto& video_driver = m_widget.add_child<Label>();
+        video_driver
+            .set_text(
+                std::format("VideoDiver: {}", SDL_GetCurrentVideoDriver()))
+            .set_scale(SCALE);
+    }
     // speed
     auto& speed_text = m_widget.add_child<Label>();
     speed_text.set_text("Speed: 0 m/s").set_scale(SCALE);
