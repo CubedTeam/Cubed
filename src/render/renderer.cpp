@@ -38,10 +38,7 @@ void Renderer::reload_config() {
 }
 
 void Renderer::init(bool debug_on) {
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        Logger::error("Failed to initialize glad");
-        exit(EXIT_FAILURE);
-    }
+
     Logger::info("OpenGL Version: {}.{}", GLVersion.major, GLVersion.minor);
     Logger::info("Renderer: {}",
                  reinterpret_cast<const char*>(glGetString(GL_RENDERER)));

@@ -8,6 +8,8 @@
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/tools/math_tools.hpp"
+
+#include <SDL3/SDL_timer.h>
 namespace Cubed {
 WorldRenderer::WorldRenderer(Renderer& renderer)
     : m_renderer(renderer), m_player_renderer(renderer),
@@ -408,7 +410,7 @@ void WorldRenderer::render_underwater(ClientWorld& world) {
     auto& proj_mat = m_renderer.p_mat();
 
     shader.set_loc("u_sceneTexture", 0);
-    shader.set_loc("u_time", static_cast<float>(glfwGetTime()));
+    shader.set_loc("u_time", static_cast<float>(SDL_GetTicks() / 1000.0f));
     shader.set_loc("u_underwater", camera.is_under_water());
     shader.set_loc("u_waterColor", glm::vec3(0.1f, 0.25f, 0.35f));
     shader.set_loc("u_fogDensity", m_underwater_fog_density);
@@ -620,7 +622,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     water_shader.set_loc("sunDir", m_sky_uniform.sun_dir_view);
     water_shader.set_loc("sunColor", m_parallel_light.directional_light_color);
     water_shader.set_loc("horizonSharpness", m_sky_uniform.horizon_sharpness);
-    water_shader.set_loc("time", glfwGetTime());
+    water_shader.set_loc("time", static_cast<float>(SDL_GetTicks() / 1000.0f));
     water_shader.set_loc("cloudWhiteMix", m_sky_uniform.cloud_white_mix);
     water_shader.set_loc("cloudThresholdLow", m_cloud_threshold_low);
     water_shader.set_loc("cloudThresholdHigh", m_cloud_threshold_high);

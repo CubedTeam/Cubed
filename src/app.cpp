@@ -9,11 +9,10 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
 #include "Cubed/tools/system_locate.hpp"
-#include "Cubed/tools/text_tools.hpp"
 #include "version.hpp"
 
 #include <exception>
-#include <imgui_impl_glfw.h>
+#include <imgui_impl_sdl3.h>
 namespace Cubed {
 
 App::App()
@@ -23,20 +22,8 @@ App::App()
       m_renderer(m_texture_manager, m_game_config), m_window(m_game_config),
       m_scene_manager(*this) {}
 
-App::~App() {}
-void App::cursor_position_callback(GLFWwindow* window, double xpos,
-                                   double ypos) {
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+App::~App() { stop_text_input(); }
 
-    ASSERT_MSG(app, "nullptr");
-    if (app->m_window.is_enable_imgui()) {
-        ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-        return;
-    }
-
-    app->m_scene_manager.handle_event(
-        MouseMoveEvent{static_cast<float>(xpos), static_cast<float>(ypos)});
-}
 void App::init(int argc, char** argv) {
     handle_argument(argc, argv);
 
@@ -58,24 +45,6 @@ void App::init(int argc, char** argv) {
 
     Logger::info("Window Init Success");
 
-    glfwSetWindowUserPointer(m_window.get_glfw_window(), this);
-
-    glfwSetCursorPosCallback(m_window.get_glfw_window(),
-                             cursor_position_callback);
-    glfwSetMouseButtonCallback(m_window.get_glfw_window(),
-                               mouse_button_callback);
-    glfwSetWindowFocusCallback(m_window.get_glfw_window(),
-                               window_focus_callback);
-    glfwSetWindowSizeCallback(m_window.get_glfw_window(),
-                              window_reshape_callback);
-    glfwSetFramebufferSizeCallback(m_window.get_glfw_window(),
-                                   framebuffer_size_callback);
-    glfwSetKeyCallback(m_window.get_glfw_window(), key_callback);
-    glfwSetScrollCallback(m_window.get_glfw_window(), mouse_scroll_callback);
-    glfwSetCursorEnterCallback(m_window.get_glfw_window(),
-                               cursor_enter_callback);
-    glfwSetCharCallback(m_window.get_glfw_window(), char_callback);
-
     m_audio.init();
     BlockManager::init();
     if (m_argument.debug_on) {
@@ -87,17 +56,18 @@ void App::init(int argc, char** argv) {
     Logger::info("Texture Load Success");
 
     m_scene_manager.request_push(SceneType::MAIN_MENU);
-
+    last_tick = SDL_GetTicks();
+    current_tick = SDL_GetTicks();
     {
         int w, h;
-        glfwGetWindowSize(m_window.get_glfw_window(), &w, &h);
-        window_reshape_callback(m_window.get_glfw_window(), w, h);
+        SDL_GetWindowSize(m_window.get_window(), &w, &h);
+        handle_window_resize(w, h);
     }
 
     {
         int w, h;
-        glfwGetFramebufferSize(m_window.get_glfw_window(), &w, &h);
-        framebuffer_size_callback(m_window.get_glfw_window(), w, h);
+        SDL_GetWindowSizeInPixels(m_window.get_window(), &w, &h);
+        handle_framebuffer_resize(w, h);
     }
 }
 
@@ -166,538 +136,486 @@ void App::handle_argument(int argc, char** argv) {
         }
     }
 }
+void App::handle_cursor_position(float xpos, float ypos) {
 
-void App::key_callback(GLFWwindow* window, int key, int scancode, int action,
-                       int mods) {
-    ImGuiIO& io = ImGui::GetIO();
+    m_scene_manager.handle_event(MouseMoveEvent{xpos, ypos});
+}
 
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    // ImGui_ImplGlfw_CursorEnterCallback(window,
-    // !app->m_window.is_mouse_enable());
-    if (io.WantCaptureKeyboard && app->m_window.is_enable_imgui()) {
-        if ((key == GLFW_KEY_LEFT_ALT) && action == GLFW_PRESS) {
-            app->dispatch_event(KeyEvent{Key::LEFT_ALT, KeyAction::PRESS});
-            return;
-        }
-        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+void App::handle_sdl_key(SDL_Event& e) {
+    if (e.type != SDL_EVENT_KEY_DOWN && e.type != SDL_EVENT_KEY_UP) {
+        ASSERT_MSG(false, "Hanle SDL Event Error Unknown Key Event");
         return;
     }
-    Key pkey;
-    KeyAction act;
-    switch (key) {
+
+    Key key;
+
+    switch (e.key.key) {
     // Letter keys
-    case GLFW_KEY_A:
-        pkey = Key::A;
+    case SDLK_A:
+        key = Key::A;
         break;
-    case GLFW_KEY_B:
-        pkey = Key::B;
+    case SDLK_B:
+        key = Key::B;
         break;
-    case GLFW_KEY_C:
-        pkey = Key::C;
+    case SDLK_C:
+        key = Key::C;
         break;
-    case GLFW_KEY_D:
-        pkey = Key::D;
+    case SDLK_D:
+        key = Key::D;
         break;
-    case GLFW_KEY_E:
-        pkey = Key::E;
+    case SDLK_E:
+        key = Key::E;
         break;
-    case GLFW_KEY_F:
-        pkey = Key::F;
+    case SDLK_F:
+        key = Key::F;
         break;
-    case GLFW_KEY_G:
-        pkey = Key::G;
+    case SDLK_G:
+        key = Key::G;
         break;
-    case GLFW_KEY_H:
-        pkey = Key::H;
+    case SDLK_H:
+        key = Key::H;
         break;
-    case GLFW_KEY_I:
-        pkey = Key::I;
+    case SDLK_I:
+        key = Key::I;
         break;
-    case GLFW_KEY_J:
-        pkey = Key::J;
+    case SDLK_J:
+        key = Key::J;
         break;
-    case GLFW_KEY_K:
-        pkey = Key::K;
+    case SDLK_K:
+        key = Key::K;
         break;
-    case GLFW_KEY_L:
-        pkey = Key::L;
+    case SDLK_L:
+        key = Key::L;
         break;
-    case GLFW_KEY_M:
-        pkey = Key::M;
+    case SDLK_M:
+        key = Key::M;
         break;
-    case GLFW_KEY_N:
-        pkey = Key::N;
+    case SDLK_N:
+        key = Key::N;
         break;
-    case GLFW_KEY_O:
-        pkey = Key::O;
+    case SDLK_O:
+        key = Key::O;
         break;
-    case GLFW_KEY_P:
-        pkey = Key::P;
+    case SDLK_P:
+        key = Key::P;
         break;
-    case GLFW_KEY_Q:
-        pkey = Key::Q;
+    case SDLK_Q:
+        key = Key::Q;
         break;
-    case GLFW_KEY_R:
-        pkey = Key::R;
+    case SDLK_R:
+        key = Key::R;
         break;
-    case GLFW_KEY_S:
-        pkey = Key::S;
+    case SDLK_S:
+        key = Key::S;
         break;
-    case GLFW_KEY_T:
-        pkey = Key::T;
+    case SDLK_T:
+        key = Key::T;
         break;
-    case GLFW_KEY_U:
-        pkey = Key::U;
+    case SDLK_U:
+        key = Key::U;
         break;
-    case GLFW_KEY_V:
-        pkey = Key::V;
+    case SDLK_V:
+        key = Key::V;
         break;
-    case GLFW_KEY_W:
-        pkey = Key::W;
+    case SDLK_W:
+        key = Key::W;
         break;
-    case GLFW_KEY_X:
-        pkey = Key::X;
+    case SDLK_X:
+        key = Key::X;
         break;
-    case GLFW_KEY_Y:
-        pkey = Key::Y;
+    case SDLK_Y:
+        key = Key::Y;
         break;
-    case GLFW_KEY_Z:
-        pkey = Key::Z;
+    case SDLK_Z:
+        key = Key::Z;
         break;
 
-    // Digit keys (main keyboard area)
-    case GLFW_KEY_0:
-        pkey = Key::DIGIT_0;
+    // Digit keys
+    case SDLK_0:
+        key = Key::DIGIT_0;
         break;
-    case GLFW_KEY_1:
-        pkey = Key::DIGIT_1;
+    case SDLK_1:
+        key = Key::DIGIT_1;
         break;
-    case GLFW_KEY_2:
-        pkey = Key::DIGIT_2;
+    case SDLK_2:
+        key = Key::DIGIT_2;
         break;
-    case GLFW_KEY_3:
-        pkey = Key::DIGIT_3;
+    case SDLK_3:
+        key = Key::DIGIT_3;
         break;
-    case GLFW_KEY_4:
-        pkey = Key::DIGIT_4;
+    case SDLK_4:
+        key = Key::DIGIT_4;
         break;
-    case GLFW_KEY_5:
-        pkey = Key::DIGIT_5;
+    case SDLK_5:
+        key = Key::DIGIT_5;
         break;
-    case GLFW_KEY_6:
-        pkey = Key::DIGIT_6;
+    case SDLK_6:
+        key = Key::DIGIT_6;
         break;
-    case GLFW_KEY_7:
-        pkey = Key::DIGIT_7;
+    case SDLK_7:
+        key = Key::DIGIT_7;
         break;
-    case GLFW_KEY_8:
-        pkey = Key::DIGIT_8;
+    case SDLK_8:
+        key = Key::DIGIT_8;
         break;
-    case GLFW_KEY_9:
-        pkey = Key::DIGIT_9;
+    case SDLK_9:
+        key = Key::DIGIT_9;
         break;
 
     // Function keys
-    case GLFW_KEY_F1:
-        pkey = Key::F1;
+    case SDLK_F1:
+        key = Key::F1;
         break;
-    case GLFW_KEY_F2:
-        pkey = Key::F2;
+    case SDLK_F2:
+        key = Key::F2;
         break;
-    case GLFW_KEY_F3:
-        pkey = Key::F3;
+    case SDLK_F3:
+        key = Key::F3;
         break;
-    case GLFW_KEY_F4:
-        pkey = Key::F4;
+    case SDLK_F4:
+        key = Key::F4;
         break;
-    case GLFW_KEY_F5:
-        pkey = Key::F5;
+    case SDLK_F5:
+        key = Key::F5;
         break;
-    case GLFW_KEY_F6:
-        pkey = Key::F6;
+    case SDLK_F6:
+        key = Key::F6;
         break;
-    case GLFW_KEY_F7:
-        pkey = Key::F7;
+    case SDLK_F7:
+        key = Key::F7;
         break;
-    case GLFW_KEY_F8:
-        pkey = Key::F8;
+    case SDLK_F8:
+        key = Key::F8;
         break;
-    case GLFW_KEY_F9:
-        pkey = Key::F9;
+    case SDLK_F9:
+        key = Key::F9;
         break;
-    case GLFW_KEY_F10:
-        pkey = Key::F10;
+    case SDLK_F10:
+        key = Key::F10;
         break;
-    case GLFW_KEY_F11:
-        pkey = Key::F11;
+    case SDLK_F11:
+        key = Key::F11;
         break;
-    case GLFW_KEY_F12:
-        pkey = Key::F12;
+    case SDLK_F12:
+        key = Key::F12;
         break;
 
     // Control keys
-    case GLFW_KEY_BACKSPACE:
-        pkey = Key::BACKSPACE;
+    case SDLK_BACKSPACE:
+        key = Key::BACKSPACE;
         break;
-    case GLFW_KEY_TAB:
-        pkey = Key::TAB;
+    case SDLK_TAB:
+        key = Key::TAB;
         break;
-    case GLFW_KEY_ENTER:
-        pkey = Key::ENTER;
+    case SDLK_RETURN:
+        key = Key::ENTER;
         break;
-    case GLFW_KEY_ESCAPE:
-        pkey = Key::ESCAPE;
+    case SDLK_ESCAPE:
+        key = Key::ESCAPE;
         break;
-    case GLFW_KEY_SPACE:
-        pkey = Key::SPACE;
+    case SDLK_SPACE:
+        key = Key::SPACE;
         break;
-    case GLFW_KEY_CAPS_LOCK:
-        pkey = Key::CAPS_LOCK;
+    case SDLK_CAPSLOCK:
+        key = Key::CAPS_LOCK;
         break;
-    case GLFW_KEY_NUM_LOCK:
-        pkey = Key::NUM_LOCK;
+    case SDLK_NUMLOCKCLEAR:
+        key = Key::NUM_LOCK;
         break;
-    case GLFW_KEY_SCROLL_LOCK:
-        pkey = Key::SCROLL_LOCK;
+    case SDLK_SCROLLLOCK:
+        key = Key::SCROLL_LOCK;
         break;
 
     // Modifier keys
-    case GLFW_KEY_LEFT_SHIFT:
-        pkey = Key::LEFT_SHIFT;
+    case SDLK_LSHIFT:
+        key = Key::LEFT_SHIFT;
         break;
-    case GLFW_KEY_RIGHT_SHIFT:
-        pkey = Key::RIGHT_SHIFT;
+    case SDLK_RSHIFT:
+        key = Key::RIGHT_SHIFT;
         break;
-    case GLFW_KEY_LEFT_CONTROL:
-        pkey = Key::LEFT_CTRL;
+    case SDLK_LCTRL:
+        key = Key::LEFT_CTRL;
         break;
-    case GLFW_KEY_RIGHT_CONTROL:
-        pkey = Key::RIGHT_CTRL;
+    case SDLK_RCTRL:
+        key = Key::RIGHT_CTRL;
         break;
-    case GLFW_KEY_LEFT_ALT:
-        pkey = Key::LEFT_ALT;
+    case SDLK_LALT:
+        key = Key::LEFT_ALT;
         break;
-    case GLFW_KEY_RIGHT_ALT:
-        pkey = Key::RIGHT_ALT;
+    case SDLK_RALT:
+        key = Key::RIGHT_ALT;
         break;
-    case GLFW_KEY_LEFT_SUPER:
-        pkey = Key::LEFT_SUPER;
+    case SDLK_LGUI:
+        key = Key::LEFT_SUPER;
         break;
-    case GLFW_KEY_RIGHT_SUPER:
-        pkey = Key::RIGHT_SUPER;
+    case SDLK_RGUI:
+        key = Key::RIGHT_SUPER;
         break;
 
     // Navigation keys
-    case GLFW_KEY_INSERT:
-        pkey = Key::INSERT;
+    case SDLK_INSERT:
+        key = Key::INSERT;
         break;
-    case GLFW_KEY_DELETE:
-        pkey = Key::DELETE;
+    case SDLK_DELETE:
+        key = Key::DELETE;
         break;
-    case GLFW_KEY_HOME:
-        pkey = Key::HOME;
+    case SDLK_HOME:
+        key = Key::HOME;
         break;
-    case GLFW_KEY_END:
-        pkey = Key::END;
+    case SDLK_END:
+        key = Key::END;
         break;
-    case GLFW_KEY_PAGE_UP:
-        pkey = Key::PAGE_UP;
+    case SDLK_PAGEUP:
+        key = Key::PAGE_UP;
         break;
-    case GLFW_KEY_PAGE_DOWN:
-        pkey = Key::PAGE_DOWN;
-        break;
-    case GLFW_KEY_LEFT:
-        pkey = Key::LEFT;
-        break;
-    case GLFW_KEY_RIGHT:
-        pkey = Key::RIGHT;
-        break;
-    case GLFW_KEY_UP:
-        pkey = Key::UP;
-        break;
-    case GLFW_KEY_DOWN:
-        pkey = Key::DOWN;
+    case SDLK_PAGEDOWN:
+        key = Key::PAGE_DOWN;
         break;
 
-    // Lock and system keys
-    case GLFW_KEY_PRINT_SCREEN:
-        pkey = Key::PRINT_SCREEN;
+    case SDLK_LEFT:
+        key = Key::LEFT;
         break;
-    case GLFW_KEY_PAUSE:
-        pkey = Key::PAUSE;
+    case SDLK_RIGHT:
+        key = Key::RIGHT;
         break;
-
-    // Main keyboard area symbol keys
-    case GLFW_KEY_GRAVE_ACCENT:
-        pkey = Key::GRAVE_ACCENT;
+    case SDLK_UP:
+        key = Key::UP;
         break;
-    case GLFW_KEY_MINUS:
-        pkey = Key::MINUS;
-        break;
-    case GLFW_KEY_EQUAL:
-        pkey = Key::EQUALS;
-        break;
-    case GLFW_KEY_LEFT_BRACKET:
-        pkey = Key::LEFT_BRACKET;
-        break;
-    case GLFW_KEY_RIGHT_BRACKET:
-        pkey = Key::RIGHT_BRACKET;
-        break;
-    case GLFW_KEY_BACKSLASH:
-        pkey = Key::BACKSLASH;
-        break;
-    case GLFW_KEY_SEMICOLON:
-        pkey = Key::SEMICOLON;
-        break;
-    case GLFW_KEY_APOSTROPHE:
-        pkey = Key::APOSTROPHE;
-        break;
-    case GLFW_KEY_COMMA:
-        pkey = Key::COMMA;
-        break;
-    case GLFW_KEY_PERIOD:
-        pkey = Key::PERIOD;
-        break;
-    case GLFW_KEY_SLASH:
-        pkey = Key::SLASH;
+    case SDLK_DOWN:
+        key = Key::DOWN;
         break;
 
-    // Numpad area
-    case GLFW_KEY_KP_0:
-        pkey = Key::NUMPAD_0;
+    // System keys
+    case SDLK_PRINTSCREEN:
+        key = Key::PRINT_SCREEN;
         break;
-    case GLFW_KEY_KP_1:
-        pkey = Key::NUMPAD_1;
+    case SDLK_PAUSE:
+        key = Key::PAUSE;
         break;
-    case GLFW_KEY_KP_2:
-        pkey = Key::NUMPAD_2;
+
+    // Symbol keys
+    case SDLK_GRAVE:
+        key = Key::GRAVE_ACCENT;
         break;
-    case GLFW_KEY_KP_3:
-        pkey = Key::NUMPAD_3;
+    case SDLK_MINUS:
+        key = Key::MINUS;
         break;
-    case GLFW_KEY_KP_4:
-        pkey = Key::NUMPAD_4;
+    case SDLK_EQUALS:
+        key = Key::EQUALS;
         break;
-    case GLFW_KEY_KP_5:
-        pkey = Key::NUMPAD_5;
+    case SDLK_LEFTBRACKET:
+        key = Key::LEFT_BRACKET;
         break;
-    case GLFW_KEY_KP_6:
-        pkey = Key::NUMPAD_6;
+    case SDLK_RIGHTBRACKET:
+        key = Key::RIGHT_BRACKET;
         break;
-    case GLFW_KEY_KP_7:
-        pkey = Key::NUMPAD_7;
+    case SDLK_BACKSLASH:
+        key = Key::BACKSLASH;
         break;
-    case GLFW_KEY_KP_8:
-        pkey = Key::NUMPAD_8;
+    case SDLK_SEMICOLON:
+        key = Key::SEMICOLON;
         break;
-    case GLFW_KEY_KP_9:
-        pkey = Key::NUMPAD_9;
+    case SDLK_APOSTROPHE:
+        key = Key::APOSTROPHE;
         break;
-    case GLFW_KEY_KP_ADD:
-        pkey = Key::NUMPAD_ADD;
+    case SDLK_COMMA:
+        key = Key::COMMA;
         break;
-    case GLFW_KEY_KP_SUBTRACT:
-        pkey = Key::NUMPAD_SUBTRACT;
+    case SDLK_PERIOD:
+        key = Key::PERIOD;
         break;
-    case GLFW_KEY_KP_MULTIPLY:
-        pkey = Key::NUMPAD_MULTIPLY;
+    case SDLK_SLASH:
+        key = Key::SLASH;
         break;
-    case GLFW_KEY_KP_DIVIDE:
-        pkey = Key::NUMPAD_DIVIDE;
+
+    // Numpad
+    case SDLK_KP_0:
+        key = Key::NUMPAD_0;
         break;
-    case GLFW_KEY_KP_DECIMAL:
-        pkey = Key::NUMPAD_DECIMAL;
+    case SDLK_KP_1:
+        key = Key::NUMPAD_1;
         break;
-    case GLFW_KEY_KP_ENTER:
-        pkey = Key::NUMPAD_ENTER;
+    case SDLK_KP_2:
+        key = Key::NUMPAD_2;
+        break;
+    case SDLK_KP_3:
+        key = Key::NUMPAD_3;
+        break;
+    case SDLK_KP_4:
+        key = Key::NUMPAD_4;
+        break;
+    case SDLK_KP_5:
+        key = Key::NUMPAD_5;
+        break;
+    case SDLK_KP_6:
+        key = Key::NUMPAD_6;
+        break;
+    case SDLK_KP_7:
+        key = Key::NUMPAD_7;
+        break;
+    case SDLK_KP_8:
+        key = Key::NUMPAD_8;
+        break;
+    case SDLK_KP_9:
+        key = Key::NUMPAD_9;
+        break;
+
+    case SDLK_KP_PLUS:
+        key = Key::NUMPAD_ADD;
+        break;
+    case SDLK_KP_MINUS:
+        key = Key::NUMPAD_SUBTRACT;
+        break;
+    case SDLK_KP_MULTIPLY:
+        key = Key::NUMPAD_MULTIPLY;
+        break;
+    case SDLK_KP_DIVIDE:
+        key = Key::NUMPAD_DIVIDE;
+        break;
+    case SDLK_KP_PERIOD:
+        key = Key::NUMPAD_DECIMAL;
+        break;
+    case SDLK_KP_ENTER:
+        key = Key::NUMPAD_ENTER;
         break;
 
     default:
-        Logger::error("Unknown Key {}", key);
+        Logger::error("Unknown Key {}", e.key.key);
         return;
     }
 
-    if (action == GLFW_PRESS) {
-        act = KeyAction::PRESS;
-    } else if (action == GLFW_RELEASE) {
+    KeyAction act;
+
+    if (e.type == SDL_EVENT_KEY_DOWN) {
+        if (e.key.repeat) {
+            act = KeyAction::REPEAT;
+        } else {
+            act = KeyAction::PRESS;
+        }
+    } else if (e.type == SDL_EVENT_KEY_UP) {
         act = KeyAction::RELEASE;
     } else {
-        act = KeyAction::REPEAT;
+        ASSERT_MSG(false, "Unknown key event");
+        return;
     }
 
-    app->dispatch_event(KeyEvent{pkey, act});
+    dispatch_event(KeyEvent{key, act});
 }
 
-void App::mouse_button_callback(GLFWwindow* window, int button, int action,
-                                int mods) {
-    ImGuiIO& io = ImGui::GetIO();
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
-        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+void App::handle_sdl_mouse_button(SDL_Event& e) {
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN &&
+        e.type != SDL_EVENT_MOUSE_BUTTON_UP) {
+        ASSERT_MSG(false, "Hanle SDL Event Error: Unknown Mouse Event");
         return;
     }
     MouseKey key;
     KeyAction act;
-    switch (button) {
-    case GLFW_MOUSE_BUTTON_LEFT:
+
+    switch (e.button.button) {
+    case SDL_BUTTON_LEFT:
         key = MouseKey::LEFT_BUTTON;
         break;
-    case GLFW_MOUSE_BUTTON_RIGHT:
+
+    case SDL_BUTTON_RIGHT:
         key = MouseKey::RIGHT_BUTTON;
         break;
-    case GLFW_MOUSE_BUTTON_MIDDLE:
+
+    case SDL_BUTTON_MIDDLE:
         key = MouseKey::MIDDLE_BUTTON;
         break;
-    case GLFW_MOUSE_BUTTON_4:
+
+    case SDL_BUTTON_X1:
         key = MouseKey::BACK_BUTTON;
         break;
-    case GLFW_MOUSE_BUTTON_5:
+
+    case SDL_BUTTON_X2:
         key = MouseKey::FORWARD_BUTTON;
         break;
-    case GLFW_MOUSE_BUTTON_6:
-        key = MouseKey::EXTRA_BUTTON_1;
-        break;
-    case GLFW_MOUSE_BUTTON_7:
-        key = MouseKey::EXTRA_BUTTON_2;
-        break;
-    case GLFW_MOUSE_BUTTON_8:
-        key = MouseKey::EXTRA_BUTTON_3;
-        break;
+
     default:
-        Logger::error("Unknown Mouse Button {}", button);
+        Logger::error("Unknown Mouse Button {}", e.button.button);
         return;
     }
-    if (action == GLFW_PRESS) {
+
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
         act = KeyAction::PRESS;
-    } else if (action == GLFW_RELEASE) {
+    } else if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) {
         act = KeyAction::RELEASE;
     } else {
-        act = KeyAction::REPEAT;
-    }
-
-    app->dispatch_event(MouseButtonEvent{key, act});
-}
-
-void App::window_focus_callback(GLFWwindow* window, int focused) {
-    ImGuiIO& io = ImGui::GetIO();
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
-        ImGui_ImplGlfw_WindowFocusCallback(window, focused);
+        ASSERT_MSG(false, "Unknown SDL Mouse Event");
         return;
     }
+    dispatch_event(MouseButtonEvent{key, act});
+}
+
+void App::handle_window_focus(bool focused) {
+
     if (focused) {
-        auto camera = app->m_window.camera();
+        auto camera = m_window.camera();
         if (camera) {
             camera->reset_camera();
         }
     }
 }
 
-void App::window_reshape_callback(GLFWwindow* window, int width, int height) {
+void App::handle_window_resize(int width, int height) {
 
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-
-    app->dispatch_event(WindowResizeEvent{width, height});
+    dispatch_event(WindowResizeEvent{width, height});
 
     Logger::info("Window Reshape W: {} H: {}", width, height);
 }
-void App::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    app->dispatch_event(FrameBufferResizeEvent{width, height});
+void App::handle_framebuffer_resize(int width, int height) {
+    dispatch_event(FrameBufferResizeEvent{width, height});
 
     Logger::info("Frame Buffer Reshape W: {} H: {}", width, height);
 }
-void App::mouse_scroll_callback(GLFWwindow* window, double xoffset,
-                                double yoffset) {
-    ImGuiIO& io = ImGui::GetIO();
+void App::handle_mouse_scroll(float, float yoffset) {
 
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
-        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-        return;
-    }
-    app->dispatch_event(MouseWheelEvent(static_cast<float>(yoffset)));
+    dispatch_event(MouseWheelEvent(yoffset));
 }
 
-void App::cursor_enter_callback(GLFWwindow* window, int entered) {
-    ImGuiIO& io = ImGui::GetIO();
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureMouse && app->m_window.is_enable_imgui()) {
-        ImGui_ImplGlfw_CursorEnterCallback(window, entered);
-        return;
-    }
-}
-
-void App::char_callback(GLFWwindow* window, unsigned int c) {
-    ImGuiIO& io = ImGui::GetIO();
-    App* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    ASSERT_MSG(app, "nullptr");
-    if (io.WantCaptureKeyboard && app->m_window.is_enable_imgui()) {
-        ImGui_ImplGlfw_CharCallback(window, c);
-        return;
-    }
-    app->dispatch_event(TextInputEvent{codepoint_to_utf8(c)});
+void App::handle_text_input(const char* text) {
+    dispatch_event(TextInputEvent{std::string(text)});
 }
 
 void App::render() {
 
-    if (glfwGetWindowAttrib(m_window.get_glfw_window(), GLFW_ICONIFIED) != 0) {
-        ImGui_ImplGlfw_Sleep(10);
-        return;
+    if (SDL_GetWindowFlags(m_window.get_window()) & SDL_WINDOW_MINIMIZED) {
+        SDL_Delay(10); // Sleep for 10 milliseconds
+        return;        // Skip rendering this frame
     }
     m_renderer.begin_frame();
     m_scene_manager.render(m_renderer);
     m_renderer.end_frame();
-    glfwSwapBuffers(m_window.get_glfw_window());
+    SDL_GL_SwapWindow(m_window.get_window());
 }
 
 void App::run() {
 
-    last_time = glfwGetTime();
-    while (!glfwWindowShouldClose(m_window.get_glfw_window())) {
-        // if (m_client_world.is_receive_exit()) {
-        //     break;
-        // }
+    last_tick = SDL_GetTicks();
+    while (m_running) {
         update();
         render();
     }
 }
 // static Gait player_gait = Gait::WALK;
 void App::update() {
-    glfwPollEvents();
-    {
-        int w, h;
-        glfwGetFramebufferSize(m_window.get_glfw_window(), &w, &h);
-
-        if (w != m_renderer.frame_width() || h != m_renderer.frame_height()) {
-            dispatch_event(FrameBufferResizeEvent{w, h});
-        }
-    }
-    {
-        int w, h;
-        glfwGetWindowSize(m_window.get_glfw_window(), &w, &h);
-
-        if (w != m_renderer.window_width() || h != m_renderer.window_height()) {
-            dispatch_event(WindowResizeEvent{w, h});
-        }
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        handle_sdl_event(e);
     }
 
-    current_time = glfwGetTime();
-    dt = current_time - last_time;
-    last_time = current_time;
+    current_tick = SDL_GetTicks();
+    dt = (current_tick - last_tick) / 1000.0f;
+    last_tick = current_tick;
     fps_time_count += dt;
     frame_count++;
     if (fps_time_count >= 1.0f) {
         fps = static_cast<int>(frame_count / fps_time_count);
         std::string title = "Cubed FPS: " + std::to_string(fps);
-        glfwSetWindowTitle(m_window.get_glfw_window(), title.c_str());
+
+        SDL_SetWindowTitle(m_window.get_window(), title.c_str());
+
         frame_count = 0;
         fps_time_count = 0.0f;
         DebugCollector::get().report(
@@ -713,6 +631,54 @@ void App::update() {
     m_renderer.update(dt);
 
     m_scene_manager.update(dt);
+}
+
+void App::handle_sdl_event(SDL_Event& e) {
+    if (m_window.is_enable_imgui()) {
+        ImGui_ImplSDL3_ProcessEvent(&e);
+    }
+
+    switch (e.type) {
+    case SDL_EVENT_QUIT:
+        m_running = false;
+        break;
+    case SDL_EVENT_KEY_DOWN:
+    case SDL_EVENT_KEY_UP:
+        handle_sdl_key(e);
+        break;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        handle_sdl_mouse_button(e);
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        handle_cursor_position(e.motion.x, e.motion.y);
+        break;
+    case SDL_EVENT_WINDOW_RESIZED:
+        handle_window_resize(e.window.data1, e.window.data2);
+        break;
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        handle_framebuffer_resize(e.window.data1, e.window.data2);
+        break;
+    case SDL_EVENT_MOUSE_WHEEL: {
+        float scroll_x = e.wheel.x;
+        float scroll_y = e.wheel.y;
+        if (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
+            scroll_y = -scroll_y;
+        }
+        handle_mouse_scroll(scroll_x, scroll_y);
+        break;
+    }
+
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        handle_window_focus(true);
+        break;
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        handle_window_focus(false);
+        break;
+    case SDL_EVENT_TEXT_INPUT:
+        handle_text_input(e.text.text);
+        break;
+    }
 }
 
 void App::dispatch_event(const Event& e) {
@@ -767,7 +733,21 @@ Window& App::window() { return m_window; }
 Config& App::config() { return m_game_config; }
 const Argument& App::argument() const { return m_argument; }
 AudioEngine& App::audio() { return m_audio; }
-const char* App::get_clipboard_text() {
-    return glfwGetClipboardString(m_window.get_glfw_window());
+std::string App::get_clipboard_text() {
+    char* text = SDL_GetClipboardText();
+    if (text) {
+        std::string str{text};
+        SDL_free(text);
+        return str;
+    }
+    return {};
 }
+
+void App::start_text_input() {
+    if (!SDL_StartTextInput(m_window.get_window())) {
+        Logger::error("Start Text Input Fail: {}", SDL_GetError());
+    }
+}
+void App::stop_text_input() { SDL_StopTextInput(m_window.get_window()); }
+
 } // namespace Cubed

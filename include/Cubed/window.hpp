@@ -3,8 +3,7 @@
 #include "Cubed/config.hpp"
 #include "Cubed/input/event.hpp"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 namespace Cubed {
 class Camera;
 class Renderer;
@@ -14,8 +13,8 @@ public:
     ~Window();
 
     bool is_mouse_enable() const;
-    const GLFWwindow* get_glfw_window() const;
-    GLFWwindow* get_glfw_window();
+    const SDL_Window* get_window() const;
+    SDL_Window* get_window();
     void init();
     void imgui_init();
 
@@ -25,7 +24,7 @@ public:
     void reload_config();
 
     void toggle_fullscreen();
-
+    void set_fullscreen(bool full);
     void enable_mouse();
     void disable_mouse();
 
@@ -40,11 +39,14 @@ public:
 
     void set_imgui_enabled(bool enable);
 
+    void set_vsync(bool enable);
+
 private:
     bool m_mouse_enable = true;
     bool m_imgui_init = false;
     bool m_game_running = false;
-    GLFWwindow* m_window;
+    SDL_Window* m_window;
+    SDL_GLContext m_context;
     int m_window_width;
     int m_window_height;
     Config& m_config;

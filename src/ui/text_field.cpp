@@ -156,14 +156,21 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.key == MouseKey::LEFT_BUTTON && e.action == KeyAction::PRESS) {
         if (m_inside) {
             m_typing = true;
+            if (m_app) {
+                m_app->start_text_input();
+            }
             update_show_text();
             return false;
         } else {
             if (m_typing) {
                 m_typing = false;
+                if (m_app) {
+                    m_app->stop_text_input();
+                }
                 if (m_on_finished) {
                     m_on_finished();
                 }
+
                 return false;
             }
         }
@@ -182,9 +189,13 @@ bool TextField::handle_key_event(const KeyEvent& e) {
     if (e.key == Key::ENTER && e.action == KeyAction::PRESS) {
         if (m_typing) {
             m_typing = false;
+            if (m_app) {
+                m_app->stop_text_input();
+            }
             if (m_on_finished) {
                 m_on_finished();
             }
+
             return true;
         }
     }

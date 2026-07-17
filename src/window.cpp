@@ -6,8 +6,8 @@
 #include "Cubed/tools/log.hpp"
 
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl3.h>
 
 namespace Cubed {
 
@@ -19,7 +19,7 @@ Window::Window(Config& config) : m_config(config) {}
 Window::~Window() {
     if (m_imgui_init) {
         ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
     }
 
     if (ImGui::GetCurrentContext() != nullptr) {
@@ -27,18 +27,17 @@ Window::~Window() {
     }
 
     if (m_window) {
-        glfwDestroyWindow(m_window);
-        m_window = nullptr;
+        SDL_GL_DestroyContext(m_context);
+        SDL_DestroyWindow(m_window);
     }
-
-    glfwTerminate();
+    SDL_Quit();
 }
 
 bool Window::is_mouse_enable() const { return m_mouse_enable; }
 
-const GLFWwindow* Window::get_glfw_window() const { return m_window; }
+const SDL_Window* Window::get_window() const { return m_window; }
 
-GLFWwindow* Window::get_glfw_window() { return m_window; }
+SDL_Window* Window::get_window() { return m_window; }
 
 bool Window::handle_event(const Event& e) {
     return std::visit(
@@ -110,84 +109,57 @@ bool Window::handle_mouse_button_event(const MouseButtonEvent& e) {
 }
 
 void Window::init() {
-    if (!glfwInit()) {
-        Logger::error("glfw init fail");
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        Logger::error("sdl3 init fail");
         exit(EXIT_FAILURE);
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_CORE);
 
-    m_window_width = m_config.get("window.width", 800);
-    m_window_height = m_config.get("window.height", 600);
-
+    m_window_width = m_config.get("window.width", 1280);
+    m_window_height = m_config.get("window.height", 720);
+    m_window = SDL_CreateWindow("Cubed", m_window_width, m_window_height,
+                                SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+                                    SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (m_config.get("window.fullscreen", false)) {
-        GLFWmonitor* primary_monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(primary_monitor);
-        m_window = glfwCreateWindow(mode->width, mode->height, "Cubed",
-                                    primary_monitor, NULL);
-    } else {
-        m_window = glfwCreateWindow(m_window_width, m_window_height, "Cubed",
-                                    NULL, NULL);
+        SDL_SetWindowFullscreen(m_window, true);
     }
 
-    glfwMakeContextCurrent(m_window);
-    if (m_config.get("window.V-Sync", true)) {
-        glfwSwapInterval(1);
-    } else {
-        glfwSwapInterval(0);
+    m_context = SDL_GL_CreateContext(m_window);
+    SDL_GL_MakeCurrent(m_window, m_context);
+
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        Logger::error("Failed to initialize glad");
+        exit(EXIT_FAILURE);
     }
+    set_vsync(m_config.get("window.V-Sync", true));
+
     if (m_game_running) {
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    if (glfwRawMouseMotionSupported()) {
-        glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        SDL_SetWindowRelativeMouseMode(m_window, true);
     } else {
-        Logger::warn("Don,t support Raw Mouse Motion");
+        SDL_SetWindowRelativeMouseMode(m_window, false);
     }
 
-    GLFWmonitor* primary = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(primary);
-    glfwSetWindowPos(m_window, static_cast<int>(mode->width / 2.0f) - 400,
-                     static_cast<int>(mode->height / 2.0f) - 300);
+    SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED,
+                          SDL_WINDOWPOS_CENTERED);
 }
 
 void Window::reload_config() {
     // V-Sync
-    if (m_config.get("window.V-Sync", true)) {
-        glfwSwapInterval(1);
-    } else {
-        glfwSwapInterval(0);
-    }
+    set_vsync(m_config.get("window.V-Sync", true));
     // Window
-    windowed_width = m_config.get("window.width", 800);
-    windowed_height = m_config.get("window.height", 600);
+    windowed_width = m_config.get("window.width", 1280);
+    windowed_height = m_config.get("window.height", 720);
 
-    if (m_config.get("window.fullscreen", false)) {
-        glfwGetWindowPos(m_window, &windowed_xpos, &windowed_ypos);
-        glfwGetWindowSize(m_window, &windowed_width, &windowed_height);
+    set_fullscreen(m_config.get("window.fullscreen", false));
 
-        GLFWmonitor* primary = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(primary);
-
-        glfwSetWindowMonitor(m_window, primary, 0, 0, mode->width, mode->height,
-                             GL_DONT_CARE);
-    } else {
-        GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
-        if (monitor != nullptr) {
-            glfwSetWindowMonitor(m_window, nullptr, windowed_xpos,
-                                 windowed_ypos, windowed_width, windowed_height,
-                                 0);
-        } else {
-            Logger::error("Can't Find Monitor");
-        }
-    }
     if (!m_mouse_enable) {
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        SDL_SetWindowRelativeMouseMode(m_window, false);
     } else {
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        SDL_SetWindowRelativeMouseMode(m_window, true);
     }
     m_config.set("window.width", windowed_width);
     m_config.set("window.height", windowed_height);
@@ -195,33 +167,37 @@ void Window::reload_config() {
 
 void Window::toggle_fullscreen() {
 
-    GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
-    if (monitor != nullptr) {
-        glfwSetWindowMonitor(m_window, nullptr, windowed_xpos, windowed_ypos,
-                             windowed_width, windowed_height, 0);
-
-        m_config.set("window.fullscreen", false);
+    bool is_fullscreen =
+        (SDL_GetWindowFlags(m_window) & SDL_WINDOW_FULLSCREEN) != 0;
+    if (is_fullscreen) {
+        set_fullscreen(false);
     } else {
-        glfwGetWindowPos(m_window, &windowed_xpos, &windowed_ypos);
-        glfwGetWindowSize(m_window, &windowed_width, &windowed_height);
-
-        GLFWmonitor* primary = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(primary);
-
-        glfwSetWindowMonitor(m_window, primary, 0, 0, mode->width, mode->height,
-                             GL_DONT_CARE);
-        m_config.set("window.fullscreen", true);
+        set_fullscreen(true);
     }
+
     m_config.set("window.width", windowed_width);
     m_config.set("window.height", windowed_height);
 }
+void Window::set_fullscreen(bool full) {
+    if (full) {
+        SDL_GetWindowPosition(m_window, &windowed_xpos, &windowed_ypos);
+        SDL_GetWindowSize(m_window, &windowed_width, &windowed_height);
+        SDL_SetWindowFullscreen(m_window, true);
+        m_config.set("window.fullscreen", true);
+    } else {
+        SDL_SetWindowFullscreen(m_window, false);
+        SDL_SetWindowPosition(m_window, windowed_xpos, windowed_ypos);
+        SDL_SetWindowSize(m_window, windowed_width, windowed_height);
 
+        m_config.set("window.fullscreen", false);
+    }
+}
 void Window::enable_mouse() {
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    SDL_SetWindowRelativeMouseMode(m_window, true);
     m_mouse_enable = true;
 }
 void Window::disable_mouse() {
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    SDL_SetWindowRelativeMouseMode(m_window, false);
     if (m_camera) {
         m_camera->reset_camera();
     }
@@ -240,18 +216,26 @@ void Window::set_game_running(bool running) {
     set_imgui_enabled(false);
 }
 
-void Window::should_close_window() { glfwSetWindowShouldClose(m_window, true); }
+void Window::should_close_window() {
+    SDL_Event quit_event;
+    quit_event.type = SDL_EVENT_QUIT;
+    SDL_PushEvent(&quit_event);
+}
 
 bool Window::is_enable_imgui() const { return m_imgui_enable; }
 
 void Window::set_imgui_enabled(bool enable) { m_imgui_enable = enable; }
 
+void Window::set_vsync(bool enable) {
+    if (!SDL_GL_SetSwapInterval(static_cast<int>(enable))) {
+        Logger::error("VSync Fail: {}", SDL_GetError());
+    }
+}
+
 void Window::imgui_init() {
-    float dpi_scale_x, dpi_scale_y;
-    glfwGetWindowContentScale(m_window, &dpi_scale_x, &dpi_scale_y);
+    float main_scale = SDL_GetWindowDisplayScale(m_window);
     // float main_scale =
     // ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-    float main_scale = dpi_scale_x;
     Logger::info("Main Scale {}", main_scale);
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -288,8 +272,8 @@ void Window::imgui_init() {
     ImFont* font = io.Fonts->AddFontFromFileTTF(Font::font_path().c_str());
     ASSERT_MSG(font != nullptr, "Font Load Fail");
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(m_window, false);
-    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplSDL3_InitForOpenGL(m_window, m_context);
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     m_imgui_init = true;
 }
