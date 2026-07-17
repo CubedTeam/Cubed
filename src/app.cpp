@@ -17,10 +17,9 @@ namespace Cubed {
 
 App::App()
 
-    : m_game_config(ASSETS_PATH "config.toml"),
+    : m_game_config(ASSETS_PATH "config.toml"), m_window(m_game_config),
       m_texture_manager(m_game_config), m_audio(m_game_config),
-      m_renderer(m_texture_manager, m_game_config), m_window(m_game_config),
-      m_scene_manager(*this) {}
+      m_renderer(m_texture_manager, m_game_config), m_scene_manager(*this) {}
 
 App::~App() { stop_text_input(); }
 

@@ -44,13 +44,13 @@ public:
 private:
     Config m_game_config;
 
+    Window m_window;
+
     TextureManager m_texture_manager;
 
     AudioEngine m_audio;
 
     Renderer m_renderer;
-
-    Window m_window;
 
     SceneManager m_scene_manager;
 

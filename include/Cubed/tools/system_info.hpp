@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cubed/tools/log.hpp"
+#include "Cubed/tools/log.hpp" // IWYU pragma: keep
 
 #include <string>
 
