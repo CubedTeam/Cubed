@@ -69,19 +69,12 @@ void Camera::hot_reload() {}
 
 void Camera::reset_camera() { m_firse_mouse = true; }
 
-void Camera::update_cursor_position_camera(double xpos, double ypos) {
+void Camera::update_cursor_position_camera(float offset_x, float offset_y) {
     if (m_firse_mouse) {
-        m_last_mouse_x = xpos;
-        m_last_mouse_y = ypos;
         m_firse_mouse = false;
         return;
     }
 
-    float offset_x = xpos - m_last_mouse_x;
-    float offset_y = m_last_mouse_y - ypos;
-
-    m_last_mouse_x = xpos;
-    m_last_mouse_y = ypos;
     ASSERT_MSG(m_player, "nullptr");
     m_player->update_front_vec(offset_x, offset_y);
 }
@@ -174,7 +167,7 @@ bool Camera::handle_key_event(const KeyEvent& e) {
     return false;
 }
 bool Camera::handle_mouse_move_event(const MouseMoveEvent& e) {
-    update_cursor_position_camera(e.xpos, e.ypos);
+    update_cursor_position_camera(e.xrel, -e.yrel);
     return true;
 }
 

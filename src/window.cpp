@@ -12,7 +12,7 @@
 namespace Cubed {
 
 static int windowed_xpos = 0, windowed_ypos = 0;
-static int windowed_width = 800, windowed_height = 600;
+static int windowed_width = 1280, windowed_height = 720;
 
 Window::Window(Config& config) : m_config(config) {}
 
@@ -193,11 +193,12 @@ void Window::set_fullscreen(bool full) {
     }
 }
 void Window::enable_mouse() {
-    SDL_SetWindowRelativeMouseMode(m_window, true);
+    SDL_WarpMouseInWindow(m_window, width() / 2, height() / 2);
+    SDL_SetWindowRelativeMouseMode(m_window, false);
     m_mouse_enable = true;
 }
 void Window::disable_mouse() {
-    SDL_SetWindowRelativeMouseMode(m_window, false);
+    SDL_SetWindowRelativeMouseMode(m_window, true);
     if (m_camera) {
         m_camera->reset_camera();
     }
@@ -231,7 +232,8 @@ void Window::set_vsync(bool enable) {
         Logger::error("VSync Fail: {}", SDL_GetError());
     }
 }
-
+int Window::width() const { return m_window_width; }
+int Window::height() const { return m_window_height; }
 void Window::imgui_init() {
     float main_scale = SDL_GetWindowDisplayScale(m_window);
 

@@ -41,14 +41,17 @@ public:
 
     void set_vsync(bool enable);
 
+    int width() const;
+    int height() const;
+
 private:
     bool m_mouse_enable = true;
     bool m_imgui_init = false;
     bool m_game_running = false;
     SDL_Window* m_window;
     SDL_GLContext m_context;
-    int m_window_width;
-    int m_window_height;
+    int m_window_width = 0;
+    int m_window_height = 0;
     Config& m_config;
     Camera* m_camera = nullptr;
     bool m_imgui_enable = false;

@@ -13,7 +13,7 @@ class App {
 public:
     App();
     ~App();
-    void handle_cursor_position(float xpos, float ypos);
+    void handle_mouse_move(float xpos, float ypos, float xrel, float yrel);
     void handle_sdl_key(SDL_Event& e);
     void handle_sdl_mouse_button(SDL_Event& e);
     void handle_window_focus(bool focused);

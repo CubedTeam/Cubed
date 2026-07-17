@@ -136,9 +136,9 @@ void App::handle_argument(int argc, char** argv) {
         }
     }
 }
-void App::handle_cursor_position(float xpos, float ypos) {
+void App::handle_mouse_move(float xpos, float ypos, float xrel, float yrel) {
 
-    m_scene_manager.handle_event(MouseMoveEvent{xpos, ypos});
+    m_scene_manager.handle_event(MouseMoveEvent{xpos, ypos, xrel, yrel});
 }
 
 void App::handle_sdl_key(SDL_Event& e) {
@@ -651,7 +651,7 @@ void App::handle_sdl_event(SDL_Event& e) {
         handle_sdl_mouse_button(e);
         break;
     case SDL_EVENT_MOUSE_MOTION:
-        handle_cursor_position(e.motion.x, e.motion.y);
+        handle_mouse_move(e.motion.x, e.motion.y, e.motion.xrel, e.motion.yrel);
         break;
     case SDL_EVENT_WINDOW_RESIZED:
         handle_window_resize(e.window.data1, e.window.data2);

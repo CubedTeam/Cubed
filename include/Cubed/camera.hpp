@@ -39,7 +39,7 @@ public:
     void camera_init(ClientPlayer* player);
     void hot_reload();
     void reset_camera();
-    void update_cursor_position_camera(double xpos, double ypos);
+    void update_cursor_position_camera(float offset_x, float offset_y);
 
     const glm::mat4 get_camera_lookat() const;
     const glm::vec3& get_camera_pos() const;
