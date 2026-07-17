@@ -109,7 +109,9 @@ bool WorldScene::handle_event(const Event& e) {
 }
 void WorldScene::on_enter() {
     auto& param = m_scene_manager.world_scene_param();
+
     m_error_ui.init();
+
     if (param.host_game) {
         if (param.seed) {
             ChunkGenerator::init(*param.seed);
@@ -124,7 +126,8 @@ void WorldScene::on_enter() {
     m_client->start(param.ip, param.port);
     // init will send packet
     try {
-        m_client_world.init(m_argument.player, m_client);
+
+        m_client_world.init(m_argument.player.value_or("Unknown"), m_client);
 
         Logger::info("World Init Success");
         m_camera.camera_init(&m_client_world.get_player());
@@ -143,8 +146,8 @@ void WorldScene::on_leave() {
 
     m_scene_manager.app().window().set_camera(nullptr);
     m_scene_manager.app().window().set_game_running(false);
-
-    if (!m_argument.is_client) {
+    auto& param = m_scene_manager.world_scene_param();
+    if (param.host_game) {
         m_server.server_world().stop();
     }
     m_scene_manager.app().audio().stop_bgm();

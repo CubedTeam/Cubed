@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/network_server.hpp"
 
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/net_error.hpp"
 using asio::ip::tcp;
 namespace Cubed {
 
@@ -61,6 +62,12 @@ asio::awaitable<void> NetworkServer::listen() {
             }
             s->start();
         }
+    } catch (const asio::system_error& e) {
+        if (!m_stopped) {
+            std::string_view error = net_error_message(e.code());
+            Logger::error("Server Error: {}, code {}", error, e.code().value());
+        }
+
     } catch (const std::exception& e) {
         if (!m_stopped) {
             Logger::error("accept error {}", e.what());

@@ -2,6 +2,7 @@
 
 #include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/net_error.hpp"
 #include "Cubed/tools/uuid.hpp"
 using asio::ip::tcp;
 using namespace google::protobuf;
@@ -103,10 +104,10 @@ asio::awaitable<void> Session::read_loop() {
         auto ec = e.code();
 
         if (ec == asio::error::eof || ec == asio::error::operation_aborted) {
-
             Logger::info("Client disconnected");
         } else {
-            Logger::warn("Asio Error {}", e.what());
+            std::string_view error = net_error_message(e.code());
+            Logger::error("Server Error: {}, code {}", error, e.code().value());
         }
 
         close();
@@ -128,7 +129,8 @@ void Session::do_write() {
         m_socket, asio::buffer(*packet),
         asio::bind_executor(m_strand, [self](std::error_code ec, size_t) {
             if (ec) {
-                Logger::warn("Write Ec {}", ec.message());
+                std::string_view error = net_error_message(ec);
+                Logger::error("Server Error: {}, code {}", error, ec.value());
                 self->close();
                 return;
             }

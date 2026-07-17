@@ -434,7 +434,8 @@ void DevPanel::show_world_tab_item() {
     if (ImGui::BeginTabItem("world")) {
 
         if (ImGui::BeginTabBar("World Kind")) {
-            if (!m_app.argument().is_client) {
+            auto& param = m_world_scene.scene_manager().world_scene_param();
+            if (param.host_game) {
                 if (ImGui::BeginTabItem("ServerWorld")) {
                     show_server_world_table_bar();
                     ImGui::EndTabItem();
