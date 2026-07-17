@@ -56,9 +56,8 @@ void Renderer::init(bool debug_on) {
         glDebugMessageCallback(
             [](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* message,
                const void*) {
-                Logger::log(Logger::Level::L_DEBUG,
-                            std::source_location::current(), "GL Debug: {}",
-                            reinterpret_cast<const char*>(message));
+                Logger::debug("GL Debug: {}",
+                              reinterpret_cast<const char*>(message));
             },
             nullptr);
     }

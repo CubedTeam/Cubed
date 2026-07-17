@@ -282,6 +282,9 @@ ClientWorld& WorldScene::client_world() { return m_client_world; }
 ServerWorld& WorldScene::server_world() { return m_server.server_world(); }
 bool WorldScene::pause() const { return m_paused; }
 void WorldScene::set_pause(bool pause) {
+    if (m_paused == pause) {
+        return;
+    }
     m_paused = pause;
     auto& window = m_scene_manager.app().window();
     window.set_game_running(!m_paused);

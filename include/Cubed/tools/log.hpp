@@ -2,84 +2,90 @@
 #include <chrono>
 #include <format>
 #include <iostream>
-#include <source_location>
+#include <print>
 #include <string>
 #include <syncstream>
+#ifdef DEBUG
+#undef DEBUG
+#endif
+
+#ifdef INFO
+#undef INFO
+#endif
+
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#ifdef WARN
+#undef WARN
+#endif
 
 namespace Cubed {
 
-namespace Logger {
-enum class Level { L_TRACE, L_DEBUG, L_INFO, L_ERROR, L_WARN };
-
-template <typename... Args>
-inline void info(std::format_string<Args...> fmt, Args&&... args) {
-    auto now_time = std::chrono::time_point_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now());
-
-    std::string msg = std::vformat(fmt.get(), std::make_format_args(args...));
-    std::osyncstream(std::cout)
-        << "\033[1;32m" << std::format("[INFO][{:%Y-%m-%d %H:%M:%S}]", now_time)
-        << msg << "\033[0m"
-        << "\n";
-}
-
-template <typename... Args>
-inline void error(std::format_string<Args...> fmt, Args&&... args) {
-    auto now_time = std::chrono::time_point_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now());
-    std::string msg = std::vformat(fmt.get(), std::make_format_args(args...));
-    std::osyncstream(std::cerr)
-        << "\033[1;31m"
-        << std::format("[ERROR][{:%Y-%m-%d %H:%M:%S}]", now_time) << msg
-        << "\033[0m"
-        << "\n";
-}
-
-template <typename... Args>
-inline void warn(std::format_string<Args...> fmt, Args&&... args) {
-    auto now_time = std::chrono::time_point_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now());
-    std::string msg = std::vformat(fmt.get(), std::make_format_args(args...));
-    std::osyncstream(std::cout)
-        << "\033[1;33m" << std::format("[WARN][{:%Y-%m-%d %H:%M:%S}]", now_time)
-        << msg << "\033[0m"
-        << "\n";
-}
-
-template <typename... Args>
-inline void log(Level level, std::source_location loc,
-                std::format_string<Args...> fmt, Args&&... args) {
-    auto now_time = std::chrono::time_point_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now());
-    std::string msg = std::vformat(fmt.get(), std::make_format_args(args...));
-    switch (level) {
-    case Logger::Level::L_TRACE:
-        std::osyncstream(std::cout)
-            << "\033[1;34m"
-            << std::format("[TRACE][{:%Y-%m-%d %H:%M:%S}]", now_time) << "["
-            << loc.file_name() << ":" << loc.line() << "]"
-            << "[" << loc.function_name() << "]" << msg << "\033[0m"
-            << "\n";
-        break;
-    case Logger::Level::L_DEBUG:
-        std::osyncstream(std::cout)
-            << "\033[1;34m"
-            << std::format("[DEBUG][{:%Y-%m-%d %H:%M:%S}]", now_time) << msg
-            << "\033[0m"
-            << "\n";
-        break;
-    case Logger::Level::L_INFO:
-        info(fmt, std::forward<Args>(args)...);
-        break;
-    case Logger::Level::L_WARN:
-        warn(fmt, std::forward<Args>(args)...);
-        break;
-    case Logger::Level::L_ERROR:
-        error(fmt, std::forward<Args>(args)...);
-        break;
+class Logger {
+public:
+    enum class Level { DEBUG, INFO, ERROR, WARN };
+    Logger() {}
+    static Logger& instance() {
+        static Logger inst;
+        return inst;
     }
-}
+    template <typename... Args>
+    static void info(std::format_string<Args...> fmt, Args&&... args) {
+        instance().log(Level::INFO, fmt, std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    static void error(std::format_string<Args...> fmt, Args&&... args) {
+        instance().log(Level::ERROR, fmt, std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    static void warn(std::format_string<Args...> fmt, Args&&... args) {
+        instance().log(Level::WARN, fmt, std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    static void debug(std::format_string<Args...> fmt, Args&&... args) {
+        instance().log(Level::DEBUG, fmt, std::forward<Args>(args)...);
+    }
+    template <typename... Args>
+    void log(Level level, std::format_string<Args...> fmt, Args&&... args) {
+        auto now_time = std::chrono::time_point_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now());
 
-} // namespace Logger
+        std::string msg =
+            std::vformat(fmt.get(), std::make_format_args(args...));
+        std::string_view level_str;
+        std::string_view color;
+        switch (level) {
+        case Level::INFO:
+            color = INFO_ANSI;
+            level_str = "[INFO]";
+            break;
+        case Level::ERROR:
+            color = ERROR_ANSI;
+            level_str = "[ERROR]";
+            break;
+        case Level::WARN:
+            color = WARN_ANSI;
+            level_str = "[WARN]";
+            break;
+        case Level::DEBUG:
+            color = DEBUG_ANSI;
+            level_str = "[DEBUG]";
+            break;
+        }
+        std::osyncstream sync_out(level == Level::ERROR ? std::cerr
+                                                        : std::cout);
+        std::println(sync_out, "{}{}[{:%Y-%m-%d %H:%M:%S}]{}{}", color,
+                     level_str, now_time, msg, CLEAR_ANSI);
+    }
+
+private:
+    static constexpr std::string_view CLEAR_ANSI = "\033[0m";
+    static constexpr std::string_view INFO_ANSI = "\033[1;32m";
+    static constexpr std::string_view ERROR_ANSI = "\033[1;31m";
+    static constexpr std::string_view DEBUG_ANSI = "\033[1;34m";
+    static constexpr std::string_view WARN_ANSI = "\033[1;33m";
+};
 
 } // namespace Cubed
