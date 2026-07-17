@@ -101,6 +101,7 @@ public:
     AudioEngine& get_audio();
     Config& get_config();
     WorldScene& world_scene();
+    void set_direct_exit();
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -153,7 +154,7 @@ private:
 
     tbb::concurrent_unordered_map<std::string, TickTimer> m_ticktimers;
     std::unordered_map<std::string, Timer> m_timers;
-
+    std::atomic<bool> m_exit_direct{false};
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};
     std::atomic<int> m_rendering_distance{24};

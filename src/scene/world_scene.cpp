@@ -20,6 +20,8 @@ WorldScene::~WorldScene() {
 void WorldScene::update(float dt) {
     if (m_client->is_connect_error()) {
         set_error(m_client->get_error_string());
+        m_client->clear_error();
+        m_client_world.set_direct_exit();
     }
     if (m_error_ui.has_error()) {
         m_error_ui.update(dt);
@@ -46,7 +48,6 @@ void WorldScene::update(float dt) {
     if (m_paused) {
         m_pasue_menu.update(dt);
     } else {
-
         m_hud_ui.update(dt);
     }
 }
@@ -290,6 +291,7 @@ void WorldScene::set_pause(bool pause) {
 }
 
 void WorldScene::set_error(std::string_view error) {
+    Logger::error("WorldScene Error Set {}", error);
     m_error_ui.set_error(error);
     set_pause(true);
 }

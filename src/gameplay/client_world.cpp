@@ -727,7 +727,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
 WorldScene& ClientWorld::world_scene() { return m_world_scene; }
-
+void ClientWorld::set_direct_exit() { m_exit_direct = true; }
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
         return;
@@ -738,7 +738,7 @@ void ClientWorld::request_exit() {
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
-        if (m_client->is_connect_error()) {
+        if (m_client->is_connect_error() || m_exit_direct) {
             break;
         }
         std::this_thread::sleep_for(milliseconds(DEFAULT_PER_TICK_TIME));
