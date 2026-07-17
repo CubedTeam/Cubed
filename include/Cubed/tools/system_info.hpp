@@ -184,14 +184,14 @@ inline std::string get_compiler_info() {
 #else
     result = "Unknown Compiler";
 #endif
-    constexpr long cpp_version =
+    constexpr long CPP_VERSION =
 #ifdef _MSC_VER
         _MSVC_LANG;
 #else
         __cplusplus;
 #endif
     result += " (C++";
-    result += std::to_string(cpp_version);
+    result += std::to_string(CPP_VERSION);
     result += ")";
 
     return result;

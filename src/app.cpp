@@ -132,9 +132,9 @@ void App::handle_argument(int argc, char** argv) {
              [&](ArgParser& p) {
                  auto arg = p.require_next("--video-driver");
                  m_argument.video_driver = arg;
-             }
-
-            }
+             }},
+            {"--enable-exclusive",
+             [&](ArgParser&) { m_argument.enable_exclusive = true; }}
 
         };
     ArgParser parser(argc, argv);

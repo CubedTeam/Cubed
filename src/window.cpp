@@ -6,6 +6,7 @@
 #include "Cubed/tools/env_tools.hpp"
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/system_window_manager.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -110,6 +111,67 @@ bool Window::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 
+void Window::set_exclusive_fullscreen(bool full) {
+
+    if (full) {
+        SDL_GetWindowPosition(m_window, &windowed_xpos, &windowed_ypos);
+        SDL_GetWindowSize(m_window, &windowed_width, &windowed_height);
+        SDL_SetWindowFullscreen(m_window, true);
+        m_fullscreen = true;
+        m_config.set("window.fullscreen", true);
+    } else {
+        SDL_SetWindowFullscreen(m_window, false);
+        SDL_SetWindowPosition(m_window, windowed_xpos, windowed_ypos);
+        SDL_SetWindowSize(m_window, windowed_width, windowed_height);
+        m_fullscreen = false;
+        m_config.set("window.fullscreen", false);
+    }
+}
+void Window::set_borderless_fullscreen(bool full) {
+    if (full) {
+        // If the window is maximized, restore it first.
+        if (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MAXIMIZED) {
+            SDL_RestoreWindow(m_window);
+        }
+
+        SDL_GetWindowPosition(m_window, &windowed_xpos, &windowed_ypos);
+
+        SDL_GetWindowSize(m_window, &windowed_width, &windowed_height);
+
+        m_windowed_display = SDL_GetDisplayForWindow(m_window);
+
+        SDL_Rect display_bounds{};
+        if (!SDL_GetDisplayBounds(m_windowed_display, &display_bounds)) {
+
+            Logger::error("SDL_GetDisplayBounds failed: {}", SDL_GetError());
+            return;
+        }
+
+        SDL_SetWindowBordered(m_window, false);
+
+        SDL_SetWindowPosition(m_window, display_bounds.x, display_bounds.y);
+
+        SDL_SetWindowSize(m_window, display_bounds.w, display_bounds.h);
+
+        SDL_RaiseWindow(m_window);
+
+        m_fullscreen = true;
+        m_config.set("window.fullscreen", true);
+    } else {
+
+        SDL_SetWindowBordered(m_window, true);
+
+        SDL_SetWindowSize(m_window, windowed_width, windowed_height);
+
+        SDL_SetWindowPosition(m_window, windowed_xpos, windowed_ypos);
+
+        SDL_RaiseWindow(m_window);
+
+        m_fullscreen = false;
+        m_config.set("window.fullscreen", false);
+    }
+}
+
 void Window::init(const Argument& argument) {
     auto video_driver = m_config.get("video_driver", std::string("auto"));
     if (argument.video_driver) {
@@ -124,6 +186,31 @@ void Window::init(const Argument& argument) {
     } else {
         Logger::warn("Unknow Vider Driver {}", video_driver);
     }
+
+    bool default_exclusive = false;
+    auto wm = Tools::detect_wm();
+    switch (wm) {
+    case WindowManager::NIRI:
+    case WindowManager::SWAY:
+    case WindowManager::HYPRLAND:
+        default_exclusive = true;
+        break;
+    case WindowManager::WINDOWS:
+    case WindowManager::GNOME:
+    case WindowManager::KDE:
+    case WindowManager::UNKNOWN:
+        default_exclusive = false;
+        break;
+    }
+
+    m_enable_exclusive =
+        m_config.get("enable_exclusive_fullscreen", default_exclusive);
+
+    if (argument.enable_exclusive) {
+        m_enable_exclusive = *argument.enable_exclusive;
+    }
+
+    Logger::info("Exclusive Fullscreen {}", m_enable_exclusive);
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         Logger::error("sdl3 init fail");
@@ -194,49 +281,11 @@ void Window::toggle_fullscreen() {
 void Window::set_fullscreen(bool full) {
     if (full == m_fullscreen)
         return;
-    if (full) {
-        // If the window is maximized, restore it first.
-        if (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MAXIMIZED) {
-            SDL_RestoreWindow(m_window);
-        }
-
-        SDL_GetWindowPosition(m_window, &windowed_xpos, &windowed_ypos);
-
-        SDL_GetWindowSize(m_window, &windowed_width, &windowed_height);
-
-        m_windowed_display = SDL_GetDisplayForWindow(m_window);
-
-        SDL_Rect display_bounds{};
-        if (!SDL_GetDisplayBounds(m_windowed_display, &display_bounds)) {
-
-            Logger::error("SDL_GetDisplayBounds failed: {}", SDL_GetError());
-            return;
-        }
-
-        SDL_SetWindowBordered(m_window, false);
-
-        SDL_SetWindowPosition(m_window, display_bounds.x, display_bounds.y);
-
-        SDL_SetWindowSize(m_window, display_bounds.w, display_bounds.h);
-
-        SDL_RaiseWindow(m_window);
-
-        m_fullscreen = true;
-        m_config.set("window.fullscreen", true);
+    if (m_enable_exclusive) {
+        set_exclusive_fullscreen(full);
     } else {
-
-        SDL_SetWindowBordered(m_window, true);
-
-        SDL_SetWindowSize(m_window, windowed_width, windowed_height);
-
-        SDL_SetWindowPosition(m_window, windowed_xpos, windowed_ypos);
-
-        SDL_RaiseWindow(m_window);
-
-        m_fullscreen = false;
-        m_config.set("window.fullscreen", false);
+        set_borderless_fullscreen(full);
     }
-
     int w, h;
     SDL_GetWindowSize(m_window, &w, &h);
 

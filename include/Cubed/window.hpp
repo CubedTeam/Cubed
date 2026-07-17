@@ -49,6 +49,7 @@ private:
     bool m_mouse_enable = true;
     bool m_imgui_init = false;
     bool m_game_running = false;
+    bool m_enable_exclusive = false;
     SDL_Window* m_window;
     SDL_GLContext m_context;
     int m_window_width = 0;
@@ -61,6 +62,9 @@ private:
     bool handle_key_event(const KeyEvent& e);
     bool handle_window_resize_event(const WindowResizeEvent& e);
     bool handle_mouse_button_event(const MouseButtonEvent& e);
+
+    void set_exclusive_fullscreen(bool full);
+    void set_borderless_fullscreen(bool full);
 };
 
 } // namespace Cubed
