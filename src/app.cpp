@@ -1,6 +1,5 @@
 #include "Cubed/app.hpp"
 
-#include "Cubed/camera.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/localization.hpp"
@@ -563,10 +562,6 @@ void App::handle_sdl_mouse_button(SDL_Event& e) {
 void App::handle_window_focus(bool focused) {
 
     if (focused) {
-        auto camera = m_window.camera();
-        if (camera) {
-            camera->reset_camera();
-        }
     }
 }
 
@@ -675,6 +670,10 @@ void App::handle_sdl_event(SDL_Event& e) {
         break;
     case SDL_EVENT_MOUSE_MOTION:
         if (!imgui_enable) {
+            if (std::abs(e.motion.xrel) > 200 ||
+                std::abs(e.motion.yrel) > 200) {
+                return;
+            }
             handle_mouse_move(e.motion.x, e.motion.y, e.motion.xrel,
                               e.motion.yrel);
         }

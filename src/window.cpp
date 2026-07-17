@@ -298,9 +298,6 @@ void Window::enable_mouse() {
 }
 void Window::disable_mouse() {
     SDL_SetWindowRelativeMouseMode(m_window, true);
-    if (m_camera) {
-        m_camera->reset_camera();
-    }
     m_mouse_enable = false;
 }
 

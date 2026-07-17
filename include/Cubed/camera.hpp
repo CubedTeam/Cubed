@@ -18,7 +18,6 @@ private:
         THIRD_PERSON_FRONT,
     };
 
-    bool m_firse_mouse = true;
     ClientPlayer* m_player;
     float m_last_mouse_x, m_last_mouse_y;
     glm::vec3 m_camera_pos;
@@ -38,7 +37,6 @@ public:
 
     void camera_init(ClientPlayer* player);
     void hot_reload();
-    void reset_camera();
     void update_cursor_position_camera(float offset_x, float offset_y);
 
     const glm::mat4 get_camera_lookat() const;
