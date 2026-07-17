@@ -76,10 +76,8 @@ bool Window::handle_key_event(const KeyEvent& e) {
     if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
         if (m_game_running) {
             if (m_mouse_enable) {
-                disable_mouse();
                 set_imgui_enabled(false);
             } else {
-                enable_mouse();
                 set_imgui_enabled(true);
             }
             return true;
@@ -225,7 +223,14 @@ void Window::should_close_window() {
 
 bool Window::is_enable_imgui() const { return m_imgui_enable; }
 
-void Window::set_imgui_enabled(bool enable) { m_imgui_enable = enable; }
+void Window::set_imgui_enabled(bool enable) {
+    m_imgui_enable = enable;
+    if (!enable) {
+        disable_mouse();
+    } else {
+        enable_mouse();
+    }
+}
 
 void Window::set_vsync(bool enable) {
     if (!SDL_GL_SetSwapInterval(static_cast<int>(enable))) {

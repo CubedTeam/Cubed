@@ -634,7 +634,8 @@ void App::update() {
 }
 
 void App::handle_sdl_event(SDL_Event& e) {
-    if (m_window.is_enable_imgui()) {
+    bool imgui_enable = m_window.is_enable_imgui();
+    if (imgui_enable) {
         ImGui_ImplSDL3_ProcessEvent(&e);
     }
 
@@ -643,32 +644,53 @@ void App::handle_sdl_event(SDL_Event& e) {
         m_running = false;
         break;
     case SDL_EVENT_KEY_DOWN:
+        if (imgui_enable && e.key.key == SDLK_ESCAPE) {
+            m_window.set_imgui_enabled(false);
+
+        } else {
+            handle_sdl_key(e);
+        }
+        break;
     case SDL_EVENT_KEY_UP:
-        handle_sdl_key(e);
+        if (!imgui_enable) {
+            handle_sdl_key(e);
+        }
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
-        handle_sdl_mouse_button(e);
+        if (!imgui_enable) {
+            handle_sdl_mouse_button(e);
+        }
+
         break;
     case SDL_EVENT_MOUSE_MOTION:
-        handle_mouse_move(e.motion.x, e.motion.y, e.motion.xrel, e.motion.yrel);
+        if (!imgui_enable) {
+            handle_mouse_move(e.motion.x, e.motion.y, e.motion.xrel,
+                              e.motion.yrel);
+        }
+
         break;
     case SDL_EVENT_WINDOW_RESIZED:
+
         handle_window_resize(e.window.data1, e.window.data2);
+
         break;
     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-        handle_framebuffer_resize(e.window.data1, e.window.data2);
-        break;
-    case SDL_EVENT_MOUSE_WHEEL: {
-        float scroll_x = e.wheel.x;
-        float scroll_y = e.wheel.y;
-        if (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
-            scroll_y = -scroll_y;
-        }
-        handle_mouse_scroll(scroll_x, scroll_y);
-        break;
-    }
 
+        handle_framebuffer_resize(e.window.data1, e.window.data2);
+
+        break;
+    case SDL_EVENT_MOUSE_WHEEL:
+        if (!imgui_enable) {
+            float scroll_x = e.wheel.x;
+            float scroll_y = e.wheel.y;
+            if (e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) {
+                scroll_y = -scroll_y;
+            }
+            handle_mouse_scroll(scroll_x, scroll_y);
+        }
+
+        break;
     case SDL_EVENT_WINDOW_FOCUS_GAINED:
         handle_window_focus(true);
         break;
@@ -676,7 +698,10 @@ void App::handle_sdl_event(SDL_Event& e) {
         handle_window_focus(false);
         break;
     case SDL_EVENT_TEXT_INPUT:
-        handle_text_input(e.text.text);
+        if (!imgui_enable) {
+            handle_text_input(e.text.text);
+        }
+
         break;
     }
 }
