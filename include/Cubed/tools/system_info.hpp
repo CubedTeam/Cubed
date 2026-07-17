@@ -173,15 +173,25 @@ inline std::string get_compiler_info() {
     result += std::to_string(__GNUC_PATCHLEVEL__);
 
 #elif defined(_MSC_VER)
+    int major = _MSC_VER / 100;
+    int minor = _MSC_VER % 100;
+
     result = "MSVC ";
-    result += std::to_string(_MSC_VER);
+    result += std::to_string(major);
+    result += ".";
+    result += std::to_string(minor);
 
 #else
     result = "Unknown Compiler";
 #endif
-
+    constexpr long cpp_version =
+#ifdef _MSC_VER
+        _MSVC_LANG;
+#else
+        __cplusplus;
+#endif
     result += " (C++";
-    result += std::to_string(__cplusplus);
+    result += std::to_string(cpp_version);
     result += ")";
 
     return result;
