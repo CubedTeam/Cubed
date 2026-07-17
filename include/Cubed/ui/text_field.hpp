@@ -47,7 +47,7 @@ private:
     static constexpr const char* DEFAULT_TEXT_FIELD_IMAGE =
         "texture/ui/textfield001.png";
 
-    App* m_app;
+    App* m_app = nullptr;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Label> m_foreground;
     std::unique_ptr<Rect> m_cursor;
