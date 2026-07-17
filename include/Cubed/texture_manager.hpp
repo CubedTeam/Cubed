@@ -50,7 +50,6 @@ public:
     const Texture* get_pbr_texture() const;
     const std::vector<std::unique_ptr<Texture>>& item_textures() const;
     const Texture* get_skin() const;
-    // Must call after MapTable::init_map() and glfwMakeContextCurrent(window);
     void init_texture();
 
     void need_reload();

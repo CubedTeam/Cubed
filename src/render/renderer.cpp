@@ -10,7 +10,6 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
 
-#include <GLFW/glfw3.h>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
 

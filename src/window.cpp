@@ -234,8 +234,7 @@ void Window::set_vsync(bool enable) {
 
 void Window::imgui_init() {
     float main_scale = SDL_GetWindowDisplayScale(m_window);
-    // float main_scale =
-    // ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+
     Logger::info("Main Scale {}", main_scale);
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();

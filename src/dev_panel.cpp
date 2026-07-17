@@ -59,13 +59,6 @@ void DevPanel::init() {
 
 void DevPanel::render() {
     ASSERT_MSG(m_player, "Player Is Null");
-    /*
-    if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
-        {
-            ImGui_ImplGlfw_Sleep(10);
-            continue;
-        }
-    */
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
