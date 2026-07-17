@@ -40,6 +40,8 @@ public:
 
     void start_text_input();
     void stop_text_input();
+    void update_text_input_area(const glm::vec4& textbox,
+                                float cursor_position_x);
 
 private:
     Config m_game_config;

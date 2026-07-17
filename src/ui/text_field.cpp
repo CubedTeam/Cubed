@@ -92,8 +92,18 @@ void TextField::update_show_text() {
         m_foreground->set_color(Color::WHITE);
     }
     update_text_scale();
-
+    update_input_area();
     m_cursor->set_offset({13.0f + m_foreground->width(), 0.0f});
+}
+
+void TextField::update_input_area() {
+    if (!m_app) {
+        return;
+    }
+    auto p = pos();
+    glm::vec4 textbox{p.x, p.y, width(), height()};
+    float cursor_position_x = p.x + 13.0f + m_foreground->width();
+    m_app->update_text_input_area(textbox, cursor_position_x);
 }
 
 TextField& TextField::set_scale(float scale) {
@@ -227,4 +237,11 @@ bool TextField::handle_key_event(const KeyEvent& e) {
 
     return false;
 }
+
+bool TextField::handle_window_resize_event(const WindowResizeEvent& e) {
+    Widget::handle_window_resize_event(e);
+    update_input_area();
+    return false;
+}
+
 } // namespace Cubed

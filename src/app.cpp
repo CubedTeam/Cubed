@@ -784,4 +784,15 @@ void App::start_text_input() {
 }
 void App::stop_text_input() { SDL_StopTextInput(m_window.get_window()); }
 
+void App::update_text_input_area(const glm::vec4& textbox,
+                                 float cursor_position_x) {
+
+    SDL_Rect area{static_cast<int>(textbox.x), static_cast<int>(textbox.y),
+                  static_cast<int>(textbox.z), static_cast<int>(textbox.w)};
+
+    int cursor_x = cursor_position_x - textbox.x;
+
+    SDL_SetTextInputArea(m_window.get_window(), &area, cursor_x);
+}
+
 } // namespace Cubed
