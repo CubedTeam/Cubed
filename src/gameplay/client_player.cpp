@@ -133,13 +133,9 @@ void ClientPlayer::update(float delta_time) {
     update_move(delta_time);
     update_lookup_block();
     place_block(delta_time);
-    DebugCollector::get().report("player_pos",
-                                 std::format("x: {:.2f} y: {:.2f} z: {:.2f}",
-                                             m_player_pos.x, m_player_pos.y,
-                                             m_player_pos.z));
-
-    DebugCollector::get().report("speed",
-                                 std::format("Speed: {:.2} m/s", m_xz_speed));
+    d_rep("player_pos", "x: {:.2f} y: {:.2f} z: {:.2f}", m_player_pos.x,
+          m_player_pos.y, m_player_pos.z);
+    d_rep("speed", "Speed: {:.2} m/s", m_xz_speed);
 }
 bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
     if (key == Key::W) {
@@ -334,7 +330,7 @@ void ClientPlayer::update_move(float delta_time) {
 
     // calculate speed
     if (m_move_state.forward || m_move_state.back || m_move_state.left ||
-        m_move_state.right || m_move_state.up) {
+        m_move_state.right) {
         direction = glm::vec3(0.0f, 0.0f, 0.0f);
         m_xz_speed += m_acceleration * delta_time;
         if (m_xz_speed > m_max_speed) {

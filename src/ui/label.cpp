@@ -3,7 +3,6 @@
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/tools/font.hpp"
 namespace Cubed {
-Label::Label(const std::string& id, Widget* parent) : Widget(id, parent) {}
 Label::Label(Widget* parent) : Widget(parent) {}
 Label& Label::set_text(std::string_view text) {
     m_text.text = text;

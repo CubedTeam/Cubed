@@ -546,8 +546,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
             }
         }
     }
-    DebugCollector::get().report(
-        "rendered_chunk", "Rendered Chunk: " + std::to_string(rendered_sum));
+    d_rep("rendered_chunk", "Rendered Chunk: {}", rendered_sum);
 }
 
 void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,

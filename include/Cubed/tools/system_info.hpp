@@ -157,6 +157,36 @@ inline std::string get_cpu_info() {
 #endif
 }
 
+inline std::string get_compiler_info() {
+    std::string result;
+
+#if defined(__clang__)
+    result = "Clang ";
+    result += __clang_version__;
+
+#elif defined(__GNUC__)
+    result = "GCC ";
+    result += std::to_string(__GNUC__);
+    result += ".";
+    result += std::to_string(__GNUC_MINOR__);
+    result += ".";
+    result += std::to_string(__GNUC_PATCHLEVEL__);
+
+#elif defined(_MSC_VER)
+    result = "MSVC ";
+    result += std::to_string(_MSC_VER);
+
+#else
+    result = "Unknown Compiler";
+#endif
+
+    result += " (C++";
+    result += std::to_string(__cplusplus);
+    result += ")";
+
+    return result;
+}
+
 } // namespace Tools
 
 } // namespace Cubed

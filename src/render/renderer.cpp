@@ -202,7 +202,7 @@ void Renderer::render_lable(const Label& label) {
 
 void Renderer::render_image(const Image& image) {
     if (!image.texture()) {
-        Logger::error("Image id {} not set image!", image.id());
+        Logger::error("Image not set image!");
         return;
     }
     const auto& shader = get_shader("image");

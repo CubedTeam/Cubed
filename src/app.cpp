@@ -561,16 +561,15 @@ void App::handle_window_focus(bool focused) {
 void App::handle_window_resize(int width, int height) {
 
     dispatch_event(WindowResizeEvent{width, height});
-
+    d_rep("window_size", "Window W: {} H: {}", width, height);
     Logger::info("Window Reshape W: {} H: {}", width, height);
 }
 void App::handle_framebuffer_resize(int width, int height) {
     dispatch_event(FrameBufferResizeEvent{width, height});
-
+    d_rep("frame_buffer", "FrameBuffer W: {} H: {}", width, height);
     Logger::info("Frame Buffer Reshape W: {} H: {}", width, height);
 }
 void App::handle_mouse_scroll(float, float yoffset) {
-
     dispatch_event(MouseWheelEvent(yoffset));
 }
 
@@ -618,11 +617,8 @@ void App::update() {
 
         frame_count = 0;
         fps_time_count = 0.0f;
-        DebugCollector::get().report(
-            "fps", std::string{"FPS: " + std::to_string(fps)});
-        DebugCollector::get().report(
-            "rss",
-            std::format("RSS: {}mb", Tools::get_current_rss() / (1024 * 1024)));
+        d_rep("fps", "FPS: {}", fps);
+        d_rep("rss", "RSS: {}mb", Tools::get_current_rss() / (1024 * 1024));
     }
     m_texture_manager.update();
 
