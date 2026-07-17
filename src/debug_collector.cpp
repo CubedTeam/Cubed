@@ -69,7 +69,7 @@ void DebugCollector::init(int width, int height) {
     os_text.set_scale(SCALE);
     if (Tools::get_os_version(os)) {
         os_text.set_text("OS: " + os);
-        Logger::info("System: {}", os);
+        Logger::info("OS System: {}", os);
     } else {
         os_text.set_text("OS: Unknown");
     }
