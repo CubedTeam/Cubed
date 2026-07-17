@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/argument.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/input/event.hpp"
 
@@ -15,7 +16,7 @@ public:
     bool is_mouse_enable() const;
     const SDL_Window* get_window() const;
     SDL_Window* get_window();
-    void init();
+    void init(const Argument& argument);
     void imgui_init();
 
     // end of frame to reload!

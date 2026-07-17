@@ -8,5 +8,6 @@ struct Argument {
     std::optional<std::string> player;
     std::optional<bool> no_debug;
     std::optional<std::string> language;
+    std::optional<std::string> video_driver;
 };
 } // namespace Cubed

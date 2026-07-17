@@ -3,6 +3,7 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/env_tools.hpp"
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
 
@@ -109,7 +110,21 @@ bool Window::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 
-void Window::init() {
+void Window::init(const Argument& argument) {
+    auto video_driver = m_config.get("video_driver", std::string("auto"));
+    if (argument.video_driver) {
+        video_driver = *argument.video_driver;
+    }
+    if (video_driver == "wayland") {
+        Tools::set_env("SDL_VIDEO_DRIVER", "wayland");
+    } else if (video_driver == "x11") {
+        Tools::set_env("SDL_VIDEO_DRIVER", "x11");
+    } else if (video_driver == "auto") {
+
+    } else {
+        Logger::warn("Unknow Vider Driver {}", video_driver);
+    }
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         Logger::error("sdl3 init fail");
         exit(EXIT_FAILURE);

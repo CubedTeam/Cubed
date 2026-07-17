@@ -40,7 +40,7 @@ void App::init(int argc, char** argv) {
             m_game_config.get("language", default_value));
     }
 
-    m_window.init();
+    m_window.init(m_argument);
     m_window.imgui_init();
 
     Logger::info("Window Init Success");
@@ -122,6 +122,11 @@ void App::handle_argument(int argc, char** argv) {
              [&](ArgParser& p) {
                  auto arg = p.require_next("--language");
                  m_argument.language = arg;
+             }},
+            {"--video-driver",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--video-driver");
+                 m_argument.video_driver = arg;
              }
 
             }
