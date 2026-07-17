@@ -2,6 +2,9 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
+
+#include <memory>
+
 namespace fs = std::filesystem;
 
 namespace Cubed {
@@ -72,10 +75,13 @@ void Font::upload_glyph(Glyph& glyph, const unsigned char* buffer) {
                     glyph.size.y / float(CELL_SIZE)};
 }
 
-Font& Font::get() {
-    static Font font;
+Font& Font::get() { return *get_ptr(); }
+std::unique_ptr<Font>& Font::get_ptr() {
+    static std::unique_ptr<Font> font = std::make_unique<Font>();
     return font;
 }
+void Font::destroy() { get_ptr().reset(); }
+
 TextMesh Font::vertices(const std::string& text) {
 
     hb_buffer_t* buffer = hb_buffer_create();

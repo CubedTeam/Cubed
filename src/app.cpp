@@ -6,6 +6,7 @@
 #include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/system_info.hpp"
 #include "Cubed/tools/system_locate.hpp"
@@ -13,6 +14,7 @@
 
 #include <exception>
 #include <imgui_impl_sdl3.h>
+
 namespace Cubed {
 
 App::App()
@@ -21,7 +23,11 @@ App::App()
       m_texture_manager(m_game_config), m_audio(m_game_config),
       m_renderer(m_texture_manager, m_game_config), m_scene_manager(*this) {}
 
-App::~App() { stop_text_input(); }
+App::~App() {
+    stop_text_input();
+    Font::destroy();
+    DebugCollector::distory();
+}
 
 void App::init(int argc, char** argv) {
     handle_argument(argc, argv);

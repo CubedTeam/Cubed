@@ -4,16 +4,19 @@
 #include "version.hpp"
 
 #include <SDL3/SDL_video.h>
+#include <memory>
 
 namespace Cubed {
 
 DebugCollector::DebugCollector() : m_widget(nullptr) {}
 
-DebugCollector& DebugCollector::get() {
-    static DebugCollector instance;
+DebugCollector& DebugCollector::get() { return *get_ptr(); }
+std::unique_ptr<DebugCollector>& DebugCollector::get_ptr() {
+    static std::unique_ptr<DebugCollector> instance =
+        std::make_unique<DebugCollector>();
     return instance;
 }
-
+void DebugCollector::distory() { get_ptr().reset(); }
 void DebugCollector::init(int width, int height) {
     constexpr float SCALE = 0.6f;
 

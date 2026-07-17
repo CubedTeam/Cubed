@@ -5,6 +5,7 @@
 #include "Cubed/ui/widget.hpp"
 
 #include <format>
+#include <memory>
 #include <unordered_map>
 
 namespace Cubed {
@@ -12,6 +13,7 @@ namespace Cubed {
 class DebugCollector {
 public:
     static DebugCollector& get();
+    static void distory();
     DebugCollector();
 
     void report(const std::string& name, std::string_view content);
@@ -22,6 +24,7 @@ public:
 private:
     ColumnLayout m_widget;
     std::unordered_map<std::string, Label*> m_component;
+    static std::unique_ptr<DebugCollector>& get_ptr();
 };
 
 template <typename... Args>
