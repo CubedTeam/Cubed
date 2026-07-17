@@ -140,9 +140,8 @@ void Window::init(const Argument& argument) {
     m_window = SDL_CreateWindow("Cubed", m_window_width, m_window_height,
                                 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
                                     SDL_WINDOW_HIGH_PIXEL_DENSITY);
-    if (m_config.get("window.fullscreen", false)) {
-        SDL_SetWindowFullscreen(m_window, true);
-    }
+
+    set_fullscreen(m_config.get("window.fullscreen", false));
 
     m_context = SDL_GL_CreateContext(m_window);
     SDL_GL_MakeCurrent(m_window, m_context);
@@ -173,9 +172,9 @@ void Window::reload_config() {
     set_fullscreen(m_config.get("window.fullscreen", false));
 
     if (!m_mouse_enable) {
-        SDL_SetWindowRelativeMouseMode(m_window, false);
+        disable_mouse();
     } else {
-        SDL_SetWindowRelativeMouseMode(m_window, true);
+        enable_mouse();
     }
     m_config.set("window.width", windowed_width);
     m_config.set("window.height", windowed_height);
@@ -183,9 +182,7 @@ void Window::reload_config() {
 
 void Window::toggle_fullscreen() {
 
-    bool is_fullscreen =
-        (SDL_GetWindowFlags(m_window) & SDL_WINDOW_FULLSCREEN) != 0;
-    if (is_fullscreen) {
+    if (m_fullscreen) {
         set_fullscreen(false);
     } else {
         set_fullscreen(true);
@@ -195,18 +192,64 @@ void Window::toggle_fullscreen() {
     m_config.set("window.height", windowed_height);
 }
 void Window::set_fullscreen(bool full) {
+    if (full == m_fullscreen)
+        return;
     if (full) {
+        // If the window is maximized, restore it first.
+        if (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MAXIMIZED) {
+            SDL_RestoreWindow(m_window);
+        }
+
         SDL_GetWindowPosition(m_window, &windowed_xpos, &windowed_ypos);
+
         SDL_GetWindowSize(m_window, &windowed_width, &windowed_height);
-        SDL_SetWindowFullscreen(m_window, true);
+
+        m_windowed_display = SDL_GetDisplayForWindow(m_window);
+
+        SDL_Rect display_bounds{};
+        if (!SDL_GetDisplayBounds(m_windowed_display, &display_bounds)) {
+
+            Logger::error("SDL_GetDisplayBounds failed: {}", SDL_GetError());
+            return;
+        }
+
+        SDL_SetWindowBordered(m_window, false);
+
+        SDL_SetWindowPosition(m_window, display_bounds.x, display_bounds.y);
+
+        SDL_SetWindowSize(m_window, display_bounds.w, display_bounds.h);
+
+        SDL_RaiseWindow(m_window);
+
+        m_fullscreen = true;
         m_config.set("window.fullscreen", true);
     } else {
-        SDL_SetWindowFullscreen(m_window, false);
-        SDL_SetWindowPosition(m_window, windowed_xpos, windowed_ypos);
+
+        SDL_SetWindowBordered(m_window, true);
+
         SDL_SetWindowSize(m_window, windowed_width, windowed_height);
 
+        SDL_SetWindowPosition(m_window, windowed_xpos, windowed_ypos);
+
+        SDL_RaiseWindow(m_window);
+
+        m_fullscreen = false;
         m_config.set("window.fullscreen", false);
     }
+
+    int w, h;
+    SDL_GetWindowSize(m_window, &w, &h);
+
+    SDL_Event event{};
+    event.type = SDL_EVENT_WINDOW_RESIZED;
+    event.window.data1 = w;
+    event.window.data2 = h;
+    event.window.windowID = SDL_GetWindowID(m_window);
+
+    SDL_PushEvent(&event);
+    SDL_Rect ime_rect{0, 0, 1, 1};
+
+    SDL_SetTextInputArea(m_window, &ime_rect, 0);
 }
 void Window::enable_mouse() {
     SDL_WarpMouseInWindow(m_window, width() / 2, height() / 2);

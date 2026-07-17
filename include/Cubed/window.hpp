@@ -53,6 +53,8 @@ private:
     SDL_GLContext m_context;
     int m_window_width = 0;
     int m_window_height = 0;
+    SDL_DisplayID m_windowed_display = 0;
+    bool m_fullscreen = false;
     Config& m_config;
     Camera* m_camera = nullptr;
     bool m_imgui_enable = false;
