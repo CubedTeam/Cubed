@@ -1,6 +1,7 @@
 #include "Cubed/debug_collector.hpp"
 
 #include "Cubed/tools/system_info.hpp"
+#include "Cubed/tools/system_window_manager.hpp"
 #include "version.hpp"
 
 #include <SDL3/SDL_video.h>
@@ -72,7 +73,12 @@ void DebugCollector::init(int width, int height) {
     } else {
         os_text.set_text("OS: Unknown");
     }
-
+    {
+        std::string wm{"WM: "};
+        wm.append(Tools::detect_wm());
+        auto& wm_label = m_widget.add_child<Label>();
+        wm_label.set_text(wm).set_scale(SCALE);
+    }
     // cpu
     auto& cpu_text = m_widget.add_child<Label>();
     cpu_text.set_text("CPU: " + Tools::get_cpu_info()).set_scale(SCALE);

@@ -6,7 +6,6 @@
 #include "Cubed/tools/env_tools.hpp"
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/system_window_manager.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -188,20 +187,12 @@ void Window::init(const Argument& argument) {
     }
 
     bool default_exclusive = false;
-    auto wm = Tools::detect_wm();
-    switch (wm) {
-    case WindowManager::NIRI:
-    case WindowManager::SWAY:
-    case WindowManager::HYPRLAND:
-        default_exclusive = true;
-        break;
-    case WindowManager::WINDOWS:
-    case WindowManager::GNOME:
-    case WindowManager::KDE:
-    case WindowManager::UNKNOWN:
-        default_exclusive = false;
-        break;
-    }
+
+#ifdef _WIN32
+    default_exclusive = false;
+#else
+    default_exclusive = true;
+#endif
 
     m_enable_exclusive =
         m_config.get("enable_exclusive_fullscreen", default_exclusive);
