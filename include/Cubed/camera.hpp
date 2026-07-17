@@ -49,6 +49,7 @@ public:
     void change_perspective();
     bool is_first_person() const;
     bool handle_event(const Event& e);
+    ClientPlayer* player();
 };
 
 } // namespace Cubed

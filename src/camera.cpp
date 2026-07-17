@@ -107,31 +107,36 @@ void Camera::change_perspective() {
 bool Camera::is_first_person() const {
     return m_perspective == Perspective::FIRST_PERSON;
 }
-
+ClientPlayer* Camera::player() { return m_player; }
 bool Camera::handle_event(const Event& e) {
-    return std::visit(
-        Overloaded{[this](const MouseMoveEvent& e) {
-                       if (handle_mouse_move_event(e)) {
-                           return true;
-                       }
+    return std::visit(Overloaded{[this](const MouseMoveEvent& e) {
+                                     if (handle_mouse_move_event(e)) {
+                                         return true;
+                                     }
 
-                       return false;
-                   },
-                   [](const MouseButtonEvent&) { return false; },
-                   [](const MouseWheelEvent&) { return false; },
-                   [this](const KeyEvent& e) {
-                       if (handle_key_event(e)) {
-                           return true;
-                       }
-                       return false;
-                   },
-                   [](const TextInputEvent&) { return false; },
-                   [](const WindowResizeEvent&) { return false; },
-                   [](const FrameBufferResizeEvent&) { return false; }
+                                     return false;
+                                 },
+                                 [](const MouseButtonEvent&) { return false; },
+                                 [](const MouseWheelEvent&) { return false; },
+                                 [this](const KeyEvent& e) {
+                                     if (handle_key_event(e)) {
+                                         return true;
+                                     }
+                                     return false;
+                                 },
+                                 [](const TextInputEvent&) { return false; },
+                                 [this](const WindowResizeEvent&) {
+                                     reset_camera();
+                                     return false;
+                                 },
+                                 [this](const FrameBufferResizeEvent&) {
+                                     reset_camera();
+                                     return false;
+                                 }
 
-        } // namespace Cubed
-        ,
-        e);
+                      } // namespace Cubed
+                      ,
+                      e);
 }
 
 glm::vec3 Camera::camera_collision(glm::vec3 start, glm::vec3 end,

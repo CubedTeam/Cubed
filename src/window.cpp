@@ -1,6 +1,7 @@
 #include "Cubed/window.hpp"
 
 #include "Cubed/camera.hpp"
+#include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
@@ -76,8 +77,10 @@ bool Window::handle_key_event(const KeyEvent& e) {
     if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
         if (m_game_running) {
             if (m_mouse_enable) {
+                disable_mouse();
                 set_imgui_enabled(false);
             } else {
+                enable_mouse();
                 set_imgui_enabled(true);
             }
             return true;
@@ -225,10 +228,11 @@ bool Window::is_enable_imgui() const { return m_imgui_enable; }
 
 void Window::set_imgui_enabled(bool enable) {
     m_imgui_enable = enable;
-    if (!enable) {
-        disable_mouse();
-    } else {
-        enable_mouse();
+    if (m_camera) {
+        auto player = m_camera->player();
+        if (player) {
+            player->reset_key_status();
+        }
     }
 }
 

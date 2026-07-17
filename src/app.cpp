@@ -645,9 +645,10 @@ void App::handle_sdl_event(SDL_Event& e) {
         break;
     case SDL_EVENT_KEY_DOWN:
         if (imgui_enable && e.key.key == SDLK_ESCAPE) {
+            m_window.disable_mouse();
             m_window.set_imgui_enabled(false);
-
-        } else {
+        }
+        if (!imgui_enable) {
             handle_sdl_key(e);
         }
         break;
