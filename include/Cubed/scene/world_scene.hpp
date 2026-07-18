@@ -34,7 +34,7 @@ public:
     void set_pause(bool pause);
     void set_error(std::string_view error);
     void set_mouse(bool pause);
-    void set_chatting(bool chatting);
+    void set_chatting(bool chatting, bool send);
     // Not thread safe
     void handle_chat_message(ChatMessage& message);
 

@@ -67,7 +67,9 @@ void ChatBox::set_d_image(TextureManager& m) {
     m_text_field->set_default_image(m);
 }
 
-void ChatBox::set_typing(bool typing) { m_text_field->set_typing(typing); }
+void ChatBox::set_typing(bool typing, bool finished) {
+    m_text_field->set_typing(typing, finished);
+}
 void ChatBox::set_app(App* app) { m_text_field->set_app(app); }
 
 void ChatBox::layout() {

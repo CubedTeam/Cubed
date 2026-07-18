@@ -27,7 +27,7 @@ public:
     TextField& set_default_image(TextureManager& texture_manager);
     TextField& set_auto_scale(bool auto_scale);
     TextField& set_app(App* app);
-    TextField& set_typing(bool typing);
+    TextField& set_typing(bool typing, bool finished);
     TextField& clear_input();
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
@@ -74,6 +74,6 @@ private:
     void update_input_area();
 
     void start_typing();
-    void stop_typing();
+    void stop_typing(bool finished);
 };
 } // namespace Cubed

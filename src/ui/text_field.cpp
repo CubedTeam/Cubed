@@ -80,7 +80,7 @@ void TextField::on_update(float dt) {
 
 void TextField::update_show_text() {
 
-    if (!m_typing) {
+    if (!m_typing && m_input_text.empty()) {
         m_foreground->set_text(m_show_text);
         m_foreground->set_color(Color::GRAY);
     } else {
@@ -147,13 +147,12 @@ TextField& TextField::set_app(App* app) {
     return *this;
 }
 
-TextField& TextField::set_typing(bool typing) {
-    Logger::info("Typing {}", typing);
+TextField& TextField::set_typing(bool typing, bool finished) {
     m_typing = typing;
     if (m_typing) {
         start_typing();
     } else {
-        stop_typing();
+        stop_typing(finished);
     }
 
     return *this;
@@ -171,11 +170,11 @@ void TextField::start_typing() {
     }
     update_show_text();
 }
-void TextField::stop_typing() {
+void TextField::stop_typing(bool finished) {
     if (m_app) {
         m_app->stop_text_input();
     }
-    if (m_on_finished) {
+    if (m_on_finished && finished) {
         m_on_finished();
     }
 }
@@ -202,7 +201,7 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
         } else {
             if (m_typing) {
                 m_typing = false;
-                stop_typing();
+                stop_typing(true);
 
                 return false;
             }
@@ -223,12 +222,7 @@ bool TextField::handle_key_event(const KeyEvent& e) {
     if (e.key == Key::ENTER && e.action == KeyAction::PRESS) {
         if (m_typing) {
             m_typing = false;
-            if (m_app) {
-                m_app->stop_text_input();
-            }
-            if (m_on_finished) {
-                m_on_finished();
-            }
+            stop_typing(true);
 
             return true;
         }
@@ -249,6 +243,12 @@ bool TextField::handle_key_event(const KeyEvent& e) {
             m_ctrl_press = false;
             return true;
         }
+    }
+
+    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        stop_typing(false);
+        clear_input();
+        return true;
     }
 
     if (e.key == Key::V && e.action == KeyAction::PRESS && m_ctrl_press) {

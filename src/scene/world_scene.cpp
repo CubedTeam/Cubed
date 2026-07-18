@@ -171,6 +171,9 @@ void WorldScene::on_re_enter() {
 }
 
 bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
+    if (m_chatting) {
+        return true;
+    }
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
@@ -191,6 +194,9 @@ bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
     return false;
 }
 bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (m_chatting) {
+        return true;
+    }
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
@@ -228,6 +234,9 @@ bool WorldScene::handle_window_resize_event(const WindowResizeEvent& e) {
     return false;
 }
 bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
+    if (m_chatting) {
+        return true;
+    }
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
@@ -249,6 +258,10 @@ bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
 bool WorldScene::handle_key_event(const KeyEvent& e) {
 
     if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        if (m_chatting && !m_paused) {
+            set_chatting(false, false);
+            return true;
+        }
         bool pasued = pause();
         pasued = !pasued;
         set_pause(pasued);
@@ -264,13 +277,17 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
     }
 
     if (e.key == Key::T && e.action == KeyAction::PRESS) {
-        if (m_chatting) {
-            set_chatting(false);
-        } else {
-            set_chatting(true);
+        if (!m_chatting) {
+            set_chatting(true, true);
+            return true;
         }
+    }
 
-        return true;
+    if (e.key == Key::ENTER && e.action == KeyAction::PRESS) {
+        if (m_chatting) {
+            set_chatting(false, true);
+            return true;
+        }
     }
 
     if (m_paused) {
@@ -324,14 +341,14 @@ void WorldScene::set_mouse(bool enable) {
     }
 }
 
-void WorldScene::set_chatting(bool chatting) {
+void WorldScene::set_chatting(bool chatting, bool send) {
     if (m_paused) {
+        m_hud_ui.set_chatting(false, false);
         return;
     }
     m_chatting = chatting;
+    m_hud_ui.set_chatting(chatting, send);
     set_mouse(chatting);
-    m_hud_ui.set_chatting(chatting);
-    Logger::info("World Scene Chatting {}", chatting);
 }
 
 // Not thread safe

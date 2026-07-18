@@ -19,7 +19,7 @@ public:
     void init() override;
     void render(Renderer& renderer) override;
 
-    void set_chatting(bool chantting);
+    void set_chatting(bool chantting, bool sned);
 
     void add_chat_message(ChatMessage& message);
 

@@ -57,9 +57,9 @@ void WorldUIManager::render(Renderer& renderer) {
     renderer.end_render_ui();
 }
 
-void WorldUIManager::set_chatting(bool chantting) {
-    Logger::info("WorldUIManager Chatting {}", chantting);
-    m_chat_box->set_typing(chantting);
+void WorldUIManager::set_chatting(bool chantting, bool send) {
+
+    m_chat_box->set_typing(chantting, send);
 }
 
 void WorldUIManager::add_chat_message(ChatMessage& message) {
