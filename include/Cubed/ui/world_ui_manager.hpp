@@ -21,6 +21,8 @@ public:
 
     void set_chatting(bool chantting);
 
+    void add_chat_message(ChatMessage& message);
+
 private:
     bool handle_key_event(const KeyEvent& e) override;
     WorldScene& m_scene;

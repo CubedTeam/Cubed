@@ -80,6 +80,8 @@ public:
     void handle_chunk_req(int task_id, const std::string& uuid, ChunkPos pos);
     void handle_block_change(const BlockChangeReq& req);
 
+    void handle_chat_message(ChatMsg& msg);
+
     int chunk_size() const;
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
@@ -189,5 +191,7 @@ private:
         std::atomic<std::shared_ptr<PriorityThreadPool>>& thread_pool,
         int threads);
     void send_server_stop();
+
+    void boardcast_message(const std::string& name, const std::string& message);
 };
 } // namespace Cubed

@@ -99,6 +99,12 @@ asio::awaitable<void> Session::read_loop() {
                     m_server_world.sync_player_water_sound(*req);
                 }
             }
+            if (cmd_id == std::to_underlying(PacketEnum::CHAT_MSG)) {
+                auto* msg = Arena::Create<ChatMsg>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_chat_message(*msg);
+                }
+            }
         }
     } catch (const asio::system_error& e) {
         auto ec = e.code();

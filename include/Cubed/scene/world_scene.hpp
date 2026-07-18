@@ -35,6 +35,8 @@ public:
     void set_error(std::string_view error);
     void set_mouse(bool pause);
     void set_chatting(bool chatting);
+    // Not thread safe
+    void handle_chat_message(ChatMessage& message);
 
 private:
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;

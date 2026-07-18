@@ -61,6 +61,7 @@ enum class PacketEnum : uint16_t {
     BLOCK_CHANGE_RSP = 3004,
     S2C_CLEAR_ALL_CHUNKS = 3005,
     UPDATE_TIME = 3006,
+    CHAT_MSG = 4001,
     PING = 9001,
     PONG = 9002
 
@@ -120,6 +121,9 @@ template <> constexpr uint16_t get_packet_id<Pong>() {
 }
 template <> constexpr uint16_t get_packet_id<PlayerWaterSound>() {
     return std::to_underlying(PacketEnum::PLAYER_WATER_SOUND);
+}
+template <> constexpr uint16_t get_packet_id<ChatMsg>() {
+    return std::to_underlying(PacketEnum::CHAT_MSG);
 }
 
 template <typename T>

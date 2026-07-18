@@ -52,6 +52,12 @@ ChatBox& ChatBox::set_spacing(float spacing) {
     m_spacing = spacing;
     return *this;
 }
+ChatBox& ChatBox::clear_input() {
+    m_text_field->clear_input();
+    return *this;
+}
+std::string& ChatBox::get_input_text() { return m_text_field->input_text(); }
+
 float ChatBox::width() const { return m_width * m_scale; }
 float ChatBox::height() const {
     // Height is dynamically calculated, no scaling needed

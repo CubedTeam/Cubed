@@ -79,18 +79,15 @@ void TextField::on_update(float dt) {
 }
 
 void TextField::update_show_text() {
-    if (m_input_text.empty()) {
-        if (!m_typing) {
-            m_foreground->set_text(m_show_text);
-            m_foreground->set_color(Color::GRAY);
-        } else {
-            m_foreground->set_text(" ");
-        }
 
+    if (!m_typing) {
+        m_foreground->set_text(m_show_text);
+        m_foreground->set_color(Color::GRAY);
     } else {
         m_foreground->set_text(m_input_text);
         m_foreground->set_color(Color::WHITE);
     }
+
     update_text_scale();
     update_input_area();
     m_cursor->set_offset({13.0f + m_foreground->width(), 0.0f});
@@ -162,6 +159,12 @@ TextField& TextField::set_typing(bool typing) {
     return *this;
 }
 
+TextField& TextField::clear_input() {
+    m_input_text.clear();
+    update_show_text();
+    return *this;
+}
+
 void TextField::start_typing() {
     if (m_app) {
         m_app->start_text_input();
@@ -178,7 +181,7 @@ void TextField::stop_typing() {
 }
 
 const std::string& TextField::input_text() const { return m_input_text; }
-
+std::string& TextField::input_text() { return m_input_text; }
 bool TextField::handle_mouse_move_event(const MouseMoveEvent& e) {
     auto p = pos();
     if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&

@@ -334,6 +334,11 @@ void WorldScene::set_chatting(bool chatting) {
     Logger::info("World Scene Chatting {}", chatting);
 }
 
+// Not thread safe
+void WorldScene::handle_chat_message(ChatMessage& message) {
+    m_hud_ui.add_chat_message(message);
+}
+
 void WorldScene::set_error(std::string_view error) {
     Logger::error("WorldScene Error Set {}", error);
     m_error_ui.set_error(error);

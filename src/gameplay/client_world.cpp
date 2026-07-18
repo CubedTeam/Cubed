@@ -6,6 +6,7 @@
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/math_tools.hpp"
+#include "Cubed/tools/time_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
 #include <numbers>
@@ -750,6 +751,17 @@ void ClientWorld::request_exit() {
     }
 }
 
+void ClientWorld::receive_chat_message(ChatMsg& msg) {
+    m_message_queue.emplace(msg.name(), msg.msg(), Tools::get_time_ticks());
+}
+void ClientWorld::send_chat_message(ChatMessage& message) {
+    Arena arena;
+    auto msg = Arena::Create<ChatMsg>(&arena);
+    msg->set_name(message.player);
+    msg->set_msg(message.text);
+    m_client->send(make_packet(*msg));
+}
+
 void ClientWorld::update(float delta_time) {
 
     m_player.update(delta_time);
@@ -915,6 +927,10 @@ void ClientWorld::update(float delta_time) {
 
     for (auto& [pos, timer] : m_timers) {
         timer.update(delta_time);
+    }
+    ChatMessage message;
+    while (m_message_queue.try_pop(message)) {
+        m_world_scene.handle_chat_message(message);
     }
 }
 

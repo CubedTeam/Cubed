@@ -753,6 +753,16 @@ void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
         [task_id, uuid, pos, this]() { send_chunk(task_id, uuid, pos); });
 }
 
+void ServerWorld::handle_chat_message(ChatMsg& msg) {
+
+    std::string name = msg.name();
+    std::string message = msg.msg();
+    auto pool = m_net_thread_pool.load();
+    pool->enqueue([this, player = std::move(name), m = std::move(message)]() {
+        boardcast_message(player, m);
+    });
+}
+
 void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     float x = std::floor(req.pos().x());
     float y = std::floor(req.pos().y());
@@ -859,6 +869,28 @@ void ServerWorld::send_server_stop() {
         player.get_session()->send(make_packet(*rsp), 0);
     }
     Logger::info("Send Server Mesaage Success");
+}
+
+void ServerWorld::boardcast_message(const std::string& name,
+                                    const std::string& message) {
+
+    std::vector<std::shared_ptr<Session>> m_session;
+    {
+        std::shared_lock lock(m_player_mutex);
+        for (auto& [_, p] : m_players) {
+            m_session.emplace_back(p.get_session());
+        }
+    }
+
+    Arena arena;
+    auto msg = Arena::Create<ChatMsg>(&arena);
+
+    msg->set_msg(message);
+    msg->set_name(name);
+
+    for (auto& s : m_session) {
+        s->send(make_packet(*msg));
+    }
 }
 
 int ServerWorld::chunk_load_style() const {

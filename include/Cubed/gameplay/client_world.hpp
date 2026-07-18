@@ -2,6 +2,7 @@
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/block.hpp"
+#include "Cubed/gameplay/chat_message.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
 #include "Cubed/gameplay/client_player.hpp"
@@ -102,6 +103,10 @@ public:
     Config& get_config();
     WorldScene& world_scene();
     void set_direct_exit();
+
+    void receive_chat_message(ChatMsg& msg);
+    void send_chat_message(ChatMessage& message);
+
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -147,6 +152,7 @@ private:
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
     tbb::concurrent_queue<PendingSound> m_pending_sound;
+    tbb::concurrent_queue<ChatMessage> m_message_queue;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;

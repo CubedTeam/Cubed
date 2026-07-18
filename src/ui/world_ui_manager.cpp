@@ -2,6 +2,7 @@
 
 #include "Cubed/app.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -38,7 +39,12 @@ void WorldUIManager::init() {
     chat_box.set_text_scale(0.6f);
     chat_box.set_d_image(m_scene.scene_manager().app().texture_manager());
     chat_box.set_app(&m_scene.scene_manager().app());
-    chat_box.set_on_finish([]() {});
+    chat_box.set_on_finish([this, &chat_box]() {
+        ChatMessage message{m_scene.client_world().get_player().get_name(),
+                            std::move(chat_box.get_input_text()), 0};
+        chat_box.clear_input();
+        m_scene.client_world().send_chat_message(message);
+    });
     m_chat_box = &chat_box;
 }
 void WorldUIManager::render(Renderer& renderer) {
@@ -54,6 +60,11 @@ void WorldUIManager::render(Renderer& renderer) {
 void WorldUIManager::set_chatting(bool chantting) {
     Logger::info("WorldUIManager Chatting {}", chantting);
     m_chat_box->set_typing(chantting);
+}
+
+void WorldUIManager::add_chat_message(ChatMessage& message) {
+
+    m_chat_box->add_message(message);
 }
 
 bool WorldUIManager::handle_key_event(const KeyEvent& e) {

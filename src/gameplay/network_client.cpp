@@ -135,6 +135,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_player_water_sound(*rsp);
                 }
             } break;
+            case std::to_underlying(PacketEnum::CHAT_MSG): {
+                auto* msg = Arena::Create<ChatMsg>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_chat_message(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

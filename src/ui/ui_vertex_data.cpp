@@ -1,8 +1,5 @@
-
 #include "Cubed/ui/ui_vertex_data.hpp"
 
-#include "Cubed/tools/cubed_assert.hpp"
-#include "Cubed/tools/log.hpp"
 namespace Cubed {
 UIVertexData::UIVertexData() {}
 UIVertexData::~UIVertexData() {
@@ -12,8 +9,7 @@ UIVertexData::~UIVertexData() {
 
 void UIVertexData::upload() {
     if (m_sum == 0) {
-        Logger::error("You need update_sum first");
-        ASSERT(false);
+        return;
     }
     if (m_vertices.size() == 0) {
         return;

@@ -20,6 +20,8 @@ public:
     ChatBox& set_width(float width);
     ChatBox& set_show_lines(int lines);
     ChatBox& set_spacing(float spacing);
+    ChatBox& clear_input();
+    std::string& get_input_text();
     float width() const override;
     float height() const override;
     void set_d_image(TextureManager& m);

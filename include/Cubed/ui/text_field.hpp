@@ -28,13 +28,14 @@ public:
     TextField& set_auto_scale(bool auto_scale);
     TextField& set_app(App* app);
     TextField& set_typing(bool typing);
+    TextField& clear_input();
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;
     bool handle_key_event(const KeyEvent& e) override;
     bool handle_window_resize_event(const WindowResizeEvent& e) override;
     const std::string& input_text() const;
-
+    std::string& input_text();
     template <typename F> TextField& set_on_finish(F&& f) {
         m_on_finished = std::forward<F>(f);
         return *this;
