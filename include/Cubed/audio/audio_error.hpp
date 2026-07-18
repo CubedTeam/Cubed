@@ -2,6 +2,7 @@
 #include "Cubed/tools/log.hpp"
 
 #include <AL/al.h>
+#include <source_location>
 namespace Cubed {
 inline void check_al_error(
     std::source_location loaction = std::source_location::current()) {

@@ -64,6 +64,7 @@ private:
     inline static int fps = 0;
     Argument m_argument;
     bool m_running = true;
+    bool m_opengl_init = false;
     void init(int argc, char** argv);
     void handle_argument(int argc, char** argv);
     auto init_camera();

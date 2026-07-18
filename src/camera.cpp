@@ -61,19 +61,12 @@ void Camera::update_move_camera() {
 void Camera::camera_init(ClientPlayer* player) {
     m_player = player;
     update_move_camera();
-    reset_camera();
     hot_reload();
 }
 
 void Camera::hot_reload() {}
 
-void Camera::reset_camera() { m_firse_mouse = true; }
-
 void Camera::update_cursor_position_camera(float offset_x, float offset_y) {
-    if (m_firse_mouse) {
-        m_firse_mouse = false;
-        return;
-    }
 
     ASSERT_MSG(m_player, "nullptr");
     m_player->update_front_vec(offset_x, offset_y);
@@ -109,34 +102,29 @@ bool Camera::is_first_person() const {
 }
 ClientPlayer* Camera::player() { return m_player; }
 bool Camera::handle_event(const Event& e) {
-    return std::visit(Overloaded{[this](const MouseMoveEvent& e) {
-                                     if (handle_mouse_move_event(e)) {
-                                         return true;
-                                     }
+    return std::visit(
+        Overloaded{[this](const MouseMoveEvent& e) {
+                       if (handle_mouse_move_event(e)) {
+                           return true;
+                       }
 
-                                     return false;
-                                 },
-                                 [](const MouseButtonEvent&) { return false; },
-                                 [](const MouseWheelEvent&) { return false; },
-                                 [this](const KeyEvent& e) {
-                                     if (handle_key_event(e)) {
-                                         return true;
-                                     }
-                                     return false;
-                                 },
-                                 [](const TextInputEvent&) { return false; },
-                                 [this](const WindowResizeEvent&) {
-                                     reset_camera();
-                                     return false;
-                                 },
-                                 [this](const FrameBufferResizeEvent&) {
-                                     reset_camera();
-                                     return false;
-                                 }
+                       return false;
+                   },
+                   [](const MouseButtonEvent&) { return false; },
+                   [](const MouseWheelEvent&) { return false; },
+                   [this](const KeyEvent& e) {
+                       if (handle_key_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
+                   [](const TextInputEvent&) { return false; },
+                   [](const WindowResizeEvent&) { return false; },
+                   [](const FrameBufferResizeEvent&) { return false; }
 
-                      } // namespace Cubed
-                      ,
-                      e);
+        } // namespace Cubed
+        ,
+        e);
 }
 
 glm::vec3 Camera::camera_collision(glm::vec3 start, glm::vec3 end,
@@ -161,10 +149,6 @@ glm::vec3 Camera::camera_collision(glm::vec3 start, glm::vec3 end,
 }
 
 bool Camera::handle_key_event(const KeyEvent& e) {
-    if (e.key == Key::LEFT_ALT && e.action == KeyAction::PRESS) {
-        reset_camera();
-        return true;
-    }
     if (e.key == Key::F5 && e.action == KeyAction::PRESS) {
         change_perspective();
         return true;

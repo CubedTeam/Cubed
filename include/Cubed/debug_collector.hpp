@@ -13,7 +13,7 @@ namespace Cubed {
 class DebugCollector {
 public:
     static DebugCollector& get();
-    static void distory();
+    static void destory();
     DebugCollector();
 
     void report(const std::string& name, std::string_view content);
