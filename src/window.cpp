@@ -238,6 +238,10 @@ void Window::init(const Argument& argument) {
 
     SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
+#ifdef DEBUG_MODE
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+    Logger::debug("Debug Flag On");
+#endif
 }
 
 void Window::reload_config() {
