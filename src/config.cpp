@@ -10,7 +10,7 @@ using namespace std::string_view_literals;
 
 namespace Cubed {
 
-Config::Config(std::string_view path) : CONGIF_PATH(path) { load_config(); }
+Config::Config(std::string_view path) : CONGIF_PATH(path) {}
 
 Config::~Config() { save_to_file(); }
 
@@ -23,6 +23,7 @@ void Config::load_config() {
         try {
             m_tbl = toml::parse_file(config_path.string());
             Logger::info("Load Config File Success");
+            m_init = true;
         } catch (const toml::parse_error& err) {
             Logger::error("Load Config Error: \"{}\"", err.what());
         }

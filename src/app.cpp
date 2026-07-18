@@ -24,13 +24,43 @@ App::App()
 
 App::~App() {
     stop_text_input();
-    Font::destroy();
-    DebugCollector::distory();
+    if (m_opengl_init) {
+        Font::destroy();
+        DebugCollector::destory();
+    }
 }
 
 void App::init(int argc, char** argv) {
-    handle_argument(argc, argv);
+    bool debug = false;
+    Logger::set_console_write(true);
+#ifdef DEBUG_MODE
+    Logger::set_level(Logger::Level::DEBUG);
+    Logger::set_file_write(false);
+    debug = true;
 
+#else
+    Logger::set_level(Logger::Level::INFO);
+    debug = false;
+#endif
+    handle_argument(argc, argv);
+    if (m_argument.log_level) {
+        Logger::set_level(Logger::get_level(*m_argument.log_level));
+    }
+    if (m_argument.logs_path) {
+        Logger::set_logs_path(*m_argument.logs_path);
+        Logger::set_file_write(true);
+    }
+    if (!debug) {
+        Logger::set_file_write(true);
+        Logger::set_console_write(false);
+    }
+    if (m_argument.enable_consolelog) {
+        Logger::set_console_write(true);
+    }
+    if (m_argument.enable_filelog) {
+        Logger::set_file_write(true);
+    }
+    m_game_config.load_config();
     if (m_argument.language) {
         Localization::instance().load_language(*m_argument.language);
         m_game_config.set("language", *m_argument.language);
@@ -46,16 +76,12 @@ void App::init(int argc, char** argv) {
 
     m_window.init(m_argument);
     m_window.imgui_init();
-
+    m_opengl_init = true;
     Logger::info("Window Init Success");
 
     m_audio.init();
     BlockManager::init();
-    if (m_argument.no_debug) {
-        m_renderer.init(*m_argument.no_debug);
-    } else {
-        m_renderer.init(true);
-    }
+    m_renderer.init();
     Logger::info("Renderer Init Success");
     // MapTable::init_map();
     m_texture_manager.init_texture();
@@ -89,16 +115,16 @@ void App::handle_argument(int argc, char** argv) {
                  int port;
                  auto r =
                      std::from_chars(arg.data(), arg.data() + arg.size(), port);
-                 m_argument.port = port;
+
                  if (r.ec != std::errc{} || r.ptr != arg.data() + arg.size()) {
                      throw std::runtime_error(
                          std::format("Invalid port: {}", arg));
                  }
-
-                 if (m_argument.port > 65535) {
+                 if (port > 65535) {
                      throw std::runtime_error(
-                         std::format("Port {} out of range", *m_argument.port));
+                         std::format("Port {} out of range", port));
                  }
+                 m_argument.port = port;
              }},
 
             {"--ip",
@@ -116,12 +142,6 @@ void App::handle_argument(int argc, char** argv) {
                  std::cout << CUBED_VERSION << "\n";
                  exit(EXIT_SUCCESS);
              }},
-
-            {"--no-debug",
-             [&](ArgParser) {
-                 m_argument.no_debug = false;
-                 Logger::info("Switch off opengl debug out put");
-             }},
             {"--language",
              [&](ArgParser& p) {
                  auto arg = p.require_next("--language");
@@ -133,7 +153,32 @@ void App::handle_argument(int argc, char** argv) {
                  m_argument.video_driver = arg;
              }},
             {"--enable-exclusive",
-             [&](ArgParser&) { m_argument.enable_exclusive = true; }}
+             [&](ArgParser&) { m_argument.enable_exclusive = true; }},
+            {"--logs-path",
+             [&](ArgParser& p) {
+                 m_argument.logs_path = p.require_next("--logs-path");
+             }},
+            {"--log-level",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--log-level");
+                 int level;
+                 auto r = std::from_chars(arg.data(), arg.data() + arg.size(),
+                                          level);
+
+                 if (r.ec != std::errc{} || r.ptr != arg.data() + arg.size()) {
+                     throw std::runtime_error(
+                         std::format("Invalid log Level: {}", arg));
+                 }
+                 if (level > 3) {
+                     throw std::runtime_error(
+                         std::format("Level {} out of range", level));
+                 }
+                 m_argument.log_level = level;
+             }},
+            {"--enable-filelog",
+             [&](ArgParser&) { m_argument.enable_filelog = true; }},
+            {"--enale-consolelog",
+             [&](ArgParser&) { m_argument.enable_consolelog = true; }}
 
         };
     ArgParser parser(argc, argv);

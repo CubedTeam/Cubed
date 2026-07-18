@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/toml.utils.hpp"
 
 namespace Cubed {
@@ -19,6 +20,7 @@ public:
 
     template <TOML::TomlValueType T>
     T get(std::string_view key, T default_value) {
+        ASSERT(m_init);
         if (auto* node = find_node(m_tbl, key)) {
             if (auto value = node->value<T>())
                 return *value;
@@ -30,6 +32,7 @@ public:
     }
 
     template <TOML::TomlValueType T> void set(std::string_view key, T&& value) {
+        ASSERT(m_init);
         auto pos = key.rfind('.');
 
         toml::table* table;
@@ -53,6 +56,7 @@ public:
 
 private:
     toml::table m_tbl;
+    bool m_init = false;
     const std::string CONGIF_PATH;
     const toml::node* find_node(const toml::table& root,
                                 std::string_view path) const;

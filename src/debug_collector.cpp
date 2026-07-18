@@ -17,7 +17,7 @@ std::unique_ptr<DebugCollector>& DebugCollector::get_ptr() {
         std::make_unique<DebugCollector>();
     return instance;
 }
-void DebugCollector::distory() { get_ptr().reset(); }
+void DebugCollector::destory() { get_ptr().reset(); }
 void DebugCollector::init(int width, int height) {
     constexpr float SCALE = 0.6f;
 

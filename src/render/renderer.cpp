@@ -36,7 +36,7 @@ void Renderer::reload_config() {
     update_fov(m_config.get("player.fov", 70.0f));
 }
 
-void Renderer::init(bool debug_on) {
+void Renderer::init() {
 
     Logger::info("OpenGL Version: {}.{}", GLVersion.major, GLVersion.minor);
     Logger::info("Renderer: {}",
@@ -51,16 +51,15 @@ void Renderer::init(bool debug_on) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 #ifdef DEBUG_MODE
-    if (debug_on) {
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(
-            [](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* message,
-               const void*) {
-                Logger::debug("GL Debug: {}",
-                              reinterpret_cast<const char*>(message));
-            },
-            nullptr);
-    }
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(
+        [](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* message,
+           const void*) {
+            Logger::debug("GL Debug: {}",
+                          reinterpret_cast<const char*>(message));
+        },
+        nullptr);
 
 #endif
 
