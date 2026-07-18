@@ -5,6 +5,7 @@ namespace Cubed {
 ChatBox::ChatBox(Widget* parent) : Widget(parent) {
 
     m_text_field = std::make_unique<TextField>(this);
+    m_text_field->set_anchor(Anchor::BOTTOM_LEFT);
 }
 
 void ChatBox::add_message(ChatMessage& message) {
@@ -15,7 +16,7 @@ void ChatBox::add_message(ChatMessage& message) {
     std::string str = std::format("<{}>{}", message.player, message.text);
 
     auto split_str = split_utf8(str, 20);
-    for (auto it = split_str.rbegin(); it != split_str.rend(); ++it) {
+    for (auto it = split_str.begin(); it != split_str.end(); ++it) {
         auto lable = std::make_unique<Label>(this);
         lable->set_text(*it)
             .set_scale(m_text_scale)
@@ -52,7 +53,10 @@ ChatBox& ChatBox::set_spacing(float spacing) {
     return *this;
 }
 float ChatBox::width() const { return m_width * m_scale; }
-float ChatBox::height() const { return m_height * m_scale; }
+float ChatBox::height() const {
+    // Height is dynamically calculated, no scaling needed
+    return m_height;
+}
 void ChatBox::set_d_image(TextureManager& m) {
     m_text_field->set_default_image(m);
 }
@@ -61,9 +65,9 @@ void ChatBox::set_typing(bool typing) { m_text_field->set_typing(typing); }
 void ChatBox::set_app(App* app) { m_text_field->set_app(app); }
 
 void ChatBox::layout() {
-    set_offset({0, m_text_field->height()});
-    int y = 0;
+    int y = m_text_field->height() + m_spacing;
     int line = 0;
+    // Shift upward sequentially starting from the latest
     for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) {
         if (!it->label) {
             continue;
@@ -73,8 +77,9 @@ void ChatBox::layout() {
             continue;
         }
         ++line;
-        it->label->set_anchor(Anchor::TOP_LEFT);
-        it->label->set_offset({0, y});
+        it->label->set_anchor(Anchor::BOTTOM_LEFT);
+        // -y means upward offset
+        it->label->set_offset({0, -y});
         it->render = true;
         y += it->label->height() + m_spacing;
     }

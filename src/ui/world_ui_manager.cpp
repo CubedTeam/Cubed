@@ -30,20 +30,15 @@ void WorldUIManager::init() {
     m_widgets.try_emplace("crosshair", &crosshair);
 
     auto& chat_box = m_root_widget->add_child<ChatBox>();
-    chat_box.set_scale(10);
+    chat_box.set_spacing(15);
     chat_box.set_anchor(Anchor::BOTTOM_LEFT);
     chat_box.set_offset({0, -10});
     chat_box.set_width(200);
-    chat_box.set_scale(3.0f);
-    chat_box.set_text_scale(0.5f);
-    ChatMessage m{"zhenyan121", "原神能不能牛逼原神牛逼", 2020};
-    ChatMessage m1{"zhenyan121", "原神能不能wdadaw牛逼原神牛逼12q432raecawfa",
-                   2021};
-    chat_box.add_message(m);
-    chat_box.add_message(m1);
+    chat_box.set_scale(2.0f);
+    chat_box.set_text_scale(0.6f);
     chat_box.set_d_image(m_scene.scene_manager().app().texture_manager());
     chat_box.set_app(&m_scene.scene_manager().app());
-    chat_box.set_on_finish([]() { Logger::info("Chat Input"); });
+    chat_box.set_on_finish([]() {});
     m_chat_box = &chat_box;
 }
 void WorldUIManager::render(Renderer& renderer) {

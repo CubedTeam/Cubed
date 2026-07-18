@@ -15,6 +15,8 @@ public:
 
     ChatBox& set_scale(float scale);
     ChatBox& set_text_scale(float scale);
+    // Only the width of TextField can be set; the height is calculated
+    // dynamically
     ChatBox& set_width(float width);
     ChatBox& set_show_lines(int lines);
     ChatBox& set_spacing(float spacing);
