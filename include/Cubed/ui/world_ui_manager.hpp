@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/ui/chat_box.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 #include "Cubed/ui/widget.hpp"
 
@@ -18,7 +19,11 @@ public:
     void init() override;
     void render(Renderer& renderer) override;
 
+    void set_chatting(bool chantting);
+
 private:
+    bool handle_key_event(const KeyEvent& e) override;
     WorldScene& m_scene;
+    ChatBox* m_chat_box;
 };
 } // namespace Cubed

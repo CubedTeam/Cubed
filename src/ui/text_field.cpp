@@ -149,6 +149,34 @@ TextField& TextField::set_app(App* app) {
     m_app = app;
     return *this;
 }
+
+TextField& TextField::set_typing(bool typing) {
+    Logger::info("Typing {}", typing);
+    m_typing = typing;
+    if (m_typing) {
+        start_typing();
+    } else {
+        stop_typing();
+    }
+
+    return *this;
+}
+
+void TextField::start_typing() {
+    if (m_app) {
+        m_app->start_text_input();
+    }
+    update_show_text();
+}
+void TextField::stop_typing() {
+    if (m_app) {
+        m_app->stop_text_input();
+    }
+    if (m_on_finished) {
+        m_on_finished();
+    }
+}
+
 const std::string& TextField::input_text() const { return m_input_text; }
 
 bool TextField::handle_mouse_move_event(const MouseMoveEvent& e) {
@@ -166,20 +194,12 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.key == MouseKey::LEFT_BUTTON && e.action == KeyAction::PRESS) {
         if (m_inside) {
             m_typing = true;
-            if (m_app) {
-                m_app->start_text_input();
-            }
-            update_show_text();
+            start_typing();
             return false;
         } else {
             if (m_typing) {
                 m_typing = false;
-                if (m_app) {
-                    m_app->stop_text_input();
-                }
-                if (m_on_finished) {
-                    m_on_finished();
-                }
+                stop_typing();
 
                 return false;
             }
@@ -188,6 +208,7 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 bool TextField::handle_text_input_event(const TextInputEvent& e) {
+    Logger::info("Recive Text Input Event");
     if (m_typing) {
         m_input_text.append(e.text);
         update_show_text();

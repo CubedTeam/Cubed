@@ -98,7 +98,12 @@ bool WorldScene::handle_event(const Event& e) {
                        }
                        return false;
                    },
-                   [](const TextInputEvent&) { return false; },
+                   [this](const TextInputEvent& e) {
+                       if (handle_text_input_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
                    [this](const WindowResizeEvent& e) {
                        handle_window_resize_event(e);
                        return false;
@@ -257,12 +262,26 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
         m_show_dev_pannel = !m_show_dev_pannel;
         return true;
     }
+
+    if (e.key == Key::T && e.action == KeyAction::PRESS) {
+        if (m_chatting) {
+            set_chatting(false);
+        } else {
+            set_chatting(true);
+        }
+
+        return true;
+    }
+
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
         }
     } else {
         if (m_hud_ui.handle_event(e)) {
+            return true;
+        }
+        if (m_chatting) {
             return true;
         }
         if (m_camera.handle_event(e)) {
@@ -276,6 +295,14 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
     return false;
 }
 
+bool WorldScene::handle_text_input_event(const TextInputEvent& e) {
+    if (m_paused) {
+        return m_pasue_menu.handle_text_input_event(e);
+    }
+    Logger::info("Hud ui handle text input");
+    return m_hud_ui.handle_text_input_event(e);
+}
+
 Camera& WorldScene::camera() { return m_camera; }
 SceneManager& WorldScene::scene_manager() { return m_scene_manager; }
 ClientWorld& WorldScene::client_world() { return m_client_world; }
@@ -286,11 +313,25 @@ void WorldScene::set_pause(bool pause) {
         return;
     }
     m_paused = pause;
+    set_mouse(pause);
+}
+
+void WorldScene::set_mouse(bool enable) {
     auto& window = m_scene_manager.app().window();
-    window.set_game_running(!m_paused);
-    if (m_paused) {
+    window.set_game_running(!enable);
+    if (enable) {
         m_client_world.reset_key_status();
     }
+}
+
+void WorldScene::set_chatting(bool chatting) {
+    if (m_paused) {
+        return;
+    }
+    m_chatting = chatting;
+    set_mouse(chatting);
+    m_hud_ui.set_chatting(chatting);
+    Logger::info("World Scene Chatting {}", chatting);
 }
 
 void WorldScene::set_error(std::string_view error) {

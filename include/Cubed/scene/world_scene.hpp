@@ -33,6 +33,8 @@ public:
     bool pause() const;
     void set_pause(bool pause);
     void set_error(std::string_view error);
+    void set_mouse(bool pause);
+    void set_chatting(bool chatting);
 
 private:
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
@@ -40,7 +42,7 @@ private:
     bool handle_window_resize_event(const WindowResizeEvent& e) override;
     bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
     bool handle_key_event(const KeyEvent& e) override;
-
+    bool handle_text_input_event(const TextInputEvent&) override;
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;
     Camera m_camera;
@@ -50,6 +52,7 @@ private:
     bool m_paused = false;
     bool m_show_hud = true;
     bool m_show_dev_pannel = true;
+    bool m_chatting = false;
     PauseMenuUIManager m_pasue_menu;
     WorldUIManager m_hud_ui;
     ErrorUI m_error_ui;

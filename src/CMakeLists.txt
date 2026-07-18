@@ -85,4 +85,5 @@ target_sources(${PROJECT_NAME}
         ui/error_ui.cpp
         localization.cpp
         tools/system_locate.cpp
+        ui/chat_box.cpp
 )

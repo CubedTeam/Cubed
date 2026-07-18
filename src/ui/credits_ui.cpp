@@ -48,7 +48,6 @@ void CreditsUI::init() {
         add_text("Author: zhenyan121");
         add_text("Libraries Used", 0.8f);
         add_text("glad");
-        add_text("GLFW");
         add_text("SDL3");
         add_text("SOIL2");
         add_text("GLM");
@@ -63,6 +62,7 @@ void CreditsUI::init() {
         add_text("dr_libs");
         add_text("nlohmann/json");
         add_text("HarfBuzz");
+        add_text("utf8cpp");
         add_text("Music", 0.8f);
         add_text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), CC "
                  "BY 4.0.");
