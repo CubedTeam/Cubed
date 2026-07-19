@@ -17,7 +17,6 @@ public:
     ChatBox& set_text_scale(float scale);
     // Only the width of TextField can be set; the height is calculated
     // dynamically
-    ChatBox& set_width(float width);
     ChatBox& set_show_lines(int lines);
     ChatBox& set_spacing(float spacing);
     ChatBox& clear_input();
@@ -42,8 +41,6 @@ private:
     int m_lines = 10;
     bool m_scale = 1.0f;
     float m_spacing = 0.0f;
-    float m_width = 0.0f;
-    float m_height = 0.0f;
     float m_text_scale = 1.0f;
     std::deque<Line> m_messages;
     std::unique_ptr<TextField> m_text_field;

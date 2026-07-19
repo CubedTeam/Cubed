@@ -18,7 +18,7 @@ void MainMenuUIManager::init() {
 
     auto image = std::make_unique<Image>(nullptr);
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
-    image->set_fill(true);
+    image->set_fill_parent(true);
     image->set_anchor(Anchor::TOP_LEFT);
     image->set_image("texture/ui/background.png", texture_manager);
     auto& renderer = m_scene.scene_manager().app().renderer();

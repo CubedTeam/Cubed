@@ -3,7 +3,12 @@
 #include "Cubed/tools/log.hpp"
 
 namespace Cubed {
-Widget::Widget(Widget* parent) : m_parent(parent) {}
+Widget::Widget(Widget* parent) : m_parent(parent) {
+    if (!m_parent) {
+        // The root node of the window automatically fills the entire window.
+        set_fill_parent(true);
+    }
+}
 void Widget::update(float dt) {
     on_update(dt);
 
@@ -23,7 +28,18 @@ void Widget::render(Renderer& renderer) {
     }
 }
 
-void Widget::on_update(float) {}
+void Widget::on_update(float) {
+    if (m_fill_width) {
+        m_width = m_parent ? m_parent->width() : m_window_width;
+    }
+    if (m_fill_height) {
+        m_height = m_parent ? m_parent->height() : m_window_height;
+    }
+    if (m_fill_parent) {
+        m_width = m_parent ? m_parent->width() : m_window_width;
+        m_height = m_parent ? m_parent->height() : m_window_height;
+    }
+}
 void Widget::on_render(Renderer&) {}
 
 std::vector<std::unique_ptr<Widget>>& Widget::children() { return m_children; }
@@ -111,17 +127,29 @@ Widget& Widget::set_visible(bool visible) {
     return *this;
 }
 
-float Widget::width() const {
-    if (m_parent) {
-        return m_parent->width();
-    }
-    return m_window_width;
+float Widget::width() const { return m_width; }
+float Widget::height() const { return m_height; }
+
+Widget& Widget::set_width(float width) {
+    m_width = width;
+    return *this;
 }
-float Widget::height() const {
-    if (m_parent) {
-        return m_parent->height();
-    }
-    return m_window_height;
+Widget& Widget::set_height(float height) {
+    m_height = height;
+    return *this;
+}
+
+Widget& Widget::set_fill_parent(bool fill) {
+    m_fill_parent = fill;
+    return *this;
+}
+Widget& Widget::set_fill_width(bool fill) {
+    m_fill_width = fill;
+    return *this;
+}
+Widget& Widget::set_fill_height(bool fill) {
+    m_fill_height = fill;
+    return *this;
 }
 
 glm::vec2 Widget::pos() const { return compute_position(); }

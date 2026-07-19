@@ -58,12 +58,7 @@ void TextField::on_render(Renderer& renderer) {
 }
 void TextField::on_update(float dt) {
 
-    if (m_fill_height) {
-        m_height = m_parent ? m_parent->height() : m_window_height;
-    }
-    if (m_fill_width) {
-        m_width = m_parent ? m_parent->width() : m_window_width;
-    }
+    Widget::on_update(dt);
 
     m_cursor_timer += dt;
     if (m_cursor_timer >= CURSOR_INTERVAL) {
@@ -173,15 +168,6 @@ TextField& TextField::set_typing(bool typing, bool finished) {
 TextField& TextField::clear_input() {
     m_input_text.clear();
     update_show_text();
-    return *this;
-}
-
-TextField& TextField::set_fill_width(bool fill) {
-    m_fill_width = fill;
-    return *this;
-}
-TextField& TextField::set_fill_height(bool fill) {
-    m_fill_height = fill;
     return *this;
 }
 

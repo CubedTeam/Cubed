@@ -23,8 +23,8 @@ public:
     float width() const override;
     float height() const override;
 
-    Button& set_width(float width);
-    Button& set_height(float height);
+    Button& set_width(float width) override;
+    Button& set_height(float height) override;
     Button& set_background_image(const std::string& path,
                                  TextureManager& texture_manager);
     Button& set_default_image(TextureManager& texture_manager);
@@ -54,8 +54,6 @@ private:
         "texture/ui/button001.png";
     std::function<void()> m_clicked;
 
-    float m_width = NORMAL_BUTTON_WIDTH;
-    float m_height = NORMAL_BUTTON_HEIGHT;
     float m_scale = DEFAULT_SCALE;
     bool m_auto_scale = false;
     void on_render(Renderer& renderer) override;

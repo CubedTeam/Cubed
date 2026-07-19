@@ -15,6 +15,7 @@ WorldUIManager::~WorldUIManager() {}
 void WorldUIManager::init() {
 
     m_root_widget = std::make_unique<Widget>(nullptr);
+    m_root_widget->set_fill_parent(true);
     auto& renderer = m_scene.scene_manager().app().renderer();
 
     m_root_widget->set_window_size(renderer.window_width(),
@@ -34,7 +35,7 @@ void WorldUIManager::init() {
     auto text_field = std::make_unique<TextField>(&chat_box);
     text_field->set_anchor(Anchor::BOTTOM_LEFT);
     auto rect = std::make_unique<Rect>(text_field.get());
-    rect->set_color(Color::GRAY).set_alpha(0.6f).set_fill(true);
+    rect->set_color(Color::GRAY).set_alpha(0.6f).set_fill_parent(true);
     text_field->set_background(std::move(rect))
         .set_app(&m_scene.scene_manager().app())
         .set_fill_width(true)

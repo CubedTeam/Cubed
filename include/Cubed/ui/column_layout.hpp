@@ -26,8 +26,8 @@ public:
 
 private:
     int m_spacing = 0;
-    float m_content_height = 0;
-    float m_content_width = 0;
+    float m_content_height = 0.0f;
+    float m_content_width = 0.0f;
     ColumnLayoutAnchor m_layout_anchor = ColumnLayoutAnchor::CENTER;
 };
 } // namespace Cubed

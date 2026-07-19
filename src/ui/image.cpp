@@ -6,20 +6,11 @@
 namespace Cubed {
 Image::Image(Widget* parent) : Widget(parent) {}
 
-void Image::on_render(Renderer& renderer) { renderer.render_image(*this); }
-void Image::on_update(float) {
-    if (m_fill) {
-        if (m_fill) {
-            if (!m_parent) {
-                m_width = m_window_width;
-                m_height = m_window_height;
-            } else {
-                m_width = m_parent->width();
-                m_height = m_parent->height();
-            }
-        }
-    }
+void Image::on_render(Renderer& renderer) {
+    renderer.render_image(*this);
+    Widget::on_render(renderer);
 }
+void Image::on_update(float dt) { Widget::on_update(dt); }
 Image& Image::set_image(const std::string& path,
                         TextureManager& texture_manager) {
     m_texture = texture_manager.get_image_texture(path);
@@ -37,6 +28,9 @@ float Image::height() const {
         Logger::error("Image not set image!");
         return 0.0f;
     }
+    if (m_fill_height || m_fill_parent) {
+        return m_height;
+    }
     return m_height * m_scale;
 }
 
@@ -45,21 +39,10 @@ float Image::width() const {
         Logger::error("Image not set image!");
         return 0.0f;
     }
+    if (m_fill_parent || m_fill_width) {
+        return m_width;
+    }
     return m_width * m_scale;
-}
-
-Image& Image::set_height(float height) {
-    m_height = height;
-    return *this;
-}
-Image& Image ::set_width(float width) {
-    m_width = width;
-    return *this;
-}
-
-Image& Image::set_fill(bool fill) {
-    m_fill = fill;
-    return *this;
 }
 
 const Texture* Image::texture() const { return m_texture; }

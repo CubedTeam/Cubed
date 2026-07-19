@@ -18,16 +18,14 @@ public:
     float width() const override;
     float height() const override;
 
-    TextField& set_width(float width);
-    TextField& set_height(float height);
+    TextField& set_width(float width) override;
+    TextField& set_height(float height) override;
     TextField& set_show_text(const std::string& text);
     TextField& set_background(std::unique_ptr<Widget> background);
     TextField& set_auto_scale(bool auto_scale);
     TextField& set_app(App* app);
     TextField& set_typing(bool typing, bool finished);
     TextField& clear_input();
-    TextField& set_fill_width(bool fill);
-    TextField& set_fill_height(bool fill);
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;

@@ -5,13 +5,16 @@
 namespace Cubed {
 Button::Button(Widget* parent) : Widget(parent) {
     m_background = std::make_unique<Image>(this);
-    m_background->set_fill(true);
+    m_background->set_fill_parent(true);
     m_background->set_anchor(Anchor::TOP_LEFT);
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER);
+    m_width = NORMAL_BUTTON_WIDTH;
+    m_height = NORMAL_BUTTON_HEIGHT;
 }
 
 void Button::on_update(float dt) {
+    Widget::on_update(dt);
     if (m_background) {
         m_background->update(dt);
     }
@@ -27,6 +30,7 @@ void Button::on_render(Renderer& renderer) {
     if (m_foreground) {
         m_foreground->render(renderer);
     }
+    Widget::on_render(renderer);
 }
 
 bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
@@ -62,8 +66,20 @@ Button& Button::set_scale(float scale) {
 
 float Button::scale() const { return m_scale; }
 
-float Button::width() const { return m_width * m_scale; }
-float Button::height() const { return m_height * m_scale; }
+float Button::width() const {
+
+    if (m_fill_width || m_fill_parent) {
+        return m_width;
+    }
+    return m_width * m_scale;
+}
+float Button::height() const {
+
+    if (m_fill_width || m_fill_parent) {
+        return m_width;
+    }
+    return m_height * m_scale;
+}
 Button& Button::set_width(float width) {
     m_width = width;
     update_text_scale();

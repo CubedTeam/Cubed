@@ -13,6 +13,8 @@ Slider::Slider(Widget* parent) : Widget(parent) {
 
     m_label = std::make_unique<Label>(this);
     m_label->set_anchor(Anchor::CENTER);
+    m_width = NORMAL_SLIDER_WIDTH;
+    m_height = NORMAL_SLIDER_HEIGHT;
     update_text_scale();
 }
 
@@ -37,7 +39,7 @@ Slider& Slider::set_slider(int* value, const int& min, const int& max) {
 void Slider::init_track() {
     m_track = std::make_unique<Image>(this);
 
-    m_track->set_fill(true);
+    m_track->set_fill_parent(true);
 
     m_track->set_anchor(Anchor::TOP_LEFT);
 }
@@ -54,8 +56,20 @@ void Slider::init_thumb() {
     m_thumb->set_scale(m_scale);
 }
 
-float Slider::width() const { return m_width * m_scale; }
-float Slider::height() const { return m_height * m_scale; }
+float Slider::width() const {
+
+    if (m_fill_width || m_fill_parent) {
+        return m_width;
+    }
+    return m_width * m_scale;
+}
+float Slider::height() const {
+
+    if (m_fill_height || m_fill_parent) {
+        return m_height;
+    }
+    return m_height * m_scale;
+}
 
 Slider& Slider::set_scale(float scale) {
     m_scale = scale;
@@ -160,6 +174,7 @@ void Slider::update_value(float mouse_x) {
 }
 
 void Slider::on_update(float dt) {
+    Widget::on_update(dt);
     if (!m_thumb || !m_track) {
         Logger::error("Please Set value and thumb and track");
         ASSERT(false);
@@ -216,6 +231,7 @@ void Slider::on_render(Renderer& renderer) {
     if (m_label) {
         m_label->render(renderer);
     }
+    Widget::on_render(renderer);
 }
 
 void Slider::update_text_scale() {

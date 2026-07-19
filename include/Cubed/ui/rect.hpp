@@ -16,11 +16,6 @@ public:
     float height() const override;
     float alpha() const;
 
-    Rect& set_width(float width);
-    Rect& set_height(float height);
-
-    Rect& set_fill(bool fill);
-
     Rect& set_scale(float scale);
     Rect& set_color(Color color);
     Rect& set_alpha(float alpha);
@@ -32,10 +27,7 @@ private:
     void on_render(Renderer& renderer) override;
 
     Color m_color = Color::WHITE;
-    float m_width = 0.0f;
-    float m_height = 0.0f;
     float m_scale = 1.0f;
     float m_alpha = 1.0f;
-    bool m_fill = false;
 };
 } // namespace Cubed
