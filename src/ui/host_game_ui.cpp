@@ -6,6 +6,7 @@
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
+#include "Cubed/ui/default_image.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/text_field.hpp"
 namespace Cubed {
@@ -48,7 +49,10 @@ void HostGameUI::init() {
         auto& text_seed = layout.add_child<TextField>();
         text_seed.set_show_text(tr("hostgame.world_seed"));
         text_seed.set_app(&m_scene.scene_manager().app());
-        text_seed.set_default_image(texture_manager);
+        std::unique_ptr<Image> back = std::make_unique<Image>(&text_seed);
+        back->set_fill(true).set_image(DEFAULT_TEXT_FIELD_IMAGE,
+                                       texture_manager);
+        text_seed.set_background(std::move(back));
         text_seed.set_on_finish([this, &text_seed]() {
             unsigned seed = 0;
             auto& text = text_seed.input_text();
@@ -67,7 +71,10 @@ void HostGameUI::init() {
     }
     {
         auto& text_port = layout.add_child<TextField>();
-        text_port.set_default_image(texture_manager);
+        std::unique_ptr<Image> back = std::make_unique<Image>(&text_port);
+        back->set_fill(true).set_image(DEFAULT_TEXT_FIELD_IMAGE,
+                                       texture_manager);
+        text_port.set_background(std::move(back));
         text_port.set_show_text(tr("hostgame.port"));
         text_port.set_app(&m_scene.scene_manager().app());
         text_port.set_on_finish([this, &text_port]() {

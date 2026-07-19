@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Cubed/ui/image.hpp"
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/rect.hpp"
 #include "Cubed/ui/widget.hpp"
@@ -22,13 +21,13 @@ public:
     TextField& set_width(float width);
     TextField& set_height(float height);
     TextField& set_show_text(const std::string& text);
-    TextField& set_background_image(const std::string& path,
-                                    TextureManager& texture_manager);
-    TextField& set_default_image(TextureManager& texture_manager);
+    TextField& set_background(std::unique_ptr<Widget> background);
     TextField& set_auto_scale(bool auto_scale);
     TextField& set_app(App* app);
     TextField& set_typing(bool typing, bool finished);
     TextField& clear_input();
+    TextField& set_fill_width(bool fill);
+    TextField& set_fill_height(bool fill);
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;
@@ -46,11 +45,9 @@ private:
     static constexpr float DEFAULT_SCALE = 3.0f;
     static constexpr float TEXT_SCALE = 0.6f;
     static constexpr float CURSOR_INTERVAL = 0.5f;
-    static constexpr const char* DEFAULT_TEXT_FIELD_IMAGE =
-        "texture/ui/textfield001.png";
 
     App* m_app = nullptr;
-    std::unique_ptr<Image> m_background;
+    std::unique_ptr<Widget> m_background;
     std::unique_ptr<Label> m_foreground;
     std::unique_ptr<Rect> m_cursor;
     float m_cursor_timer = 0.0f;
@@ -62,6 +59,8 @@ private:
     float m_width = NORMAL_TEXTFIELD_WIDTH;
     float m_height = NORMAL_TEXTFIELD_HEIGHT;
     float m_scale = DEFAULT_SCALE;
+    bool m_fill_width = false;
+    bool m_fill_height = false;
 
     std::string m_input_text;
     std::string m_show_text;

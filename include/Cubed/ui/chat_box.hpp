@@ -24,9 +24,8 @@ public:
     std::string& get_input_text();
     float width() const override;
     float height() const override;
-    void set_d_image(TextureManager& m);
+    void set_text_field(std::unique_ptr<TextField> text_field);
     void set_typing(bool typing, bool finished);
-    void set_app(App* app);
     template <typename F> ChatBox& set_on_finish(F&& f) {
         m_text_field->set_on_finish(std::forward<F>(f));
         return *this;

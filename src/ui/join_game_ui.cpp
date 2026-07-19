@@ -5,6 +5,7 @@
 #include "Cubed/scene/join_game_scene.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
+#include "Cubed/ui/default_image.hpp"
 #include "Cubed/ui/text_field.hpp"
 namespace Cubed {
 JoinGameUI::JoinGameUI(JoinGameScene& scene) : m_scene(scene) {}
@@ -45,7 +46,10 @@ void JoinGameUI::init() {
     {
         auto& text_ip = layout.add_child<TextField>();
         text_ip.set_show_text(tr("joingame.server_ip"));
-        text_ip.set_default_image(texture_manager);
+        std::unique_ptr<Image> back = std::make_unique<Image>(&text_ip);
+        back->set_fill(true).set_image(DEFAULT_TEXT_FIELD_IMAGE,
+                                       texture_manager);
+        text_ip.set_background(std::move(back));
         text_ip.set_app(&m_scene.scene_manager().app());
         text_ip.set_on_finish([this, &text_ip]() {
             auto& ip = text_ip.input_text();

@@ -31,14 +31,21 @@ void WorldUIManager::init() {
     m_widgets.try_emplace("crosshair", &crosshair);
 
     auto& chat_box = m_root_widget->add_child<ChatBox>();
+    auto text_field = std::make_unique<TextField>(&chat_box);
+    text_field->set_anchor(Anchor::BOTTOM_LEFT);
+    auto rect = std::make_unique<Rect>(text_field.get());
+    rect->set_color(Color::GRAY).set_alpha(0.6f).set_fill(true);
+    text_field->set_background(std::move(rect))
+        .set_app(&m_scene.scene_manager().app())
+        .set_fill_width(true)
+        .set_visible(false);
+    chat_box.set_text_field(std::move(text_field));
     chat_box.set_spacing(15);
     chat_box.set_anchor(Anchor::BOTTOM_LEFT);
     chat_box.set_offset({0, -10});
     chat_box.set_width(200);
     chat_box.set_scale(2.0f);
     chat_box.set_text_scale(0.6f);
-    chat_box.set_d_image(m_scene.scene_manager().app().texture_manager());
-    chat_box.set_app(&m_scene.scene_manager().app());
     chat_box.set_on_finish([this, &chat_box]() {
         ChatMessage message{m_scene.client_world().get_player().get_name(),
                             std::move(chat_box.get_input_text()), 0};

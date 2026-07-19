@@ -11,11 +11,6 @@ constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 
 namespace Cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
-
-    m_background = std::make_unique<Image>(this);
-    m_background->set_fill(true);
-    m_background->set_anchor(Anchor::TOP_LEFT);
-
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER_LEFT);
     m_foreground->set_offset({10, 0});
@@ -62,6 +57,14 @@ void TextField::on_render(Renderer& renderer) {
     }
 }
 void TextField::on_update(float dt) {
+
+    if (m_fill_height) {
+        m_height = m_parent ? m_parent->height() : m_window_height;
+    }
+    if (m_fill_width) {
+        m_width = m_parent ? m_parent->width() : m_window_width;
+    }
+
     m_cursor_timer += dt;
     if (m_cursor_timer >= CURSOR_INTERVAL) {
         m_cursor_timer = 0.0f;
@@ -105,11 +108,24 @@ void TextField::update_input_area() {
 
 TextField& TextField::set_scale(float scale) {
     m_scale = scale;
+    m_cursor->set_height(std::max(1.0f, height() - DELTA_CUROUR_HEIGHT));
+
     return *this;
 }
 
-float TextField::width() const { return m_width * m_scale; }
-float TextField::height() const { return m_height * m_scale; }
+float TextField::width() const {
+
+    if (m_fill_width) {
+        return m_width;
+    }
+    return m_width * m_scale;
+}
+float TextField::height() const {
+    if (m_fill_height) {
+        return m_height;
+    }
+    return m_height * m_scale;
+}
 
 TextField& TextField::set_width(float width) {
     m_width = width;
@@ -127,14 +143,10 @@ TextField& TextField::set_show_text(const std::string& text) {
     update_show_text();
     return *this;
 }
-TextField& TextField::set_background_image(const std::string& path,
-                                           TextureManager& texture_manager) {
-    m_background->set_image(path, texture_manager);
-    return *this;
-}
 
-TextField& TextField::set_default_image(TextureManager& texture_manager) {
-    return set_background_image(DEFAULT_TEXT_FIELD_IMAGE, texture_manager);
+TextField& TextField::set_background(std::unique_ptr<Widget> background) {
+    m_background = std::move(background);
+    return *this;
 }
 
 TextField& TextField::set_auto_scale(bool auto_scale) {
@@ -161,6 +173,15 @@ TextField& TextField::set_typing(bool typing, bool finished) {
 TextField& TextField::clear_input() {
     m_input_text.clear();
     update_show_text();
+    return *this;
+}
+
+TextField& TextField::set_fill_width(bool fill) {
+    m_fill_width = fill;
+    return *this;
+}
+TextField& TextField::set_fill_height(bool fill) {
+    m_fill_height = fill;
     return *this;
 }
 

@@ -2,11 +2,7 @@
 
 #include "Cubed/tools/text_tools.hpp"
 namespace Cubed {
-ChatBox::ChatBox(Widget* parent) : Widget(parent) {
-
-    m_text_field = std::make_unique<TextField>(this);
-    m_text_field->set_anchor(Anchor::BOTTOM_LEFT);
-}
+ChatBox::ChatBox(Widget* parent) : Widget(parent) {}
 
 void ChatBox::add_message(ChatMessage& message) {
     while (m_messages.size() > MAX_MESSGAES_SUM) {
@@ -27,7 +23,10 @@ void ChatBox::add_message(ChatMessage& message) {
 
 ChatBox& ChatBox::set_scale(float scale) {
     m_scale = scale;
-    m_text_field->set_scale(scale);
+    if (m_text_field) {
+        m_text_field->set_scale(scale);
+    }
+
     return *this;
 }
 ChatBox& ChatBox::set_text_scale(float scale) {
@@ -41,7 +40,6 @@ ChatBox& ChatBox::set_text_scale(float scale) {
 }
 ChatBox& ChatBox::set_width(float width) {
     m_width = width;
-    m_text_field->set_width(width);
     return *this;
 }
 ChatBox& ChatBox::set_show_lines(int lines) {
@@ -63,17 +61,25 @@ float ChatBox::height() const {
     // Height is dynamically calculated, no scaling needed
     return m_height;
 }
-void ChatBox::set_d_image(TextureManager& m) {
-    m_text_field->set_default_image(m);
+
+void ChatBox::set_text_field(std::unique_ptr<TextField> text_field) {
+    m_text_field = std::move(text_field);
 }
 
 void ChatBox::set_typing(bool typing, bool finished) {
-    m_text_field->set_typing(typing, finished);
+    if (m_text_field) {
+        m_text_field->set_typing(typing, finished);
+        m_text_field->set_visible(typing);
+    }
 }
-void ChatBox::set_app(App* app) { m_text_field->set_app(app); }
 
 void ChatBox::layout() {
-    int y = m_text_field->height() + m_spacing;
+    int y;
+    if (m_text_field) {
+        y = m_text_field->height() + m_spacing;
+    } else {
+        y = m_spacing;
+    }
     int line = 0;
     // Shift upward sequentially starting from the latest
     for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) {
@@ -100,7 +106,10 @@ void ChatBox::on_update(float dt) {
 }
 
 void ChatBox::on_render(Renderer& renderer) {
-    m_text_field->render(renderer);
+    if (m_text_field) {
+        m_text_field->render(renderer);
+    }
+
     for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) {
         if (!it->label) {
             continue;
@@ -111,7 +120,7 @@ void ChatBox::on_render(Renderer& renderer) {
     }
 }
 bool ChatBox::handle_text_input_event(const TextInputEvent& e) {
-    if (m_text_field->handle_text_input_event(e)) {
+    if (m_text_field && m_text_field->handle_text_input_event(e)) {
         return true;
     }
     return Widget::handle_text_input_event(e);
