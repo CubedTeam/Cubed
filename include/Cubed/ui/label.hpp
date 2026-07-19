@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/ui/rect.hpp"
 #include "Cubed/ui/text.hpp"
 #include "Cubed/ui/ui_vertex_data.hpp"
 #include "Cubed/ui/widget.hpp"
@@ -17,7 +18,9 @@ public:
 
     Label& set_color(Color color);
     Label& set_scale(float scale);
-
+    Label& enable_background();
+    Label& set_background(Color color, float alpha);
+    Label& set_background_alpha(float alpha);
     const UIVertexData& data() const;
 
     const TextStyle& text_style() const;
@@ -38,6 +41,7 @@ protected:
 private:
     TextStyle m_text;
     UIVertexData m_data;
+    std::unique_ptr<Rect> m_background;
     float m_real_width = 0.0f;
     float m_real_height = 0.0f;
     float m_offset_x = 0.0f;

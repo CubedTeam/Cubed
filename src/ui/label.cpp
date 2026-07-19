@@ -19,9 +19,37 @@ Label& Label::set_scale(float scale) {
     return *this;
 }
 
-void Label::on_update(float dt) { (void)dt; }
+Label& Label::enable_background() {
+    if (m_background) {
+        return *this;
+    }
+    m_background = std::make_unique<Rect>(this);
+    m_background->set_fill(true);
+    m_background->set_anchor(Anchor::TOP_LEFT);
+    return *this;
+}
+Label& Label::set_background(Color color, float alpha) {
+    m_background->set_color(color).set_alpha(alpha);
+    return *this;
+}
+Label& Label::set_background_alpha(float alpha) {
+    m_background->set_alpha(alpha);
+    return *this;
+}
 
-void Label::on_render(Renderer& renderer) { renderer.render_lable(*this); }
+void Label::on_update(float dt) {
+    if (m_background) {
+        m_background->update(dt);
+    }
+}
+
+void Label::on_render(Renderer& renderer) {
+
+    if (m_background) {
+        m_background->render(renderer);
+    }
+    renderer.render_lable(*this);
+}
 
 void Label::update_vertices() {
     auto textmesh = Font::get().vertices(m_text.text);

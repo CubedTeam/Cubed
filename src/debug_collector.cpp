@@ -19,15 +19,34 @@ std::unique_ptr<DebugCollector>& DebugCollector::get_ptr() {
 }
 void DebugCollector::destory() { get_ptr().reset(); }
 void DebugCollector::init(int width, int height) {
-    constexpr float SCALE = 0.6f;
+    constexpr float SCALE = 0.7f;
+    constexpr Color COLOR = Color::GRAY;
+    constexpr float ALPHA = 0.6f;
 
     m_widget.set_window_size(width, height);
     m_widget.set_spacing(15);
     m_widget.set_anchor(Anchor::TOP_LEFT);
     m_widget.set_offset({0, 5});
     m_widget.set_child_anchor(ColumnLayoutAnchor::LEFT);
+
+    auto add_label = [&](std::string_view text, std::string_view key = "") {
+        auto& label = m_widget.add_child<Label>();
+        label.enable_background()
+            .set_background(COLOR, ALPHA)
+            .set_color(Color::WHITE)
+            .set_text(text)
+            .set_scale(SCALE);
+        if (!key.empty()) {
+            auto [_, insert] =
+                m_component.try_emplace(std::string(key), &label);
+            if (!insert) {
+                Logger::error("DebugCollector Key {} already esist", key);
+            }
+        }
+    };
+
     // version_text
-    auto& version_text = m_widget.add_child<Label>();
+
     std::string version{"Version: " CUBED_VERSION};
 
 #ifdef DEBUG_MODE
@@ -36,87 +55,56 @@ void DebugCollector::init(int width, int height) {
     version.append("-release");
 #endif
 
-    version_text.set_color(Color::WHITE).set_text(version).set_scale(SCALE);
+    add_label(version);
 
-    {
-        auto& compiler = m_widget.add_child<Label>();
-        compiler.set_text(Tools::get_compiler_info()).set_scale(SCALE);
-    }
+    add_label(Tools::get_compiler_info());
 
     // fps
-    auto& fps_text = m_widget.add_child<Label>();
-    fps_text.set_text("FPS: 0").set_scale(SCALE);
-    m_component.try_emplace("fps", &fps_text);
+
+    add_label("FPS: 0", "fps");
 
     // player_pos
-    auto& player_pos_text = m_widget.add_child<Label>();
-    player_pos_text.set_text("x: 0.00 y: 0.00 z: 0.00").set_scale(SCALE);
-    m_component.try_emplace("player_pos", &player_pos_text);
+    add_label("x: 0.00 y: 0.00 z: 0.00", "player_pos");
 
     // rendered_chunk
-    auto& rendered_chunk_text = m_widget.add_child<Label>();
-    rendered_chunk_text.set_text("Rendered Chunk: 0").set_scale(SCALE);
-    m_component.try_emplace("rendered_chunk", &rendered_chunk_text);
+    add_label("Rendered Chunk: 0", "rendered_chunk");
 
     // rss
-    auto& rss_text = m_widget.add_child<Label>();
-    rss_text.set_text("RSS: 0mb").set_scale(SCALE);
-    m_component.try_emplace("rss", &rss_text);
+    add_label("RSS: 0mb", "rss");
 
     // os
     std::string os;
-    auto& os_text = m_widget.add_child<Label>();
-    os_text.set_scale(SCALE);
+    std::string os_text;
     if (Tools::get_os_version(os)) {
-        os_text.set_text("OS: " + os);
+        os_text = "OS: " + os;
         Logger::info("OS System: {}", os);
     } else {
-        os_text.set_text("OS: Unknown");
+        os_text = "OS: Unknown";
     }
+    add_label(os_text);
     {
         std::string wm{"WM: "};
         wm.append(Tools::detect_wm());
-        auto& wm_label = m_widget.add_child<Label>();
-        wm_label.set_text(wm).set_scale(SCALE);
+        add_label(wm);
     }
     // cpu
-    auto& cpu_text = m_widget.add_child<Label>();
-    cpu_text.set_text("CPU: " + Tools::get_cpu_info()).set_scale(SCALE);
+    add_label("CPU: " + Tools::get_cpu_info());
 
     // gpu
-    auto& gpu_text = m_widget.add_child<Label>();
-    gpu_text
-        .set_text(std::string{"GPU: "} +
-                  reinterpret_cast<const char*>(glGetString(GL_RENDERER)))
-        .set_scale(SCALE);
-
+    add_label(std::string{"GPU: "} +
+              reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
     // opengl_version
-    auto& opengl_version_text = m_widget.add_child<Label>();
-    opengl_version_text
-        .set_text("OpenGL: " + std::to_string(GLVersion.major) + "." +
-                  std::to_string(GLVersion.minor))
-        .set_scale(SCALE);
-    {
-        auto& video_driver = m_widget.add_child<Label>();
-        video_driver
-            .set_text(
-                std::format("VideoDiver: {}", SDL_GetCurrentVideoDriver()))
-            .set_scale(SCALE);
-    }
+    add_label("OpenGL: " + std::to_string(GLVersion.major) + "." +
+              std::to_string(GLVersion.minor));
+
+    add_label(std::format("VideoDiver: {}", SDL_GetCurrentVideoDriver()));
+
     // speed
-    auto& speed_text = m_widget.add_child<Label>();
-    speed_text.set_text("Speed: 0 m/s").set_scale(SCALE);
-    m_component.try_emplace("speed", &speed_text);
-    {
-        auto& window_size = m_widget.add_child<Label>();
-        window_size.set_text("Window W: {} H: {}").set_scale(SCALE);
-        m_component.try_emplace("window_size", &window_size);
-    }
-    {
-        auto& frame_size = m_widget.add_child<Label>();
-        frame_size.set_text("FrameBuffer W: {} H: {}").set_scale(SCALE);
-        m_component.try_emplace("frame_buffer", &frame_size);
-    }
+    add_label("Speed: 0 m/s", "speed");
+
+    add_label("Window W: {} H: {}", "window_size");
+
+    add_label("FrameBuffer W: {} H: {}", "frame_buffer");
 }
 
 Widget& DebugCollector::get_widget() { return m_widget; }
