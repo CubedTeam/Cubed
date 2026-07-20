@@ -14,8 +14,14 @@ void ChatBox::add_message(ChatMessage& message) {
     auto split_str = split_utf8(str, 20);
     for (auto it = split_str.begin(); it != split_str.end(); ++it) {
         auto lable = std::make_unique<Label>(this);
-        lable->set_text(*it)
-            .set_scale(m_text_scale)
+        lable->set_text(*it).set_scale(m_text_scale);
+        auto background = std::make_unique<Rect>(lable.get());
+        background->set_fill_height(true);
+        background->set_anchor(Anchor::TOP_LEFT);
+        background->set_alpha(0.6f)
+            .set_color(Color::GRAY)
+            .set_width(text_label_width());
+        lable->set_background(std::move(background))
             .set_anchor(Anchor::TOP_LEFT);
         m_messages.emplace_back(std::move(lable), message.time);
     }
@@ -62,7 +68,7 @@ float ChatBox::height() const {
     // Height is dynamically calculated, no scaling needed
     return m_height;
 }
-
+float ChatBox::text_label_width() const { return m_text_width * m_scale; }
 void ChatBox::set_text_field(std::unique_ptr<TextField> text_field) {
     m_text_field = std::move(text_field);
 }
@@ -102,6 +108,9 @@ void ChatBox::layout() {
 }
 void ChatBox::on_update(float dt) {
     Widget::on_update(dt);
+    for (auto& m : m_messages) {
+        m.label->update(dt);
+    }
     layout();
     m_text_field->update(dt);
 }

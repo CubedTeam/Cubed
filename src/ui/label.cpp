@@ -9,7 +9,6 @@ Label& Label::set_text(std::string_view text) {
     update_vertices();
     return *this;
 }
-
 Label& Label::set_color(Color color) {
     m_text.color = color;
     return *this;
@@ -19,24 +18,11 @@ Label& Label::set_scale(float scale) {
     return *this;
 }
 
-Label& Label::enable_background() {
-    if (m_background) {
-        return *this;
-    }
-    m_background = std::make_unique<Rect>(this);
-    m_background->set_fill_parent(true);
-    m_background->set_anchor(Anchor::TOP_LEFT);
+Label& Label::set_background(std::unique_ptr<Widget> background) {
+    m_background = std::move(background);
     return *this;
 }
-Label& Label::set_background(Color color, float alpha) {
-    m_background->set_color(color).set_alpha(alpha);
-    return *this;
-}
-Label& Label::set_background_alpha(float alpha) {
-    m_background->set_alpha(alpha);
-    return *this;
-}
-
+Widget* Label::get_background() { return m_background.get(); }
 void Label::on_update(float dt) {
     Widget::on_update(dt);
     if (m_background) {

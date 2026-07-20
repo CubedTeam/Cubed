@@ -29,6 +29,7 @@ void Widget::render(Renderer& renderer) {
 }
 
 void Widget::on_update(float) {
+
     if (m_fill_width) {
         m_width = m_parent ? m_parent->width() : m_window_width;
     }

@@ -26,6 +26,7 @@ public:
     TextField& set_app(App* app);
     TextField& set_typing(bool typing, bool finished);
     TextField& clear_input();
+
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;
@@ -54,11 +55,8 @@ private:
     bool m_typing = false;
     bool m_auto_scale = false;
     bool m_ctrl_press = false;
-    float m_width = NORMAL_TEXTFIELD_WIDTH;
-    float m_height = NORMAL_TEXTFIELD_HEIGHT;
+
     float m_scale = DEFAULT_SCALE;
-    bool m_fill_width = false;
-    bool m_fill_height = false;
 
     std::string m_input_text;
     std::string m_show_text;

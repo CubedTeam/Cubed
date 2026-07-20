@@ -23,6 +23,7 @@ public:
     std::string& get_input_text();
     float width() const override;
     float height() const override;
+    float text_label_width() const;
     void set_text_field(std::unique_ptr<TextField> text_field);
     void set_typing(bool typing, bool finished);
     template <typename F> ChatBox& set_on_finish(F&& f) {
@@ -42,6 +43,7 @@ private:
     bool m_scale = 1.0f;
     float m_spacing = 0.0f;
     float m_text_scale = 1.0f;
+    float m_text_width = 500.0f;
     std::deque<Line> m_messages;
     std::unique_ptr<TextField> m_text_field;
     void layout();

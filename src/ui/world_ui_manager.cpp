@@ -41,11 +41,12 @@ void WorldUIManager::init() {
         .set_fill_width(true)
         .set_visible(false);
     chat_box.set_text_field(std::move(text_field));
-    chat_box.set_spacing(15);
+    chat_box.set_spacing(0);
     chat_box.set_anchor(Anchor::BOTTOM_LEFT);
     chat_box.set_offset({0, -10});
-    chat_box.set_width(200);
-    chat_box.set_scale(2.0f);
+    // chat_box.set_width(500);
+    chat_box.set_fill_width(true);
+    // chat_box.set_scale(2.0f);
     chat_box.set_text_scale(0.6f);
     chat_box.set_on_finish([this, &chat_box]() {
         ChatMessage message{m_scene.client_world().get_player().get_name(),

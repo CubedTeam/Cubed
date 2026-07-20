@@ -11,6 +11,8 @@ constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 
 namespace Cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
+    m_width = NORMAL_TEXTFIELD_WIDTH;
+    m_height = NORMAL_TEXTFIELD_HEIGHT;
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER_LEFT);
     m_foreground->set_offset({10, 0});
@@ -21,6 +23,7 @@ TextField::TextField(Widget* parent) : Widget(parent) {
     m_cursor->set_anchor(Anchor::CENTER_LEFT);
     m_cursor->set_offset({10, 0});
     m_cursor->set_color(Color::WHITE);
+
     update_text_scale();
 }
 

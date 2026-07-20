@@ -2,6 +2,7 @@
 
 #include "Cubed/tools/system_info.hpp"
 #include "Cubed/tools/system_window_manager.hpp"
+#include "Cubed/ui/rect.hpp"
 #include "version.hpp"
 
 #include <SDL3/SDL_video.h>
@@ -31,11 +32,10 @@ void DebugCollector::init(int width, int height) {
 
     auto add_label = [&](std::string_view text, std::string_view key = "") {
         auto& label = m_widget.add_child<Label>();
-        label.enable_background()
-            .set_background(COLOR, ALPHA)
-            .set_color(Color::WHITE)
-            .set_text(text)
-            .set_scale(SCALE);
+        auto rect = std::make_unique<Rect>(&label);
+        rect->set_color(COLOR).set_alpha(ALPHA).set_fill_parent(true);
+        label.set_background(std::move(rect));
+        label.set_color(Color::WHITE).set_text(text).set_scale(SCALE);
         if (!key.empty()) {
             auto [_, insert] =
                 m_component.try_emplace(std::string(key), &label);
