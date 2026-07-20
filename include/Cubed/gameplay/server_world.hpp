@@ -10,6 +10,7 @@
 #include "Cubed/gameplay/server_player.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
+#include "Cubed/tools/sensitive_filter.hpp"
 #include "Cubed/tools/thread_pool.hpp"
 #include "Cubed/ui/color.hpp"
 #include "world/block_change.pb.h"
@@ -131,6 +132,8 @@ private:
 
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
+    bool m_enable_filter = true;
+    SensitiveFilter m_filter;
 
     std::jthread m_gen_thread;
     std::jthread m_server_thread;

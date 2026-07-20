@@ -88,4 +88,5 @@ target_sources(${PROJECT_NAME}
         ui/chat_box.cpp
         audio/audio_recording.cpp
         audio/audio_stream_source.cpp
+        tools/sensitive_filter.cpp
 )

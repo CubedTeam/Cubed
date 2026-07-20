@@ -7,12 +7,14 @@
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/uuid.hpp"
 
+#include <nlohmann/json.hpp>
 #include <ranges>
 #include <utility>
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace google::protobuf;
-
+namespace fs = std::filesystem;
+using nlohmann::json;
 namespace Cubed {
 ServerWorld::ServerWorld(Config& config) : m_config(config) {}
 
@@ -198,6 +200,18 @@ void ServerWorld::init_world() {
 
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
+
+    m_enable_filter = m_config.get("sensitive_filter", true);
+    try {
+        fs::path path = std::format("{}SensitiveLexicon.json", ASSETS_PATH);
+        std::ifstream s{path};
+        json j = json::parse(s);
+        m_filter.load(j);
+    } catch (const std::exception& e) {
+        Logger::error("Load SensitiveLexicon.json Fail");
+        m_enable_filter = false;
+    }
+
     // m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
     start_thread_pool();
 
@@ -934,9 +948,14 @@ void ServerWorld::boardcast_message(const std::string& name,
 
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);
+    if (m_enable_filter) {
+        msg->set_msg(m_filter.filter(message));
+        msg->set_name(m_filter.filter(name));
+    } else {
+        msg->set_msg(message);
+        msg->set_name(name);
+    }
 
-    msg->set_msg(message);
-    msg->set_name(name);
     msg->set_color(std::to_underlying(color));
     msg->set_system_msg(system_msg);
 
