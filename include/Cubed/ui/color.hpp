@@ -6,7 +6,7 @@
 namespace Cubed {
 
 enum class Color {
-    BLACK,
+    BLACK = 0,
     WHITE,
     RED,
     GREEN,
@@ -20,6 +20,39 @@ enum class Color {
     PINK,
     BROWN
 };
+
+inline constexpr Color color_from_int(int i) {
+    switch (i) {
+    case std::to_underlying(Color::BLACK):
+        return Color::BLACK;
+    case std::to_underlying(Color::WHITE):
+        return Color::WHITE;
+    case std::to_underlying(Color::RED):
+        return Color::RED;
+    case std::to_underlying(Color::GREEN):
+        return Color::GREEN;
+    case std::to_underlying(Color::BLUE):
+        return Color::BLUE;
+    case std::to_underlying(Color::YELLOW):
+        return Color::YELLOW;
+    case std::to_underlying(Color::CYAN):
+        return Color::CYAN;
+    case std::to_underlying(Color::MAGENTA):
+        return Color::MAGENTA;
+    case std::to_underlying(Color::GRAY):
+        return Color::GRAY;
+    case std::to_underlying(Color::ORANGE):
+        return Color::ORANGE;
+    case std::to_underlying(Color::PURPLE):
+        return Color::PURPLE;
+    case std::to_underlying(Color::PINK):
+        return Color::PINK;
+    case std::to_underlying(Color::BROWN):
+        return Color::BROWN;
+    default:
+        return Color::WHITE;
+    }
+}
 
 inline constexpr glm::vec4 color_value(Color color) {
     using glm::vec4;

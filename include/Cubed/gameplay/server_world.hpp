@@ -11,6 +11,7 @@
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
 #include "Cubed/tools/thread_pool.hpp"
+#include "Cubed/ui/color.hpp"
 #include "world/block_change.pb.h"
 
 #include <absl/container/flat_hash_set.h>
@@ -192,6 +193,7 @@ private:
         int threads);
     void send_server_stop();
 
-    void boardcast_message(const std::string& name, const std::string& message);
+    void boardcast_message(const std::string& name, const std::string& message,
+                           Color color = Color::WHITE, bool system_msg = false);
 };
 } // namespace Cubed

@@ -752,7 +752,10 @@ void ClientWorld::request_exit() {
 }
 
 void ClientWorld::receive_chat_message(ChatMsg& msg) {
-    m_message_queue.emplace(msg.name(), msg.msg(), Tools::get_time_ticks());
+    Color color = color_from_int(msg.color());
+
+    m_message_queue.emplace(msg.name(), msg.msg(), color, msg.system_msg(),
+                            Tools::get_time_ticks());
 }
 
 void ClientWorld::receive_voice_message(VoiceMsg& msg) {

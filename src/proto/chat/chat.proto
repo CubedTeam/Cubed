@@ -3,6 +3,8 @@ import "common/vector3.proto";
 message ChatMsg {
     string name = 1;
     string msg = 2;
+    int32 color = 3;
+    bool system_msg = 4;
 }
 
 message VoiceMsg {

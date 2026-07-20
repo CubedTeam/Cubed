@@ -681,19 +681,25 @@ void ServerWorld::handle_player_login(const std::string& name,
     rsp->set_success(true);
     rsp->set_uuid(uuid);
     session->send(make_packet(*rsp), 0);
+
+    boardcast_message("Server", std::format("Player {} Join Game", name),
+                      Color::YELLOW, true);
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {
     std::shared_ptr<Session> exit_session;
     ChunkPosSet old_set;
+    std::string name;
     {
         std::lock_guard lock(m_player_mutex);
         auto it = m_players.find(uuid);
         if (it != m_players.end()) {
-            Logger::info("Player {} Exit the Server", it->second.get_name());
+            name = it->second.get_name();
+            Logger::info("Player {} Exit the Server", name);
             exit_session = it->second.get_session();
             old_set = std::move(it->second.get_chunk_pos_set());
             m_players.erase(it);
+
         } else {
             Logger::error("Player {} isn't in Server", uuid);
             return;
@@ -723,6 +729,9 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
             s->send(make_packet(*rsp), 0);
         }
     }
+
+    boardcast_message("Server", std::format("Player {} Exit Game", name),
+                      Color::YELLOW, true);
 }
 
 glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
@@ -910,7 +919,8 @@ void ServerWorld::send_server_stop() {
 }
 
 void ServerWorld::boardcast_message(const std::string& name,
-                                    const std::string& message) {
+                                    const std::string& message, Color color,
+                                    bool system_msg) {
 
     std::vector<std::shared_ptr<Session>> m_session;
     {
@@ -925,6 +935,8 @@ void ServerWorld::boardcast_message(const std::string& name,
 
     msg->set_msg(message);
     msg->set_name(name);
+    msg->set_color(std::to_underlying(color));
+    msg->set_system_msg(system_msg);
 
     for (auto& s : m_session) {
         s->send(make_packet(*msg));

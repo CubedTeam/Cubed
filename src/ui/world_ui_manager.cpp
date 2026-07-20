@@ -51,7 +51,8 @@ void WorldUIManager::init() {
     chat_box.set_text_scale(0.6f);
     chat_box.set_on_finish([this, &chat_box]() {
         ChatMessage message{m_scene.client_world().get_player().get_name(),
-                            std::move(chat_box.get_input_text()), 0};
+                            std::move(chat_box.get_input_text()), Color::WHITE,
+                            false, 0};
         chat_box.clear_input();
         m_scene.client_world().send_chat_message(message);
     });

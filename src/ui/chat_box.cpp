@@ -12,12 +12,14 @@ void ChatBox::add_message(ChatMessage& message) {
         m_messages.pop_front();
     }
 
-    std::string str = std::format("<{}>{}", message.player, message.text);
+    std::string str = message.system_msg
+                          ? std::format("{}", message.text)
+                          : std::format("<{}>{}", message.player, message.text);
 
     auto split_str = wrap_message(str);
     for (auto it = split_str.begin(); it != split_str.end(); ++it) {
         auto lable = std::make_unique<Label>(this);
-        lable->set_text(*it).set_scale(m_text_scale);
+        lable->set_text(*it).set_scale(m_text_scale).set_color(message.color);
         auto background = std::make_unique<Rect>(lable.get());
         background->set_fill_height(true);
         background->set_anchor(Anchor::TOP_LEFT);
