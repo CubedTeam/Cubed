@@ -48,7 +48,7 @@ public:
     void set_client(std::weak_ptr<NetworkClient> client);
 
     void send_voice(const std::array<int16_t, AudioRecording::FRAME_SAMPLES>&);
-    void receive_voice(std::span<char> opus, const glm::vec3& pos);
+    void receive_voice(std::span<const char> opus, const glm::vec3& pos);
 
     AudioRecording& audio_recording();
 

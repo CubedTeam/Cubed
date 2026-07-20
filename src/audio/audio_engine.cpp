@@ -80,7 +80,7 @@ void AudioEngine::init() {
 
         m_low_pass_filter = std::make_unique<AudioFilter>();
 
-        m_low_pass_filter->set_lowpass(1.0f, 0.15f);
+        m_low_pass_filter->set_lowpass(1.0f, 0.1f);
 
         m_underwater_effect = std::make_unique<AudioEffect>();
         m_underwater_effect->set_reverb(0.8f, 0.3162f, 0.01f);
@@ -102,7 +102,7 @@ void AudioEngine::init() {
     m_bgm->set_buffer_2d(m_sounds.get_buffer("bgm/bgm001.mp3"));
 
     m_fade_map.try_emplace("bgm", m_bgm.get(), 5.0f, 2.0f);
-
+    m_voice_source = std::make_unique<AudioStreamSource>();
     ALCint max_mono = 0;
 
     alcGetIntegerv(device, ALC_MONO_SOURCES, 1, &max_mono);
@@ -113,14 +113,12 @@ void AudioEngine::init() {
     }
 
     Logger::info("Set Source Pool Size {}", static_cast<int>(max_mono));
-    // Reserve a source for BGM
-    m_pool = std::make_shared<SourcePool>(max_mono - 1);
+    // Reserve two sources for BGM and voice
+    m_pool = std::make_shared<SourcePool>(max_mono - 2);
 
     Logger::info("Audio Engine Init Success");
 
     m_init = true;
-
-    m_voice_source = std::make_unique<AudioStreamSource>();
 }
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
@@ -242,9 +240,13 @@ void AudioEngine::underwater_change(bool underwater) {
     }
     if (underwater) {
         m_bgm->set_filter(*m_low_pass_filter);
+        m_voice_source->set_filter(*m_low_pass_filter);
+        m_voice_source->set_effect_slot(*m_underwater_slot);
 
     } else {
         m_bgm->clear_filter();
+        m_voice_source->clear_filter();
+        m_voice_source->clear_effect_slot();
     }
     Logger::info("Under Water Change {}", m_underwater);
 }
@@ -279,7 +281,8 @@ void AudioEngine::send_voice(
         c->send(make_packet(*msg));
     }
 }
-void AudioEngine::receive_voice(std::span<char> opus, const glm::vec3& pos) {
+void AudioEngine::receive_voice(std::span<const char> opus,
+                                const glm::vec3& pos) {
     std::array<int16_t, AudioRecording::FRAME_SAMPLES> pcm;
     int len =
         opus_decode(m_decoder, reinterpret_cast<const uint8_t*>(opus.data()),
@@ -288,6 +291,7 @@ void AudioEngine::receive_voice(std::span<char> opus, const glm::vec3& pos) {
         Logger::error("Opus decode failed: {}", opus_strerror(len));
         return;
     }
+    m_voice_source->set_pos(pos);
     m_voice_source->push_pcm(std::span(pcm.data(), len),
                              AudioRecording::SAMPLE_RATE);
 }

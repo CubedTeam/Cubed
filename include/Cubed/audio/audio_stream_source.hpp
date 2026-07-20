@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Cubed/audio/audio_effect_slot.hpp"
+#include "Cubed/audio/audio_filter.hpp"
+#include "glm/ext/vector_float3.hpp"
+
 #include <al.h>
 #include <cstdint>
 #include <span>
@@ -19,6 +23,15 @@ public:
 
     void stop();
     bool is_playing() const;
+    void reset();
+
+    void set_volume(float volume);
+    void set_pitch(float pitch);
+    void set_pos(glm::vec3 pos);
+    void set_filter(const AudioFilter& filter);
+    void clear_filter();
+    void set_effect_slot(const AudioEffectSlot& slot);
+    void clear_effect_slot();
 
 private:
     ALuint m_source = 0;
