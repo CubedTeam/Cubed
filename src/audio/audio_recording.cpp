@@ -35,6 +35,9 @@ void AudioRecording::init() {
 }
 
 void AudioRecording::start() {
+    if (m_recording) {
+        return;
+    }
     ALCint samples;
 
     alcGetIntegerv(m_capture, ALC_CAPTURE_SAMPLES, 1, &samples);
@@ -46,6 +49,9 @@ void AudioRecording::start() {
 }
 
 void AudioRecording::stop() {
+    if (!m_recording) {
+        return;
+    }
     alcCaptureStop(m_capture);
     m_recording = false;
 }

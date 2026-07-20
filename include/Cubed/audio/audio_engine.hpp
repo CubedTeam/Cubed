@@ -71,6 +71,7 @@ private:
     bool m_underwater = false;
     float m_music_volume = 1.0f;
     float m_sfx_volume = 1.0f;
+    float m_player_voice_volume = 1.0f;
 
     std::unique_ptr<AudioStreamSource> m_voice_source;
     std::unique_ptr<AudioFilter> m_low_pass_filter;

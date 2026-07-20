@@ -94,7 +94,7 @@ void AudioEngine::init() {
     m_recording.init();
     m_music_volume = m_config.get("volume.music", 1.0f);
     m_sfx_volume = m_config.get("volume.SFX", 1.0f);
-
+    m_player_voice_volume = m_config.get("volume.player_voice", 1.0f);
     m_sounds.init();
 
     m_bgm = std::make_unique<AudioSource>(m_music_volume);
@@ -103,6 +103,7 @@ void AudioEngine::init() {
 
     m_fade_map.try_emplace("bgm", m_bgm.get(), 5.0f, 2.0f);
     m_voice_source = std::make_unique<AudioStreamSource>();
+    m_voice_source->set_volume(m_player_voice_volume);
     ALCint max_mono = 0;
 
     alcGetIntegerv(device, ALC_MONO_SOURCES, 1, &max_mono);
@@ -216,8 +217,12 @@ void AudioEngine::update() {
 void AudioEngine::reload_config() {
     m_music_volume = m_config.get("volume.music", 1.0f);
     m_sfx_volume = m_config.get("volume.SFX", 1.0f);
+    m_player_voice_volume = m_config.get("volume.player_voice", 1.0f);
     if (m_bgm) {
         m_bgm->set_target_volume(m_music_volume);
+    }
+    if (m_voice_source) {
+        m_voice_source->set_volume(m_player_voice_volume);
     }
 }
 

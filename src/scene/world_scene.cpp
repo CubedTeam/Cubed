@@ -115,7 +115,7 @@ bool WorldScene::handle_event(const Event& e) {
 }
 void WorldScene::on_enter() {
     auto& param = m_scene_manager.world_scene_param();
-
+    load_config();
     m_error_ui.init();
 
     if (param.host_game) {
@@ -163,11 +163,26 @@ void WorldScene::on_re_enter() {
     m_error_ui.on_re_enter();
     m_pasue_menu.on_re_enter();
     m_client_world.reload_config();
+    load_config();
     auto width = m_scene_manager.app().renderer().window_width();
     auto height = m_scene_manager.app().renderer().window_height();
 
     handle_event(
         WindowResizeEvent{static_cast<int>(width), static_cast<int>(height)});
+}
+
+void WorldScene::load_config() {
+    auto type = m_scene_manager.app().config().get("voice_input", "PTT");
+    if (type == "off") {
+        m_input_type = VoiceInputType::OFF;
+        m_client_world.get_audio().audio_recording().stop();
+    } else if (type == "PTT") {
+        m_input_type = VoiceInputType::PTT;
+        m_client_world.get_audio().audio_recording().stop();
+    } else if (type == "always") {
+        m_input_type = VoiceInputType::ALWAYS;
+        m_client_world.get_audio().audio_recording().start();
+    }
 }
 
 bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
@@ -291,14 +306,16 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
     }
 
     if (e.key == Key::V) {
-        auto& recording = m_client_world.get_audio().audio_recording();
-        if (e.action == KeyAction::PRESS) {
-            recording.start();
-            return true;
-        }
-        if (e.action == KeyAction::RELEASE) {
-            recording.stop();
-            return true;
+        if (m_input_type == VoiceInputType::PTT) {
+            auto& recording = m_client_world.get_audio().audio_recording();
+            if (e.action == KeyAction::PRESS) {
+                recording.start();
+                return true;
+            }
+            if (e.action == KeyAction::RELEASE) {
+                recording.stop();
+                return true;
+            }
         }
     }
 

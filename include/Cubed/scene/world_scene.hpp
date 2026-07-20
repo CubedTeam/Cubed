@@ -9,6 +9,7 @@
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
+enum class VoiceInputType { OFF, PTT, ALWAYS };
 class SceneManager;
 class WorldScene : public Scene {
 public:
@@ -39,12 +40,6 @@ public:
     void handle_chat_message(ChatMessage& message);
 
 private:
-    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
-    bool handle_mouse_button_event(const MouseButtonEvent& e) override;
-    bool handle_window_resize_event(const WindowResizeEvent& e) override;
-    bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
-    bool handle_key_event(const KeyEvent& e) override;
-    bool handle_text_input_event(const TextInputEvent&) override;
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;
     Camera m_camera;
@@ -59,5 +54,13 @@ private:
     WorldUIManager m_hud_ui;
     ErrorUI m_error_ui;
     const Argument& m_argument;
+    VoiceInputType m_input_type;
+    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
+    bool handle_mouse_button_event(const MouseButtonEvent& e) override;
+    bool handle_window_resize_event(const WindowResizeEvent& e) override;
+    bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
+    bool handle_key_event(const KeyEvent& e) override;
+    bool handle_text_input_event(const TextInputEvent&) override;
+    void load_config();
 };
 } // namespace Cubed

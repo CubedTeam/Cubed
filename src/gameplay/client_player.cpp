@@ -653,7 +653,6 @@ void ClientPlayer::init(std::string_view name) {
         glm::ivec3 block = glm::floor(m_player_pos);
         block.y -= 1;
         BlockType id = m_world.get_block_tpye(block);
-        Logger::info("player Block {} Walk Sound", id);
         if (id == 0) {
             return;
         }
@@ -661,7 +660,7 @@ void ClientPlayer::init(std::string_view name) {
         std::string sound = "block/" + name + "/walk.ogg";
         auto& audio = m_world.get_audio();
         audio.play_3d(sound, m_player_pos);
-        Logger::info("Player block {} walk sound", name);
+        Logger::debug("Player block {} walk sound", name);
     });
 }
 

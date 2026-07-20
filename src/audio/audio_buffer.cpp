@@ -13,9 +13,7 @@ float AudioBuffer::duration() const { return m_duration; }
 uint32_t AudioBuffer::channels() const { return m_channels; }
 
 void AudioBuffer::set_data(const AudioData& data) {
-    Logger::info("buffer={} valid={}", m_buffer, (int)alIsBuffer(m_buffer));
 
-    Logger::info("buffer={} isBuffer={}", m_buffer, (int)alIsBuffer(m_buffer));
     ALenum format;
     if (data.channels == 1) {
         format = AL_FORMAT_MONO16;
@@ -24,9 +22,9 @@ void AudioBuffer::set_data(const AudioData& data) {
     }
     m_channels = data.channels;
 
-    Logger::info("channels={} rate={} samples={} bytes={} format={}",
-                 data.channels, data.sample_rate, data.pcm.size(),
-                 data.pcm.size() * sizeof(int16_t), format);
+    Logger::debug("channels={} rate={} samples={} bytes={} format={}",
+                  data.channels, data.sample_rate, data.pcm.size(),
+                  data.pcm.size() * sizeof(int16_t), format);
     alBufferData(m_buffer, format, data.pcm.data(),
                  static_cast<ALsizei>(data.pcm.size() * sizeof(int16_t)),
                  static_cast<ALsizei>(data.sample_rate));
@@ -35,7 +33,7 @@ void AudioBuffer::set_data(const AudioData& data) {
     alGetBufferi(m_buffer, AL_SIZE, &size);
     check_al_error();
 
-    Logger::info("buffer size={}", size);
+    Logger::debug("buffer size={}", size);
     m_duration = static_cast<float>(data.pcm.size()) /
                  (data.channels * data.sample_rate);
 }

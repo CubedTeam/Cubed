@@ -57,6 +57,14 @@ public:
         save_to_file();
     }
 
+    std::string get(std::string_view key, const char* default_value) {
+        return get(key, std::string(default_value));
+    }
+
+    void set(std::string_view key, const char* val) {
+        set(key, std::string(val));
+    }
+
 private:
     toml::table m_tbl;
     bool m_init = false;
