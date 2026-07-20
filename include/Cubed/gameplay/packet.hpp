@@ -62,6 +62,7 @@ enum class PacketEnum : uint16_t {
     S2C_CLEAR_ALL_CHUNKS = 3005,
     UPDATE_TIME = 3006,
     CHAT_MSG = 4001,
+    VOICE_MSG = 4002,
     PING = 9001,
     PONG = 9002
 
@@ -124,6 +125,9 @@ template <> constexpr uint16_t get_packet_id<PlayerWaterSound>() {
 }
 template <> constexpr uint16_t get_packet_id<ChatMsg>() {
     return std::to_underlying(PacketEnum::CHAT_MSG);
+}
+template <> constexpr uint16_t get_packet_id<VoiceMsg>() {
+    return std::to_underlying(PacketEnum::VOICE_MSG);
 }
 
 template <typename T>

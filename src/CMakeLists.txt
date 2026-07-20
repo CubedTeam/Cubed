@@ -86,4 +86,5 @@ target_sources(${PROJECT_NAME}
         localization.cpp
         tools/system_locate.cpp
         ui/chat_box.cpp
+        audio/audio_recording.cpp
 )

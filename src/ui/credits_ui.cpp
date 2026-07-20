@@ -60,6 +60,7 @@ void CreditsUI::init() {
         add_text("protobuf");
         add_text("zstd");
         add_text("OpenAl Soft");
+        add_text("Opus");
         add_text("dr_libs");
         add_text("nlohmann/json");
         add_text("HarfBuzz");

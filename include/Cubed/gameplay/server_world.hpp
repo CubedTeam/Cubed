@@ -81,7 +81,7 @@ public:
     void handle_block_change(const BlockChangeReq& req);
 
     void handle_chat_message(ChatMsg& msg);
-
+    void handle_voice_message(VoiceMsg& msg);
     int chunk_size() const;
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {

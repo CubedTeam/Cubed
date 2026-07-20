@@ -106,7 +106,7 @@ public:
 
     void receive_chat_message(ChatMsg& msg);
     void send_chat_message(ChatMessage& message);
-
+    void receive_voice_message(VoiceMsg& msg);
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -115,6 +115,11 @@ public:
     }
 
 private:
+    struct VoiceMessage {
+        std::string data;
+        glm::vec3 pos;
+    };
+
     std::atomic<bool> m_is_pending_delete_queue_free{false};
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
@@ -153,6 +158,7 @@ private:
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
     tbb::concurrent_queue<PendingSound> m_pending_sound;
     tbb::concurrent_queue<ChatMessage> m_message_queue;
+    tbb::concurrent_queue<VoiceMessage> m_voice_queue;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;

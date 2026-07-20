@@ -141,6 +141,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_chat_message(*msg);
                 }
             } break;
+            case std::to_underlying(PacketEnum::VOICE_MSG): {
+                auto* msg = Arena::Create<VoiceMsg>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_voice_message(*msg);
+                }
+            }
             }
         }
     } catch (const asio::system_error& e) {
@@ -228,5 +234,5 @@ void NetworkClient::set_error(std::string_view error) {
     m_error_string = error;
     m_connect_error = true;
 }
-
+ClientWorld& NetworkClient::world() { return m_world; }
 } // namespace Cubed

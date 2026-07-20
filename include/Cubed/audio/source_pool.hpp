@@ -4,7 +4,7 @@
 namespace Cubed {
 class SourcePool {
 private:
-    std::vector<AudioSource> m_sources;
+    std::vector<std::unique_ptr<AudioSource>> m_sources;
 
 public:
     explicit SourcePool(size_t size);
@@ -15,9 +15,10 @@ public:
     SourcePool& operator=(SourcePool&&) = delete;
 
     void update();
+    [[nodiscard]]
     AudioSource* acquire();
 
-    std::vector<AudioSource>& sources();
+    std::vector<std::unique_ptr<AudioSource>>& sources();
 };
 
 } // namespace Cubed

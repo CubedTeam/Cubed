@@ -105,6 +105,12 @@ asio::awaitable<void> Session::read_loop() {
                     m_server_world.handle_chat_message(*msg);
                 }
             }
+            if (cmd_id == std::to_underlying(PacketEnum::VOICE_MSG)) {
+                auto* msg = Arena::Create<VoiceMsg>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_voice_message(*msg);
+                }
+            }
         }
     } catch (const asio::system_error& e) {
         auto ec = e.code();

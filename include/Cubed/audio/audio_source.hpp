@@ -5,6 +5,7 @@
 
 #include <AL/al.h>
 #include <glm/glm.hpp>
+#include <memory>
 namespace Cubed {
 
 enum class AudioState { INITIAL, PLAYING, PAUSED, STOPPED };
@@ -21,8 +22,9 @@ public:
     void set_pitch(float pitch);
     void play();
     void play_2d(const AudioBuffer& buffer);
+    void play_2d(std::unique_ptr<AudioBuffer> buffer);
     void play_3d(const AudioBuffer& buffer, const glm::vec3& pos);
-
+    void play_3d(std::unique_ptr<AudioBuffer> buffer, const glm::vec3& pos);
     void stop();
     void pause();
     float duration() const;
@@ -42,6 +44,8 @@ public:
     void clear_effect_slot();
 
 private:
+    std::unique_ptr<AudioBuffer> m_buffer;
+
     ALuint m_source = 0;
     float m_target_volume = 1.0f;
     float m_duration = 0.0f;

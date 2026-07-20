@@ -763,6 +763,44 @@ void ServerWorld::handle_chat_message(ChatMsg& msg) {
     });
 }
 
+void ServerWorld::handle_voice_message(VoiceMsg& msg) {
+    Logger::info("Get voice Message");
+    auto pool = m_net_thread_pool.load();
+    std::string uuid = msg.uuid();
+    std::string data = msg.opus_data();
+    auto pos = msg.pos();
+    glm::vec3 p{pos.x(), pos.y(), pos.z()};
+    pool->enqueue([this, uuid = std::move(uuid), data = std::move(data), p]() {
+        std::vector<std::shared_ptr<Session>> session;
+
+        {
+            std::shared_lock lock(m_player_mutex);
+            for (auto& [key, player] : m_players) {
+                if (key == uuid) {
+                    continue;
+                }
+                session.emplace_back(player.get_session());
+            }
+        }
+
+        Arena arena;
+        auto msg = Arena::Create<VoiceMsg>(&arena);
+        msg->set_uuid(uuid);
+
+        msg->set_opus_data(data);
+
+        auto pos = msg->mutable_pos();
+        pos->set_x(p.x);
+        pos->set_y(p.y);
+        pos->set_z(p.z);
+
+        for (auto& s : session) {
+            s->send(make_packet(*msg), 5);
+        }
+        Logger::info("Send voice message sum {}", session.size());
+    });
+}
+
 void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     float x = std::floor(req.pos().x());
     float y = std::floor(req.pos().y());

@@ -754,6 +754,13 @@ void ClientWorld::request_exit() {
 void ClientWorld::receive_chat_message(ChatMsg& msg) {
     m_message_queue.emplace(msg.name(), msg.msg(), Tools::get_time_ticks());
 }
+
+void ClientWorld::receive_voice_message(VoiceMsg& msg) {
+    glm::vec3 pos{msg.pos().x(), msg.pos().y(), msg.pos().z()};
+    Logger::info("Receive Voice From net");
+    m_voice_queue.emplace(msg.opus_data(), pos);
+}
+
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);
@@ -931,6 +938,11 @@ void ClientWorld::update(float delta_time) {
     ChatMessage message;
     while (m_message_queue.try_pop(message)) {
         m_world_scene.handle_chat_message(message);
+    }
+
+    VoiceMessage vm;
+    while (m_voice_queue.try_pop(vm)) {
+        m_audio.receive_voice(vm.data, vm.pos);
     }
 }
 

@@ -141,7 +141,7 @@ void WorldScene::on_enter() {
         m_dev_panel.init();
         m_pasue_menu.init();
         m_hud_ui.init();
-
+        m_scene_manager.app().audio().set_client(m_client);
         m_scene_manager.app().window().set_game_running(true);
     } catch (const std::exception& e) {
         m_error_ui.set_error(e.what());
@@ -286,6 +286,18 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
     if (e.key == Key::ENTER && e.action == KeyAction::PRESS) {
         if (m_chatting) {
             set_chatting(false, true);
+            return true;
+        }
+    }
+
+    if (e.key == Key::V) {
+        auto& recording = m_client_world.get_audio().audio_recording();
+        if (e.action == KeyAction::PRESS) {
+            recording.start();
+            return true;
+        }
+        if (e.action == KeyAction::RELEASE) {
+            recording.stop();
             return true;
         }
     }

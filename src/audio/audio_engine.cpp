@@ -1,13 +1,19 @@
 #include "Cubed/audio/audio_engine.hpp"
 
 #include "Cubed/audio/audio_error.hpp"
+#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/network_client.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <stdexcept>
-
+using namespace google::protobuf;
+namespace {
+constexpr std::size_t OPUS_MAX_PACKET_SIZE = 400;
+}
 namespace Cubed {
-AudioEngine::AudioEngine(Config& config) : m_config(config) {};
+AudioEngine::AudioEngine(Config& config)
+    : m_recording(*this), m_config(config) {};
 
 AudioEngine::~AudioEngine() {
     if (!m_init) {
@@ -21,13 +27,35 @@ AudioEngine::~AudioEngine() {
     m_low_pass_filter.reset();
     m_underwater_effect.reset();
     m_underwater_slot.reset();
-
+    opus_encoder_destroy(m_encoder);
+    opus_decoder_destroy(m_decoder);
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device);
 }
 
 void AudioEngine::init() {
+    {
+        int error;
+        m_encoder = opus_encoder_create(AudioRecording::SAMPLE_RATE,
+                                        1, // Mono
+                                        OPUS_APPLICATION_VOIP, &error);
+
+        if (error != OPUS_OK) {
+            Logger::error("Can't Create Opus Encoder Error {}", error);
+        }
+        opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(24000));
+        opus_encoder_ctl(m_encoder, OPUS_SET_COMPLEXITY(5));
+        opus_encoder_ctl(m_encoder, OPUS_SET_SIGNAL(OPUS_SIGNAL_VOICE));
+    }
+    {
+        int error;
+        m_decoder = opus_decoder_create(AudioRecording::SAMPLE_RATE, 1, &error);
+
+        if (error != OPUS_OK) {
+            Logger::error("Can't Create Opus Encoder Error {}", error);
+        }
+    }
     device = alcOpenDevice(NULL);
     if (!device) {
         throw std::runtime_error("Failed to open OpenAL device.");
@@ -62,7 +90,7 @@ void AudioEngine::init() {
 
     alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
     check_al_error();
-
+    m_recording.init();
     m_music_volume = m_config.get("volume.music", 1.0f);
     m_sfx_volume = m_config.get("volume.SFX", 1.0f);
 
@@ -144,10 +172,10 @@ void AudioEngine::play_2d(const std::string& sound, bool check) {
         return;
     }
     auto* source = m_pool->acquire();
-    source->set_volume(m_sfx_volume);
     if (!source) {
         Logger::error("Source is Full");
     }
+    source->set_volume(m_sfx_volume);
 
     try {
         auto& buffer = m_sounds.get_buffer(sound);
@@ -181,6 +209,7 @@ void AudioEngine::update() {
         fade.update();
     }
     m_pool->update();
+    m_recording.update();
 }
 
 void AudioEngine::reload_config() {
@@ -201,11 +230,11 @@ void AudioEngine::underwater_change(bool underwater) {
     }
     for (auto& source : m_pool->sources()) {
         if (m_underwater) {
-            source.set_filter(*m_low_pass_filter);
-            source.set_effect_slot(*m_underwater_slot);
+            source->set_filter(*m_low_pass_filter);
+            source->set_effect_slot(*m_underwater_slot);
         } else {
-            source.clear_filter();
-            source.clear_effect_slot();
+            source->clear_filter();
+            source->clear_effect_slot();
         }
     }
     if (underwater) {
@@ -218,5 +247,88 @@ void AudioEngine::underwater_change(bool underwater) {
 }
 
 float& AudioEngine::bgm_target_volume() { return m_bgm->target_volume(); }
+
+void AudioEngine::set_client(std::weak_ptr<NetworkClient> client) {
+    m_client = client;
+}
+
+void AudioEngine::send_voice(
+    const std::array<int16_t, AudioRecording::FRAME_SAMPLES>& pcm) {
+    {
+        AudioData data;
+        data.pcm = {pcm.begin(), pcm.end()};
+        data.channels = 1;
+        data.sample_rate = AudioRecording::SAMPLE_RATE;
+        auto* source = m_pool->acquire();
+        source->set_volume(m_sfx_volume);
+        if (!source) {
+            Logger::error("Source is Full");
+            return;
+        }
+        std::unique_ptr<AudioBuffer> buffer =
+            std::make_unique<AudioBuffer>(data);
+
+        if (m_efx_supported && m_underwater) {
+            source->set_filter(*m_low_pass_filter);
+            source->set_effect_slot(*m_underwater_slot);
+        }
+        source->play_2d(std::move(buffer));
+    }
+    /*
+    std::array<uint8_t, OPUS_MAX_PACKET_SIZE> opus;
+    int len = opus_encode(m_encoder, pcm.data(), AudioRecording::FRAME_SAMPLES,
+                          opus.data(), opus.size());
+
+    if (len < 0) {
+        Logger::error("Opus encode failed: {}", opus_strerror(len));
+        return;
+    }
+    Logger::info("opus encode len={}", len);
+    if (auto c = m_client.lock()) {
+        Arena arena;
+        auto msg = Arena::Create<VoiceMsg>(&arena);
+        msg->set_uuid(c->world().get_player().get_uuid());
+        msg->set_opus_data(reinterpret_cast<char*>(opus.data()), len);
+        auto* pos = msg->mutable_pos();
+        auto p = c->world().get_player().get_player_pos();
+        pos->set_x(p.x);
+        pos->set_y(p.y);
+        pos->set_z(p.z);
+        c->send(make_packet(*msg));
+    }
+        */
+}
+void AudioEngine::receive_voice(std::span<char> opus, const glm::vec3& pos) {
+    AudioData data;
+    data.pcm.resize(AudioRecording::FRAME_SAMPLES);
+    data.channels = 1;
+    data.sample_rate = AudioRecording::SAMPLE_RATE;
+    int len = opus_decode(
+        m_decoder, reinterpret_cast<const uint8_t*>(opus.data()), opus.size(),
+        data.pcm.data(), AudioRecording::FRAME_SAMPLES, 0);
+    if (len < 0) {
+        Logger::error("Opus decode failed: {}", opus_strerror(len));
+        return;
+    }
+    Logger::info("decode samples={}", len);
+    Logger::info("Receive Vocie and start play");
+    auto* source = m_pool->acquire();
+    source->set_volume(m_sfx_volume);
+    if (!source) {
+        Logger::error("Source is Full");
+        return;
+    }
+    for (int i = 0; i < 10; ++i)
+        Logger::info("recv {}", data.pcm[i]);
+    std::unique_ptr<AudioBuffer> buffer = std::make_unique<AudioBuffer>(data);
+
+    if (m_efx_supported && m_underwater) {
+        source->set_filter(*m_low_pass_filter);
+        source->set_effect_slot(*m_underwater_slot);
+    }
+    source->play_3d(std::move(buffer), pos);
+}
+
+AudioRecording& AudioEngine::audio_recording() { return m_recording; }
 
 } // namespace Cubed

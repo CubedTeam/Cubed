@@ -91,12 +91,19 @@ void AudioSource::play_2d(const AudioBuffer& buffer) {
     set_buffer_2d(buffer);
     play();
 }
-
+void AudioSource::play_2d(std::unique_ptr<AudioBuffer> buffer) {
+    m_buffer = std::move(buffer);
+    play_2d(*m_buffer);
+}
 void AudioSource::play_3d(const AudioBuffer& buffer, const glm::vec3& pos) {
     set_buffer_3d(buffer, pos);
     play();
 }
-
+void AudioSource::play_3d(std::unique_ptr<AudioBuffer> buffer,
+                          const glm::vec3& pos) {
+    m_buffer = std::move(buffer);
+    play_3d(*m_buffer, pos);
+}
 void AudioSource::stop() { alSourceStop(m_source); }
 void AudioSource::pause() { alSourcePause(m_source); }
 
@@ -163,7 +170,7 @@ void AudioSource::reset() {
 
     clear_filter();
     clear_effect_slot();
-
+    m_buffer.reset();
     m_duration = 0.0f;
     m_target_volume = 1.0f;
     m_using = false;

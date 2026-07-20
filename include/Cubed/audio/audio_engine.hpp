@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Cubed/audio/audio_fade.hpp"
+#include "Cubed/audio/audio_recording.hpp"
 #include "Cubed/audio/audio_source.hpp"
 #include "Cubed/audio/sound_manager.hpp"
 #include "Cubed/audio/source_pool.hpp"
@@ -10,13 +11,15 @@
 #include <AL/alc.h>
 #include <glm/glm.hpp>
 #include <memory>
+#include <opus/opus.h>
 #include <string>
 #include <unordered_map>
 namespace Cubed {
 
-class ClientWorld;
+class NetworkClient;
 
 class AudioEngine {
+
 public:
     AudioEngine(Config& config);
     AudioEngine(const AudioEngine&) = delete;
@@ -41,11 +44,22 @@ public:
 
     float& bgm_target_volume();
 
+    void set_client(std::weak_ptr<NetworkClient> client);
+
+    void send_voice(const std::array<int16_t, AudioRecording::FRAME_SAMPLES>&);
+    void receive_voice(std::span<char> opus, const glm::vec3& pos);
+
+    AudioRecording& audio_recording();
+
 private:
     using FadeMap = std::unordered_map<std::string, AudioFade>;
     bool m_init{false};
     ALCdevice* device{nullptr};
     ALCcontext* context{nullptr};
+    OpusEncoder* m_encoder{nullptr};
+    OpusDecoder* m_decoder{nullptr};
+    AudioRecording m_recording;
+    std::weak_ptr<NetworkClient> m_client;
     glm::vec3 listener_pos;
     std::unique_ptr<AudioSource> m_bgm;
     FadeMap m_fade_map;
