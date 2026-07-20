@@ -100,6 +100,7 @@ public:
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
     AudioEngine& get_audio();
+    const AudioEngine& get_audio() const;
     Config& get_config();
     WorldScene& world_scene();
     void set_direct_exit();

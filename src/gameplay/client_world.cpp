@@ -726,6 +726,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 }
 
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
+const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
 WorldScene& ClientWorld::world_scene() { return m_world_scene; }
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }

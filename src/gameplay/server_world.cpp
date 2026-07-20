@@ -773,7 +773,6 @@ void ServerWorld::handle_chat_message(ChatMsg& msg) {
 }
 
 void ServerWorld::handle_voice_message(VoiceMsg& msg) {
-    Logger::info("Get voice Message");
     auto pool = m_net_thread_pool.load();
     std::string uuid = msg.uuid();
     std::string data = msg.opus_data();
@@ -806,7 +805,6 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
         for (auto& s : session) {
             s->send(make_packet(*msg), 5);
         }
-        Logger::info("Send voice message sum {}", session.size());
     });
 }
 

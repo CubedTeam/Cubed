@@ -39,6 +39,8 @@ public:
     // Not thread safe
     void handle_chat_message(ChatMessage& message);
 
+    bool is_recording() const;
+
 private:
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;

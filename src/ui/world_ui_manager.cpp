@@ -20,13 +20,11 @@ void WorldUIManager::init() {
 
     m_root_widget->set_window_size(renderer.window_width(),
                                    renderer.window_height());
-
+    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     auto& crosshair = m_root_widget->add_child<Image>();
 
-    crosshair.set_image("texture/ui/0.png",
-                        m_scene.scene_manager().app().texture_manager());
-    crosshair.set_window_size(renderer.window_width(),
-                              renderer.window_height());
+    crosshair.set_image("texture/ui/0.png", texture_manager);
+
     crosshair.set_anchor(Anchor::CENTER);
     crosshair.set_scale(3.0f);
     m_widgets.try_emplace("crosshair", &crosshair);
@@ -57,6 +55,12 @@ void WorldUIManager::init() {
         m_scene.client_world().send_chat_message(message);
     });
     m_chat_box = &chat_box;
+    auto& microphone = m_root_widget->add_child<Image>();
+    microphone.set_image("texture/ui/microphone.png", texture_manager)
+        .set_scale(5.0f)
+        .set_anchor(Anchor::BOTTOM_RIGHT)
+        .set_visible(false);
+    m_mircophone = &microphone;
 }
 void WorldUIManager::render(Renderer& renderer) {
     renderer.begin_render_ui();
@@ -66,6 +70,15 @@ void WorldUIManager::render(Renderer& renderer) {
     m_root_widget->render(renderer);
 
     renderer.end_render_ui();
+}
+
+void WorldUIManager::update(float dt) {
+    UIManager::update(dt);
+    if (m_scene.is_recording()) {
+        m_mircophone->set_visible(true);
+    } else {
+        m_mircophone->set_visible(false);
+    }
 }
 
 void WorldUIManager::set_chatting(bool chantting, bool send) {

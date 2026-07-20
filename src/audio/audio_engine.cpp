@@ -302,5 +302,7 @@ void AudioEngine::receive_voice(std::span<const char> opus,
 }
 
 AudioRecording& AudioEngine::audio_recording() { return m_recording; }
-
+const AudioRecording& AudioEngine::audio_recording() const {
+    return m_recording;
+}
 } // namespace Cubed

@@ -394,7 +394,9 @@ void WorldScene::set_chatting(bool chatting, bool send) {
 void WorldScene::handle_chat_message(ChatMessage& message) {
     m_hud_ui.add_chat_message(message);
 }
-
+bool WorldScene::is_recording() const {
+    return m_client_world.get_audio().audio_recording().is_recording();
+}
 void WorldScene::set_error(std::string_view error) {
     Logger::error("WorldScene Error Set {}", error);
     m_error_ui.set_error(error);

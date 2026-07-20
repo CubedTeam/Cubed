@@ -51,6 +51,7 @@ public:
     void receive_voice(std::span<const char> opus, const glm::vec3& pos);
 
     AudioRecording& audio_recording();
+    const AudioRecording& audio_recording() const;
 
 private:
     using FadeMap = std::unordered_map<std::string, AudioFade>;
