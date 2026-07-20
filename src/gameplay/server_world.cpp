@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/uuid.hpp"
 
 #include <ranges>
@@ -785,6 +786,9 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
             std::shared_lock lock(m_player_mutex);
             for (auto& [key, player] : m_players) {
                 if (key == uuid) {
+                    continue;
+                }
+                if (Math::distance2(p, player.get_pos()) > 48.0f * 48.0f) {
                     continue;
                 }
                 session.emplace_back(player.get_session());
