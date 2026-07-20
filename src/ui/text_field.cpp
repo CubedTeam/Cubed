@@ -173,7 +173,7 @@ TextField& TextField::clear_input() {
     update_show_text();
     return *this;
 }
-
+bool TextField::is_typing() const { return m_typing; }
 void TextField::start_typing() {
     if (m_app) {
         m_app->start_text_input();

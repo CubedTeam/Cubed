@@ -1,6 +1,7 @@
 #include "Cubed/ui/chat_box.hpp"
 
 #include "Cubed/tools/text_tools.hpp"
+#include "Cubed/tools/time_tools.hpp"
 namespace Cubed {
 ChatBox::ChatBox(Widget* parent) : Widget(parent) {}
 
@@ -101,15 +102,29 @@ void ChatBox::layout() {
         it->label->set_anchor(Anchor::BOTTOM_LEFT);
         // -y means upward offset
         it->label->set_offset({0, -y});
-        it->render = true;
         y += it->label->height() + m_spacing;
     }
     m_height = m_lines == 0 ? 0 : (y - m_spacing);
 }
 void ChatBox::on_update(float dt) {
     Widget::on_update(dt);
+    auto tick = Tools::get_time_ticks();
     for (auto& m : m_messages) {
         m.label->update(dt);
+        if (!m.render) {
+            continue;
+        }
+
+        if (tick < m.time) {
+            Logger::error("Tick {} Less Than Line Time {}", tick, m.time);
+            continue;
+        }
+        auto elapsed = tick - m.time;
+
+        if (elapsed >= DISAPPEAR_TIME * 1000) {
+
+            m.render = false;
+        }
     }
     layout();
     m_text_field->update(dt);
@@ -124,7 +139,7 @@ void ChatBox::on_render(Renderer& renderer) {
         if (!it->label) {
             continue;
         }
-        if (it->render) {
+        if (m_text_field->is_typing() || it->render) {
             it->label->render(renderer);
         }
     }

@@ -26,7 +26,7 @@ public:
     TextField& set_app(App* app);
     TextField& set_typing(bool typing, bool finished);
     TextField& clear_input();
-
+    bool is_typing() const;
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_text_input_event(const TextInputEvent& e) override;

@@ -33,11 +33,11 @@ public:
 
 private:
     static constexpr int MAX_MESSGAES_SUM = 50;
-
+    static constexpr float DISAPPEAR_TIME = 5.0f;
     struct Line {
         std::unique_ptr<Label> label;
         uint64_t time;
-        bool render = false;
+        bool render = true;
     };
     int m_lines = 10;
     bool m_scale = 1.0f;

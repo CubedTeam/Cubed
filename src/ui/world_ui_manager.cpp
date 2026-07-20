@@ -39,7 +39,8 @@ void WorldUIManager::init() {
     text_field->set_background(std::move(rect))
         .set_app(&m_scene.scene_manager().app())
         .set_fill_width(true)
-        .set_visible(false);
+        .set_visible(false)
+        .set_height(15.0f);
     chat_box.set_text_field(std::move(text_field));
     chat_box.set_spacing(0);
     chat_box.set_anchor(Anchor::BOTTOM_LEFT);
