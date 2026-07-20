@@ -823,13 +823,13 @@ std::string App::get_clipboard_text() {
 }
 
 void App::start_text_input() {
-    Logger::info("Start Text Input");
+    Logger::debug("Start Text Input");
     if (!SDL_StartTextInput(m_window.get_window())) {
         Logger::error("Start Text Input Fail: {}", SDL_GetError());
     }
 }
 void App::stop_text_input() {
-    Logger::info("Stop Text Input");
+    Logger::debug("Stop Text Input");
     SDL_StopTextInput(m_window.get_window());
 }
 
