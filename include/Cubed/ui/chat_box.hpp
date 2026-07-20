@@ -51,5 +51,6 @@ private:
     void on_render(Renderer& renderer) override;
     bool handle_text_input_event(const TextInputEvent& e) override;
     bool handle_key_event(const KeyEvent& e) override;
+    std::vector<std::string> wrap_message(const std::string& text) const;
 };
 } // namespace Cubed

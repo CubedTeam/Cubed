@@ -1,7 +1,9 @@
 #include "Cubed/ui/chat_box.hpp"
 
-#include "Cubed/tools/text_tools.hpp"
+#include "Cubed/tools/font.hpp"
 #include "Cubed/tools/time_tools.hpp"
+
+#include <utf8cpp/utf8.h>
 namespace Cubed {
 ChatBox::ChatBox(Widget* parent) : Widget(parent) {}
 
@@ -12,7 +14,7 @@ void ChatBox::add_message(ChatMessage& message) {
 
     std::string str = std::format("<{}>{}", message.player, message.text);
 
-    auto split_str = split_utf8(str, 20);
+    auto split_str = wrap_message(str);
     for (auto it = split_str.begin(); it != split_str.end(); ++it) {
         auto lable = std::make_unique<Label>(this);
         lable->set_text(*it).set_scale(m_text_scale);
@@ -158,5 +160,39 @@ bool ChatBox::handle_key_event(const KeyEvent& e) {
     }
     return Widget::handle_key_event(e);
 }
+std::vector<std::string> ChatBox::wrap_message(const std::string& text) const {
+    std::vector<std::string> lines;
 
+    std::string line;
+    size_t last_space = std::string::npos;
+
+    auto it = text.begin();
+    while (it != text.end()) {
+        auto begin = it;
+        utf8::next(it, text.end());
+
+        line.append(begin, it);
+
+        if (*begin == ' ')
+            last_space = line.size() - 1;
+
+        if (Font::text_width(line) * m_text_scale > text_label_width()) {
+            if (last_space != std::string::npos) {
+                lines.emplace_back(line.substr(0, last_space));
+                line.erase(0, last_space + 1);
+                last_space = std::string::npos;
+            } else {
+
+                line.erase(line.size() - (it - begin));
+                lines.emplace_back(line);
+                line.assign(begin, it);
+            }
+        }
+    }
+
+    if (!line.empty())
+        lines.emplace_back(std::move(line));
+
+    return lines;
+}
 } // namespace Cubed
