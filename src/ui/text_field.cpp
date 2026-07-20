@@ -220,7 +220,7 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 bool TextField::handle_text_input_event(const TextInputEvent& e) {
-    Logger::info("Recive Text Input Event");
+
     if (m_typing) {
         m_input_text.append(e.text);
         update_show_text();

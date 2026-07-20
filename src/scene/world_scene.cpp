@@ -355,7 +355,7 @@ bool WorldScene::handle_text_input_event(const TextInputEvent& e) {
     if (m_paused) {
         return m_pasue_menu.handle_text_input_event(e);
     }
-    Logger::info("Hud ui handle text input");
+
     return m_hud_ui.handle_text_input_event(e);
 }
 
