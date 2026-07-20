@@ -70,9 +70,7 @@ void WorldScene::render(Renderer& renderer) {
     }
 }
 bool WorldScene::handle_event(const Event& e) {
-    if (m_error_ui.has_error()) {
-        return m_error_ui.handle_event(e);
-    }
+
     return std::visit(
         Overloaded{[this](const MouseMoveEvent& e) {
                        if (handle_mouse_move_event(e)) {
@@ -186,6 +184,9 @@ void WorldScene::load_config() {
 }
 
 bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
     if (m_chatting) {
         return true;
     }
@@ -209,6 +210,9 @@ bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
     return false;
 }
 bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
     if (m_chatting) {
         return true;
     }
@@ -232,23 +236,23 @@ bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
 }
 bool WorldScene::handle_window_resize_event(const WindowResizeEvent& e) {
 
-    if (m_pasue_menu.handle_event(e)) {
-        return true;
-    }
-    if (m_hud_ui.handle_event(e)) {
-        return true;
-    }
-    if (m_camera.handle_event(e)) {
-        return true;
-    }
+    m_error_ui.handle_event(e);
+
+    m_pasue_menu.handle_event(e);
+
+    m_hud_ui.handle_event(e);
+
+    m_camera.handle_event(e);
+
     // world event needs to be processed last
-    if (m_client_world.handle_event(e)) {
-        return true;
-    }
+    m_client_world.handle_event(e);
 
     return false;
 }
 bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
     if (m_chatting) {
         return true;
     }
@@ -271,6 +275,9 @@ bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
     return false;
 }
 bool WorldScene::handle_key_event(const KeyEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
 
     if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
         if (m_chatting && !m_paused) {
@@ -342,6 +349,9 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
 }
 
 bool WorldScene::handle_text_input_event(const TextInputEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
     if (m_paused) {
         return m_pasue_menu.handle_text_input_event(e);
     }
