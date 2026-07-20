@@ -23,10 +23,11 @@ AudioEngine::~AudioEngine() {
     m_bgm.reset();
     m_pool.reset();
     m_sounds.clear();
-
+    m_voice_source.reset();
     m_low_pass_filter.reset();
     m_underwater_effect.reset();
     m_underwater_slot.reset();
+
     opus_encoder_destroy(m_encoder);
     opus_decoder_destroy(m_decoder);
     alcMakeContextCurrent(nullptr);
@@ -118,6 +119,8 @@ void AudioEngine::init() {
     Logger::info("Audio Engine Init Success");
 
     m_init = true;
+
+    m_voice_source = std::make_unique<AudioStreamSource>();
 }
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
@@ -254,27 +257,7 @@ void AudioEngine::set_client(std::weak_ptr<NetworkClient> client) {
 
 void AudioEngine::send_voice(
     const std::array<int16_t, AudioRecording::FRAME_SAMPLES>& pcm) {
-    {
-        AudioData data;
-        data.pcm = {pcm.begin(), pcm.end()};
-        data.channels = 1;
-        data.sample_rate = AudioRecording::SAMPLE_RATE;
-        auto* source = m_pool->acquire();
-        source->set_volume(m_sfx_volume);
-        if (!source) {
-            Logger::error("Source is Full");
-            return;
-        }
-        std::unique_ptr<AudioBuffer> buffer =
-            std::make_unique<AudioBuffer>(data);
 
-        if (m_efx_supported && m_underwater) {
-            source->set_filter(*m_low_pass_filter);
-            source->set_effect_slot(*m_underwater_slot);
-        }
-        source->play_2d(std::move(buffer));
-    }
-    /*
     std::array<uint8_t, OPUS_MAX_PACKET_SIZE> opus;
     int len = opus_encode(m_encoder, pcm.data(), AudioRecording::FRAME_SAMPLES,
                           opus.data(), opus.size());
@@ -283,7 +266,6 @@ void AudioEngine::send_voice(
         Logger::error("Opus encode failed: {}", opus_strerror(len));
         return;
     }
-    Logger::info("opus encode len={}", len);
     if (auto c = m_client.lock()) {
         Arena arena;
         auto msg = Arena::Create<VoiceMsg>(&arena);
@@ -296,37 +278,18 @@ void AudioEngine::send_voice(
         pos->set_z(p.z);
         c->send(make_packet(*msg));
     }
-        */
 }
 void AudioEngine::receive_voice(std::span<char> opus, const glm::vec3& pos) {
-    AudioData data;
-    data.pcm.resize(AudioRecording::FRAME_SAMPLES);
-    data.channels = 1;
-    data.sample_rate = AudioRecording::SAMPLE_RATE;
-    int len = opus_decode(
-        m_decoder, reinterpret_cast<const uint8_t*>(opus.data()), opus.size(),
-        data.pcm.data(), AudioRecording::FRAME_SAMPLES, 0);
+    std::array<int16_t, AudioRecording::FRAME_SAMPLES> pcm;
+    int len =
+        opus_decode(m_decoder, reinterpret_cast<const uint8_t*>(opus.data()),
+                    opus.size(), pcm.data(), AudioRecording::FRAME_SAMPLES, 0);
     if (len < 0) {
         Logger::error("Opus decode failed: {}", opus_strerror(len));
         return;
     }
-    Logger::info("decode samples={}", len);
-    Logger::info("Receive Vocie and start play");
-    auto* source = m_pool->acquire();
-    source->set_volume(m_sfx_volume);
-    if (!source) {
-        Logger::error("Source is Full");
-        return;
-    }
-    for (int i = 0; i < 10; ++i)
-        Logger::info("recv {}", data.pcm[i]);
-    std::unique_ptr<AudioBuffer> buffer = std::make_unique<AudioBuffer>(data);
-
-    if (m_efx_supported && m_underwater) {
-        source->set_filter(*m_low_pass_filter);
-        source->set_effect_slot(*m_underwater_slot);
-    }
-    source->play_3d(std::move(buffer), pos);
+    m_voice_source->push_pcm(std::span(pcm.data(), len),
+                             AudioRecording::SAMPLE_RATE);
 }
 
 AudioRecording& AudioEngine::audio_recording() { return m_recording; }

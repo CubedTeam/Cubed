@@ -3,6 +3,7 @@
 #include "Cubed/audio/audio_fade.hpp"
 #include "Cubed/audio/audio_recording.hpp"
 #include "Cubed/audio/audio_source.hpp"
+#include "Cubed/audio/audio_stream_source.hpp"
 #include "Cubed/audio/sound_manager.hpp"
 #include "Cubed/audio/source_pool.hpp"
 #include "Cubed/config.hpp"
@@ -70,6 +71,8 @@ private:
     bool m_underwater = false;
     float m_music_volume = 1.0f;
     float m_sfx_volume = 1.0f;
+
+    std::unique_ptr<AudioStreamSource> m_voice_source;
     std::unique_ptr<AudioFilter> m_low_pass_filter;
     std::unique_ptr<AudioEffect> m_underwater_effect;
     std::unique_ptr<AudioEffectSlot> m_underwater_slot;

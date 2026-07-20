@@ -60,9 +60,6 @@ void AudioRecording::update() {
     while (available >= FRAME_SAMPLES) {
         std::array<int16_t, FRAME_SAMPLES> pcm;
         alcCaptureSamples(m_capture, pcm.data(), FRAME_SAMPLES);
-        for (int i = 0; i < 20; i++) {
-            Logger::info("pcm[{}]={}", i, pcm[i]);
-        }
         send_voice(pcm);
         available -= FRAME_SAMPLES;
     }
