@@ -134,7 +134,6 @@ target_link_libraries(${PROJECT_NAME}
         glad
         OpenGL::GL
         Freetype::Freetype
-        tomlplusplus::tomlplusplus
         imgui
         dr_libs
         tbb
