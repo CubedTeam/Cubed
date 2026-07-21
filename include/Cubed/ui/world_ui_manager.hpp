@@ -2,6 +2,7 @@
 
 #include "Cubed/ui/chat_box.hpp"
 #include "Cubed/ui/image.hpp"
+#include "Cubed/ui/item_slot.hpp"
 #include "Cubed/ui/row_layout.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 #include "Cubed/ui/widget.hpp"
@@ -35,7 +36,6 @@ private:
     Label* m_disbable_voice = nullptr;
     RowLayout* m_hotbar = nullptr;
 
-    std::vector<Image*> m_hotbar_items;
-    std::vector<Image*> m_hotbar_slot;
+    std::vector<ItemSlot*> m_hotbar_slot;
 };
 } // namespace Cubed

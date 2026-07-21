@@ -34,13 +34,10 @@ void WorldUIManager::init() {
         hotbar.set_anchor(Anchor::BOTTOM_CENTER);
         m_hotbar = &hotbar;
         for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
-            auto& bg = hotbar.add_child<Image>();
-            bg.set_image("texture/ui/slot.png", texture_manager, true);
-            bg.set_scale(5.0f);
-            auto& item = bg.add_child<Image>();
-            item.set_fill_parent(true).set_anchor(Anchor::CENTER);
-            m_hotbar_items.emplace_back(&item);
-            m_hotbar_slot.emplace_back(&bg);
+            auto& slot = hotbar.add_child<ItemSlot>();
+            slot.set_default_background(texture_manager);
+            slot.set_scale(5.0f);
+            m_hotbar_slot.emplace_back(&slot);
         }
         update_hotbar();
     }
@@ -144,9 +141,9 @@ void WorldUIManager::update_hotbar() {
             m_hotbar_slot[i]->set_border_visale(false);
         }
         if (type == 0) {
-            m_hotbar_items[i]->set_texture(nullptr, false);
+            m_hotbar_slot[i]->set_item(0, nullptr);
         } else {
-            m_hotbar_items[i]->set_texture(item_texture[type].get(), false);
+            m_hotbar_slot[i]->set_item(type, item_texture[type].get());
         }
     }
 }
