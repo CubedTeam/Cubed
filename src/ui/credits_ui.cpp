@@ -50,7 +50,6 @@ void CreditsUI::init() {
         add_text("Libraries Used", 0.8f);
         add_text("GLAD – MIT / Apache-2.0");
         add_text("SDL3 – zlib");
-        add_text("SOIL2 – MIT-0");
         add_text("GLM – MIT");
         add_text("FreeType – FTL / GPL-2.0+");
         add_text("toml++ – MIT");
@@ -65,6 +64,7 @@ void CreditsUI::init() {
         add_text("nlohmann/json – MIT");
         add_text("HarfBuzz – Old-MIT / GPL-2.0+");
         add_text("utf8cpp – BSL-1.0");
+        add_text("stb - public domain / MIT licensed");
         add_text("Music", 0.8f);
         add_text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), CC "
                  "BY 4.0.");

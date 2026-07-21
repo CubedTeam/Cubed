@@ -2,12 +2,10 @@
 
 #include "Cubed/tools/log.hpp"
 
-#define STB_VORBIS_IMPLEMENTATION
-#include "stb/stb_vorbis.h"
-
 #include <dr_flac.h>
 #include <dr_mp3.h>
 #include <dr_wav.h>
+#include <stb_vorbis.h>
 
 namespace fs = std::filesystem;
 namespace Cubed {

@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <stb_image.h>
 #include <unordered_set>
 
 namespace Cubed {
@@ -171,7 +172,7 @@ void delete_image_data(unsigned char* data) {
     if (data == nullptr) {
         return;
     }
-    SOIL_free_image_data(data);
+    stbi_image_free(data);
 }
 
 ImageData load_image_data(const std::string& tex_image_path, bool check_exist) {
@@ -181,9 +182,8 @@ ImageData load_image_data(const std::string& tex_image_path, bool check_exist) {
     }
     unsigned char* data = nullptr;
     int width, height, channels;
-    data =
-        SOIL_load_image(path.string().c_str(), &width, &height, &channels,
-                        SOIL_LOAD_RGBA); // Materials are all RGBA; must force
+    data = stbi_load(path.string().c_str(), &width, &height, &channels,
+                     STBI_rgb_alpha); // Materials are all RGBA; must force
     // RGBA, otherwise sampling will fail.
     if (check_exist) {
         if (!data) {
