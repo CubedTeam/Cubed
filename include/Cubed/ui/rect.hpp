@@ -21,6 +21,7 @@ public:
     Rect& set_alpha(float alpha);
 
     Color color() const;
+    virtual bool supports_border() const override;
 
 private:
     void on_update(float dt) override;

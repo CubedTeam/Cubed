@@ -83,6 +83,8 @@ public:
     void set_underwater(bool u);
     void place_block(float dt);
 
+    int selected_hotbar() const;
+
     std::span<const ItemStack, HOTBAR_SUM> get_hotbar() const;
 
 private:
@@ -112,7 +114,7 @@ private:
 
     float m_xz_speed = 0.0f;
 
-    int m_current_hotbar = 0;
+    int m_selected_hotbar = 0;
 
     bool m_moving = false;
     bool m_sprinting = false;

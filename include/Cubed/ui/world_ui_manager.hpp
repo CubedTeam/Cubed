@@ -36,5 +36,6 @@ private:
     RowLayout* m_hotbar = nullptr;
 
     std::vector<Image*> m_hotbar_items;
+    std::vector<Image*> m_hotbar_slot;
 };
 } // namespace Cubed

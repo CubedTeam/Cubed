@@ -13,8 +13,8 @@ Slider::Slider(Widget* parent) : Widget(parent) {
 
     m_label = std::make_unique<Label>(this);
     m_label->set_anchor(Anchor::CENTER);
-    m_width = NORMAL_SLIDER_WIDTH;
-    m_height = NORMAL_SLIDER_HEIGHT;
+    set_width(NORMAL_SLIDER_WIDTH);
+    set_height(NORMAL_SLIDER_HEIGHT);
     update_text_scale();
 }
 
@@ -59,16 +59,16 @@ void Slider::init_thumb() {
 float Slider::width() const {
 
     if (m_fill_width || m_fill_parent) {
-        return m_width;
+        return Widget::width();
     }
-    return m_width * m_scale;
+    return Widget::width() * m_scale;
 }
 float Slider::height() const {
 
     if (m_fill_height || m_fill_parent) {
-        return m_height;
+        return Widget::height();
     }
-    return m_height * m_scale;
+    return Widget::height() * m_scale;
 }
 
 Slider& Slider::set_scale(float scale) {
@@ -86,13 +86,13 @@ Slider& Slider::set_width(float width) {
         ASSERT(false);
         return *this;
     }
-    m_width = width;
+    Widget::set_width(width);
     update_text_scale();
     return *this;
 }
 
 Slider& Slider::set_height(float h) {
-    m_height = h;
+    Widget::set_height(h);
     ASSERT_MSG(m_thumb, "Thumb is nullptr !");
     m_thumb->set_height(height());
     m_thumb->set_width(height() / 2.0f);

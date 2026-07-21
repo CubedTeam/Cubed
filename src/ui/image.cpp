@@ -20,8 +20,8 @@ Image& Image::set_image(const std::string& path,
     }
     m_texture = texture_manager.get_image_texture(path);
     if (change_size) {
-        m_width = m_texture->width();
-        m_height = m_texture->height();
+        set_width(m_texture->width());
+        set_height(m_texture->height());
     }
     return *this;
 }
@@ -33,11 +33,11 @@ Image& Image::set_texture(const Texture* texture, bool change_size) {
     m_texture = texture;
     if (change_size) {
         if (m_texture) {
-            m_width = m_texture->width();
-            m_height = m_texture->height();
+            set_width(m_texture->width());
+            set_height(m_texture->height());
         } else {
-            m_width = 0;
-            m_height = 0;
+            set_height(0.0f);
+            set_width(0.0f);
         }
     }
 
@@ -55,9 +55,9 @@ float Image::height() const {
         return 0.0f;
     }
     if (m_fill_height || m_fill_parent) {
-        return m_height;
+        return Widget::height();
     }
-    return m_height * m_scale;
+    return Widget::height() * m_scale;
 }
 
 float Image::width() const {
@@ -66,9 +66,9 @@ float Image::width() const {
         return 0.0f;
     }
     if (m_fill_parent || m_fill_width) {
-        return m_width;
+        return Widget::width();
     }
-    return m_width * m_scale;
+    return Widget::height() * m_scale;
 }
 
 const Texture* Image::texture() const { return m_texture; }

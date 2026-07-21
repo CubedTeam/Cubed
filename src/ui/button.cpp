@@ -9,8 +9,8 @@ Button::Button(Widget* parent) : Widget(parent) {
     m_background->set_anchor(Anchor::TOP_LEFT);
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER);
-    m_width = NORMAL_BUTTON_WIDTH;
-    m_height = NORMAL_BUTTON_HEIGHT;
+    set_width(NORMAL_BUTTON_WIDTH);
+    set_height(NORMAL_BUTTON_HEIGHT);
 }
 
 void Button::on_update(float dt) {
@@ -39,10 +39,12 @@ bool Button::handle_mouse_move_event(const MouseMoveEvent& e) {
         if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&
             e.ypos <= p.y + height()) {
             m_hovered = true;
+            set_border_visale(true);
             return true;
         }
     }
     m_hovered = false;
+    set_border_visale(false);
 
     return Widget::handle_mouse_move_event(e);
 }
@@ -69,24 +71,24 @@ float Button::scale() const { return m_scale; }
 float Button::width() const {
 
     if (m_fill_width || m_fill_parent) {
-        return m_width;
+        return Widget::width();
     }
-    return m_width * m_scale;
+    return Widget::width() * m_scale;
 }
 float Button::height() const {
 
     if (m_fill_width || m_fill_parent) {
-        return m_width;
+        return Widget::height();
     }
-    return m_height * m_scale;
+    return Widget::height() * m_scale;
 }
 Button& Button::set_width(float width) {
-    m_width = width;
+    Widget::set_width(width);
     update_text_scale();
     return *this;
 }
 Button& Button::set_height(float height) {
-    m_height = height;
+    Widget::set_height(height);
     update_text_scale();
     return *this;
 }

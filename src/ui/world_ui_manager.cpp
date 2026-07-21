@@ -29,7 +29,21 @@ void WorldUIManager::init() {
     crosshair.set_anchor(Anchor::CENTER);
     crosshair.set_scale(3.0f);
     m_widgets.try_emplace("crosshair", &crosshair);
-
+    {
+        auto& hotbar = m_root_widget->add_child<RowLayout>();
+        hotbar.set_anchor(Anchor::BOTTOM_CENTER);
+        m_hotbar = &hotbar;
+        for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
+            auto& bg = hotbar.add_child<Image>();
+            bg.set_image("texture/ui/slot.png", texture_manager, true);
+            bg.set_scale(5.0f);
+            auto& item = bg.add_child<Image>();
+            item.set_fill_parent(true).set_anchor(Anchor::CENTER);
+            m_hotbar_items.emplace_back(&item);
+            m_hotbar_slot.emplace_back(&bg);
+        }
+        update_hotbar();
+    }
     auto& chat_box = m_root_widget->add_child<ChatBox>();
     auto text_field = std::make_unique<TextField>(&chat_box);
     text_field->set_anchor(Anchor::BOTTOM_LEFT);
@@ -70,21 +84,6 @@ void WorldUIManager::init() {
         .set_offset({0, -5});
     disbale_voice.set_anchor(Anchor::BOTTOM_RIGHT).set_visible(false);
     m_disbable_voice = &disbale_voice;
-
-    {
-        auto& hotbar = m_root_widget->add_child<RowLayout>();
-        hotbar.set_anchor(Anchor::BOTTOM_CENTER);
-        m_hotbar = &hotbar;
-        for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
-            auto& bg = hotbar.add_child<Image>();
-            bg.set_image("texture/ui/slot.png", texture_manager, true);
-            bg.set_scale(5.0f);
-            auto& item = bg.add_child<Image>();
-            item.set_fill_parent(true).set_anchor(Anchor::CENTER);
-            m_hotbar_items.emplace_back(&item);
-        }
-        update_hotbar();
-    }
 }
 void WorldUIManager::render(Renderer& renderer) {
     renderer.begin_render_ui();
@@ -134,9 +133,16 @@ void WorldUIManager::update_hotbar() {
     }
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     auto& item_texture = texture_manager.get_item_textures();
-    auto hotbar = m_scene.client_world().get_player().get_hotbar();
+    auto& player = m_scene.client_world().get_player();
+    auto hotbar = player.get_hotbar();
+    size_t selected = player.selected_hotbar();
     for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
         auto type = hotbar[i].type;
+        if (selected == i) {
+            m_hotbar_slot[i]->set_border_visale(true);
+        } else {
+            m_hotbar_slot[i]->set_border_visale(false);
+        }
         if (type == 0) {
             m_hotbar_items[i]->set_texture(nullptr, false);
         } else {

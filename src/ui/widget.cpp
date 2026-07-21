@@ -1,6 +1,7 @@
 #include "Cubed/ui/widget.hpp"
 
 #include "Cubed/tools/log.hpp"
+#include "Cubed/ui/rect.hpp"
 
 namespace Cubed {
 Widget::Widget(Widget* parent) : m_parent(parent) {
@@ -26,19 +27,26 @@ void Widget::render(Renderer& renderer) {
     for (auto& child : m_children) {
         child->render(renderer);
     }
+    if (m_show_border) {
+        for (auto& w : m_border) {
+            if (w) {
+                w->render(renderer);
+            }
+        }
+    }
 }
 
 void Widget::on_update(float) {
 
     if (m_fill_width) {
-        m_width = m_parent ? m_parent->width() : m_window_width;
+        set_width(m_parent ? m_parent->width() : m_window_width);
     }
     if (m_fill_height) {
-        m_height = m_parent ? m_parent->height() : m_window_height;
+        set_height(m_parent ? m_parent->height() : m_window_height);
     }
     if (m_fill_parent) {
-        m_width = m_parent ? m_parent->width() : m_window_width;
-        m_height = m_parent ? m_parent->height() : m_window_height;
+        set_width(m_parent ? m_parent->width() : m_window_width);
+        set_height(m_parent ? m_parent->height() : m_window_height);
     }
 }
 void Widget::on_render(Renderer&) {}
@@ -109,6 +117,32 @@ glm::vec2 Widget::compute_position() const {
     return pos;
 }
 
+void Widget::set_width_internal(float width) { m_width = width; }
+void Widget::set_height_internal(float height) { m_height = height; }
+
+void Widget::update_border() {
+    auto w = width();
+    auto h = height();
+    for (int i = 0; i < 4; ++i) {
+        if (!m_border[i]) {
+            auto rect = std::make_unique<Rect>(this);
+            rect->set_anchor(Anchor::TOP_LEFT);
+            rect->set_color(Color::WHITE);
+            m_border[i] = std::move(rect);
+        }
+    }
+
+    m_border[0]->set_width(w).set_height(m_border_size);
+    m_border[1]
+        ->set_width(w)
+        .set_height(m_border_size)
+        .set_offset({0, h - m_border_size});
+    m_border[2]->set_height(h).set_width(m_border_size);
+    m_border[3]
+        ->set_height(h)
+        .set_width(m_border_size)
+        .set_offset({w - m_border_size, 0});
+}
 Widget& Widget::set_anchor(Anchor anchor) {
     m_anchor = anchor;
     return *this;
@@ -132,11 +166,19 @@ float Widget::width() const { return m_width; }
 float Widget::height() const { return m_height; }
 
 Widget& Widget::set_width(float width) {
-    m_width = width;
+    set_width_internal(width);
+    if (supports_border()) {
+        update_border();
+    }
+
     return *this;
 }
 Widget& Widget::set_height(float height) {
-    m_height = height;
+    set_height_internal(height);
+    if (supports_border()) {
+        update_border();
+    }
+
     return *this;
 }
 
@@ -153,6 +195,23 @@ Widget& Widget::set_fill_height(bool fill) {
     return *this;
 }
 
+Widget& Widget::set_border_size(int size) {
+    if (size < 0) {
+        return *this;
+    }
+    if (m_border_size == size) {
+        return *this;
+    }
+    m_border_size = size;
+    update_border();
+    return *this;
+}
+Widget& Widget::set_border_visale(bool visable) {
+    m_show_border = visable;
+
+    return *this;
+}
+bool Widget::supports_border() const { return true; }
 glm::vec2 Widget::pos() const { return compute_position(); }
 
 bool Widget::handle_key_event(const KeyEvent& e) {

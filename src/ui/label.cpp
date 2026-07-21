@@ -45,9 +45,10 @@ void Label::update_vertices() {
 
     m_offset_x = textmesh.min_x;
     m_offset_y = textmesh.min_y;
-    m_width = m_real_width = textmesh.width;
-    m_height = m_real_height = textmesh.height;
-
+    m_real_width = textmesh.width;
+    m_real_height = textmesh.height;
+    set_width(m_real_width);
+    set_height(m_real_height);
     m_data.update_sum();
     m_data.upload();
 }
@@ -57,17 +58,17 @@ const TextStyle& Label::text_style() const { return m_text; }
 float Label::width() const {
 
     if (m_fill_width || m_fill_parent) {
-        return m_width;
+        return Widget::width();
     }
 
-    return m_width * m_scale;
+    return Widget::width() * m_scale;
 }
 float Label::height() const {
 
     if (m_fill_height || m_fill_parent) {
-        return m_height;
+        return Widget::height();
     }
-    return m_height * m_scale;
+    return Widget::height() * m_scale;
 }
 float Label::real_width() const { return m_real_width; }
 float Label::real_height() const { return m_real_height; }

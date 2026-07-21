@@ -11,8 +11,8 @@ constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 
 namespace Cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
-    m_width = NORMAL_TEXTFIELD_WIDTH;
-    m_height = NORMAL_TEXTFIELD_HEIGHT;
+    Widget::set_width(NORMAL_TEXTFIELD_WIDTH);
+    Widget::set_height(NORMAL_TEXTFIELD_HEIGHT);
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER_LEFT);
     m_foreground->set_offset({10, 0});
@@ -114,24 +114,24 @@ TextField& TextField::set_scale(float scale) {
 float TextField::width() const {
 
     if (m_fill_width) {
-        return m_width;
+        return Widget::width();
     }
-    return m_width * m_scale;
+    return Widget::width() * m_scale;
 }
 float TextField::height() const {
     if (m_fill_height) {
-        return m_height;
+        return Widget::height();
     }
-    return m_height * m_scale;
+    return Widget::height() * m_scale;
 }
 
 TextField& TextField::set_width(float width) {
-    m_width = width;
+    Widget::set_width(width);
     update_text_scale();
     return *this;
 }
 TextField& TextField::set_height(float h) {
-    m_height = h;
+    Widget::set_height(h);
     update_text_scale();
     m_cursor->set_height(std::max(1.0f, height() - DELTA_CUROUR_HEIGHT));
     return *this;
