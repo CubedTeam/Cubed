@@ -21,7 +21,7 @@ void SensitiveFilter::load(const nlohmann::json& j) {
     build();
 }
 std::string SensitiveFilter::filter(std::string_view str) {
-    if (!utf8::is_valid(str)) {
+    if (!utf8::is_valid(str.begin(), str.end())) {
         return {};
     }
     int state = 0;

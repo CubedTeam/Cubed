@@ -770,7 +770,6 @@ void ClientWorld::receive_voice_message(VoiceMsg& msg) {
         return;
     }
     glm::vec3 pos{msg.pos().x(), msg.pos().y(), msg.pos().z()};
-    Logger::info("Receive Voice From net");
     m_voice_queue.emplace(msg.opus_data(), pos);
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }

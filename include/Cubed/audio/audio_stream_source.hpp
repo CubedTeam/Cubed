@@ -5,9 +5,11 @@
 #include "glm/ext/vector_float3.hpp"
 
 #include <al.h>
+#include <array>
 #include <cstdint>
 #include <span>
 #include <vector>
+
 namespace Cubed {
 class AudioStreamSource {
 public:
