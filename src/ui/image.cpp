@@ -46,6 +46,7 @@ Image& Image::set_texture(const Texture* texture, bool change_size) {
 
 Image& Image::set_scale(float scale) {
     m_scale = scale;
+    update_border();
     return *this;
 }
 float Image::scale() const { return m_scale; }
@@ -68,7 +69,7 @@ float Image::width() const {
     if (m_fill_parent || m_fill_width) {
         return Widget::width();
     }
-    return Widget::height() * m_scale;
+    return Widget::width() * m_scale;
 }
 
 const Texture* Image::texture() const { return m_texture; }

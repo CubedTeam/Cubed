@@ -37,7 +37,7 @@ ChatBox& ChatBox::set_scale(float scale) {
     if (m_text_field) {
         m_text_field->set_scale(scale);
     }
-
+    update_border();
     return *this;
 }
 ChatBox& ChatBox::set_text_scale(float scale) {

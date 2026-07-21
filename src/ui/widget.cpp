@@ -121,6 +121,9 @@ void Widget::set_width_internal(float width) { m_width = width; }
 void Widget::set_height_internal(float height) { m_height = height; }
 
 void Widget::update_border() {
+    if (!supports_border()) {
+        return;
+    }
     auto w = width();
     auto h = height();
     for (int i = 0; i < 4; ++i) {

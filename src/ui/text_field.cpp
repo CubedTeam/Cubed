@@ -107,7 +107,7 @@ void TextField::update_input_area() {
 TextField& TextField::set_scale(float scale) {
     m_scale = scale;
     m_cursor->set_height(std::max(1.0f, height() - DELTA_CUROUR_HEIGHT));
-
+    update_border();
     return *this;
 }
 

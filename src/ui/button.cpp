@@ -63,6 +63,7 @@ bool Button::handle_mouse_button_event(const MouseButtonEvent& e) {
 Button& Button::set_scale(float scale) {
     m_scale = scale;
     update_text_scale();
+    update_border();
     return *this;
 }
 

@@ -15,6 +15,7 @@ Label& Label::set_color(Color color) {
 }
 Label& Label::set_scale(float scale) {
     m_scale = scale;
+    update_border();
     return *this;
 }
 
