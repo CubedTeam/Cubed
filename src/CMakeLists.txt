@@ -91,4 +91,5 @@ target_sources(${PROJECT_NAME}
         tools/sensitive_filter.cpp
         ui/row_layout.cpp
         ui/item_slot.cpp
+        ui/inventory_ui.cpp
 )

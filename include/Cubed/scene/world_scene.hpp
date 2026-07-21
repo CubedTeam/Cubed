@@ -6,6 +6,7 @@
 #include "Cubed/gameplay/network_server.hpp"
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/error_ui.hpp"
+#include "Cubed/ui/inventory_ui.hpp"
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
@@ -42,6 +43,7 @@ public:
     bool is_recording() const;
 
 private:
+    enum class PauseUI { PAUSE_MENU, INVENTORY };
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;
     Camera m_camera;
@@ -53,6 +55,8 @@ private:
     bool m_show_dev_pannel = true;
     bool m_chatting = false;
     PauseMenuUIManager m_pasue_menu;
+    InventoryUI m_inventory_ui;
+    PauseUI m_paused_ui = PauseUI::PAUSE_MENU;
     WorldUIManager m_hud_ui;
     ErrorUI m_error_ui;
     const Argument& m_argument;
