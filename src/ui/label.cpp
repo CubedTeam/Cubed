@@ -21,6 +21,7 @@ Label& Label::set_scale(float scale) {
 
 Label& Label::set_background(std::unique_ptr<Widget> background) {
     m_background = std::move(background);
+    m_background->set_offset({-3, -3});
     return *this;
 }
 Widget* Label::get_background() { return m_background.get(); }
@@ -59,17 +60,17 @@ const TextStyle& Label::text_style() const { return m_text; }
 float Label::width() const {
 
     if (m_fill_width || m_fill_parent) {
-        return Widget::width();
+        return Widget::width() + 6.0f;
     }
 
-    return Widget::width() * m_scale;
+    return Widget::width() * m_scale + 6.0f;
 }
 float Label::height() const {
 
     if (m_fill_height || m_fill_parent) {
-        return Widget::height();
+        return Widget::height() + 6.0f;
     }
-    return Widget::height() * m_scale;
+    return Widget::height() * m_scale + 6.0f;
 }
 float Label::real_width() const { return m_real_width; }
 float Label::real_height() const { return m_real_height; }
