@@ -7,7 +7,7 @@
 #include "Cubed/tools/shader_tools.hpp"
 
 namespace {
-constexpr int BLOCK_SIZE = 16;
+constexpr int BLOCK_SIZE = 512;
 constexpr int BLOCK_NORMAL_SIZE = 128;
 constexpr int CROSS_PLANE_SIZE = 16;
 constexpr int BLOCK_ITEM_SIZE = 16;

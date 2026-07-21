@@ -71,7 +71,7 @@ void DevPanel::render() {
         show_settings_tab_item();
         show_world_tab_item();
         show_player_tab_item();
-        show_items_tab_item();
+        // show_items_tab_item();
         show_shader_tab_item();
 
         ImGui::EndTabBar();
@@ -525,7 +525,7 @@ void DevPanel::show_player_tab_item() {
         ImGui::EndTabItem();
     }
 }
-
+/*
 void DevPanel::show_items_tab_item() {
     auto& textures = m_app.texture_manager().item_textures();
     // auto& names = MapTable::item_map();
@@ -562,7 +562,7 @@ void DevPanel::show_items_tab_item() {
         }
         ImGui::EndTabItem();
     }
-}
+}*/
 
 void DevPanel::show_shader_tab_item() {
 
