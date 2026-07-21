@@ -12,13 +12,7 @@ find_package(SDL3 REQUIRED)
 find_package(Opus REQUIRED)
 
 # Third-party libraries
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.3 
-    
-)
-FetchContent_MakeAvailable(glm)
+
 FetchContent_Declare(
     soil2
     GIT_REPOSITORY https://github.com/SpartanJ/SOIL2.git
