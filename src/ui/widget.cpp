@@ -109,8 +109,16 @@ glm::vec2 Widget::compute_position() const {
     case Anchor::BOTTOM_RIGHT:
         pos = {parent_w - W, parent_h - H};
         break;
+    case Anchor::FOLLOW_MOUSE:
+        pos = m_mouse_pos;
+        if (pos.x + W > m_window_width) {
+            pos.x -= W;
+        }
+        if (pos.y + H > m_window_height) {
+            pos.y -= H;
+        }
     }
-    if (m_parent) {
+    if (m_parent && m_anchor != Anchor::FOLLOW_MOUSE) {
         pos += m_parent->pos();
     }
     pos += m_offset;
@@ -154,10 +162,10 @@ Widget& Widget::set_offset(glm::ivec2 offset) {
     m_offset = offset;
     return *this;
 }
-Widget& Widget::set_window_size(int width, int height) {
+void Widget::set_window_size(int width, int height) {
     m_window_height = height;
     m_window_width = width;
-    return *this;
+    return;
 }
 
 Widget& Widget::set_visible(bool visible) {
@@ -269,8 +277,6 @@ bool Widget::handle_mouse_wheel_event(const MouseWheelEvent& e) {
 }
 bool Widget::handle_window_resize_event(const WindowResizeEvent& e) {
 
-    set_window_size(e.width, e.height);
-
     if (m_order == TraversalOrder::BACK_TO_FRONT) {
         for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
             if ((*it)->handle_window_resize_event(e)) {
@@ -288,6 +294,8 @@ bool Widget::handle_window_resize_event(const WindowResizeEvent& e) {
 }
 
 bool Widget::handle_mouse_move_event(const MouseMoveEvent& e) {
+    m_mouse_pos.x = e.xpos;
+    m_mouse_pos.y = e.ypos;
     if (m_order == TraversalOrder::BACK_TO_FRONT) {
         for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
             if ((*it)->handle_mouse_move_event(e)) {

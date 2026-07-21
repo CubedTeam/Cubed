@@ -8,6 +8,10 @@ ItemSlot::ItemSlot(Widget* parent) : Widget(parent) {
     m_foreground->set_texture(nullptr, false).set_fill_parent(true);
     Widget::set_width(DEFAULT_WIDTH);
     Widget::set_height(DEFAULT_HEIGHT);
+    m_label = std::make_unique<Label>(this);
+    m_label->set_scale(0.6f);
+    m_label->set_anchor(Anchor::FOLLOW_MOUSE);
+    m_label->set_visible(false);
 }
 
 ItemSlot& ItemSlot::set_default_background(TextureManager& texture_manager) {
@@ -22,6 +26,7 @@ ItemSlot& ItemSlot::set_scale(float scale) {
 ItemSlot& ItemSlot::set_item(BlockType id, const Texture* texture) {
     m_foreground->set_texture(texture, false);
     m_block_type = id;
+    m_label->set_text(BlockManager::name_form_id(id));
     return *this;
 }
 float ItemSlot::width() const {
@@ -45,6 +50,9 @@ void ItemSlot::on_render(Renderer& renderer) {
     if (m_foreground) {
         m_foreground->render(renderer);
     }
+    if (m_label) {
+        m_label->render(renderer);
+    }
 }
 void ItemSlot::on_update(float dt) {
 
@@ -54,7 +62,44 @@ void ItemSlot::on_update(float dt) {
     if (m_foreground) {
         m_foreground->update(dt);
     }
+    if (m_label) {
+        m_label->update(dt);
+    }
     Widget::on_update(dt);
+}
+
+bool ItemSlot::handle_mouse_move_event(const MouseMoveEvent& e) {
+    auto p = pos();
+    if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&
+        e.ypos <= p.y + height()) {
+        m_hovered = true;
+        m_label->set_visible(true);
+    } else {
+        m_hovered = false;
+        m_label->set_visible(false);
+    }
+
+    if (m_label && m_label->handle_mouse_move_event(e)) {
+        return true;
+    }
+    if (m_foreground && m_foreground->handle_mouse_move_event(e)) {
+        return true;
+    }
+    if (m_background && m_background->handle_mouse_move_event(e)) {
+        return true;
+    }
+
+    return Widget::handle_mouse_move_event(e);
+}
+bool ItemSlot::handle_window_resize_event(const WindowResizeEvent& e) {
+    if (m_label && m_label->handle_window_resize_event(e)) {
+    }
+    if (m_foreground && m_foreground->handle_window_resize_event(e)) {
+    }
+    if (m_background && m_background->handle_window_resize_event(e)) {
+    }
+
+    return Widget::handle_window_resize_event(e);
 }
 
 } // namespace Cubed

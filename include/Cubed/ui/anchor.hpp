@@ -12,4 +12,7 @@ enum class Anchor {
     BOTTOM_LEFT,
     BOTTOM_CENTER,
     BOTTOM_RIGHT,
+
+    FOLLOW_MOUSE
+
 };

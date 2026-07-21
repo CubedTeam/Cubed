@@ -2,7 +2,6 @@
 
 #include "Cubed/app.hpp"
 #include "Cubed/localization.hpp"
-#include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/ui/button.hpp"
@@ -21,13 +20,10 @@ void MainMenuUIManager::init() {
     image->set_fill_parent(true);
     image->set_anchor(Anchor::TOP_LEFT);
     image->set_image("texture/ui/background.png", texture_manager, false);
-    auto& renderer = m_scene.scene_manager().app().renderer();
-    image->set_window_size(renderer.window_width(), renderer.window_height());
 
     auto& layout = image->add_child<ColumnLayout>();
     layout.set_spacing(20);
     layout.set_anchor(Anchor::CENTER);
-    layout.set_window_size(renderer.window_width(), renderer.window_height());
     {
         auto& start_game_button = layout.add_child<Button>();
 

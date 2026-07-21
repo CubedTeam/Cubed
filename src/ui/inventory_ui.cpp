@@ -11,10 +11,8 @@ InventoryUI::InventoryUI(WorldScene& scene) : m_scene(scene) {}
 
 void InventoryUI::init() {
     auto back = std::make_unique<Rect>(nullptr);
-    auto& renderer = m_scene.scene_manager().app().renderer();
-    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
 
-    back->set_window_size(renderer.window_width(), renderer.window_height());
+    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     back->set_anchor(Anchor::TOP_LEFT);
     back->set_color(Color::BLACK).set_alpha(0.7f);
     back->set_fill_parent(true);

@@ -19,12 +19,11 @@ std::unique_ptr<DebugCollector>& DebugCollector::get_ptr() {
     return instance;
 }
 void DebugCollector::destory() { get_ptr().reset(); }
-void DebugCollector::init(int width, int height) {
+void DebugCollector::init(int, int) {
     constexpr float SCALE = 0.7f;
     constexpr Color COLOR = Color::GRAY;
     constexpr float ALPHA = 0.6f;
 
-    m_widget.set_window_size(width, height);
     m_widget.set_spacing(15);
     m_widget.set_anchor(Anchor::TOP_LEFT);
     m_widget.set_offset({0, 5});

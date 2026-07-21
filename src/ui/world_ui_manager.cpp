@@ -17,10 +17,7 @@ void WorldUIManager::init() {
 
     m_root_widget = std::make_unique<Widget>(nullptr);
     m_root_widget->set_fill_parent(true);
-    auto& renderer = m_scene.scene_manager().app().renderer();
 
-    m_root_widget->set_window_size(renderer.window_width(),
-                                   renderer.window_height());
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     auto& crosshair = m_root_widget->add_child<Image>();
 

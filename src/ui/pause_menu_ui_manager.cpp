@@ -1,6 +1,5 @@
 #include "Cubed/app.hpp"
 #include "Cubed/localization.hpp"
-#include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/button.hpp"
@@ -16,8 +15,6 @@ void PauseMenuUIManager::init() {
     rect->set_color(Color::BLACK);
     rect->set_alpha(0.7f);
     rect->set_anchor(Anchor::TOP_LEFT);
-    auto& renderer = m_scene.scene_manager().app().renderer();
-    rect->set_window_size(renderer.window_width(), renderer.window_height());
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     auto& layout = rect->add_child<ColumnLayout>();
     layout.set_anchor(Anchor::CENTER);

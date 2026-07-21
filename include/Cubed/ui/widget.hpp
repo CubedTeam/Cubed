@@ -31,7 +31,7 @@ public:
     virtual void render(Renderer& renderer);
     virtual Widget& set_anchor(Anchor anchor);
     virtual Widget& set_offset(glm::ivec2 offset);
-    virtual Widget& set_window_size(int width, int height);
+    static void set_window_size(int width, int height);
     virtual Widget& set_visible(bool visible);
     // Returns the final display size
 
@@ -65,8 +65,8 @@ public:
 
 protected:
     Widget* m_parent = nullptr;
-    float m_window_height = 0.0f;
-    float m_window_width = 0.0f;
+    static inline float m_window_height = 0.0f;
+    static inline float m_window_width = 0.0f;
 
     // Center is at the top-left corner, position is at the top-left corner
     Anchor m_anchor = Anchor::TOP_LEFT;
@@ -99,6 +99,7 @@ private:
     */
     std::array<std::unique_ptr<Widget>, 4> m_border;
     TraversalOrder m_order = TraversalOrder::BACK_TO_FRONT;
+    glm::vec2 m_mouse_pos;
     float m_width = 0.0f;
     float m_height = 0.0f;
 };

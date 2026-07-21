@@ -13,14 +13,12 @@ namespace Cubed {
 CreditsUI::CreditsUI(CreditsScene& scene) : m_scene(scene) {}
 
 void CreditsUI::init() {
-    auto& renderer = m_scene.scene_manager().app().renderer();
 
     auto image = std::make_unique<Image>(nullptr);
     image
         ->set_image("texture/ui/background.png",
                     m_scene.scene_manager().app().texture_manager(), false)
         .set_anchor(Anchor::TOP_LEFT)
-        .set_window_size(renderer.window_width(), renderer.window_height())
         .set_fill_parent(true);
 
     auto& rect = image->add_child<Rect>();

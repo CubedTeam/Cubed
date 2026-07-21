@@ -611,7 +611,7 @@ void App::handle_window_focus(bool focused) {
 }
 
 void App::handle_window_resize(int width, int height) {
-
+    Widget::set_window_size(width, height);
     dispatch_event(WindowResizeEvent{width, height});
     d_rep("window_size", "Window W: {} H: {}", width, height);
     Logger::info("Window Reshape W: {} H: {}", width, height);
