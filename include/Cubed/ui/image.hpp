@@ -13,8 +13,13 @@ public:
     Image& operator=(const Image&) = delete;
     Image& operator=(Image&&) = delete;
     Image(Widget* parent);
-
-    Image& set_image(const std::string& path, TextureManager& texture_manager);
+    // If you need to set width and height to the material's size, pass true,
+    // If you set fill parent, please pass false.
+    Image& set_image(const std::string& path, TextureManager& texture_manager,
+                     bool change_size);
+    // If you need to set width and height to the material's size, pass true
+    // If you set fill parent, please pass false.
+    Image& set_texture(const Texture* texture, bool change_size);
     float width() const override;
     float height() const override;
     const Texture* texture() const;

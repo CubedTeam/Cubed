@@ -15,7 +15,7 @@ void ErrorUI::init() {
 
     bi->set_window_size(renderer.window_width(), renderer.window_height());
     bi->set_anchor(Anchor::TOP_LEFT);
-    bi->set_image("texture/ui/background.png", texture_manager);
+    bi->set_image("texture/ui/background.png", texture_manager, false);
     bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();

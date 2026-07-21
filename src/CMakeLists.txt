@@ -89,4 +89,5 @@ target_sources(${PROJECT_NAME}
         audio/audio_recording.cpp
         audio/audio_stream_source.cpp
         tools/sensitive_filter.cpp
+        ui/row_layout.cpp
 )

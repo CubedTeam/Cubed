@@ -24,7 +24,7 @@ void WorldUIManager::init() {
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     auto& crosshair = m_root_widget->add_child<Image>();
 
-    crosshair.set_image("texture/ui/0.png", texture_manager);
+    crosshair.set_image("texture/ui/0.png", texture_manager, true);
 
     crosshair.set_anchor(Anchor::CENTER);
     crosshair.set_scale(3.0f);
@@ -57,7 +57,7 @@ void WorldUIManager::init() {
     });
     m_chat_box = &chat_box;
     auto& microphone = m_root_widget->add_child<Image>();
-    microphone.set_image("texture/ui/microphone.png", texture_manager)
+    microphone.set_image("texture/ui/microphone.png", texture_manager, true)
         .set_scale(5.0f)
         .set_anchor(Anchor::BOTTOM_RIGHT)
         .set_visible(false);
@@ -70,6 +70,21 @@ void WorldUIManager::init() {
         .set_offset({0, -5});
     disbale_voice.set_anchor(Anchor::BOTTOM_RIGHT).set_visible(false);
     m_disbable_voice = &disbale_voice;
+
+    {
+        auto& hotbar = m_root_widget->add_child<RowLayout>();
+        hotbar.set_anchor(Anchor::BOTTOM_CENTER);
+        m_hotbar = &hotbar;
+        for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
+            auto& bg = hotbar.add_child<Image>();
+            bg.set_image("texture/ui/slot.png", texture_manager, true);
+            bg.set_scale(5.0f);
+            auto& item = bg.add_child<Image>();
+            item.set_fill_parent(true).set_anchor(Anchor::CENTER);
+            m_hotbar_items.emplace_back(&item);
+        }
+        update_hotbar();
+    }
 }
 void WorldUIManager::render(Renderer& renderer) {
     renderer.begin_render_ui();
@@ -94,6 +109,8 @@ void WorldUIManager::update(float dt) {
         m_mircophone->set_visible(false);
         m_disbable_voice->set_visible(false);
     }
+
+    update_hotbar();
 }
 
 void WorldUIManager::set_chatting(bool chantting, bool send) {
@@ -109,6 +126,23 @@ void WorldUIManager::add_chat_message(ChatMessage& message) {
 bool WorldUIManager::handle_key_event(const KeyEvent& e) {
 
     return UIManager::handle_key_event(e);
+}
+
+void WorldUIManager::update_hotbar() {
+    if (!m_hotbar) {
+        return;
+    }
+    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
+    auto& item_texture = texture_manager.get_item_textures();
+    auto hotbar = m_scene.client_world().get_player().get_hotbar();
+    for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
+        auto type = hotbar[i].type;
+        if (type == 0) {
+            m_hotbar_items[i]->set_texture(nullptr, false);
+        } else {
+            m_hotbar_items[i]->set_texture(item_texture[type].get(), false);
+        }
+    }
 }
 
 } // namespace Cubed

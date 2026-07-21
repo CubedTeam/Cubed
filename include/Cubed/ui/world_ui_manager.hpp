@@ -2,6 +2,7 @@
 
 #include "Cubed/ui/chat_box.hpp"
 #include "Cubed/ui/image.hpp"
+#include "Cubed/ui/row_layout.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 #include "Cubed/ui/widget.hpp"
 
@@ -26,10 +27,14 @@ public:
 
 private:
     bool handle_key_event(const KeyEvent& e) override;
+    void update_hotbar();
     WorldScene& m_scene;
 
     ChatBox* m_chat_box = nullptr;
     Image* m_mircophone = nullptr;
     Label* m_disbable_voice = nullptr;
+    RowLayout* m_hotbar = nullptr;
+
+    std::vector<Image*> m_hotbar_items;
 };
 } // namespace Cubed

@@ -93,7 +93,7 @@ Button& Button::set_height(float height) {
 
 Button& Button::set_background_image(const std::string& path,
                                      TextureManager& texture_manager) {
-    m_background->set_image(path, texture_manager);
+    m_background->set_image(path, texture_manager, false);
     return *this;
 }
 

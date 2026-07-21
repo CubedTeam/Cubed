@@ -12,9 +12,6 @@ public:
     ColumnLayout& operator=(ColumnLayout&&) = delete;
     ColumnLayout(Widget* parent);
     ~ColumnLayout();
-
-    void update(float dt) override;
-
     float width() const override;
     float height() const override;
 
@@ -29,5 +26,7 @@ private:
     float m_content_height = 0.0f;
     float m_content_width = 0.0f;
     ColumnLayoutAnchor m_layout_anchor = ColumnLayoutAnchor::CENTER;
+
+    void on_update(float dt) override;
 };
 } // namespace Cubed

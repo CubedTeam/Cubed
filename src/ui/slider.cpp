@@ -107,12 +107,12 @@ Slider& Slider::set_slider_text(const std::string& key,
 }
 Slider& Slider::set_track_image(const std::string& path,
                                 TextureManager& texture_manager) {
-    m_track->set_image(path, texture_manager);
+    m_track->set_image(path, texture_manager, false);
     return *this;
 }
 Slider& Slider::set_thumb_image(const std::string& path,
                                 TextureManager& texture_manager) {
-    m_thumb->set_image(path, texture_manager);
+    m_thumb->set_image(path, texture_manager, true);
     return *this;
 }
 

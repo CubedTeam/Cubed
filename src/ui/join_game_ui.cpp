@@ -16,7 +16,7 @@ void JoinGameUI::init() {
 
     bi->set_window_size(renderer.window_width(), renderer.window_height());
     bi->set_anchor(Anchor::TOP_LEFT);
-    bi->set_image("texture/ui/background.png", texture_manager);
+    bi->set_image("texture/ui/background.png", texture_manager, false);
     bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();
@@ -47,7 +47,7 @@ void JoinGameUI::init() {
         auto& text_ip = layout.add_child<TextField>();
         text_ip.set_show_text(tr("joingame.server_ip"));
         std::unique_ptr<Image> back = std::make_unique<Image>(&text_ip);
-        back->set_image(DEFAULT_TEXT_FIELD_IMAGE, texture_manager)
+        back->set_image(DEFAULT_TEXT_FIELD_IMAGE, texture_manager, false)
             .set_fill_parent(true);
         text_ip.set_background(std::move(back));
         text_ip.set_app(&m_scene.scene_manager().app());
