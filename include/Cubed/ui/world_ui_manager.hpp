@@ -30,5 +30,6 @@ private:
 
     ChatBox* m_chat_box = nullptr;
     Image* m_mircophone = nullptr;
+    Label* m_disbable_voice = nullptr;
 };
 } // namespace Cubed

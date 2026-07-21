@@ -265,15 +265,19 @@ void AudioEngine::set_client(std::weak_ptr<NetworkClient> client) {
 void AudioEngine::send_voice(
     const std::array<int16_t, AudioRecording::FRAME_SAMPLES>& pcm) {
 
-    std::array<uint8_t, OPUS_MAX_PACKET_SIZE> opus;
-    int len = opus_encode(m_encoder, pcm.data(), AudioRecording::FRAME_SAMPLES,
-                          opus.data(), opus.size());
-
-    if (len < 0) {
-        Logger::error("Opus encode failed: {}", opus_strerror(len));
-        return;
-    }
     if (auto c = m_client.lock()) {
+        if (!c->world().enable_voice_chat()) {
+            return;
+        }
+        std::array<uint8_t, OPUS_MAX_PACKET_SIZE> opus;
+        int len =
+            opus_encode(m_encoder, pcm.data(), AudioRecording::FRAME_SAMPLES,
+                        opus.data(), opus.size());
+
+        if (len < 0) {
+            Logger::error("Opus encode failed: {}", opus_strerror(len));
+            return;
+        }
         Arena arena;
         auto msg = Arena::Create<VoiceMsg>(&arena);
         msg->set_uuid(c->world().get_player().get_uuid());

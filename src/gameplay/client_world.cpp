@@ -475,6 +475,11 @@ void ClientWorld::init(std::string_view player_name,
     m_audio.play_bgm();
 }
 
+void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
+    m_voice_chat = rsp.voice_chat();
+    start_client_thread(rsp.uuid());
+}
+
 void ClientWorld::start_client_thread(std::string_view uuid) {
     if (m_game_running) {
         Logger::error("Game Already Running");
@@ -482,6 +487,7 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
     }
     // response
     m_player.set_uuid(uuid);
+
     m_client_thread = std::jthread([this](std::stop_token token) {
         m_game_running = true;
         client_run(token);
@@ -760,11 +766,14 @@ void ClientWorld::receive_chat_message(ChatMsg& msg) {
 }
 
 void ClientWorld::receive_voice_message(VoiceMsg& msg) {
+    if (!m_voice_chat) {
+        return;
+    }
     glm::vec3 pos{msg.pos().x(), msg.pos().y(), msg.pos().z()};
     Logger::info("Receive Voice From net");
     m_voice_queue.emplace(msg.opus_data(), pos);
 }
-
+bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);

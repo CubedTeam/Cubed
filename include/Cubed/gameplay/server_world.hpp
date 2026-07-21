@@ -132,7 +132,8 @@ private:
 
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
-    bool m_enable_filter = true;
+    std::atomic<bool> m_enable_filter{false};
+    std::atomic<bool> m_voice_chat{true};
     SensitiveFilter m_filter;
 
     std::jthread m_gen_thread;

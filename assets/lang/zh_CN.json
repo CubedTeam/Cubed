@@ -34,5 +34,6 @@
     "hostgame.create_world": "创建世界",
     "joingame.join_a_world": "加入世界",
     "joingame.server_ip": "服务器IP",
-    "joingame.join_world": "加入世界"
+    "joingame.join_world": "加入世界",
+    "error.disable_voice": "服务器已禁用语音聊天"
 }

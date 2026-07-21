@@ -83,11 +83,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 auto* rsp = Arena::Create<LoginRsp>(&arena);
                 Logger::info("Client: Receive Login rsp");
                 if (decode_packet(*rsp, body_data, header)) {
-                    if (rsp->success()) {
-                        m_world.start_client_thread(rsp->uuid());
-                    } else {
-                        Logger::error("Connected Server Fail");
-                    }
+                    m_world.receive_login_rsp(*rsp);
                 }
             } break;
             case std::to_underlying(PacketEnum::CHUNK_DATA_RSP): {

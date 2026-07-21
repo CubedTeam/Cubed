@@ -3,6 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -61,6 +62,14 @@ void WorldUIManager::init() {
         .set_anchor(Anchor::BOTTOM_RIGHT)
         .set_visible(false);
     m_mircophone = &microphone;
+
+    auto& disbale_voice = m_root_widget->add_child<Label>();
+    disbale_voice.set_scale(0.6f);
+    disbale_voice.set_text(tr("error.disable_voice"))
+        .set_color(Color::RED)
+        .set_offset({0, -5});
+    disbale_voice.set_anchor(Anchor::BOTTOM_RIGHT).set_visible(false);
+    m_disbable_voice = &disbale_voice;
 }
 void WorldUIManager::render(Renderer& renderer) {
     renderer.begin_render_ui();
@@ -75,9 +84,15 @@ void WorldUIManager::render(Renderer& renderer) {
 void WorldUIManager::update(float dt) {
     UIManager::update(dt);
     if (m_scene.is_recording()) {
-        m_mircophone->set_visible(true);
+        if (m_scene.client_world().enable_voice_chat()) {
+            m_mircophone->set_visible(true);
+        } else {
+            m_disbable_voice->set_visible(true);
+        }
+
     } else {
         m_mircophone->set_visible(false);
+        m_disbable_voice->set_visible(false);
     }
 }
 

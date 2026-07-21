@@ -79,6 +79,7 @@ public:
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;
     void start_client_thread(std::string_view uuid);
+    void receive_login_rsp(LoginRsp& rsp);
     void stop_client_thread();
 
     void start_thread_pool();
@@ -108,6 +109,7 @@ public:
     void receive_chat_message(ChatMsg& msg);
     void send_chat_message(ChatMessage& message);
     void receive_voice_message(VoiceMsg& msg);
+    bool enable_voice_chat() const;
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -176,6 +178,7 @@ private:
     std::atomic<bool> m_requesting_chunk{false};
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_chunk_task_id{0};
+    std::atomic<bool> m_voice_chat{true};
     std::shared_ptr<NetworkClient> m_client;
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 

@@ -201,7 +201,10 @@ void ServerWorld::init_world() {
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
 
-    m_enable_filter = m_config.get("sensitive_filter", true);
+    m_enable_filter = m_config.get("sensitive_filter", false);
+    Logger::info("sensitive filter {}", m_enable_filter.load());
+    m_voice_chat = m_config.get("voice_chat", true);
+    Logger::info("voice chat {}", m_voice_chat.load());
     try {
         fs::path path = std::format("{}SensitiveLexicon.json", ASSETS_PATH);
         std::ifstream s{path};
@@ -695,6 +698,7 @@ void ServerWorld::handle_player_login(const std::string& name,
     auto* rsp = Arena::Create<LoginRsp>(&arena);
     rsp->set_success(true);
     rsp->set_uuid(uuid);
+    rsp->set_voice_chat(m_voice_chat);
     session->send(make_packet(*rsp), 0);
 
     boardcast_message("Server", std::format("Player {} Join Game", name),
@@ -788,6 +792,9 @@ void ServerWorld::handle_chat_message(ChatMsg& msg) {
 }
 
 void ServerWorld::handle_voice_message(VoiceMsg& msg) {
+    if (!m_voice_chat) {
+        return;
+    }
     auto pool = m_net_thread_pool.load();
     std::string uuid = msg.uuid();
     std::string data = msg.opus_data();

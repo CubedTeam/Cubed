@@ -34,5 +34,6 @@
     "hostgame.create_world": "Create World",
     "joingame.join_a_world": "Join A World",
     "joingame.server_ip": "Server Ip",
-    "joingame.join_world": "Join World"
+    "joingame.join_world": "Join World",
+    "error.disable_voice": "Server Disable Voice Chat"
 }
