@@ -183,6 +183,9 @@ void Renderer::render_lable(const Label& label) {
 
     Font::get().text_texture()->bind(0);
     auto& data = label.data();
+    if (!data.m_vao) {
+        return;
+    }
     auto pos = label.pos();
     auto& text_style = label.text_style();
     auto color = color_value(text_style.color);

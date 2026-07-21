@@ -46,8 +46,8 @@ AudioData AudioLoader::load_wav(const std::filesystem::path& path) {
     drwav_read_pcm_frames_s16(&wav, wav.totalPCMFrameCount, data.pcm.data());
 
     drwav_uninit(&wav);
-    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
-                 data.channels, data.sample_rate, data.pcm.size());
+    Logger::debug("{} channels={} rate={} samples={}", path.filename().string(),
+                  data.channels, data.sample_rate, data.pcm.size());
     return data;
 }
 
@@ -70,8 +70,8 @@ AudioData AudioLoader::load_mp3(const std::filesystem::path& path) {
     data.pcm.assign(pcm, pcm + frame_count * config.channels);
 
     drmp3_free(pcm, nullptr);
-    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
-                 data.channels, data.sample_rate, data.pcm.size());
+    Logger::debug("{} channels={} rate={} samples={}", path.filename().string(),
+                  data.channels, data.sample_rate, data.pcm.size());
     return data;
 }
 
@@ -93,8 +93,8 @@ AudioData AudioLoader::load_flac(const std::filesystem::path& path) {
     data.pcm.assign(pcm, pcm + frame_count * channels);
 
     drflac_free(pcm, nullptr);
-    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
-                 data.channels, data.sample_rate, data.pcm.size());
+    Logger::debug("{} channels={} rate={} samples={}", path.filename().string(),
+                  data.channels, data.sample_rate, data.pcm.size());
     return data;
 }
 
@@ -134,8 +134,8 @@ AudioData AudioLoader::load_ogg(const std::filesystem::path& path) {
     data.sample_rate = sample_rate;
     data.pcm = std::move(pcm);
 
-    Logger::info("{} channels={} rate={} samples={}", path.filename().string(),
-                 data.channels, data.sample_rate, data.pcm.size());
+    Logger::debug("{} channels={} rate={} samples={}", path.filename().string(),
+                  data.channels, data.sample_rate, data.pcm.size());
 
     return data;
 }

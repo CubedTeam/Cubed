@@ -11,11 +11,8 @@ constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 
 namespace Cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
-
-    m_background = std::make_unique<Image>(this);
-    m_background->set_fill(true);
-    m_background->set_anchor(Anchor::TOP_LEFT);
-
+    m_width = NORMAL_TEXTFIELD_WIDTH;
+    m_height = NORMAL_TEXTFIELD_HEIGHT;
     m_foreground = std::make_unique<Label>(this);
     m_foreground->set_anchor(Anchor::CENTER_LEFT);
     m_foreground->set_offset({10, 0});
@@ -26,6 +23,7 @@ TextField::TextField(Widget* parent) : Widget(parent) {
     m_cursor->set_anchor(Anchor::CENTER_LEFT);
     m_cursor->set_offset({10, 0});
     m_cursor->set_color(Color::WHITE);
+
     update_text_scale();
 }
 
@@ -62,6 +60,9 @@ void TextField::on_render(Renderer& renderer) {
     }
 }
 void TextField::on_update(float dt) {
+
+    Widget::on_update(dt);
+
     m_cursor_timer += dt;
     if (m_cursor_timer >= CURSOR_INTERVAL) {
         m_cursor_timer = 0.0f;
@@ -79,18 +80,15 @@ void TextField::on_update(float dt) {
 }
 
 void TextField::update_show_text() {
-    if (m_input_text.empty()) {
-        if (!m_typing) {
-            m_foreground->set_text(m_show_text);
-            m_foreground->set_color(Color::GRAY);
-        } else {
-            m_foreground->set_text(" ");
-        }
 
+    if (!m_typing && m_input_text.empty()) {
+        m_foreground->set_text(m_show_text);
+        m_foreground->set_color(Color::GRAY);
     } else {
         m_foreground->set_text(m_input_text);
         m_foreground->set_color(Color::WHITE);
     }
+
     update_text_scale();
     update_input_area();
     m_cursor->set_offset({13.0f + m_foreground->width(), 0.0f});
@@ -108,11 +106,24 @@ void TextField::update_input_area() {
 
 TextField& TextField::set_scale(float scale) {
     m_scale = scale;
+    m_cursor->set_height(std::max(1.0f, height() - DELTA_CUROUR_HEIGHT));
+
     return *this;
 }
 
-float TextField::width() const { return m_width * m_scale; }
-float TextField::height() const { return m_height * m_scale; }
+float TextField::width() const {
+
+    if (m_fill_width) {
+        return m_width;
+    }
+    return m_width * m_scale;
+}
+float TextField::height() const {
+    if (m_fill_height) {
+        return m_height;
+    }
+    return m_height * m_scale;
+}
 
 TextField& TextField::set_width(float width) {
     m_width = width;
@@ -130,14 +141,10 @@ TextField& TextField::set_show_text(const std::string& text) {
     update_show_text();
     return *this;
 }
-TextField& TextField::set_background_image(const std::string& path,
-                                           TextureManager& texture_manager) {
-    m_background->set_image(path, texture_manager);
-    return *this;
-}
 
-TextField& TextField::set_default_image(TextureManager& texture_manager) {
-    return set_background_image(DEFAULT_TEXT_FIELD_IMAGE, texture_manager);
+TextField& TextField::set_background(std::unique_ptr<Widget> background) {
+    m_background = std::move(background);
+    return *this;
 }
 
 TextField& TextField::set_auto_scale(bool auto_scale) {
@@ -149,8 +156,41 @@ TextField& TextField::set_app(App* app) {
     m_app = app;
     return *this;
 }
-const std::string& TextField::input_text() const { return m_input_text; }
 
+TextField& TextField::set_typing(bool typing, bool finished) {
+    m_typing = typing;
+    if (m_typing) {
+        start_typing();
+    } else {
+        stop_typing(finished);
+    }
+
+    return *this;
+}
+
+TextField& TextField::clear_input() {
+    m_input_text.clear();
+    update_show_text();
+    return *this;
+}
+bool TextField::is_typing() const { return m_typing; }
+void TextField::start_typing() {
+    if (m_app) {
+        m_app->start_text_input();
+    }
+    update_show_text();
+}
+void TextField::stop_typing(bool finished) {
+    if (m_app) {
+        m_app->stop_text_input();
+    }
+    if (m_on_finished && finished) {
+        m_on_finished();
+    }
+}
+
+const std::string& TextField::input_text() const { return m_input_text; }
+std::string& TextField::input_text() { return m_input_text; }
 bool TextField::handle_mouse_move_event(const MouseMoveEvent& e) {
     auto p = pos();
     if (e.xpos >= p.x && e.xpos <= p.x + width() && e.ypos >= p.y &&
@@ -166,20 +206,12 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.key == MouseKey::LEFT_BUTTON && e.action == KeyAction::PRESS) {
         if (m_inside) {
             m_typing = true;
-            if (m_app) {
-                m_app->start_text_input();
-            }
-            update_show_text();
+            start_typing();
             return false;
         } else {
             if (m_typing) {
                 m_typing = false;
-                if (m_app) {
-                    m_app->stop_text_input();
-                }
-                if (m_on_finished) {
-                    m_on_finished();
-                }
+                stop_typing(true);
 
                 return false;
             }
@@ -188,6 +220,7 @@ bool TextField::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 bool TextField::handle_text_input_event(const TextInputEvent& e) {
+
     if (m_typing) {
         m_input_text.append(e.text);
         update_show_text();
@@ -199,12 +232,7 @@ bool TextField::handle_key_event(const KeyEvent& e) {
     if (e.key == Key::ENTER && e.action == KeyAction::PRESS) {
         if (m_typing) {
             m_typing = false;
-            if (m_app) {
-                m_app->stop_text_input();
-            }
-            if (m_on_finished) {
-                m_on_finished();
-            }
+            stop_typing(true);
 
             return true;
         }
@@ -225,6 +253,12 @@ bool TextField::handle_key_event(const KeyEvent& e) {
             m_ctrl_press = false;
             return true;
         }
+    }
+
+    if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        stop_typing(false);
+        clear_input();
+        return true;
     }
 
     if (e.key == Key::V && e.action == KeyAction::PRESS && m_ctrl_press) {

@@ -21,8 +21,8 @@ public:
     float height() const override;
 
     Slider& set_scale(float scale);
-    Slider& set_width(float width);
-    Slider& set_height(float h);
+    Slider& set_width(float width) override;
+    Slider& set_height(float h) override;
     Slider& set_slider_text(const std::string& key,
                             const std::string& variable);
     Slider& set_track_image(const std::string& path,
@@ -48,8 +48,7 @@ private:
     std::unique_ptr<Label> m_label;
     ValueType m_type = ValueType::FLOAT;
     float m_scale = DEFAULT_SCALE;
-    float m_width = NORMAL_SLIDER_WIDTH;
-    float m_height = NORMAL_SLIDER_HEIGHT;
+
     float m_xpos = 0.0f;
     bool m_dragging = false;
     bool m_inside = false;

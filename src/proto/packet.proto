@@ -10,3 +10,4 @@ import "system/pong.proto";
 import "world/chunk_data.proto";
 import "world/block_change.proto";
 import "world/time.proto";
+import "chat/chat.proto";

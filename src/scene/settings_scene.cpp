@@ -29,6 +29,8 @@ void SettingsScene::on_enter() {
     m_slider_variable.sfx = config.get("volume.SFX", m_slider_variable.sfx);
     m_slider_variable.rendering_distance = config.get(
         "world.rendering_distance", m_slider_variable.rendering_distance);
+    m_slider_variable.player_voice =
+        config.get("volume.player_voice", m_slider_variable.player_voice);
 }
 void SettingsScene::on_leave() {
     save_and_apply();
@@ -54,6 +56,7 @@ void SettingsScene::save_and_apply() {
                m_slider_variable.rendering_distance);
     config.set("volume.SFX", m_slider_variable.sfx);
     config.set("volume.music", m_slider_variable.music);
+    config.set("volume.player_voice", m_slider_variable.player_voice);
     config.save_to_file();
     auto& app = m_scene_manager.app();
     app.audio().reload_config();

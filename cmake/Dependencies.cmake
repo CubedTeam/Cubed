@@ -9,7 +9,7 @@ find_package(OpenAL REQUIRED)
 find_package(harfbuzz REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(SDL3 REQUIRED)
-
+find_package(Opus REQUIRED)
 
 # Third-party libraries
 FetchContent_Declare(

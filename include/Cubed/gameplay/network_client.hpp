@@ -21,6 +21,7 @@ public:
     bool is_connect_error() const;
     std::string get_error_string() const;
     void clear_error();
+    ClientWorld& world();
 
 private:
     struct Task {

@@ -147,6 +147,7 @@ target_link_libraries(${PROJECT_NAME}
         zstd::zstd
         OpenAL::OpenAL
         harfbuzz::harfbuzz
+        Opus::Opus
         $<$<PLATFORM_ID:Windows>:ws2_32>
 
 )

@@ -10,7 +10,9 @@
 #include "Cubed/gameplay/server_player.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
+#include "Cubed/tools/sensitive_filter.hpp"
 #include "Cubed/tools/thread_pool.hpp"
+#include "Cubed/ui/color.hpp"
 #include "world/block_change.pb.h"
 
 #include <absl/container/flat_hash_set.h>
@@ -80,6 +82,8 @@ public:
     void handle_chunk_req(int task_id, const std::string& uuid, ChunkPos pos);
     void handle_block_change(const BlockChangeReq& req);
 
+    void handle_chat_message(ChatMsg& msg);
+    void handle_voice_message(VoiceMsg& msg);
     int chunk_size() const;
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
@@ -128,6 +132,9 @@ private:
 
     CaveCarver m_cave_carcer;
     RiverWorm m_river_worm;
+    std::atomic<bool> m_enable_filter{false};
+    std::atomic<bool> m_voice_chat{true};
+    SensitiveFilter m_filter;
 
     std::jthread m_gen_thread;
     std::jthread m_server_thread;
@@ -189,5 +196,8 @@ private:
         std::atomic<std::shared_ptr<PriorityThreadPool>>& thread_pool,
         int threads);
     void send_server_stop();
+
+    void boardcast_message(const std::string& name, const std::string& message,
+                           Color color = Color::WHITE, bool system_msg = false);
 };
 } // namespace Cubed

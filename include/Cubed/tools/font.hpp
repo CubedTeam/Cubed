@@ -56,6 +56,7 @@ public:
     TextMesh vertices(const std::string& text);
     const Texture* text_texture();
     static const std::string& font_path();
+    static float text_width(const std::string& text);
 
 private:
     FT_Library m_ft;

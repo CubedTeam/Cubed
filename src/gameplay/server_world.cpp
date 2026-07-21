@@ -4,14 +4,17 @@
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/uuid.hpp"
 
+#include <nlohmann/json.hpp>
 #include <ranges>
 #include <utility>
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace google::protobuf;
-
+namespace fs = std::filesystem;
+using nlohmann::json;
 namespace Cubed {
 ServerWorld::ServerWorld(Config& config) : m_config(config) {}
 
@@ -197,6 +200,21 @@ void ServerWorld::init_world() {
 
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
+
+    m_enable_filter = m_config.get("sensitive_filter", false);
+    Logger::info("sensitive filter {}", m_enable_filter.load());
+    m_voice_chat = m_config.get("voice_chat", true);
+    Logger::info("voice chat {}", m_voice_chat.load());
+    try {
+        fs::path path = std::format("{}SensitiveLexicon.json", ASSETS_PATH);
+        std::ifstream s{path};
+        json j = json::parse(s);
+        m_filter.load(j);
+    } catch (const std::exception& e) {
+        Logger::error("Load SensitiveLexicon.json Fail");
+        m_enable_filter = false;
+    }
+
     // m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
     start_thread_pool();
 
@@ -680,20 +698,27 @@ void ServerWorld::handle_player_login(const std::string& name,
     auto* rsp = Arena::Create<LoginRsp>(&arena);
     rsp->set_success(true);
     rsp->set_uuid(uuid);
+    rsp->set_voice_chat(m_voice_chat);
     session->send(make_packet(*rsp), 0);
+
+    boardcast_message("Server", std::format("Player {} Join Game", name),
+                      Color::YELLOW, true);
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {
     std::shared_ptr<Session> exit_session;
     ChunkPosSet old_set;
+    std::string name;
     {
         std::lock_guard lock(m_player_mutex);
         auto it = m_players.find(uuid);
         if (it != m_players.end()) {
-            Logger::info("Player {} Exit the Server", it->second.get_name());
+            name = it->second.get_name();
+            Logger::info("Player {} Exit the Server", name);
             exit_session = it->second.get_session();
             old_set = std::move(it->second.get_chunk_pos_set());
             m_players.erase(it);
+
         } else {
             Logger::error("Player {} isn't in Server", uuid);
             return;
@@ -723,6 +748,9 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
             s->send(make_packet(*rsp), 0);
         }
     }
+
+    boardcast_message("Server", std::format("Player {} Exit Game", name),
+                      Color::YELLOW, true);
 }
 
 glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
@@ -751,6 +779,58 @@ void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
     auto pool = m_net_thread_pool.load();
     pool->enqueue(
         [task_id, uuid, pos, this]() { send_chunk(task_id, uuid, pos); });
+}
+
+void ServerWorld::handle_chat_message(ChatMsg& msg) {
+
+    std::string name = msg.name();
+    std::string message = msg.msg();
+    auto pool = m_net_thread_pool.load();
+    pool->enqueue([this, player = std::move(name), m = std::move(message)]() {
+        boardcast_message(player, m);
+    });
+}
+
+void ServerWorld::handle_voice_message(VoiceMsg& msg) {
+    if (!m_voice_chat) {
+        return;
+    }
+    auto pool = m_net_thread_pool.load();
+    std::string uuid = msg.uuid();
+    std::string data = msg.opus_data();
+    auto pos = msg.pos();
+    glm::vec3 p{pos.x(), pos.y(), pos.z()};
+    pool->enqueue([this, uuid = std::move(uuid), data = std::move(data), p]() {
+        std::vector<std::shared_ptr<Session>> session;
+
+        {
+            std::shared_lock lock(m_player_mutex);
+            for (auto& [key, player] : m_players) {
+                if (key == uuid) {
+                    continue;
+                }
+                if (Math::distance2(p, player.get_pos()) > 48.0f * 48.0f) {
+                    continue;
+                }
+                session.emplace_back(player.get_session());
+            }
+        }
+
+        Arena arena;
+        auto msg = Arena::Create<VoiceMsg>(&arena);
+        msg->set_uuid(uuid);
+
+        msg->set_opus_data(data);
+
+        auto pos = msg->mutable_pos();
+        pos->set_x(p.x);
+        pos->set_y(p.y);
+        pos->set_z(p.z);
+
+        for (auto& s : session) {
+            s->send(make_packet(*msg), 5);
+        }
+    });
 }
 
 void ServerWorld::handle_block_change(const BlockChangeReq& req) {
@@ -859,6 +939,36 @@ void ServerWorld::send_server_stop() {
         player.get_session()->send(make_packet(*rsp), 0);
     }
     Logger::info("Send Server Mesaage Success");
+}
+
+void ServerWorld::boardcast_message(const std::string& name,
+                                    const std::string& message, Color color,
+                                    bool system_msg) {
+
+    std::vector<std::shared_ptr<Session>> m_session;
+    {
+        std::shared_lock lock(m_player_mutex);
+        for (auto& [_, p] : m_players) {
+            m_session.emplace_back(p.get_session());
+        }
+    }
+
+    Arena arena;
+    auto msg = Arena::Create<ChatMsg>(&arena);
+    if (m_enable_filter) {
+        msg->set_msg(m_filter.filter(message));
+        msg->set_name(m_filter.filter(name));
+    } else {
+        msg->set_msg(message);
+        msg->set_name(name);
+    }
+
+    msg->set_color(std::to_underlying(color));
+    msg->set_system_msg(system_msg);
+
+    for (auto& s : m_session) {
+        s->send(make_packet(*msg));
+    }
 }
 
 int ServerWorld::chunk_load_style() const {

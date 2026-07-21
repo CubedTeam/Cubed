@@ -154,6 +154,28 @@ TextMesh Font::vertices(const std::string& text) {
     return {std::move(vertices), max_x - min_x, max_y - min_y, 0, 0};
 }
 
+float Font::text_width(const std::string& text) {
+    auto& f = Font::get();
+
+    hb_buffer_t* buffer = hb_buffer_create();
+
+    hb_buffer_add_utf8(buffer, text.c_str(), text.size(), 0, text.size());
+    hb_buffer_guess_segment_properties(buffer);
+    hb_shape(f.m_hb_font, buffer, nullptr, 0);
+
+    unsigned int count = 0;
+    auto* positions = hb_buffer_get_glyph_positions(buffer, &count);
+
+    hb_position_t advance = 0;
+    for (unsigned int i = 0; i < count; ++i) {
+        advance += positions[i].x_advance;
+    }
+
+    hb_buffer_destroy(buffer);
+
+    return static_cast<float>(advance) / 64.0f;
+}
+
 const Texture* Font::text_texture() { return m_text_texture.get(); }
 
 const std::string& Font::font_path() { return m_font_path; }

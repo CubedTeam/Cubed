@@ -21,10 +21,10 @@ void SettingsUI::init() {
     bi->set_window_size(renderer.window_width(), renderer.window_height());
     bi->set_anchor(Anchor::TOP_LEFT);
     bi->set_image("texture/ui/background.png", texture_manager);
-    bi->set_fill(true);
+    bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();
-    rect.set_fill(true);
+    rect.set_fill_parent(true);
     rect.set_alpha(0.7f);
     rect.set_color(Color::BLACK);
 
@@ -69,15 +69,41 @@ void SettingsUI::init() {
         sfx.set_slider(&v.sfx, 0.0f, 1.0f);
         set_default_slider_image(sfx);
         sfx.set_slider_text("settings.sfx_volume", "sfx");
+
+        auto& player_voice = layout.add_child<Slider>();
+        player_voice.set_slider(&v.player_voice, 0.0f, 1.0f);
+        set_default_slider_image(player_voice);
+        player_voice.set_slider_text("settings.player_voice", "volume");
     }
     auto& config = m_scene.scene_manager().app().config();
+    {
+        auto& combo = layout.add_child<ComboButton>();
+        auto type = config.get("voice_input", "PTT");
+        if (type == "off") {
+            combo.set_index(0);
+        } else if (type == "PTT") {
+            combo.set_index(1);
+        } else if (type == "always") {
+            combo.set_index(2);
+        }
+        combo.set_combo_text("settings.voice_input", "type");
+        std::vector<ComboPair> comb;
+        comb.emplace_back(tr("common.off"),
+                          [&config]() { config.set("voice_input", "off"); });
+        comb.emplace_back(tr("voice_input.ptt"),
+                          [&config]() { config.set("voice_input", "PTT"); });
+        comb.emplace_back(tr("voice_input.always"),
+                          [&config]() { config.set("voice_input", "always"); });
+        combo.set_default_image(texture_manager);
+        combo.set_combos(comb);
+    }
     {
 
         bool full = config.get("window.fullscreen", false);
         auto& fullscreen = layout.add_child<ComboButton>();
         fullscreen.set_index(!full ? 0 : 1);
         fullscreen.set_combo_text("settings.fullscreen", "state");
-        std::vector<std::pair<std::string, std::function<void()>>> comb;
+        std::vector<ComboPair> comb;
         comb.emplace_back(tr("common.off"), [&config, this]() {
             config.set("window.fullscreen", false);
             m_scene.scene_manager().app().window().reload_config();

@@ -7,6 +7,7 @@ message LoginReq {
 message LoginRsp {
     bool success = 1;
     string uuid = 2;
+    bool voice_chat = 3;
 }
 
 message LogoutReq {

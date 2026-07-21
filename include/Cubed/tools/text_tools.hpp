@@ -1,6 +1,10 @@
 #pragma once
+#include "Cubed/tools/cubed_assert.hpp"
+
 #include <cstdint>
 #include <string>
+#include <utf8cpp/utf8.h>
+#include <vector>
 namespace Cubed {
 inline std::string codepoint_to_utf8(uint32_t cp) {
     std::string out;
@@ -36,6 +40,30 @@ inline void utf8_pop_back(std::string& str) {
     }
 
     str.erase(i);
+}
+
+inline std::vector<std::string> split_utf8(const std::string& str, int size) {
+    ASSERT(size > 0);
+    if (!utf8::is_valid(str)) {
+        return {};
+    }
+    std::vector<std::string> blocks;
+    auto cur = str.begin();
+    int chat_count = 0;
+
+    for (auto it = str.begin(); it != str.end();) {
+        if (chat_count >= size) {
+            blocks.emplace_back(cur, it);
+            cur = it;
+            chat_count = 0;
+        }
+        utf8::next(it, str.end());
+        ++chat_count;
+        if (it == str.end()) {
+            blocks.emplace_back(cur, it);
+        }
+    }
+    return blocks;
 }
 
 } // namespace Cubed

@@ -70,9 +70,7 @@ void WorldScene::render(Renderer& renderer) {
     }
 }
 bool WorldScene::handle_event(const Event& e) {
-    if (m_error_ui.has_error()) {
-        return m_error_ui.handle_event(e);
-    }
+
     return std::visit(
         Overloaded{[this](const MouseMoveEvent& e) {
                        if (handle_mouse_move_event(e)) {
@@ -98,7 +96,12 @@ bool WorldScene::handle_event(const Event& e) {
                        }
                        return false;
                    },
-                   [](const TextInputEvent&) { return false; },
+                   [this](const TextInputEvent& e) {
+                       if (handle_text_input_event(e)) {
+                           return true;
+                       }
+                       return false;
+                   },
                    [this](const WindowResizeEvent& e) {
                        handle_window_resize_event(e);
                        return false;
@@ -110,7 +113,7 @@ bool WorldScene::handle_event(const Event& e) {
 }
 void WorldScene::on_enter() {
     auto& param = m_scene_manager.world_scene_param();
-
+    load_config();
     m_error_ui.init();
 
     if (param.host_game) {
@@ -136,7 +139,7 @@ void WorldScene::on_enter() {
         m_dev_panel.init();
         m_pasue_menu.init();
         m_hud_ui.init();
-
+        m_scene_manager.app().audio().set_client(m_client);
         m_scene_manager.app().window().set_game_running(true);
     } catch (const std::exception& e) {
         m_error_ui.set_error(e.what());
@@ -158,6 +161,7 @@ void WorldScene::on_re_enter() {
     m_error_ui.on_re_enter();
     m_pasue_menu.on_re_enter();
     m_client_world.reload_config();
+    load_config();
     auto width = m_scene_manager.app().renderer().window_width();
     auto height = m_scene_manager.app().renderer().window_height();
 
@@ -165,7 +169,27 @@ void WorldScene::on_re_enter() {
         WindowResizeEvent{static_cast<int>(width), static_cast<int>(height)});
 }
 
+void WorldScene::load_config() {
+    auto type = m_scene_manager.app().config().get("voice_input", "PTT");
+    if (type == "off") {
+        m_input_type = VoiceInputType::OFF;
+        m_client_world.get_audio().audio_recording().stop();
+    } else if (type == "PTT") {
+        m_input_type = VoiceInputType::PTT;
+        m_client_world.get_audio().audio_recording().stop();
+    } else if (type == "always") {
+        m_input_type = VoiceInputType::ALWAYS;
+        m_client_world.get_audio().audio_recording().start();
+    }
+}
+
 bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
+    if (m_chatting) {
+        return true;
+    }
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
@@ -186,6 +210,12 @@ bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
     return false;
 }
 bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
+    if (m_chatting) {
+        return true;
+    }
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
@@ -206,23 +236,26 @@ bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
 }
 bool WorldScene::handle_window_resize_event(const WindowResizeEvent& e) {
 
-    if (m_pasue_menu.handle_event(e)) {
-        return true;
-    }
-    if (m_hud_ui.handle_event(e)) {
-        return true;
-    }
-    if (m_camera.handle_event(e)) {
-        return true;
-    }
+    m_error_ui.handle_event(e);
+
+    m_pasue_menu.handle_event(e);
+
+    m_hud_ui.handle_event(e);
+
+    m_camera.handle_event(e);
+
     // world event needs to be processed last
-    if (m_client_world.handle_event(e)) {
-        return true;
-    }
+    m_client_world.handle_event(e);
 
     return false;
 }
 bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
+    if (m_chatting) {
+        return true;
+    }
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
@@ -242,8 +275,15 @@ bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
     return false;
 }
 bool WorldScene::handle_key_event(const KeyEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
 
     if (e.key == Key::ESCAPE && e.action == KeyAction::PRESS) {
+        if (m_chatting && !m_paused) {
+            set_chatting(false, false);
+            return true;
+        }
         bool pasued = pause();
         pasued = !pasued;
         set_pause(pasued);
@@ -257,12 +297,44 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
         m_show_dev_pannel = !m_show_dev_pannel;
         return true;
     }
+
+    if (e.key == Key::T && e.action == KeyAction::PRESS) {
+        if (!m_chatting) {
+            set_chatting(true, true);
+            return true;
+        }
+    }
+
+    if (e.key == Key::ENTER && e.action == KeyAction::PRESS) {
+        if (m_chatting) {
+            set_chatting(false, true);
+            return true;
+        }
+    }
+
+    if (e.key == Key::V) {
+        if (m_input_type == VoiceInputType::PTT) {
+            auto& recording = m_client_world.get_audio().audio_recording();
+            if (e.action == KeyAction::PRESS) {
+                recording.start();
+                return true;
+            }
+            if (e.action == KeyAction::RELEASE) {
+                recording.stop();
+                return true;
+            }
+        }
+    }
+
     if (m_paused) {
         if (m_pasue_menu.handle_event(e)) {
             return true;
         }
     } else {
         if (m_hud_ui.handle_event(e)) {
+            return true;
+        }
+        if (m_chatting) {
             return true;
         }
         if (m_camera.handle_event(e)) {
@@ -276,6 +348,17 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
     return false;
 }
 
+bool WorldScene::handle_text_input_event(const TextInputEvent& e) {
+    if (m_error_ui.has_error()) {
+        return m_error_ui.handle_event(e);
+    }
+    if (m_paused) {
+        return m_pasue_menu.handle_text_input_event(e);
+    }
+
+    return m_hud_ui.handle_text_input_event(e);
+}
+
 Camera& WorldScene::camera() { return m_camera; }
 SceneManager& WorldScene::scene_manager() { return m_scene_manager; }
 ClientWorld& WorldScene::client_world() { return m_client_world; }
@@ -286,13 +369,34 @@ void WorldScene::set_pause(bool pause) {
         return;
     }
     m_paused = pause;
+    set_mouse(pause);
+}
+
+void WorldScene::set_mouse(bool enable) {
     auto& window = m_scene_manager.app().window();
-    window.set_game_running(!m_paused);
-    if (m_paused) {
+    window.set_game_running(!enable);
+    if (enable) {
         m_client_world.reset_key_status();
     }
 }
 
+void WorldScene::set_chatting(bool chatting, bool send) {
+    if (m_paused) {
+        m_hud_ui.set_chatting(false, false);
+        return;
+    }
+    m_chatting = chatting;
+    m_hud_ui.set_chatting(chatting, send);
+    set_mouse(chatting);
+}
+
+// Not thread safe
+void WorldScene::handle_chat_message(ChatMessage& message) {
+    m_hud_ui.add_chat_message(message);
+}
+bool WorldScene::is_recording() const {
+    return m_client_world.get_audio().audio_recording().is_recording();
+}
 void WorldScene::set_error(std::string_view error) {
     Logger::error("WorldScene Error Set {}", error);
     m_error_ui.set_error(error);

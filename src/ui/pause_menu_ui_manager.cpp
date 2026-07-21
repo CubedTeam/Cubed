@@ -12,7 +12,7 @@ PauseMenuUIManager::PauseMenuUIManager(WorldScene& scene) : m_scene(scene) {}
 void PauseMenuUIManager::init() {
     auto rect = std::make_unique<Rect>(nullptr);
 
-    rect->set_fill(true);
+    rect->set_fill_parent(true);
     rect->set_color(Color::BLACK);
     rect->set_alpha(0.5f);
     rect->set_anchor(Anchor::TOP_LEFT);

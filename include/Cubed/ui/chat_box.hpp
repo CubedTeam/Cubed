@@ -1,0 +1,56 @@
+#pragma once
+
+#include "Cubed/gameplay/chat_message.hpp"
+#include "Cubed/ui/text_field.hpp"
+#include "Cubed/ui/widget.hpp"
+
+#include <deque>
+
+namespace Cubed {
+class ChatBox : public Widget {
+public:
+    ChatBox(Widget* parent);
+
+    void add_message(ChatMessage& message);
+
+    ChatBox& set_scale(float scale);
+    ChatBox& set_text_scale(float scale);
+    // Only the width of TextField can be set; the height is calculated
+    // dynamically
+    ChatBox& set_show_lines(int lines);
+    ChatBox& set_spacing(float spacing);
+    ChatBox& clear_input();
+    std::string& get_input_text();
+    float width() const override;
+    float height() const override;
+    float text_label_width() const;
+    void set_text_field(std::unique_ptr<TextField> text_field);
+    void set_typing(bool typing, bool finished);
+    template <typename F> ChatBox& set_on_finish(F&& f) {
+        m_text_field->set_on_finish(std::forward<F>(f));
+        return *this;
+    }
+
+private:
+    static constexpr int MAX_MESSGAES_SUM = 50;
+    static constexpr float DISAPPEAR_TIME = 5.0f;
+    struct Line {
+        std::unique_ptr<Label> label;
+        uint64_t time;
+        bool render = true;
+    };
+    int m_lines = 10;
+    bool m_scale = 1.0f;
+    float m_spacing = 0.0f;
+    float m_text_scale = 1.0f;
+    float m_text_width = 500.0f;
+    std::deque<Line> m_messages;
+    std::unique_ptr<TextField> m_text_field;
+    void layout();
+    void on_update(float dt) override;
+    void on_render(Renderer& renderer) override;
+    bool handle_text_input_event(const TextInputEvent& e) override;
+    bool handle_key_event(const KeyEvent& e) override;
+    std::vector<std::string> wrap_message(const std::string& text) const;
+};
+} // namespace Cubed

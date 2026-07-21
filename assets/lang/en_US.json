@@ -17,11 +17,15 @@
     "settings.distance": "Distance: {distance}",
     "settings.music_volume": "Music: {music}",
     "settings.sfx_volume": "SFX: {sfx}",
+    "settings.player_voice": "Player Voice: {volume}",
     "settings.fullscreen": "fullscreen: {state}",
     "settings.aniso": "Aniso: {aniso}",
     "settings.vsync": "V-Sync: {state}",
     "settings.language": "Language: {lang}",
     "settings.restart_game_info": "You need to restart the game to apply this changes.",
+    "settings.voice_input": "Voice Input: {type}",
+    "voice_input.ptt": "PTT",
+    "voice_input.always": "always",
     "common.on": "on",
     "common.off": "off",
     "hostgame.create_a_new_world": "Create A New World",
@@ -30,5 +34,6 @@
     "hostgame.create_world": "Create World",
     "joingame.join_a_world": "Join A World",
     "joingame.server_ip": "Server Ip",
-    "joingame.join_world": "Join World"
+    "joingame.join_world": "Join World",
+    "error.disable_voice": "Server Disable Voice Chat"
 }

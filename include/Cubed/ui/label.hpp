@@ -14,10 +14,11 @@ public:
     virtual ~Label() = default;
 
     Label& set_text(std::string_view text);
-
     Label& set_color(Color color);
     Label& set_scale(float scale);
 
+    Label& set_background(std::unique_ptr<Widget> background);
+    Widget* get_background();
     const UIVertexData& data() const;
 
     const TextStyle& text_style() const;
@@ -38,6 +39,7 @@ protected:
 private:
     TextStyle m_text;
     UIVertexData m_data;
+    std::unique_ptr<Widget> m_background;
     float m_real_width = 0.0f;
     float m_real_height = 0.0f;
     float m_offset_x = 0.0f;

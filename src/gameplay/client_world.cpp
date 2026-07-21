@@ -6,6 +6,7 @@
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/math_tools.hpp"
+#include "Cubed/tools/time_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
 #include <numbers>
@@ -474,6 +475,11 @@ void ClientWorld::init(std::string_view player_name,
     m_audio.play_bgm();
 }
 
+void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
+    m_voice_chat = rsp.voice_chat();
+    start_client_thread(rsp.uuid());
+}
+
 void ClientWorld::start_client_thread(std::string_view uuid) {
     if (m_game_running) {
         Logger::error("Game Already Running");
@@ -481,6 +487,7 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
     }
     // response
     m_player.set_uuid(uuid);
+
     m_client_thread = std::jthread([this](std::stop_token token) {
         m_game_running = true;
         client_run(token);
@@ -725,6 +732,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
 }
 
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
+const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
 WorldScene& ClientWorld::world_scene() { return m_world_scene; }
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }
@@ -748,6 +756,29 @@ void ClientWorld::request_exit() {
             break;
         }
     }
+}
+
+void ClientWorld::receive_chat_message(ChatMsg& msg) {
+    Color color = color_from_int(msg.color());
+
+    m_message_queue.emplace(msg.name(), msg.msg(), color, msg.system_msg(),
+                            Tools::get_time_ticks());
+}
+
+void ClientWorld::receive_voice_message(VoiceMsg& msg) {
+    if (!m_voice_chat) {
+        return;
+    }
+    glm::vec3 pos{msg.pos().x(), msg.pos().y(), msg.pos().z()};
+    m_voice_queue.emplace(msg.opus_data(), pos);
+}
+bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
+void ClientWorld::send_chat_message(ChatMessage& message) {
+    Arena arena;
+    auto msg = Arena::Create<ChatMsg>(&arena);
+    msg->set_name(message.player);
+    msg->set_msg(message.text);
+    m_client->send(make_packet(*msg));
 }
 
 void ClientWorld::update(float delta_time) {
@@ -915,6 +946,15 @@ void ClientWorld::update(float delta_time) {
 
     for (auto& [pos, timer] : m_timers) {
         timer.update(delta_time);
+    }
+    ChatMessage message;
+    while (m_message_queue.try_pop(message)) {
+        m_world_scene.handle_chat_message(message);
+    }
+
+    VoiceMessage vm;
+    while (m_voice_queue.try_pop(vm)) {
+        m_audio.receive_voice(vm.data, vm.pos);
     }
 }
 

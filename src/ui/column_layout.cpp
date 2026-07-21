@@ -7,8 +7,8 @@ ColumnLayout::ColumnLayout(Widget* parent) : Widget(parent) {
 ColumnLayout::~ColumnLayout() {}
 
 void ColumnLayout::update(float dt) {
-    layout();
     Widget::update(dt);
+    layout();
 }
 
 float ColumnLayout::width() const { return m_content_width; }

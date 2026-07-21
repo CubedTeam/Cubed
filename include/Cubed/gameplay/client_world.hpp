@@ -2,6 +2,7 @@
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/block.hpp"
+#include "Cubed/gameplay/chat_message.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
 #include "Cubed/gameplay/client_player.hpp"
@@ -78,6 +79,7 @@ public:
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;
     void start_client_thread(std::string_view uuid);
+    void receive_login_rsp(LoginRsp& rsp);
     void stop_client_thread();
 
     void start_thread_pool();
@@ -99,9 +101,15 @@ public:
     int chunk_size() const;
     static AABB get_block_aabb(const glm::ivec3& pos);
     AudioEngine& get_audio();
+    const AudioEngine& get_audio() const;
     Config& get_config();
     WorldScene& world_scene();
     void set_direct_exit();
+
+    void receive_chat_message(ChatMsg& msg);
+    void send_chat_message(ChatMessage& message);
+    void receive_voice_message(VoiceMsg& msg);
+    bool enable_voice_chat() const;
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -110,6 +118,11 @@ public:
     }
 
 private:
+    struct VoiceMessage {
+        std::string data;
+        glm::vec3 pos;
+    };
+
     std::atomic<bool> m_is_pending_delete_queue_free{false};
     std::mutex m_delete_vbo_mutex;
     std::mutex m_delete_vao_mutex;
@@ -147,6 +160,8 @@ private:
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
     tbb::concurrent_queue<PendingSound> m_pending_sound;
+    tbb::concurrent_queue<ChatMessage> m_message_queue;
+    tbb::concurrent_queue<VoiceMessage> m_voice_queue;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
@@ -163,6 +178,7 @@ private:
     std::atomic<bool> m_requesting_chunk{false};
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_chunk_task_id{0};
+    std::atomic<bool> m_voice_chat{true};
     std::shared_ptr<NetworkClient> m_client;
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 

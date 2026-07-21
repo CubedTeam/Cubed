@@ -34,8 +34,16 @@ public:
     virtual Widget& set_window_size(int width, int height);
     virtual Widget& set_visible(bool visible);
     // Returns the final display size
-    virtual float width() const = 0;
-    virtual float height() const = 0;
+
+    virtual float width() const;
+    virtual float height() const;
+    virtual Widget& set_width(float width);
+    virtual Widget& set_height(float height);
+
+    virtual Widget& set_fill_parent(bool fill);
+    virtual Widget& set_fill_width(bool fill);
+    virtual Widget& set_fill_height(bool fill);
+
     virtual glm::vec2 pos() const;
 
     virtual bool handle_key_event(const KeyEvent& e);
@@ -44,7 +52,6 @@ public:
     virtual bool handle_window_resize_event(const WindowResizeEvent& e);
     virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
     virtual bool handle_text_input_event(const TextInputEvent& e);
-
     void set_order(TraversalOrder order);
 
     template <typename T, typename... Args> T& add_child(Args&&... args) {
@@ -56,12 +63,16 @@ public:
 
 protected:
     Widget* m_parent = nullptr;
-    float m_window_height = 0;
-    float m_window_width = 0;
+    float m_window_height = 0.0f;
+    float m_window_width = 0.0f;
+    float m_width = 0.0f;
+    float m_height = 0.0f;
     // Center is at the top-left corner, position is at the top-left corner
     Anchor m_anchor = Anchor::TOP_LEFT;
     bool m_visible = true;
-
+    bool m_fill_parent = false;
+    bool m_fill_height = false;
+    bool m_fill_width = false;
     glm::ivec2 m_offset{0, 0};
 
     std::vector<std::unique_ptr<Widget>>& children();

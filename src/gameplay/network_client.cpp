@@ -83,11 +83,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 auto* rsp = Arena::Create<LoginRsp>(&arena);
                 Logger::info("Client: Receive Login rsp");
                 if (decode_packet(*rsp, body_data, header)) {
-                    if (rsp->success()) {
-                        m_world.start_client_thread(rsp->uuid());
-                    } else {
-                        Logger::error("Connected Server Fail");
-                    }
+                    m_world.receive_login_rsp(*rsp);
                 }
             } break;
             case std::to_underlying(PacketEnum::CHUNK_DATA_RSP): {
@@ -135,6 +131,18 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_player_water_sound(*rsp);
                 }
             } break;
+            case std::to_underlying(PacketEnum::CHAT_MSG): {
+                auto* msg = Arena::Create<ChatMsg>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_chat_message(*msg);
+                }
+            } break;
+            case std::to_underlying(PacketEnum::VOICE_MSG): {
+                auto* msg = Arena::Create<VoiceMsg>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_voice_message(*msg);
+                }
+            }
             }
         }
     } catch (const asio::system_error& e) {
@@ -222,5 +230,5 @@ void NetworkClient::set_error(std::string_view error) {
     m_error_string = error;
     m_connect_error = true;
 }
-
+ClientWorld& NetworkClient::world() { return m_world; }
 } // namespace Cubed

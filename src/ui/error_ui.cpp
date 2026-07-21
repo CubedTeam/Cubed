@@ -16,10 +16,10 @@ void ErrorUI::init() {
     bi->set_window_size(renderer.window_width(), renderer.window_height());
     bi->set_anchor(Anchor::TOP_LEFT);
     bi->set_image("texture/ui/background.png", texture_manager);
-    bi->set_fill(true);
+    bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();
-    rect.set_fill(true);
+    rect.set_fill_parent(true);
     rect.set_alpha(0.7f);
     rect.set_color(Color::BLACK);
 

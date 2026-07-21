@@ -9,6 +9,7 @@
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
 namespace Cubed {
+enum class VoiceInputType { OFF, PTT, ALWAYS };
 class SceneManager;
 class WorldScene : public Scene {
 public:
@@ -33,14 +34,14 @@ public:
     bool pause() const;
     void set_pause(bool pause);
     void set_error(std::string_view error);
+    void set_mouse(bool pause);
+    void set_chatting(bool chatting, bool send);
+    // Not thread safe
+    void handle_chat_message(ChatMessage& message);
+
+    bool is_recording() const;
 
 private:
-    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
-    bool handle_mouse_button_event(const MouseButtonEvent& e) override;
-    bool handle_window_resize_event(const WindowResizeEvent& e) override;
-    bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
-    bool handle_key_event(const KeyEvent& e) override;
-
     SceneManager& m_scene_manager;
     DevPanel m_dev_panel;
     Camera m_camera;
@@ -50,9 +51,18 @@ private:
     bool m_paused = false;
     bool m_show_hud = true;
     bool m_show_dev_pannel = true;
+    bool m_chatting = false;
     PauseMenuUIManager m_pasue_menu;
     WorldUIManager m_hud_ui;
     ErrorUI m_error_ui;
     const Argument& m_argument;
+    VoiceInputType m_input_type;
+    bool handle_mouse_move_event(const MouseMoveEvent& e) override;
+    bool handle_mouse_button_event(const MouseButtonEvent& e) override;
+    bool handle_window_resize_event(const WindowResizeEvent& e) override;
+    bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
+    bool handle_key_event(const KeyEvent& e) override;
+    bool handle_text_input_event(const TextInputEvent&) override;
+    void load_config();
 };
 } // namespace Cubed

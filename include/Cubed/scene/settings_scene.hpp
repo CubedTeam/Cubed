@@ -8,6 +8,7 @@ struct SliderVariable {
     float mouse_sensitivity = 0.15f;
     float sfx = 1.0f;
     float music = 0.5f;
+    float player_voice = 1.0f;
     int rendering_distance = 24;
 };
 
