@@ -143,6 +143,7 @@ bool Slider::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
         if (m_inside) {
             m_dragging = true;
+            m_thumb->set_border_visale(true);
             update_value(m_xpos);
             return true;
         }
@@ -151,6 +152,7 @@ bool Slider::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::RELEASE && e.key == MouseKey::LEFT_BUTTON) {
         if (m_dragging) {
             m_dragging = false;
+            m_thumb->set_border_visale(false);
             return true;
         }
     }
