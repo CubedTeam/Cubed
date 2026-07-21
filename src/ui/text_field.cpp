@@ -246,12 +246,14 @@ bool TextField::handle_key_event(const KeyEvent& e) {
         }
     }
     if (e.key == Key::LEFT_CTRL) {
-        if (e.action == KeyAction::PRESS) {
-            m_ctrl_press = true;
-            return true;
-        } else if (e.action == KeyAction::RELEASE) {
-            m_ctrl_press = false;
-            return true;
+        if (m_typing) {
+            if (e.action == KeyAction::PRESS) {
+                m_ctrl_press = true;
+                return true;
+            } else if (e.action == KeyAction::RELEASE) {
+                m_ctrl_press = false;
+                return true;
+            }
         }
     }
 

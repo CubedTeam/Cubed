@@ -191,6 +191,7 @@ bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
         }
     } else if (key == Key::LEFT_CTRL) {
         if (action == KeyAction::PRESS) {
+
             m_sprinting = true;
         }
         /*
