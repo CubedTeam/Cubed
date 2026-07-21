@@ -34,10 +34,38 @@ void InventoryUI::init() {
             slot.set_default_background(texture_manager);
             slot.set_scale(5.0f);
             slot.set_item(i, block_textures[i].get());
+            m_slots.emplace_back(&slot);
         }
     }
-
+    {
+        auto& label = back->add_child<Label>();
+        auto rect = std::make_unique<Rect>(&label);
+        rect->set_fill_parent(true);
+        rect->set_color(Color::BLACK);
+        label.set_background(std::move(rect));
+        label.set_anchor(Anchor::FOLLOW_MOUSE);
+        label.set_scale(0.8f);
+        label.set_visible(false);
+        label.set_offset({20, -20});
+        m_item_info = &label;
+    }
     m_root_widget = std::move(back);
 }
 void InventoryUI::on_re_enter() {}
+void InventoryUI::update(float dt) {
+    UIManager::update(dt);
+    update_item_info();
+}
+
+void InventoryUI::update_item_info() {
+    for (auto& slot : m_slots) {
+        if (slot->hovered()) {
+            m_item_info->set_text(BlockManager::name_form_id(slot->block()))
+                .set_visible(true);
+            return;
+        }
+    }
+    m_item_info->set_visible(false);
+}
+
 } // namespace Cubed
