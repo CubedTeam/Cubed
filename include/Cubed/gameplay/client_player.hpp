@@ -84,7 +84,7 @@ public:
     void place_block(float dt);
 
     int selected_hotbar() const;
-
+    void set_hotbar(int pos, const ItemStack& item);
     std::span<const ItemStack, HOTBAR_SUM> get_hotbar() const;
 
 private:

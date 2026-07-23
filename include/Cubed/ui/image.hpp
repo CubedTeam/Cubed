@@ -25,6 +25,7 @@ public:
     const Texture* texture() const;
     Image& set_scale(float scale);
     float scale() const;
+    bool has_texture() const;
 
 private:
     void on_render(Renderer& renderer) override;

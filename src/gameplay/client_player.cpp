@@ -321,7 +321,10 @@ void ClientPlayer::place_block(float dt) {
 }
 
 int ClientPlayer::selected_hotbar() const { return m_selected_hotbar; }
-
+void ClientPlayer::set_hotbar(int pos, const ItemStack& item) {
+    ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_SUM);
+    m_hotbar[pos] = item;
+}
 std::span<const ItemStack, ClientPlayer::HOTBAR_SUM>
 ClientPlayer::get_hotbar() const {
     return m_hotbar;

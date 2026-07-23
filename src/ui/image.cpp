@@ -50,6 +50,7 @@ Image& Image::set_scale(float scale) {
     return *this;
 }
 float Image::scale() const { return m_scale; }
+bool Image::has_texture() const { return m_texture != nullptr; }
 float Image::height() const {
     if (!m_texture) {
         // Logger::error("Image not set image!");

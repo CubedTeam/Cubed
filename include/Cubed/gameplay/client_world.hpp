@@ -110,6 +110,7 @@ public:
     void send_chat_message(ChatMessage& message);
     void receive_voice_message(VoiceMsg& msg);
     bool enable_voice_chat() const;
+
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(

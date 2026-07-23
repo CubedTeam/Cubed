@@ -49,6 +49,35 @@ void InventoryUI::init() {
         label.set_offset({20, -20});
         m_item_info = &label;
     }
+    {
+        auto& spec = column.add_child<Rect>();
+        spec.set_color(Color::WHITE).set_fill_width(true).set_height(15.0f);
+    }
+    {
+        auto& player = m_scene.client_world().get_player();
+        auto hotbar = player.get_hotbar();
+        auto& row = column.add_child<RowLayout>();
+
+        for (auto& h : hotbar) {
+            auto& item = row.add_child<ItemSlot>();
+            item.set_default_background(texture_manager);
+            item.set_scale(5.0f);
+            if (h.type == 0) {
+                item.set_item(0, nullptr);
+            } else {
+                item.set_item(h.type, block_textures[h.type].get());
+            }
+            m_hotbar.emplace_back(&item);
+        }
+    }
+    {
+        auto& image = back->add_child<Image>();
+        image.set_texture(nullptr, true);
+        image.set_scale(0.25f);
+        image.set_anchor(Anchor::FOLLOW_MOUSE).set_offset({0, 0});
+        image.set_visible(false);
+        m_selected_image = &image;
+    }
     m_root_widget = std::move(back);
 }
 void InventoryUI::on_re_enter() {}
@@ -58,14 +87,98 @@ void InventoryUI::update(float dt) {
 }
 
 void InventoryUI::update_item_info() {
-    for (auto& slot : m_slots) {
-        if (slot->hovered()) {
-            m_item_info->set_text(BlockManager::name_form_id(slot->block()))
+    auto show_item_info = [this](ItemSlot* slot) {
+        if (slot && !m_selected_image->has_texture()) {
+            auto type = slot->block();
+
+            m_item_info->set_text(BlockManager::name_form_id(type))
                 .set_visible(true);
+            return true;
+        }
+        return false;
+    };
+    {
+        auto slot = get_hovered_slot();
+        if (show_item_info(slot)) {
+            return;
+        }
+    }
+    {
+        auto [slot, _] = get_hovered_hotbar_slot();
+        if (show_item_info(slot)) {
             return;
         }
     }
     m_item_info->set_visible(false);
 }
 
+bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
+
+        auto& texture_manager = m_scene.scene_manager().app().texture_manager();
+        auto& blocks = texture_manager.get_item_textures();
+        if (!m_selected_image->has_texture()) {
+
+            {
+                auto slot = get_hovered_slot();
+                if (slot) {
+                    m_selected_block = slot->block();
+                    if (m_selected_block != 0) {
+                        m_selected_image->set_texture(
+                            blocks[m_selected_block].get(), true);
+                        m_selected_image->set_visible(true);
+                        return true;
+                    }
+                }
+            }
+            {
+                auto [slot, pos] = get_hovered_hotbar_slot();
+                if (slot) {
+                    m_selected_block = slot->block();
+                    if (m_selected_block != 0) {
+                        m_selected_image->set_texture(
+                            blocks[m_selected_block].get(), true);
+                        m_hotbar[pos]->set_item(0, nullptr);
+                        m_selected_image->set_visible(true);
+                        return true;
+                    }
+                }
+            }
+        }
+        if (m_selected_image->has_texture()) {
+            m_selected_image->set_texture(nullptr, true);
+            m_selected_image->set_visible(false);
+            auto [slot, pos] = get_hovered_hotbar_slot();
+            if (slot) {
+                auto& player = m_scene.client_world().get_player();
+                player.set_hotbar(pos, {m_selected_block, 1});
+                if (m_selected_block != 0) {
+                    m_hotbar[pos]->set_item(m_selected_block,
+                                            blocks[m_selected_block].get());
+                }
+            }
+            return true;
+        }
+    }
+    return UIManager::handle_mouse_button_event(e);
+}
+ItemSlot* InventoryUI::get_hovered_slot() {
+    for (auto& slot : m_slots) {
+        if (slot->hovered()) {
+
+            return slot;
+        }
+    }
+    return nullptr;
+}
+std::pair<ItemSlot*, size_t> InventoryUI::get_hovered_hotbar_slot() {
+    for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
+        auto& slot = m_hotbar[i];
+        if (slot->hovered()) {
+
+            return {slot, i};
+        }
+    }
+    return {nullptr, 0};
+}
 } // namespace Cubed
