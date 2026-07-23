@@ -90,10 +90,11 @@ void InventoryUI::update_item_info() {
     auto show_item_info = [this](ItemSlot* slot) {
         if (slot && !m_selected_image->has_texture()) {
             auto type = slot->block();
-
-            m_item_info->set_text(BlockManager::name_form_id(type))
-                .set_visible(true);
-            return true;
+            if (type != 0) {
+                m_item_info->set_text(BlockManager::local_name(type))
+                    .set_visible(true);
+                return true;
+            }
         }
         return false;
     };
@@ -139,6 +140,8 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
                         m_selected_image->set_texture(
                             blocks[m_selected_block].get(), true);
                         m_hotbar[pos]->set_item(0, nullptr);
+                        auto& player = m_scene.client_world().get_player();
+                        player.set_hotbar(pos, {0, 0});
                         m_selected_image->set_visible(true);
                         return true;
                     }

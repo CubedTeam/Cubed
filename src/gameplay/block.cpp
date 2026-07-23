@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/block.hpp"
 
+#include "Cubed/localization.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/toml.utils.hpp"
@@ -38,7 +39,13 @@ const std::string& BlockManager::name_form_id(BlockType id) {
     }
     return m_datas[id].name;
 }
-
+std::string BlockManager::local_name(BlockType id) {
+    if (id >= sums()) {
+        Logger::error("Id {}, is Over The Max Id", id, sums() - 1);
+        return tr(m_datas[0].name_key);
+    }
+    return tr(m_datas[id].name_key);
+}
 bool BlockManager::is_gas(BlockType id) {
     if (id >= sums()) {
         Logger::error("Id {}, is Over The Max Id", id, sums() - 1);
@@ -146,7 +153,8 @@ void BlockManager::init() {
         auto is_blend = safe_get_value(block, "is_blend", false);
         auto is_transitional = safe_get_value(block, "is_transitional", false);
         auto roughness = safe_get_value(block, "roughness", 1.0);
-        m_datas.emplace_back(*id, *name, *is_liquid, *is_passable,
+        auto name_key = safe_get_value(block, "name_key", "Unknow_key");
+        m_datas.emplace_back(*name, *name_key, *id, *is_liquid, *is_passable,
                              *is_cross_plane, *is_transparent, *is_gas,
                              *is_discard, *is_blend, *is_transitional,
                              static_cast<float>(*roughness));

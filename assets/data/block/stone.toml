@@ -8,4 +8,5 @@ is_passable = false
 is_transitional = true
 is_transparent = false
 name = 'stone'
+name_key = 'block.stone'
 roughness = 0.75

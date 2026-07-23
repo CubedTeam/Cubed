@@ -8,4 +8,5 @@ is_passable = false
 is_transitional = false
 is_transparent = false
 name = 'log'
-roughness = 0.7
+name_key = 'block.log'
+roughness = 0.69999999999999996
