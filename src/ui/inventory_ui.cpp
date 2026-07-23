@@ -51,7 +51,7 @@ void InventoryUI::init() {
     }
     {
         auto& spec = column.add_child<Rect>();
-        spec.set_color(Color::WHITE).set_fill_width(true).set_height(15.0f);
+        spec.set_color(Color::GRAY).set_fill_width(true).set_height(15.0f);
     }
     {
         auto& player = m_scene.client_world().get_player();
