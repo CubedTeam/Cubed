@@ -25,8 +25,8 @@ void InventoryUI::init() {
     {
         auto& row_layout = column.add_child<RowLayout>();
         auto row = &row_layout;
-        for (size_t i = 0; i < sum; ++i) {
-            if (i % 10 == 0) {
+        for (size_t i = 1; i < sum; ++i) {
+            if ((i - 1) % 10 == 0) {
                 auto& r = column.add_child<RowLayout>();
                 row = &r;
             }
