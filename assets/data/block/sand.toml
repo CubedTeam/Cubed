@@ -8,4 +8,5 @@ is_passable = false
 is_transitional = true
 is_transparent = false
 name = 'sand'
-roughness = 0.8
+name_key = 'block.sand'
+roughness = 0.80000000000000004

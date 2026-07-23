@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SOIL2.h>
 #include <glad/glad.h>
 #include <string>
 #include <utility>

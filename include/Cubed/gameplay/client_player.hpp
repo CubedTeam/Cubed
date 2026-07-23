@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/item_stack.hpp"
 #include "Cubed/gameplay/player.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/input/input.hpp"
@@ -18,6 +19,7 @@ namespace Cubed {
 class ClientWorld;
 class ClientPlayer {
 public:
+    static constexpr size_t HOTBAR_SUM = 10;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
     static constexpr float RUN_SOUND_INTERVAL = 0.3f;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
@@ -47,7 +49,6 @@ public:
     void change_mode(GameMode mode);
     void reload_config();
     void set_player_pos(const glm::vec3& pos);
-    void set_place_block(unsigned id);
     void update(float delta_time);
 
     float& max_walk_speed();
@@ -58,7 +59,7 @@ public:
     float& g();
     float& fly_y_speed();
 
-    unsigned get_current_block() const;
+    const ItemStack& get_current_itemstack() const;
 
     void set_gait(Gait gait);
     GameMode& game_mode();
@@ -82,6 +83,10 @@ public:
     void set_underwater(bool u);
     void place_block(float dt);
 
+    int selected_hotbar() const;
+    void set_hotbar(int pos, const ItemStack& item);
+    std::span<const ItemStack, HOTBAR_SUM> get_hotbar() const;
+
 private:
     using enum GameMode;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
@@ -89,12 +94,13 @@ private:
     float m_acceleration = DEFAULT_ACCELERATION;
     float m_deceleration = DEFAULT_DECELERATION;
     float m_g = DEFAULT_G;
-    constexpr static float MAX_SPACE_ON_TIME = 0.3f;
-    constexpr static float PLACE_BLOCK_INTERVAL = 0.2f;
+    static constexpr float MAX_SPACE_ON_TIME = 0.3f;
+    static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
+
     float m_place_time = PLACE_BLOCK_INTERVAL;
     std::atomic<float> m_yaw = 0.0f;
     std::atomic<float> m_pitch = 0.0f;
-
+    std::array<ItemStack, HOTBAR_SUM> m_hotbar;
     float m_sensitivity = 0.15f;
 
     float m_max_speed = m_max_walk_speed;
@@ -108,7 +114,7 @@ private:
 
     float m_xz_speed = 0.0f;
 
-    unsigned m_place_block = 1;
+    int m_selected_hotbar = 0;
 
     bool m_moving = false;
     bool m_sprinting = false;

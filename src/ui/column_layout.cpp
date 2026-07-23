@@ -6,10 +6,7 @@ ColumnLayout::ColumnLayout(Widget* parent) : Widget(parent) {
 }
 ColumnLayout::~ColumnLayout() {}
 
-void ColumnLayout::update(float dt) {
-    Widget::update(dt);
-    layout();
-}
+void ColumnLayout::on_update(float) { layout(); }
 
 float ColumnLayout::width() const { return m_content_width; }
 float ColumnLayout::height() const { return m_content_height; }

@@ -8,4 +8,5 @@ is_passable = false
 is_transitional = true
 is_transparent = false
 name = 'dirt'
+name_key = 'block.dirt'
 roughness = 1.0

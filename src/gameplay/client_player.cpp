@@ -126,8 +126,6 @@ void ClientPlayer::reload_config() {
 }
 void ClientPlayer::set_player_pos(const glm::vec3& pos) { m_player_pos = pos; }
 
-void ClientPlayer::set_place_block(unsigned id) { m_place_block = id; }
-
 void ClientPlayer::update(float delta_time) {
     m_gait = compute_gait();
     update_move(delta_time);
@@ -193,6 +191,7 @@ bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
         }
     } else if (key == Key::LEFT_CTRL) {
         if (action == KeyAction::PRESS) {
+
             m_sprinting = true;
         }
         /*
@@ -207,6 +206,26 @@ bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
                 change_mode(CREATIVE);
             }
         }
+    } else if (key == Key::NUMPAD_1 || key == Key::DIGIT_1) {
+        m_selected_hotbar = 0;
+    } else if (key == Key::NUMPAD_2 || key == Key::DIGIT_2) {
+        m_selected_hotbar = 1;
+    } else if (key == Key::NUMPAD_3 || key == Key::DIGIT_3) {
+        m_selected_hotbar = 2;
+    } else if (key == Key::NUMPAD_4 || key == Key::DIGIT_4) {
+        m_selected_hotbar = 3;
+    } else if (key == Key::NUMPAD_5 || key == Key::DIGIT_5) {
+        m_selected_hotbar = 4;
+    } else if (key == Key::NUMPAD_6 || key == Key::DIGIT_6) {
+        m_selected_hotbar = 5;
+    } else if (key == Key::NUMPAD_7 || key == Key::DIGIT_7) {
+        m_selected_hotbar = 6;
+    } else if (key == Key::NUMPAD_8 || key == Key::DIGIT_8) {
+        m_selected_hotbar = 7;
+    } else if (key == Key::NUMPAD_9 || key == Key::DIGIT_9) {
+        m_selected_hotbar = 8;
+    } else if (key == Key::NUMPAD_0 || key == Key::DIGIT_0) {
+        m_selected_hotbar = 9;
     } else {
         return false;
     }
@@ -287,16 +306,30 @@ void ClientPlayer::place_block(float dt) {
         }
     }
     if (m_mouse_state.right) {
-        glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
-        if (!m_world.is_solid(near_pos)) {
-            AABB block_box = ClientWorld::get_block_aabb(near_pos);
-            AABB player_box = get_aabb(get_player_pos());
-            if (!player_box.intersects(block_box)) {
-                m_world.report_block_change(near_pos, m_place_block);
+        auto type = m_hotbar[m_selected_hotbar].type;
+        if (type != 0) {
+            glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
+            if (!m_world.is_solid(near_pos)) {
+                AABB block_box = ClientWorld::get_block_aabb(near_pos);
+                AABB player_box = get_aabb(get_player_pos());
+                if (!player_box.intersects(block_box)) {
+                    m_world.report_block_change(near_pos, type);
+                }
             }
         }
     }
 }
+
+int ClientPlayer::selected_hotbar() const { return m_selected_hotbar; }
+void ClientPlayer::set_hotbar(int pos, const ItemStack& item) {
+    ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_SUM);
+    m_hotbar[pos] = item;
+}
+std::span<const ItemStack, ClientPlayer::HOTBAR_SUM>
+ClientPlayer::get_hotbar() const {
+    return m_hotbar;
+}
+
 void ClientPlayer::update_move(float delta_time) {
     // if frame rate less than 1 frame per second, don't update
     if (delta_time > 1.0f) {
@@ -537,14 +570,14 @@ bool ClientPlayer::update_scroll(float yoffset) {
     }
     if (m_game_mode == CREATIVE) {
         if (yoffset < 0) {
-            m_place_block += 1;
-            if (m_place_block >= BlockManager::sums()) {
-                m_place_block = 1;
+            m_selected_hotbar += 1;
+            if (m_selected_hotbar >= 10) {
+                m_selected_hotbar = 0;
             }
         } else {
-            m_place_block -= 1;
-            if (m_place_block <= 0) {
-                m_place_block = BlockManager::sums() - 1;
+            m_selected_hotbar -= 1;
+            if (m_selected_hotbar < 0) {
+                m_selected_hotbar = 0;
             }
         }
     }
@@ -615,7 +648,9 @@ float& ClientPlayer::acceleration() { return m_acceleration; }
 float& ClientPlayer::deceleration() { return m_deceleration; }
 float& ClientPlayer::g() { return m_g; }
 float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
-unsigned ClientPlayer::get_current_block() const { return m_place_block; };
+const ItemStack& ClientPlayer::get_current_itemstack() const {
+    return m_hotbar[m_selected_hotbar];
+};
 void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
 ClientWorld& ClientPlayer::get_world() { return m_world; }
@@ -662,6 +697,10 @@ void ClientPlayer::init(std::string_view name) {
         audio.play_3d(sound, m_player_pos);
         Logger::debug("Player block {} walk sound", name);
     });
+
+    for (int i = 0; i < 10; i++) {
+        m_hotbar[i].type = i;
+    }
 }
 
 bool ClientPlayer::is_underwater() const { return m_underwater; }

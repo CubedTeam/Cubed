@@ -37,7 +37,7 @@ ChatBox& ChatBox::set_scale(float scale) {
     if (m_text_field) {
         m_text_field->set_scale(scale);
     }
-
+    update_border();
     return *this;
 }
 ChatBox& ChatBox::set_text_scale(float scale) {
@@ -65,13 +65,13 @@ std::string& ChatBox::get_input_text() { return m_text_field->input_text(); }
 
 float ChatBox::width() const {
     if (m_fill_width || m_fill_parent) {
-        return m_width;
+        return Widget::width();
     }
-    return m_width * m_scale;
+    return Widget::width() * m_scale;
 }
 float ChatBox::height() const {
     // Height is dynamically calculated, no scaling needed
-    return m_height;
+    return Widget::height();
 }
 float ChatBox::text_label_width() const { return m_text_width * m_scale; }
 void ChatBox::set_text_field(std::unique_ptr<TextField> text_field) {
@@ -108,7 +108,7 @@ void ChatBox::layout() {
         it->label->set_offset({0, -y});
         y += it->label->height() + m_spacing;
     }
-    m_height = m_lines == 0 ? 0 : (y - m_spacing);
+    set_height(m_lines == 0 ? 0 : (y - m_spacing));
 }
 void ChatBox::on_update(float dt) {
     Widget::on_update(dt);

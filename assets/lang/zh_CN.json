@@ -35,5 +35,15 @@
     "joingame.join_a_world": "加入世界",
     "joingame.server_ip": "服务器IP",
     "joingame.join_world": "加入世界",
-    "error.disable_voice": "服务器已禁用语音聊天"
+    "error.disable_voice": "服务器已禁用语音聊天",
+    "block.air": "空气",
+    "block.dirt": "泥土",
+    "block.grass_block": "草方块",
+    "block.grass": "草",
+    "block.leaf": "树叶",
+    "block.log": "原木",
+    "block.sand": "沙子",
+    "block.snowy_grass_block": "覆雪草方块",
+    "block.stone": "石头",
+    "block.water": "水"
 }

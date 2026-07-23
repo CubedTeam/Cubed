@@ -2,9 +2,11 @@
 #include "Cubed/input/event.hpp"
 #include "Cubed/ui/anchor.hpp"
 
+#include <array>
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
+
 namespace Cubed {
 class Renderer;
 
@@ -31,7 +33,7 @@ public:
     virtual void render(Renderer& renderer);
     virtual Widget& set_anchor(Anchor anchor);
     virtual Widget& set_offset(glm::ivec2 offset);
-    virtual Widget& set_window_size(int width, int height);
+    static void set_window_size(int width, int height);
     virtual Widget& set_visible(bool visible);
     // Returns the final display size
 
@@ -43,7 +45,9 @@ public:
     virtual Widget& set_fill_parent(bool fill);
     virtual Widget& set_fill_width(bool fill);
     virtual Widget& set_fill_height(bool fill);
-
+    virtual Widget& set_border_size(int size);
+    virtual Widget& set_border_visale(bool visable);
+    virtual bool supports_border() const;
     virtual glm::vec2 pos() const;
 
     virtual bool handle_key_event(const KeyEvent& e);
@@ -63,16 +67,17 @@ public:
 
 protected:
     Widget* m_parent = nullptr;
-    float m_window_height = 0.0f;
-    float m_window_width = 0.0f;
-    float m_width = 0.0f;
-    float m_height = 0.0f;
+    static inline float m_window_height = 0.0f;
+    static inline float m_window_width = 0.0f;
+
     // Center is at the top-left corner, position is at the top-left corner
     Anchor m_anchor = Anchor::TOP_LEFT;
     bool m_visible = true;
     bool m_fill_parent = false;
     bool m_fill_height = false;
     bool m_fill_width = false;
+    bool m_show_border = false;
+    int m_border_size = 5;
     glm::ivec2 m_offset{0, 0};
 
     std::vector<std::unique_ptr<Widget>>& children();
@@ -82,9 +87,22 @@ protected:
     virtual void on_update(float dt);
     virtual void on_render(Renderer& renderer);
     virtual glm::vec2 compute_position() const;
+    virtual void update_border();
+    void set_width_internal(float width);
+    void set_height_internal(float height);
 
 private:
     std::vector<std::unique_ptr<Widget>> m_children;
+    /*
+    0 - up
+    1 - down
+    2 - left
+    3 - right
+    */
+    std::array<std::unique_ptr<Widget>, 4> m_border;
     TraversalOrder m_order = TraversalOrder::BACK_TO_FRONT;
+    glm::vec2 m_mouse_pos;
+    float m_width = 0.0f;
+    float m_height = 0.0f;
 };
 } // namespace Cubed

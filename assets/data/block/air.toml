@@ -8,4 +8,5 @@ is_passable = true
 is_transitional = false
 is_transparent = true
 name = 'air'
+name_key = 'block.air'
 roughness = 1.0

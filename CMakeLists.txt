@@ -39,6 +39,8 @@ add_subdirectory(third_party/imgui)
 
 add_subdirectory(third_party/dr_libs)
 
+add_subdirectory(third_party/stb)
+
 add_executable(${PROJECT_NAME})
 
 add_subdirectory(src)
@@ -130,14 +132,12 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE
         SDL3::SDL3                                 
         glad
-        glm::glm
         OpenGL::GL
-        soil2
         Freetype::Freetype
-        tomlplusplus::tomlplusplus
         imgui
         dr_libs
         tbb
+        stb
         protobuf::libprotobuf
         absl::log
         absl::check

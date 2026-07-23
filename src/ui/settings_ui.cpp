@@ -15,12 +15,10 @@ namespace Cubed {
 SettingsUI::SettingsUI(SettingsScene& scene) : m_scene(scene) {}
 void SettingsUI::init() {
     auto bi = std::make_unique<Image>(nullptr);
-    auto& renderer = m_scene.scene_manager().app().renderer();
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
 
-    bi->set_window_size(renderer.window_width(), renderer.window_height());
     bi->set_anchor(Anchor::TOP_LEFT);
-    bi->set_image("texture/ui/background.png", texture_manager);
+    bi->set_image("texture/ui/background.png", texture_manager, false);
     bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();

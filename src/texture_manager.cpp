@@ -10,7 +10,7 @@ namespace {
 constexpr int BLOCK_SIZE = 16;
 constexpr int BLOCK_NORMAL_SIZE = 128;
 constexpr int CROSS_PLANE_SIZE = 16;
-constexpr int BLOCK_ITEM_SIZE = 16;
+constexpr int BLOCK_ITEM_SIZE = 512;
 constexpr int BLOCK_STATUS_SIZE = 16;
 constexpr int SKIN_SIZE = 64;
 
@@ -70,7 +70,7 @@ const Texture* TextureManager::get_pbr_texture() const {
 }
 
 const std::vector<std::unique_ptr<Texture>>&
-TextureManager::item_textures() const {
+TextureManager::get_item_textures() const {
     return m_item_textures;
 }
 
@@ -136,7 +136,6 @@ void TextureManager::load_block_item_texture(unsigned id) {
                           BLOCK_ITEM_SIZE);
 
     texture->set_nearest();
-    texture->set_clamp_to_border();
 
     m_item_textures.push_back(std::move(texture));
 }

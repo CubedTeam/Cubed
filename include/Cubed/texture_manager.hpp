@@ -48,7 +48,7 @@ public:
     const Texture* get_cross_plane_array() const;
     const Texture* get_image_texture(const std::string& path);
     const Texture* get_pbr_texture() const;
-    const std::vector<std::unique_ptr<Texture>>& item_textures() const;
+    const std::vector<std::unique_ptr<Texture>>& get_item_textures() const;
     const Texture* get_skin() const;
     void init_texture();
 

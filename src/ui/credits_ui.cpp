@@ -13,14 +13,12 @@ namespace Cubed {
 CreditsUI::CreditsUI(CreditsScene& scene) : m_scene(scene) {}
 
 void CreditsUI::init() {
-    auto& renderer = m_scene.scene_manager().app().renderer();
 
     auto image = std::make_unique<Image>(nullptr);
     image
         ->set_image("texture/ui/background.png",
-                    m_scene.scene_manager().app().texture_manager())
+                    m_scene.scene_manager().app().texture_manager(), false)
         .set_anchor(Anchor::TOP_LEFT)
-        .set_window_size(renderer.window_width(), renderer.window_height())
         .set_fill_parent(true);
 
     auto& rect = image->add_child<Rect>();
@@ -50,7 +48,6 @@ void CreditsUI::init() {
         add_text("Libraries Used", 0.8f);
         add_text("GLAD – MIT / Apache-2.0");
         add_text("SDL3 – zlib");
-        add_text("SOIL2 – MIT-0");
         add_text("GLM – MIT");
         add_text("FreeType – FTL / GPL-2.0+");
         add_text("toml++ – MIT");
@@ -65,6 +62,7 @@ void CreditsUI::init() {
         add_text("nlohmann/json – MIT");
         add_text("HarfBuzz – Old-MIT / GPL-2.0+");
         add_text("utf8cpp – BSL-1.0");
+        add_text("stb - public domain / MIT licensed");
         add_text("Music", 0.8f);
         add_text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), CC "
                  "BY 4.0.");

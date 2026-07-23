@@ -35,5 +35,15 @@
     "joingame.join_a_world": "Join A World",
     "joingame.server_ip": "Server Ip",
     "joingame.join_world": "Join World",
-    "error.disable_voice": "Server Disable Voice Chat"
+    "error.disable_voice": "Server Disable Voice Chat",
+    "block.air": "air",
+    "block.dirt": "dirt",
+    "block.grass_block": "grass block",
+    "block.grass": "grass",
+    "block.leaf": "leaf",
+    "block.log": "log",
+    "block.sand": "sand",
+    "block.snowy_grass_block": "snowy grass block",
+    "block.stone": "stone",
+    "block.water": "water"
 }

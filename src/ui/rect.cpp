@@ -21,16 +21,16 @@ void Rect::on_render(Renderer& renderer) {
 float Rect::width() const {
 
     if (m_fill_width || m_fill_parent) {
-        return m_width;
+        return Widget::width();
     }
-    return m_width * m_scale;
+    return Widget::width() * m_scale;
 }
 float Rect::height() const {
 
     if (m_fill_height || m_fill_parent) {
-        return m_height;
+        return Widget::height();
     }
-    return m_height * m_scale;
+    return Widget::height() * m_scale;
 }
 float Rect::alpha() const { return m_alpha; }
 
@@ -47,4 +47,5 @@ Rect& Rect::set_alpha(float alpha) {
     return *this;
 }
 Color Rect::color() const { return m_color; }
+bool Rect::supports_border() const { return false; }
 } // namespace Cubed

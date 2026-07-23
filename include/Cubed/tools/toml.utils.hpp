@@ -29,6 +29,12 @@ std::optional<T> safe_get_value(const toml::table& table, std::string_view key,
     return value;
 }
 
+inline std::optional<std::string>
+safe_get_value(const toml::table& table, std::string_view key,
+               std::string_view default_value) {
+    return safe_get_value(table, key, std::string(default_value));
+}
+
 } // namespace TOML
 
 } // namespace Cubed

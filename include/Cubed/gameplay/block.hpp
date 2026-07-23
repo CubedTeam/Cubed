@@ -42,6 +42,7 @@ struct LookBlock {
 
 struct BlockData {
     std::string name;
+    std::string name_key;
     BlockType id = 0;
 
     bool is_liquid = false;
@@ -55,11 +56,11 @@ struct BlockData {
     bool is_blend = false;
     bool is_transitional = false;
     float roughness = 1.0f;
-    BlockData(BlockType b_id, std::string_view b_name, bool liquid,
-              bool passable, bool cross_plane, bool transparent, bool gas,
-              bool discard, bool blend, bool transitional, float r)
-        : name(b_name), id(b_id), is_liquid(liquid), is_gas(gas),
-          is_passable(passable), is_cross_plane(cross_plane),
+    BlockData(std::string_view b_name, std::string_view name_k, BlockType b_id,
+              bool liquid, bool passable, bool cross_plane, bool transparent,
+              bool gas, bool discard, bool blend, bool transitional, float r)
+        : name(b_name), name_key(name_k), id(b_id), is_liquid(liquid),
+          is_gas(gas), is_passable(passable), is_cross_plane(cross_plane),
           is_transparent(transparent), is_discard(discard), is_blend(blend),
           is_transitional(transitional), roughness(r) {}
 };
@@ -72,7 +73,7 @@ public:
     static unsigned sums();
     static unsigned cross_plane_sum();
     static const std::string& name_form_id(BlockType id);
-
+    static std::string local_name(BlockType id);
     static bool is_gas(BlockType id);
     static bool is_liquid(BlockType id);
 

@@ -8,8 +8,8 @@ WorldScene::WorldScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_dev_panel(*this),
       m_client_world(scene_manager.app().audio(), scene_manager.app().config(),
                      *this),
-      m_pasue_menu(*this), m_hud_ui(*this), m_error_ui(*this),
-      m_argument(scene_manager.app().argument()) {}
+      m_pasue_menu(*this), m_inventory_ui(*this), m_hud_ui(*this),
+      m_error_ui(*this), m_argument(scene_manager.app().argument()) {}
 
 WorldScene::~WorldScene() {
     if (m_client) {
@@ -46,7 +46,14 @@ void WorldScene::update(float dt) {
         }
     }*/
     if (m_paused) {
-        m_pasue_menu.update(dt);
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            m_inventory_ui.update(dt);
+            break;
+        case PauseUI::PAUSE_MENU:
+            m_pasue_menu.update(dt);
+            break;
+        }
     } else {
         m_hud_ui.update(dt);
     }
@@ -62,7 +69,14 @@ void WorldScene::render(Renderer& renderer) {
         m_hud_ui.render(renderer);
     }
     if (m_paused) {
-        m_pasue_menu.render(renderer);
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            m_inventory_ui.render(renderer);
+            break;
+        case PauseUI::PAUSE_MENU:
+            m_pasue_menu.render(renderer);
+            break;
+        }
     } else {
         if (m_show_dev_pannel && m_show_hud) {
             renderer.render_dev_panel(m_dev_panel);
@@ -139,6 +153,7 @@ void WorldScene::on_enter() {
         m_dev_panel.init();
         m_pasue_menu.init();
         m_hud_ui.init();
+        m_inventory_ui.init();
         m_scene_manager.app().audio().set_client(m_client);
         m_scene_manager.app().window().set_game_running(true);
     } catch (const std::exception& e) {
@@ -191,8 +206,11 @@ bool WorldScene::handle_mouse_move_event(const MouseMoveEvent& e) {
         return true;
     }
     if (m_paused) {
-        if (m_pasue_menu.handle_event(e)) {
-            return true;
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            return m_inventory_ui.handle_event(e);
+        case PauseUI::PAUSE_MENU:
+            return m_pasue_menu.handle_event(e);
         }
     } else {
         if (m_hud_ui.handle_event(e)) {
@@ -217,8 +235,11 @@ bool WorldScene::handle_mouse_button_event(const MouseButtonEvent& e) {
         return true;
     }
     if (m_paused) {
-        if (m_pasue_menu.handle_event(e)) {
-            return true;
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            return m_inventory_ui.handle_event(e);
+        case PauseUI::PAUSE_MENU:
+            return m_pasue_menu.handle_event(e);
         }
     } else {
         if (m_hud_ui.handle_event(e)) {
@@ -257,8 +278,11 @@ bool WorldScene::handle_mouse_wheel_event(const MouseWheelEvent& e) {
         return true;
     }
     if (m_paused) {
-        if (m_pasue_menu.handle_event(e)) {
-            return true;
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            return m_inventory_ui.handle_event(e);
+        case PauseUI::PAUSE_MENU:
+            return m_pasue_menu.handle_event(e);
         }
     } else {
         if (m_hud_ui.handle_event(e)) {
@@ -286,6 +310,14 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
         }
         bool pasued = pause();
         pasued = !pasued;
+        m_paused_ui = PauseUI::PAUSE_MENU;
+        set_pause(pasued);
+        return true;
+    }
+    if (e.key == Key::E && e.action == KeyAction::PRESS) {
+        bool pasued = pause();
+        pasued = !pasued;
+        m_paused_ui = PauseUI::INVENTORY;
         set_pause(pasued);
         return true;
     }
@@ -327,8 +359,11 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
     }
 
     if (m_paused) {
-        if (m_pasue_menu.handle_event(e)) {
-            return true;
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            return m_inventory_ui.handle_event(e);
+        case PauseUI::PAUSE_MENU:
+            return m_pasue_menu.handle_event(e);
         }
     } else {
         if (m_hud_ui.handle_event(e)) {
@@ -353,7 +388,12 @@ bool WorldScene::handle_text_input_event(const TextInputEvent& e) {
         return m_error_ui.handle_event(e);
     }
     if (m_paused) {
-        return m_pasue_menu.handle_text_input_event(e);
+        switch (m_paused_ui) {
+        case PauseUI::INVENTORY:
+            return m_inventory_ui.handle_event(e);
+        case PauseUI::PAUSE_MENU:
+            return m_pasue_menu.handle_event(e);
+        }
     }
 
     return m_hud_ui.handle_text_input_event(e);

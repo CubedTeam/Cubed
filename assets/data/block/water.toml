@@ -8,4 +8,5 @@ is_passable = true
 is_transitional = false
 is_transparent = true
 name = 'water'
+name_key = 'block.water'
 roughness = 0.02
