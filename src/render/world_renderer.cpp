@@ -393,7 +393,7 @@ void WorldRenderer::shadow_map_generate(ClientWorld& world) {
         }
     }
     // player
-    auto& player_shadow = m_renderer.get_shader("player_depth");
+    auto& player_shadow = m_renderer.get_shader("depth_model");
     m_player_renderer.shadow_render(player_shadow, light_space_matrix, world);
 }
 

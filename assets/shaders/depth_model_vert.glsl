@@ -7,7 +7,6 @@ uniform mat4 lightSpaceMatrix;
 uniform mat4 modelMatrix;
 
 out vec2 tc;
-flat out int tex_layer;
 
 void main() {
     tc = texCoord;
