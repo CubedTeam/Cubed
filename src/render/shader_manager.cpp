@@ -35,6 +35,8 @@ void ShaderManager::init() {
                     "shaders/depth_player_fragment_shader.glsl");
     register_shader("rect", "shaders/rect_v_shader.glsl",
                     "shaders/rect_f_shader.glsl");
+    register_shader("model_shader", "shaders/model_vert.glsl",
+                    "shaders/model_frag.glsl");
 }
 
 void ShaderManager::register_shader(const std::string& name,

@@ -92,4 +92,7 @@ target_sources(${PROJECT_NAME}
         ui/row_layout.cpp
         ui/item_slot.cpp
         ui/inventory_ui.cpp
+        tools/model_loader.cpp
+        render/model_manager.cpp
+        render/model_renderer.cpp
 )
