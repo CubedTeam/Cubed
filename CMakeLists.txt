@@ -148,6 +148,7 @@ target_link_libraries(${PROJECT_NAME}
         OpenAL::OpenAL
         harfbuzz::harfbuzz
         Opus::Opus
+        assimp::assimp
         $<$<PLATFORM_ID:Windows>:ws2_32>
 
 )
