@@ -18,14 +18,13 @@ void ModelRender::render_model(const std::string& name, const glm::vec3& pos,
 }
 
 void ModelRender::shadow_pass(const std::string& name, const glm::vec3& pos,
-                              const glm::mat4& light_matrix, Camera& camera) {
+                              Camera& camera) {
     auto& model_manager = m_renderer.model_manager();
     auto& root = model_manager.get_model(name);
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos);
     auto& shader = m_renderer.get_shader("depth_model");
     glm::mat4 view = camera.get_camera_lookat();
 
-    shader.set_loc("lightSpaceMatrix", light_matrix);
     render_node(root, transform, view, shader, true);
 }
 
@@ -37,7 +36,10 @@ void ModelRender::render_node(const ModelNode& node, const glm::mat4& parent,
     if (shadow) {
         shader.set_loc("modelMatrix", transform);
     } else {
-        shader.set_loc("mv_matrix", view * transform);
+        glm::mat4 mv_matrix = view * transform;
+        shader.set_loc("modelMatrix", transform);
+        shader.set_loc("mv_matrix", mv_matrix);
+        shader.set_loc("norm_matrix", glm::transpose(glm::inverse(mv_matrix)));
     }
 
     for (auto& mesh : node.meshes) {
@@ -52,7 +54,7 @@ void ModelRender::render_node(const ModelNode& node, const glm::mat4& parent,
 void ModelRender::render_mesh(const Mesh& mesh, bool) {
     mesh.vao->bind();
     if (mesh.texture) {
-        mesh.texture->bind(0);
+        mesh.texture->bind(1);
     } else {
         Logger::error("Model Texture Not Find");
     }

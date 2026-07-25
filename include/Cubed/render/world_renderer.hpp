@@ -132,9 +132,8 @@ private:
 
     void render_underwater(ClientWorld& world);
     void render_outline(ClientWorld& world);
-    void render_entity(ClientWorld& world);
     void shadow_entity(ClientWorld& world, const glm::mat4& light_matrix);
-    void render_player(ClientWorld& world);
+    void render_entity(ClientWorld& world);
 
     void render_normal_block(const glm::mat4& model_mat,
                              const glm::mat4& mv_mat, const glm::mat4& norm_mat,

@@ -51,7 +51,6 @@ void WorldRenderer::render(ClientWorld& world) {
     render_world(world);
     render_outline(world);
     render_entity(world);
-    render_player(world);
 
     FrameBuffer::unbind();
 
@@ -291,31 +290,19 @@ void WorldRenderer::render_outline(ClientWorld& world) {
     }
 }
 
-void WorldRenderer::render_entity(ClientWorld& world) {
-    glEnable(GL_DEPTH_TEST);
-    auto& registry = world.get_registry();
-    auto view = registry.view<Transform, Model>();
-    auto& shader = m_renderer.get_shader("model_shader");
-    shader.use();
-    for (auto entity : view) {
-        auto [transform, model] = view.get<Transform, Model>(entity);
-        m_renderer.model_renderer().render_model(model.name, transform.pos,
-                                                 world.world_scene().camera());
-    }
-}
-
 void WorldRenderer::shadow_entity(ClientWorld& world,
                                   const glm::mat4& light_matrix) {
     auto& registry = world.get_registry();
     auto view = registry.view<Transform, Model>();
     auto& shader = m_renderer.get_shader("depth_model");
     shader.use();
+    shader.set_loc("lightSpaceMatrix", light_matrix);
     for (auto entity : view) {
         auto [transform, model] = view.get<Transform, Model>(entity);
         m_renderer.model_renderer().shadow_pass(model.name, transform.pos,
-                                                light_matrix,
                                                 world.world_scene().camera());
     }
+    m_player_renderer.shadow_render(shader, world);
 }
 
 void WorldRenderer::shadow_map_generate(ClientWorld& world) {
@@ -422,10 +409,6 @@ void WorldRenderer::shadow_map_generate(ClientWorld& world) {
     }
 
     shadow_entity(world, light_space_matrix);
-
-    // player
-    auto& player_shadow = m_renderer.get_shader("depth_model");
-    m_player_renderer.shadow_render(player_shadow, light_space_matrix, world);
 }
 
 void WorldRenderer::render_underwater(ClientWorld& world) {
@@ -707,8 +690,8 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     glBindVertexArray(0);
 }
 
-void WorldRenderer::render_player(ClientWorld& world) {
-    auto& shader = m_renderer.get_shader("player");
+void WorldRenderer::render_entity(ClientWorld& world) {
+    auto& shader = m_renderer.get_shader("model_shader");
     shader.use();
     glm::vec3 light_dir_view =
         glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
@@ -729,6 +712,16 @@ void WorldRenderer::render_player(ClientWorld& world) {
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);
 
     m_depth_map_texture->bind(0);
+
+    glEnable(GL_DEPTH_TEST);
+    auto& registry = world.get_registry();
+    auto view = registry.view<Transform, Model>();
+    for (auto entity : view) {
+        auto [transform, model] = view.get<Transform, Model>(entity);
+        m_renderer.model_renderer().render_model(model.name, transform.pos,
+                                                 world.world_scene().camera());
+    }
+
     m_player_renderer.render(shader, world);
 }
 

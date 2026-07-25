@@ -14,8 +14,7 @@ public:
     ~PlayerRenderer();
     void init();
     void render(const Shader& shader, ClientWorld& world);
-    void shadow_render(const Shader& shader, glm::mat4& light_matrix,
-                       ClientWorld& world);
+    void shadow_render(const Shader& shader, ClientWorld& world);
 
 private:
     struct PlayerVertex {

@@ -302,15 +302,12 @@ void PlayerRenderer::render(const Shader& shader, ClientWorld& world) {
     }
 }
 
-void PlayerRenderer::shadow_render(const Shader& shader,
-                                   glm::mat4& light_matrix,
-                                   ClientWorld& world) {
+void PlayerRenderer::shadow_render(const Shader& shader, ClientWorld& world) {
     if (!m_inited) {
         Logger::error("Player Renderer isn't init");
         return;
     }
-    shader.use();
-    shader.set_loc("lightSpaceMatrix", light_matrix);
+
     auto& players = world.render_player_data();
 
     for (auto& player : players) {

@@ -14,7 +14,7 @@ public:
                       Camera& camera);
 
     void shadow_pass(const std::string& name, const glm::vec3& pos,
-                     const glm::mat4& light_matrix, Camera& camera);
+                     Camera& camera);
 
 private:
     Renderer& m_renderer;

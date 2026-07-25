@@ -29,8 +29,6 @@ void ShaderManager::init() {
                     "shaders/billboard_f_shader.glsl");
     register_shader("water", "shaders/water_v_shader.glsl",
                     "shaders/water_f_shader.glsl");
-    register_shader("player", "shaders/player_v_shader.glsl",
-                    "shaders/player_f_shader.glsl");
     register_shader("depth_model", "shaders/depth_model_vert.glsl",
                     "shaders/depth_model_frag.glsl");
     register_shader("rect", "shaders/rect_v_shader.glsl",
