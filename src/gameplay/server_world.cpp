@@ -113,7 +113,7 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
     rsq_pos->set_x(pos.x);
     rsq_pos->set_z(pos.z);
     {
-        chunk_caac cacc;
+        chunk_cacc cacc;
         if (!m_chunks.find(cacc, pos)) {
             // No chunk found and not generating
             Logger::error("Chunk {} {} neither pending nor ready", pos.x,
@@ -989,5 +989,89 @@ void ServerWorld::set_chunk_load_style(int id) {
 }
 
 int ServerWorld::chunk_size() const { return m_chunks.size(); }
+
+int ServerWorld::get_block(const glm::ivec3& block_pos) const {
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
+    chunk_cacc cacc;
+
+    if (!m_chunks.find(cacc, ChunkPos{chunk_x, chunk_z})) {
+        return 0;
+    }
+    if (cacc->second.state != ChunkState::READY) {
+        return 0;
+    }
+    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
+    auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+        z >= CHUNK_SIZE) {
+        return 0;
+    }
+    return chunk_blocks[Chunk::index(x, y, z)];
+}
+bool ServerWorld::is_solid(const glm::ivec3& block_pos) const {
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
+    chunk_cacc cacc;
+
+    if (!m_chunks.find(cacc, ChunkPos{chunk_x, chunk_z})) {
+        return false;
+    }
+    if (cacc->second.state != ChunkState::READY) {
+        return 0;
+    }
+    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
+    auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+        z >= CHUNK_SIZE) {
+        return false;
+    }
+    auto id = chunk_blocks[Chunk::index(x, y, z)];
+    if (BlockManager::is_gas(id) || BlockManager::is_liquid(id)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+bool ServerWorld::can_pass_block(const glm::ivec3& block_pos) const {
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
+    chunk_cacc cacc;
+
+    if (!m_chunks.find(cacc, ChunkPos{chunk_x, chunk_z})) {
+        return true;
+    }
+    if (cacc->second.state != ChunkState::READY) {
+        return 0;
+    }
+    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
+    auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+        z >= CHUNK_SIZE) {
+        return true;
+    }
+    auto id = chunk_blocks[Chunk::index(x, y, z)];
+    return BlockManager::is_passable(id);
+}
+
+BlockType ServerWorld::get_block_tpye(const glm::ivec3& block_pos) const {
+    auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
+    chunk_cacc cacc;
+
+    if (!m_chunks.find(cacc, ChunkPos{chunk_x, chunk_z})) {
+        // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
+        //               block_pos.z);
+        return 0;
+    }
+    if (cacc->second.state != ChunkState::READY) {
+        return 0;
+    }
+    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
+    auto [x, y, z] = Chunk::world_to_block(block_pos, {chunk_x, chunk_z});
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+        z >= CHUNK_SIZE) {
+        // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
+        //               block_pos.z);
+        return 0;
+    }
+    return chunk_blocks[Chunk::index(x, y, z)];
+}
 
 } // namespace Cubed

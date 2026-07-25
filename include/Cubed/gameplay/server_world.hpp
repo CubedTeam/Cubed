@@ -8,6 +8,7 @@
 #include "Cubed/gameplay/river_worm.hpp"
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_player.hpp"
+#include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
 #include "Cubed/tools/sensitive_filter.hpp"
@@ -25,7 +26,7 @@
 #include <vector>
 namespace Cubed {
 class Session;
-class ServerWorld {
+class ServerWorld : public World {
 public:
     enum class ThreadPoolKind { NET, GEN };
     ServerWorld(Config& config);
@@ -85,6 +86,12 @@ public:
     void handle_chat_message(ChatMsg& msg);
     void handle_voice_message(VoiceMsg& msg);
     int chunk_size() const;
+
+    int get_block(const glm::ivec3& block_pos) const override;
+    bool is_solid(const glm::ivec3& block_pos) const override;
+    bool can_pass_block(const glm::ivec3& block_pos) const override;
+    BlockType get_block_tpye(const glm::ivec3& block_pos) const override;
+
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,
@@ -119,7 +126,7 @@ private:
     using PlayerUUIDMap = tbb::concurrent_hash_map<std::string, std::string>;
 
     using chunk_acc = ChunkHashMap::accessor;
-    using chunk_caac = ChunkHashMap::const_accessor;
+    using chunk_cacc = ChunkHashMap::const_accessor;
 
     using uuid_acc = PlayerUUIDMap::accessor;
     using uuid_cacc = PlayerUUIDMap::const_accessor;

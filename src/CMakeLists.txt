@@ -95,4 +95,5 @@ target_sources(${PROJECT_NAME}
         tools/model_loader.cpp
         render/model_manager.cpp
         render/model_renderer.cpp
+        gameplay/chunk.cpp
 )

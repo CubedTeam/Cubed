@@ -8,6 +8,7 @@
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/gameplay/world.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
@@ -30,7 +31,7 @@ struct PlayerRenderData {
     float angle;
 };
 class WorldScene;
-class ClientWorld {
+class ClientWorld : public World {
 public:
     ClientWorld(const ClientWorld&) = delete;
     ClientWorld(ClientWorld&&) = delete;
@@ -46,10 +47,10 @@ public:
     const std::optional<LookBlock>& get_look_block_pos() const;
     ClientPlayer& get_player();
     const ClientPlayer& get_player() const;
-    int get_block(const glm::ivec3& block_pos) const;
-    bool is_solid(const glm::ivec3& block_pos) const;
-    bool can_pass_block(const glm::ivec3& block_pos) const;
-    BlockType get_block_tpye(const glm::ivec3& block_pos) const;
+    int get_block(const glm::ivec3& block_pos) const override;
+    bool is_solid(const glm::ivec3& block_pos) const override;
+    bool can_pass_block(const glm::ivec3& block_pos) const override;
+    BlockType get_block_tpye(const glm::ivec3& block_pos) const override;
 
     void rebuild_world();
 

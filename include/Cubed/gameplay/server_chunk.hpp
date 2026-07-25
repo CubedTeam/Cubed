@@ -2,6 +2,7 @@
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/biome.hpp"
 #include "Cubed/gameplay/block.hpp"
+#include "Cubed/gameplay/chunk.hpp"
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 
@@ -11,7 +12,7 @@
 #include <tuple>
 namespace Cubed {
 class ServerWorld;
-class ServerChunk {
+class ServerChunk : public Chunk {
 public:
     ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
                 bool temp_chunk = false);

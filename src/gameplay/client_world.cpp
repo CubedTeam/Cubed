@@ -136,7 +136,6 @@ void ClientWorld::rebuild_world() {
 BlockType ClientWorld::get_block_tpye(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;
-    ;
 
     if (!m_chunks.find(cacc, ChunkPos{chunk_x, chunk_z})) {
         // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
@@ -737,6 +736,7 @@ AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
                       static_cast<float>(pos.z) + 0.5f},
             glm::vec3{0.5f, 0.5f, 0.5f}};
 }
+
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
