@@ -13,10 +13,13 @@ public:
     void render_model(const std::string& name, const glm::vec3& pos,
                       Camera& camera);
 
+    void shadow_pass(const std::string& name, const glm::vec3& pos,
+                     const glm::mat4& light_matrix, Camera& camera);
+
 private:
     Renderer& m_renderer;
     void render_node(const ModelNode& node, const glm::mat4& parent,
-                     const glm::mat4& view, const Shader& shader);
-    void render_mesh(const Mesh& mesh);
+                     const glm::mat4& view, const Shader& shader, bool shadow);
+    void render_mesh(const Mesh& mesh, bool shadow);
 };
 } // namespace Cubed

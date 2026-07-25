@@ -250,12 +250,6 @@ void Renderer::render_dev_panel(DevPanel& dev_panel) {
     glEnable(GL_DEPTH_TEST);
 }
 
-void Renderer::render_model(const std::string& name, const glm::vec3& pos,
-                            Camera& camera) {
-    glEnable(GL_DEPTH_TEST);
-    m_model_renderer.render_model(name, pos, camera);
-}
-
 bool Renderer::handle_event(const Event& e) {
     return std::visit(Overloaded{[](const MouseMoveEvent&) { return false; },
                                  [](const MouseButtonEvent&) { return false; },
@@ -348,4 +342,5 @@ float Renderer::frame_width() const { return m_frame_width; }
 const glm::mat4& Renderer::p_mat() const { return m_world_proj_matrix; }
 const std::vector<VertexArray>& Renderer::vao() const { return m_vao; }
 ModelManager& Renderer::model_manager() { return m_model_manager; }
+ModelRender& Renderer::model_renderer() { return m_model_renderer; }
 } // namespace Cubed

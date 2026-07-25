@@ -45,6 +45,9 @@ void WorldRenderer::render(ClientWorld& world) {
     day_night_calculation(world);
 
     render_sky(world);
+    if (m_shader_on) {
+        shadow_map_generate(world);
+    }
     render_world(world);
     render_outline(world);
     render_entity(world);
@@ -229,10 +232,6 @@ void WorldRenderer::render_world(ClientWorld& world) {
 
     glm::mat4 norm_mat = glm::transpose(glm::inverse(mv_mat));
 
-    if (m_shader_on) {
-        shadow_map_generate(world);
-    }
-
     m_world_fbo->bind();
 
     glCullFace(GL_BACK);
@@ -293,12 +292,29 @@ void WorldRenderer::render_outline(ClientWorld& world) {
 }
 
 void WorldRenderer::render_entity(ClientWorld& world) {
+    glEnable(GL_DEPTH_TEST);
     auto& registry = world.get_registry();
     auto view = registry.view<Transform, Model>();
+    auto& shader = m_renderer.get_shader("model_shader");
+    shader.use();
     for (auto entity : view) {
         auto [transform, model] = view.get<Transform, Model>(entity);
-        m_renderer.render_model(model.name, transform.pos,
-                                world.world_scene().camera());
+        m_renderer.model_renderer().render_model(model.name, transform.pos,
+                                                 world.world_scene().camera());
+    }
+}
+
+void WorldRenderer::shadow_entity(ClientWorld& world,
+                                  const glm::mat4& light_matrix) {
+    auto& registry = world.get_registry();
+    auto view = registry.view<Transform, Model>();
+    auto& shader = m_renderer.get_shader("depth_model");
+    shader.use();
+    for (auto entity : view) {
+        auto [transform, model] = view.get<Transform, Model>(entity);
+        m_renderer.model_renderer().shadow_pass(model.name, transform.pos,
+                                                light_matrix,
+                                                world.world_scene().camera());
     }
 }
 
@@ -404,6 +420,9 @@ void WorldRenderer::shadow_map_generate(ClientWorld& world) {
                          snapshot->normal_discard_vertices_count);
         }
     }
+
+    shadow_entity(world, light_space_matrix);
+
     // player
     auto& player_shadow = m_renderer.get_shader("depth_model");
     m_player_renderer.shadow_render(player_shadow, light_space_matrix, world);

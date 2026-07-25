@@ -82,10 +82,8 @@ public:
 
     bool handle_event(const Event& e);
 
-    void render_model(const std::string& name, const glm::vec3& pos,
-                      Camera& camera);
-
     ModelManager& model_manager();
+    ModelRender& model_renderer();
 
 private:
     TextureManager& m_texture_manager;
