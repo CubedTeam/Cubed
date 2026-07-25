@@ -4,16 +4,20 @@
 namespace Cubed {
 
 struct AABB {
-    glm::vec3 min{0.0f, 0.0f, 0.0f};
-    glm::vec3 max{0.0f, 0.0f, 0.0f};
+    glm::vec3 center{0.0f};
+    glm::vec3 half{0.0f};
 
-    AABB(glm::vec3 min_point, glm::vec3 max_point)
-        : min(min_point), max(max_point) {}
+    AABB(glm::vec3 center_point, glm::vec3 half_size)
+        : center(center_point), half(half_size) {}
+
+    glm::vec3 min() const { return center - half; }
+
+    glm::vec3 max() const { return center + half; }
 
     bool intersects(const AABB& other) const {
-        return (min.x <= other.max.x && max.x >= other.min.x) &&
-               (min.y <= other.max.y && max.y >= other.min.y) &&
-               (min.z <= other.max.z && max.z >= other.min.z);
+        return (glm::abs(center.x - other.center.x) <= half.x + other.half.x) &&
+               (glm::abs(center.y - other.center.y) <= half.y + other.half.y) &&
+               (glm::abs(center.z - other.center.z) <= half.z + other.half.z);
     }
 };
 

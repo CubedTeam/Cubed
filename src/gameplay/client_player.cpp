@@ -12,14 +12,11 @@ ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
 
 AABB ClientPlayer::get_aabb(const glm::vec3& pos) {
-    float half_width = M_SIZE.x / 2.0f;
-    float half_depth = M_SIZE.z / 2.0f;
+    glm::vec3 half = M_SIZE * 0.5f;
 
-    glm::vec3 min{pos.x - half_width, pos.y, pos.z - half_depth};
+    glm::vec3 center{pos.x, pos.y + half.y, pos.z};
 
-    glm::vec3 max{pos.x + half_width, pos.y + M_SIZE.y, pos.z + half_depth};
-
-    return AABB{min, max};
+    return AABB{center, half};
 }
 const glm::vec3& ClientPlayer::get_front() const { return m_front; }
 
@@ -442,12 +439,15 @@ void ClientPlayer::update_x_move(glm::vec3& player_pos) {
         return;
     }
     AABB player_box = get_aabb(player_pos);
-    int minx = std::floor(player_box.min.x);
-    int maxx = std::floor(player_box.max.x);
-    int miny = std::floor(player_box.min.y);
-    int maxy = std::floor(player_box.max.y);
-    int minz = std::floor(player_box.min.z);
-    int maxz = std::floor(player_box.max.z);
+    glm::vec3 min = player_box.min();
+    glm::vec3 max = player_box.max();
+
+    int minx = std::floor(min.x);
+    int maxx = std::floor(max.x);
+    int miny = std::floor(min.y);
+    int maxy = std::floor(max.y);
+    int minz = std::floor(min.z);
+    int maxz = std::floor(max.z);
 
     for (int x = minx; x <= maxx; ++x) {
         for (int y = miny; y <= maxy; ++y) {
@@ -472,12 +472,15 @@ void ClientPlayer::update_y_move(glm::vec3& player_pos) {
         return;
     }
     AABB player_box = get_aabb(player_pos);
-    int minx = std::floor(player_box.min.x);
-    int maxx = std::floor(player_box.max.x);
-    int miny = std::floor(player_box.min.y);
-    int maxy = std::floor(player_box.max.y);
-    int minz = std::floor(player_box.min.z);
-    int maxz = std::floor(player_box.max.z);
+    glm::vec3 min = player_box.min();
+    glm::vec3 max = player_box.max();
+
+    int minx = std::floor(min.x);
+    int maxx = std::floor(max.x);
+    int miny = std::floor(min.y);
+    int maxy = std::floor(max.y);
+    int minz = std::floor(min.z);
+    int maxz = std::floor(max.z);
 
     for (int x = minx; x <= maxx; ++x) {
         for (int y = miny; y <= maxy; ++y) {
@@ -506,12 +509,15 @@ void ClientPlayer::update_z_move(glm::vec3& player_pos) {
         return;
     }
     AABB player_box = get_aabb(player_pos);
-    int minx = std::floor(player_box.min.x);
-    int maxx = std::floor(player_box.max.x);
-    int miny = std::floor(player_box.min.y);
-    int maxy = std::floor(player_box.max.y);
-    int minz = std::floor(player_box.min.z);
-    int maxz = std::floor(player_box.max.z);
+    glm::vec3 min = player_box.min();
+    glm::vec3 max = player_box.max();
+
+    int minx = std::floor(min.x);
+    int maxx = std::floor(max.x);
+    int miny = std::floor(min.y);
+    int maxy = std::floor(max.y);
+    int minz = std::floor(min.z);
+    int maxz = std::floor(max.z);
 
     for (int x = minx; x <= maxx; ++x) {
         for (int y = miny; y <= maxy; ++y) {

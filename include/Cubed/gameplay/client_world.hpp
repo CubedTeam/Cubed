@@ -20,21 +20,6 @@
 #include <tbb/concurrent_unordered_map.h>
 namespace Cubed {
 
-struct PlayerInfo {
-    std::string name;
-    std::string uuid;
-    glm::vec3 render_pos;
-    glm::vec3 target_pos;
-    float render_yaw;
-    float yaw;
-    float render_pitch;
-    float pitch;
-    Gait gait;
-    float angle = 0.0f;
-    float walk_time = 0.0f;
-    float moving_time = 0.0f;
-};
-
 struct PlayerRenderData {
     std::string name;
     std::string uuid;
@@ -55,7 +40,8 @@ public:
     ~ClientWorld();
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client);
-    void update(float delta_time);
+    void update(float dt);
+    void update_players(float dt);
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
     ClientPlayer& get_player();
@@ -123,6 +109,17 @@ public:
             std::forward_as_tuple(threshold, std::forward<Fn>(f)));
     }
 
+    template <typename... Components>
+    entt::entity create_entity(Components&&... components) {
+        auto e = m_registry.create();
+
+        (m_registry.emplace<std::remove_cvref_t<Components>>(
+             e, std::forward<Components>(components)),
+         ...);
+
+        return e;
+    }
+
 private:
     struct VoiceMessage {
         std::string data;
@@ -141,7 +138,6 @@ private:
                                  ChunkPos::TBBHash>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     using ChunkPosVector = std::vector<ChunkPos>;
-    using OtherPlayerHashMap = std::unordered_map<std::string, PlayerInfo>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
 
@@ -156,7 +152,7 @@ private:
     entt::registry m_registry;
 
     ClientPlayer m_player;
-    OtherPlayerHashMap m_player_info;
+    std::unordered_map<std::string, entt::entity> m_player_entities;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;
@@ -164,7 +160,7 @@ private:
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 
-    mutable std::shared_mutex m_player_info_mutex;
+    mutable std::shared_mutex m_registry_mutex;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;

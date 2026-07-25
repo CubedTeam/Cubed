@@ -296,10 +296,13 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
     if (id != 0) {
         AABB block_box = get_block_aabb(pos);
-        std::shared_lock lock(m_player_info_mutex);
+        std::shared_lock lock(m_registry_mutex);
 
-        for (auto& [uuid, player] : m_player_info) {
-            AABB box = ClientPlayer::get_aabb(player.target_pos);
+        for (auto& [key, player] : m_player_entities) {
+            auto [transform, entity_info] =
+                m_registry.get<Transform, EntityInfo>(player);
+
+            AABB box = ClientPlayer::get_aabb(transform.pos);
             if (box.intersects(block_box)) {
                 return;
             }
@@ -331,20 +334,22 @@ void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
     auto pitch = rsp.pitch();
     auto yaw = rsp.yaw();
     {
-        std::lock_guard lock(m_player_info_mutex);
+        std::lock_guard lock(m_registry_mutex);
         glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
-        auto it = m_player_info.find(rsp.uuid());
-        if (it == m_player_info.end()) {
-            m_player_info.emplace(
-                std::piecewise_construct, std::forward_as_tuple(rsp.uuid()),
-                std::forward_as_tuple(rsp.name(), rsp.uuid(), pos, pos, yaw,
-                                      yaw, pitch, pitch,
-                                      get_gait_from_id(rsp.gait())));
+        auto it = m_player_entities.find(rsp.uuid());
+        if (it == m_player_entities.end()) {
+            auto entity =
+                create_entity(EntityInfo{rsp.name(), rsp.uuid()},
+                              Transform{pos, pos, get_gait_from_id(rsp.gait())},
+                              ViewAngles{yaw, yaw, pitch, pitch});
+            m_player_entities.try_emplace(rsp.uuid(), entity);
         } else {
-            it->second.target_pos = pos;
-            it->second.yaw = yaw;
-            it->second.pitch = pitch;
-            it->second.gait = get_gait_from_id(rsp.gait());
+            auto& transform = m_registry.get<Transform>(it->second);
+            transform.pos = pos;
+            transform.gait = get_gait_from_id(rsp.gait());
+            auto& view_angles = m_registry.get<ViewAngles>(it->second);
+            view_angles.yaw = yaw;
+            view_angles.pitch = pitch;
         }
         // Logger::info("Player {} pos Update", rsp.name());
     }
@@ -360,11 +365,13 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
         return;
     }
     {
-        std::lock_guard lock(m_player_info_mutex);
-        int sum = m_player_info.erase(rsp.uuid());
-        if (sum == 0) {
+        std::lock_guard lock(m_registry_mutex);
+        auto it = m_player_entities.find(rsp.uuid());
+        if (it == m_player_entities.end()) {
             Logger::warn("Player {} not find", rsp.uuid());
         } else {
+            m_registry.destroy(it->second);
+            m_player_entities.erase(rsp.uuid());
             Logger::info("Player {} erase", rsp.uuid());
         }
     }
@@ -474,9 +481,8 @@ void ClientWorld::init(std::string_view player_name,
     Logger::info("Send Login Request");
     m_client->send(make_packet(req), 0);
     m_audio.play_bgm();
-    auto pig = m_registry.create();
-    m_registry.emplace<Transform>(pig, glm::vec3{0.0f, 100.0f, 0.0f});
-    m_registry.emplace<Model>(pig, "model/creature/pig.glb");
+    create_entity(Transform{glm::vec3{0.0f, 100.0f, 0.0f}},
+                  Model{"model/creature/pig.glb"});
 }
 
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
@@ -726,15 +732,11 @@ bool ClientWorld::is_receive_exit() { return m_receive_exit; }
 int ClientWorld::chunk_size() const { return m_chunks.size(); }
 
 AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
-    auto x = pos.x;
-    auto y = pos.y;
-    auto z = pos.z;
-    return {glm::vec3{static_cast<float>(x), static_cast<float>(y),
-                      static_cast<float>(z)},
-            glm::vec3{static_cast<float>(x + 1), static_cast<float>(y + 1),
-                      static_cast<float>(z + 1)}};
+    return {glm::vec3{static_cast<float>(pos.x) + 0.5f,
+                      static_cast<float>(pos.y) + 0.5f,
+                      static_cast<float>(pos.z) + 0.5f},
+            glm::vec3{0.5f, 0.5f, 0.5f}};
 }
-
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
@@ -857,91 +859,7 @@ void ClientWorld::update(float delta_time) {
     }
 
     m_render_player_data.clear();
-    {
-        std::lock_guard lock(m_player_info_mutex);
-        for (auto& [uuid, player] : m_player_info) {
-            player.render_pos =
-                glm::mix(player.render_pos, player.target_pos, 0.15f);
-            if (Math::distance2(player.render_pos, m_player.get_player_pos()) >
-                m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
-                    CHUNK_SIZE) {
-                continue;
-            }
-            player.render_yaw = glm::mix(player.render_yaw, player.yaw, 0.15);
-            player.render_pitch =
-                glm::mix(player.render_pitch, player.pitch, 0.15);
-
-            if (player.gait == Gait::WALK || player.gait == Gait::RUN) {
-
-                player.walk_time += delta_time;
-
-                float speed = player.gait == Gait::RUN ? 14.0f : 8.0f;
-                float amp = player.gait == Gait::RUN ? 50.0f : 35.0f;
-                // float amp = 90.0f;
-                player.angle =
-                    glm::sin(player.walk_time * speed) * glm::radians(amp);
-            } else if (player.gait == Gait::STOP) {
-                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
-                player.angle = glm::mix(player.angle, 0.0f, t);
-            }
-
-            // walking sound
-            if (player.gait == Gait::STOP) {
-                player.moving_time = 0.0f;
-            } else {
-                player.moving_time += delta_time;
-            }
-            auto play_walk_sound = [&]() {
-                glm::ivec3 block = glm::floor(player.render_pos);
-                block.y -= 1;
-                BlockType id = get_block_tpye(block);
-                if (id == 0) {
-                    return;
-                }
-                std::string name = BlockManager::name_form_id(id);
-                std::string sound = "block/" + name + "/walk.ogg";
-                m_audio.play_3d(sound, player.render_pos);
-            };
-            if (player.gait == Gait::WALK) {
-                if (player.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
-                    player.moving_time = 0.0f;
-                    play_walk_sound();
-                }
-            }
-            if (player.gait == Gait::RUN) {
-                if (player.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
-                    player.moving_time = 0.0f;
-                    play_walk_sound();
-                }
-            }
-
-            m_render_player_data.emplace_back(
-                player.name, player.uuid, player.render_pos, player.render_yaw,
-                player.render_pitch, player.gait, player.angle);
-        }
-        {
-            auto gait = m_player.get_gait();
-            auto& walk_time = m_player.walk_time();
-            auto& angle = m_player.angle();
-            if (gait == Gait::WALK || gait == Gait::RUN) {
-
-                walk_time += delta_time;
-
-                float speed = gait == Gait::RUN ? 14.0f : 8.0f;
-                float amp = gait == Gait::RUN ? 50.0f : 35.0f;
-                // float amp = 90.0f;
-                angle = glm::sin(walk_time * speed) * glm::radians(amp);
-            } else if (gait == Gait::STOP) {
-                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
-                angle = glm::mix(angle, 0.0f, t);
-            }
-
-            m_render_player_data.emplace_back(
-                m_player.get_name(), m_player.get_uuid(),
-                m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
-                m_player.get_gait(), m_player.angle());
-        }
-    }
+    update_players(delta_time);
 
     // sound
     PendingSound pending_sound;
@@ -960,6 +878,104 @@ void ClientWorld::update(float delta_time) {
     VoiceMessage vm;
     while (m_voice_queue.try_pop(vm)) {
         m_audio.receive_voice(vm.data, vm.pos);
+    }
+}
+
+void ClientWorld::update_players(float dt) {
+
+    auto update_renderinfo = [this, dt](entt::entity player) {
+        auto& transform = m_registry.get<Transform>(player);
+        transform.render_pos =
+            glm::mix(transform.render_pos, transform.pos, 0.15f);
+        if (Math::distance2(transform.render_pos, m_player.get_player_pos()) >
+            m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
+                CHUNK_SIZE) {
+            return;
+        }
+        auto& view_angles = m_registry.get<ViewAngles>(player);
+        view_angles.render_yaw =
+            glm::mix(view_angles.render_yaw, view_angles.yaw, 0.15);
+        view_angles.render_pitch =
+            glm::mix(view_angles.render_pitch, view_angles.pitch, 0.15);
+
+        if (transform.gait == Gait::WALK || transform.gait == Gait::RUN) {
+
+            transform.walk_time += dt;
+
+            float speed = transform.gait == Gait::RUN ? 14.0f : 8.0f;
+            float amp = transform.gait == Gait::RUN ? 50.0f : 35.0f;
+            // float amp = 90.0f;
+            view_angles.angle =
+                glm::sin(transform.walk_time * speed) * glm::radians(amp);
+        } else if (transform.gait == Gait::STOP) {
+            float t = glm::clamp(dt * 10.0f, 0.0f, 1.0f);
+            view_angles.angle = glm::mix(view_angles.angle, 0.0f, t);
+        }
+
+        // walking sound
+        if (transform.gait == Gait::STOP) {
+            transform.moving_time = 0.0f;
+        } else {
+            transform.moving_time += dt;
+        }
+        auto play_walk_sound = [&]() {
+            glm::ivec3 block = glm::floor(transform.render_pos);
+            block.y -= 1;
+            BlockType id = get_block_tpye(block);
+            if (id == 0) {
+                return;
+            }
+            std::string name = BlockManager::name_form_id(id);
+            std::string sound = "block/" + name + "/walk.ogg";
+            m_audio.play_3d(sound, transform.render_pos);
+        };
+        if (transform.gait == Gait::WALK) {
+            if (transform.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
+                transform.moving_time = 0.0f;
+                play_walk_sound();
+            }
+        }
+        if (transform.gait == Gait::RUN) {
+            if (transform.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
+                transform.moving_time = 0.0f;
+                play_walk_sound();
+            }
+        }
+        auto& player_info = m_registry.get<EntityInfo>(player);
+        m_render_player_data.emplace_back(
+            player_info.name, player_info.uuid, transform.render_pos,
+            view_angles.render_yaw, view_angles.render_pitch, transform.gait,
+            view_angles.angle);
+    };
+
+    {
+        std::lock_guard lock(m_registry_mutex);
+
+        for (auto& [_, player] : m_player_entities) {
+            update_renderinfo(player);
+        }
+        {
+            auto gait = m_player.get_gait();
+            auto& walk_time = m_player.walk_time();
+            auto& angle = m_player.angle();
+            if (gait == Gait::WALK || gait == Gait::RUN) {
+
+                walk_time += dt;
+
+                float speed = gait == Gait::RUN ? 14.0f : 8.0f;
+                float amp = gait == Gait::RUN ? 50.0f : 35.0f;
+                // float amp = 90.0f;
+                angle = glm::sin(walk_time * speed) * glm::radians(amp);
+            } else if (gait == Gait::STOP) {
+                float t = glm::clamp(dt * 10.0f, 0.0f, 1.0f);
+                angle = glm::mix(angle, 0.0f, t);
+            }
+
+            m_render_player_data.emplace_back(
+                m_player.get_name(), m_player.get_uuid(),
+                m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
+                m_player.get_gait(), m_player.angle());
+        }
     }
 }
 
