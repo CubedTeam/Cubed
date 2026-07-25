@@ -49,8 +49,8 @@ AABB HitboxManager::load(const std::string& path) {
             }
         }
         acc a;
-        if (m_hitboxes.insert(a, path)) {
-            a->second = AABB{center, half};
+        if (m_hitboxes.insert(
+                a, std::pair<std::string, AABB>{path, AABB{center, half}})) {
             return a->second;
         }
     } catch (const std::exception& e) {
