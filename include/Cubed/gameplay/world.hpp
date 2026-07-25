@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/AABB.hpp"
 #include "Cubed/gameplay/block.hpp"
 
 #include <glm/glm.hpp>
@@ -16,5 +17,13 @@ public:
     virtual bool is_solid(const glm::ivec3& block_pos) const = 0;
     virtual bool can_pass_block(const glm::ivec3& block_pos) const = 0;
     virtual BlockType get_block_tpye(const glm::ivec3& block_pos) const = 0;
+    virtual int get_per_tick_time() const = 0;
+
+    static AABB get_block_aabb(const glm::ivec3& pos) {
+        return {glm::vec3{static_cast<float>(pos.x) + 0.5f,
+                          static_cast<float>(pos.y) + 0.5f,
+                          static_cast<float>(pos.z) + 0.5f},
+                glm::vec3{0.5f, 0.5f, 0.5f}};
+    }
 };
 } // namespace Cubed

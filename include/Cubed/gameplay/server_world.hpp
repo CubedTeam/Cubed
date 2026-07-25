@@ -91,7 +91,7 @@ public:
     bool is_solid(const glm::ivec3& block_pos) const override;
     bool can_pass_block(const glm::ivec3& block_pos) const override;
     BlockType get_block_tpye(const glm::ivec3& block_pos) const override;
-
+    int get_per_tick_time() const override;
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,

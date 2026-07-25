@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/AABB.hpp"
 #include "Cubed/gameplay/player.hpp"
 
 #include <glm/glm.hpp>
@@ -32,6 +33,16 @@ struct ViewAngles {
     float render_pitch = 0.0f;
     float pitch = 0.0f;
     float angle = 0.0f;
+};
+
+struct Velocity {
+    float dx = 0.0f;
+    float dy = 0.0f;
+    float dz = 0.0f;
+};
+
+struct HitBoxes {
+    std::vector<AABB> boxex;
 };
 
 } // namespace Cubed

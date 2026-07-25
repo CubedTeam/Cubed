@@ -96,4 +96,6 @@ target_sources(${PROJECT_NAME}
         render/model_manager.cpp
         render/model_renderer.cpp
         gameplay/chunk.cpp
+        gameplay/move_system.cpp
+        gameplay/hitbox_manager.cpp
 )

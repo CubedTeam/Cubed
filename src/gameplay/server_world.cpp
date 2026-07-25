@@ -454,7 +454,7 @@ void ServerWorld::serever_run(std::stop_token stoken) {
     Logger::info("Server Thread Started!");
 
     using Clock = std::chrono::steady_clock;
-    constexpr auto TICK = std::chrono::milliseconds(DEFAULT_PER_TICK_TIME);
+    const auto TICK = std::chrono::milliseconds(m_per_tick_time);
 
     auto next = Clock::now();
     while (!stoken.stop_requested()) {
@@ -1073,5 +1073,7 @@ BlockType ServerWorld::get_block_tpye(const glm::ivec3& block_pos) const {
     }
     return chunk_blocks[Chunk::index(x, y, z)];
 }
+
+int ServerWorld::get_per_tick_time() const { return m_per_tick_time; }
 
 } // namespace Cubed

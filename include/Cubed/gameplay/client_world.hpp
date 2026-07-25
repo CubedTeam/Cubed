@@ -91,7 +91,7 @@ public:
     void request_exit();
     bool is_receive_exit();
     int chunk_size() const;
-    static AABB get_block_aabb(const glm::ivec3& pos);
+
     AudioEngine& get_audio();
     const AudioEngine& get_audio() const;
     Config& get_config();
@@ -103,6 +103,7 @@ public:
     void receive_voice_message(VoiceMsg& msg);
     bool enable_voice_chat() const;
     const entt::registry& get_registry();
+    int get_per_tick_time() const override;
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -181,6 +182,7 @@ private:
     std::atomic<int> m_rendering_distance{24};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
+    std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME;
     std::atomic<bool> m_requesting_chunk{false};
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_chunk_task_id{0};

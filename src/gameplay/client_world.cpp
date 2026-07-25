@@ -505,7 +505,7 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
     // Wait for 20 ticks, after the server's central chunk is generated, then
     // request chunks
 
-    std::this_thread::sleep_for(milliseconds(20 * DEFAULT_PER_TICK_TIME));
+    std::this_thread::sleep_for(milliseconds(20 * m_per_tick_time));
 
     request_chunk();
 }
@@ -557,7 +557,7 @@ void ClientWorld::client_run(std::stop_token stoken) {
     Logger::info("Client Thread Started");
     using Clock = std::chrono::steady_clock;
 
-    constexpr auto TICK = std::chrono::milliseconds(DEFAULT_PER_TICK_TIME);
+    const auto TICK = std::chrono::milliseconds(m_per_tick_time);
 
     auto next = Clock::now();
     while (!stoken.stop_requested()) {
@@ -730,13 +730,6 @@ bool ClientWorld::is_receive_exit() { return m_receive_exit; }
 
 int ClientWorld::chunk_size() const { return m_chunks.size(); }
 
-AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
-    return {glm::vec3{static_cast<float>(pos.x) + 0.5f,
-                      static_cast<float>(pos.y) + 0.5f,
-                      static_cast<float>(pos.z) + 0.5f},
-            glm::vec3{0.5f, 0.5f, 0.5f}};
-}
-
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
@@ -755,7 +748,7 @@ void ClientWorld::request_exit() {
         if (m_client->is_connect_error() || m_exit_direct) {
             break;
         }
-        std::this_thread::sleep_for(milliseconds(DEFAULT_PER_TICK_TIME));
+        std::this_thread::sleep_for(milliseconds(m_per_tick_time));
         ++cnt;
         if (cnt >= WORLD_EXIT_TIMEOUT) {
             Logger::warn("Can't Receive Server Exit Sign");
@@ -780,6 +773,7 @@ void ClientWorld::receive_voice_message(VoiceMsg& msg) {
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
 const entt::registry& ClientWorld::get_registry() { return m_registry; }
+int ClientWorld::get_per_tick_time() const { return m_per_tick_time; }
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);
