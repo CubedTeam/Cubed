@@ -65,7 +65,6 @@ void WorldScene::render(Renderer& renderer) {
         return;
     }
     renderer.render_world(m_client_world);
-    renderer.render_model("model/creature/pig.glb", {0, 100, 0}, m_camera);
     if (m_show_hud) {
         m_hud_ui.render(renderer);
     }

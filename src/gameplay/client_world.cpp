@@ -2,6 +2,7 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/chunk_generator.hpp"
+#include "Cubed/gameplay/entity.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -473,6 +474,9 @@ void ClientWorld::init(std::string_view player_name,
     Logger::info("Send Login Request");
     m_client->send(make_packet(req), 0);
     m_audio.play_bgm();
+    auto pig = m_registry.create();
+    m_registry.emplace<Transform>(pig, glm::vec3{0.0f, 100.0f, 0.0f});
+    m_registry.emplace<Model>(pig, "model/creature/pig.glb");
 }
 
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
@@ -773,6 +777,7 @@ void ClientWorld::receive_voice_message(VoiceMsg& msg) {
     m_voice_queue.emplace(msg.opus_data(), pos);
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
+const entt::registry& ClientWorld::get_registry() { return m_registry; }
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);

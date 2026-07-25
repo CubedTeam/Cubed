@@ -14,6 +14,7 @@
 
 #include <absl/container/flat_hash_set.h>
 #include <deque>
+#include <entt/entt.hpp>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
@@ -46,6 +47,10 @@ struct PlayerRenderData {
 class WorldScene;
 class ClientWorld {
 public:
+    ClientWorld(const ClientWorld&) = delete;
+    ClientWorld(ClientWorld&&) = delete;
+    ClientWorld& operator=(const ClientWorld&) = delete;
+    ClientWorld& operator=(ClientWorld&&) = delete;
     ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene);
     ~ClientWorld();
     void init(std::string_view player_name,
@@ -110,7 +115,7 @@ public:
     void send_chat_message(ChatMessage& message);
     void receive_voice_message(VoiceMsg& msg);
     bool enable_voice_chat() const;
-
+    const entt::registry& get_registry();
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
@@ -147,6 +152,9 @@ private:
 
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
+
+    entt::registry m_registry;
+
     ClientPlayer m_player;
     OtherPlayerHashMap m_player_info;
     ChunkHashMap m_chunks;

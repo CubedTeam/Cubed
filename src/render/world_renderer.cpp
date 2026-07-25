@@ -3,6 +3,7 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/entity.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/render/renderer_constants.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -46,6 +47,7 @@ void WorldRenderer::render(ClientWorld& world) {
     render_sky(world);
     render_world(world);
     render_outline(world);
+    render_entity(world);
     render_player(world);
 
     FrameBuffer::unbind();
@@ -287,6 +289,16 @@ void WorldRenderer::render_outline(ClientWorld& world) {
         glDepthFunc(GL_LEQUAL);
         glLineWidth(4.0f);
         glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
+    }
+}
+
+void WorldRenderer::render_entity(ClientWorld& world) {
+    auto& registry = world.get_registry();
+    auto view = registry.view<Transform, Model>();
+    for (auto entity : view) {
+        auto [transform, model] = view.get<Transform, Model>(entity);
+        m_renderer.render_model(model.name, transform.pos,
+                                world.world_scene().camera());
     }
 }
 
