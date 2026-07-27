@@ -1,6 +1,9 @@
 #pragma once
+#include "Cubed/gameplay/model.hpp"
 #include "Cubed/render/model_node.hpp"
 #include "Cubed/tools/model_loader.hpp"
+
+#include <tbb/concurrent_hash_map.h>
 namespace Cubed {
 class ModelManager {
 public:
@@ -11,11 +14,20 @@ public:
     ModelManager& operator=(ModelManager&&) = delete;
     ~ModelManager();
     const ModelNode& get_model(const std::string& model_name);
+    const ModelNode& get_model(ModelID id);
+    ModelID get_model_id(const std::string& name);
+    const std::string& get_model_name(ModelID id);
     void init();
 
 private:
     ModelLoader m_loader;
-    std::unordered_map<std::string, ModelNode> m_models;
-    const ModelNode& load_model(const std::string& model_name);
+    ModelID m_next = 0;
+    using ModelMap = tbb::concurrent_hash_map<ModelID, ModelNode>;
+    using IDMap = tbb::concurrent_hash_map<std::string, ModelID>;
+    using NameMap = tbb::concurrent_hash_map<ModelID, std::string>;
+    ModelMap m_models;
+    IDMap m_id_map;
+    NameMap m_name_map;
+    const ModelNode& load_model(std::string_view model_name);
 };
 } // namespace Cubed

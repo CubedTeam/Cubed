@@ -6,8 +6,6 @@
 #include <string>
 namespace Cubed {
 
-using ModelID = uint32_t;
-
 struct Position {
     glm::vec3 value{0.0f};
 };
@@ -23,10 +21,6 @@ struct WalkPose {
 struct EntityInfo {
     std::string name;
     std::string uuid;
-};
-
-struct Model {
-    ModelID id;
 };
 
 struct Health {
