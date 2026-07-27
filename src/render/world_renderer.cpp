@@ -3,7 +3,6 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
-#include "Cubed/gameplay/entity.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/render/renderer_constants.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -292,17 +291,18 @@ void WorldRenderer::render_outline(ClientWorld& world) {
 
 void WorldRenderer::shadow_entity(ClientWorld& world,
                                   const glm::mat4& light_matrix) {
-    auto& registry = world.get_registry();
-    auto view = registry.view<Transform, Model>();
     auto& shader = m_renderer.get_shader("depth_model");
     shader.use();
     shader.set_loc("lightSpaceMatrix", light_matrix);
-    for (auto entity : view) {
-        auto [transform, model] = view.get<Transform, Model>(entity);
-        m_renderer.model_renderer().shadow_pass(model.name, transform.pos,
-                                                world.world_scene().camera());
-    }
-    m_player_renderer.shadow_render(shader, world);
+    /*
+     auto& registry = world.get_registry();
+auto view = registry.view<Transform, Model>();
+for (auto entity : view) {
+auto [transform, model] = view.get<Transform, Model>(entity);
+m_renderer.model_renderer().shadow_pass(model.name, transform.pos,
+                world.world_scene().camera());
+}*/
+    m_player_renderer.render(shader, world, true);
 }
 
 void WorldRenderer::shadow_map_generate(ClientWorld& world) {
@@ -714,15 +714,17 @@ void WorldRenderer::render_entity(ClientWorld& world) {
     m_depth_map_texture->bind(0);
 
     glEnable(GL_DEPTH_TEST);
-    auto& registry = world.get_registry();
+    /*
+        auto& registry = world.get_registry();
     auto view = registry.view<Transform, Model>();
     for (auto entity : view) {
         auto [transform, model] = view.get<Transform, Model>(entity);
         m_renderer.model_renderer().render_model(model.name, transform.pos,
                                                  world.world_scene().camera());
     }
+    */
 
-    m_player_renderer.render(shader, world);
+    m_player_renderer.render(shader, world, false);
 }
 
 glm::vec3 WorldRenderer::quantize_sun_direction(const glm::vec3& lightdir,

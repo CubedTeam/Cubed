@@ -5,11 +5,18 @@
 #include <glm/glm.hpp>
 #include <string>
 namespace Cubed {
-struct Transform {
-    glm::vec3 pos{0, 0, 0};
-    glm::vec3 render_pos{0, 0, 0};
+
+using ModelID = uint32_t;
+
+struct Position {
+    glm::vec3 value{0.0f};
+};
+
+struct WalkPose {
     Gait gait = Gait::STOP;
+    // for arm roll caculate
     float walk_time = 0.0f;
+    // for sound play
     float moving_time = 0.0f;
 };
 
@@ -19,26 +26,22 @@ struct EntityInfo {
 };
 
 struct Model {
-    std::string name;
+    ModelID id;
 };
 
 struct Health {
-    float hp = 0;
+    float hp = 20;
     float max_hp = 20;
 };
 
-struct ViewAngles {
-    float render_yaw = 0.0f;
+struct Orientation {
     float yaw = 0.0f;
-    float render_pitch = 0.0f;
     float pitch = 0.0f;
-    float angle = 0.0f;
+    float roll = 0.0f;
 };
 
 struct Velocity {
-    float dx = 0.0f;
-    float dy = 0.0f;
-    float dz = 0.0f;
+    glm::vec3 value{0.0f};
 };
 
 struct HitBoxes {

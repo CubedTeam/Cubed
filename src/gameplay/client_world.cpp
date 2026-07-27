@@ -295,13 +295,11 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
     if (id != 0) {
         AABB block_box = get_block_aabb(pos);
-        std::shared_lock lock(m_registry_mutex);
+        std::shared_lock lock(m_players_date_mutex);
 
-        for (auto& [key, player] : m_player_entities) {
-            auto [transform, entity_info] =
-                m_registry.get<Transform, EntityInfo>(player);
+        for (const auto& player : m_players_data) {
 
-            AABB box = ClientPlayer::get_aabb(transform.pos);
+            AABB box = ClientPlayer::get_aabb(player.pos.value);
             if (box.intersects(block_box)) {
                 return;
             }
@@ -333,22 +331,31 @@ void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
     auto pitch = rsp.pitch();
     auto yaw = rsp.yaw();
     {
-        std::lock_guard lock(m_registry_mutex);
+        std::lock_guard lock(m_players_date_mutex);
         glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
-        auto it = m_player_entities.find(rsp.uuid());
-        if (it == m_player_entities.end()) {
-            auto entity =
-                create_entity(EntityInfo{rsp.name(), rsp.uuid()},
-                              Transform{pos, pos, get_gait_from_id(rsp.gait())},
-                              ViewAngles{yaw, yaw, pitch, pitch});
-            m_player_entities.try_emplace(rsp.uuid(), entity);
+        auto it = m_players_handle.find(rsp.uuid());
+        if (it == m_players_handle.end()) {
+            PlayerData data{};
+            data.entity.name = rsp.name();
+            data.entity.uuid = rsp.uuid();
+            data.angle.pitch = pitch;
+            data.angle.yaw = yaw;
+            data.render_angle.pitch = pitch;
+            data.render_angle.yaw = yaw;
+            data.pos.value = pos;
+            data.render_pos.value = pos;
+            data.walk.gait = get_gait_from_id(rsp.gait());
+            auto handle = m_players_data.emplace(std::move(data));
+            m_players_handle.try_emplace(rsp.uuid(), handle);
         } else {
-            auto& transform = m_registry.get<Transform>(it->second);
-            transform.pos = pos;
-            transform.gait = get_gait_from_id(rsp.gait());
-            auto& view_angles = m_registry.get<ViewAngles>(it->second);
-            view_angles.yaw = yaw;
-            view_angles.pitch = pitch;
+            auto it = m_players_handle.find(rsp.uuid());
+            if (it != m_players_handle.end()) {
+                auto& data = m_players_data[it->second];
+                data.pos.value = pos;
+                data.walk.gait = get_gait_from_id(rsp.gait());
+                data.angle.yaw = yaw;
+                data.angle.pitch = pitch;
+            }
         }
         // Logger::info("Player {} pos Update", rsp.name());
     }
@@ -364,13 +371,13 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
         return;
     }
     {
-        std::lock_guard lock(m_registry_mutex);
-        auto it = m_player_entities.find(rsp.uuid());
-        if (it == m_player_entities.end()) {
+        std::lock_guard lock(m_players_date_mutex);
+        auto it = m_players_handle.find(rsp.uuid());
+        if (it == m_players_handle.end()) {
             Logger::warn("Player {} not find", rsp.uuid());
         } else {
-            m_registry.destroy(it->second);
-            m_player_entities.erase(rsp.uuid());
+            m_players_data.erase(it->second);
+            m_players_handle.erase(it);
             Logger::info("Player {} erase", rsp.uuid());
         }
     }
@@ -480,8 +487,6 @@ void ClientWorld::init(std::string_view player_name,
     Logger::info("Send Login Request");
     m_client->send(make_packet(req), 0);
     m_audio.play_bgm();
-    create_entity(Transform{glm::vec3{0.0f, 100.0f, 0.0f}},
-                  Model{"model/creature/pig.glb"});
 }
 
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
@@ -876,43 +881,43 @@ void ClientWorld::update(float delta_time) {
 
 void ClientWorld::update_players(float dt) {
 
-    auto update_renderinfo = [this, dt](entt::entity player) {
-        auto& transform = m_registry.get<Transform>(player);
-        transform.render_pos =
-            glm::mix(transform.render_pos, transform.pos, 0.15f);
-        if (Math::distance2(transform.render_pos, m_player.get_player_pos()) >
+    auto update_renderinfo = [this, dt](PlayerData& player) {
+        player.render_pos.value =
+            glm::mix(player.render_pos.value, player.pos.value, 0.15f);
+        if (Math::distance2(player.render_pos.value,
+                            m_player.get_player_pos()) >
             m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
                 CHUNK_SIZE) {
             return;
         }
-        auto& view_angles = m_registry.get<ViewAngles>(player);
-        view_angles.render_yaw =
-            glm::mix(view_angles.render_yaw, view_angles.yaw, 0.15);
-        view_angles.render_pitch =
-            glm::mix(view_angles.render_pitch, view_angles.pitch, 0.15);
+        player.render_angle.yaw =
+            glm::mix(player.render_angle.yaw, player.angle.yaw, 0.15);
+        player.render_angle.pitch =
+            glm::mix(player.render_angle.pitch, player.angle.pitch, 0.15);
 
-        if (transform.gait == Gait::WALK || transform.gait == Gait::RUN) {
+        if (player.walk.gait == Gait::WALK || player.walk.gait == Gait::RUN) {
 
-            transform.walk_time += dt;
+            player.walk.walk_time += dt;
 
-            float speed = transform.gait == Gait::RUN ? 14.0f : 8.0f;
-            float amp = transform.gait == Gait::RUN ? 50.0f : 35.0f;
+            float speed = player.walk.gait == Gait::RUN ? 14.0f : 8.0f;
+            float amp = player.walk.gait == Gait::RUN ? 50.0f : 35.0f;
             // float amp = 90.0f;
-            view_angles.angle =
-                glm::sin(transform.walk_time * speed) * glm::radians(amp);
-        } else if (transform.gait == Gait::STOP) {
+            player.render_angle.roll =
+                glm::sin(player.walk.walk_time * speed) * glm::radians(amp);
+        } else if (player.walk.gait == Gait::STOP) {
             float t = glm::clamp(dt * 10.0f, 0.0f, 1.0f);
-            view_angles.angle = glm::mix(view_angles.angle, 0.0f, t);
+            player.render_angle.roll =
+                glm::mix(player.render_angle.roll, 0.0f, t);
         }
 
         // walking sound
-        if (transform.gait == Gait::STOP) {
-            transform.moving_time = 0.0f;
+        if (player.walk.gait == Gait::STOP) {
+            player.walk.moving_time = 0.0f;
         } else {
-            transform.moving_time += dt;
+            player.walk.moving_time += dt;
         }
         auto play_walk_sound = [&]() {
-            glm::ivec3 block = glm::floor(transform.render_pos);
+            glm::ivec3 block = glm::floor(player.render_pos.value);
             block.y -= 1;
             BlockType id = get_block_tpye(block);
             if (id == 0) {
@@ -920,31 +925,32 @@ void ClientWorld::update_players(float dt) {
             }
             std::string name = BlockManager::name_form_id(id);
             std::string sound = "block/" + name + "/walk.ogg";
-            m_audio.play_3d(sound, transform.render_pos);
+            m_audio.play_3d(sound, player.render_pos.value);
         };
-        if (transform.gait == Gait::WALK) {
-            if (transform.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
-                transform.moving_time = 0.0f;
+        if (player.walk.gait == Gait::WALK) {
+            if (player.walk.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
+                player.walk.moving_time = 0.0f;
                 play_walk_sound();
             }
         }
-        if (transform.gait == Gait::RUN) {
-            if (transform.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
-                transform.moving_time = 0.0f;
+        if (player.walk.gait == Gait::RUN) {
+            if (player.walk.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
+                player.walk.moving_time = 0.0f;
                 play_walk_sound();
             }
         }
-        auto& player_info = m_registry.get<EntityInfo>(player);
-        m_render_player_data.emplace_back(
-            player_info.name, player_info.uuid, transform.render_pos,
-            view_angles.render_yaw, view_angles.render_pitch, transform.gait,
-            view_angles.angle);
+        PlayerRenderData render_data;
+        render_data.render_pos = player.render_pos;
+        render_data.angle = player.render_angle;
+        render_data.gait = player.walk.gait;
+        render_data.info = player.entity;
+        m_render_player_data.emplace_back(std::move(render_data));
     };
 
     {
-        std::lock_guard lock(m_registry_mutex);
+        std::lock_guard lock(m_players_date_mutex);
 
-        for (auto& [_, player] : m_player_entities) {
+        for (auto& player : m_players_data) {
             update_renderinfo(player);
         }
         {
@@ -963,11 +969,15 @@ void ClientWorld::update_players(float dt) {
                 float t = glm::clamp(dt * 10.0f, 0.0f, 1.0f);
                 angle = glm::mix(angle, 0.0f, t);
             }
-
-            m_render_player_data.emplace_back(
-                m_player.get_name(), m_player.get_uuid(),
-                m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
-                m_player.get_gait(), m_player.angle());
+            PlayerRenderData render_data{};
+            render_data.render_pos.value = m_player.get_player_pos();
+            render_data.angle.yaw = m_player.yaw();
+            render_data.angle.pitch = m_player.pitch();
+            render_data.angle.roll = angle;
+            render_data.gait = m_player.get_gait();
+            render_data.info.name = m_player.get_name();
+            render_data.info.uuid = m_player.get_uuid();
+            m_render_player_data.emplace_back(std::move(render_data));
         }
     }
 }

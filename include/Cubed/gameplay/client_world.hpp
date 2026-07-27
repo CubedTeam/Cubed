@@ -8,10 +8,12 @@
 #include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/gameplay/player_data.hpp"
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
+#include "Cubed/tools/sparse_vector.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <deque>
@@ -20,15 +22,6 @@
 #include <tbb/concurrent_unordered_map.h>
 namespace Cubed {
 
-struct PlayerRenderData {
-    std::string name;
-    std::string uuid;
-    glm::vec3 render_pos;
-    float yaw;
-    float pitch;
-    Gait gait;
-    float angle;
-};
 class WorldScene;
 class ClientWorld : public World {
 public:
@@ -146,7 +139,10 @@ private:
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
 
-    mutable std::shared_mutex m_registry_mutex;
+    mutable std::shared_mutex m_players_date_mutex;
+    using PlayerHandle = SparseVector<PlayerData>::Handle;
+    SparseVector<PlayerData> m_players_data;
+    std::unordered_map<std::string, PlayerHandle> m_players_handle;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;

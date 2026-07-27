@@ -13,8 +13,7 @@ public:
     PlayerRenderer(Renderer& renderer);
     ~PlayerRenderer();
     void init();
-    void render(const Shader& shader, ClientWorld& world);
-    void shadow_render(const Shader& shader, ClientWorld& world);
+    void render(const Shader& shader, ClientWorld& world, bool shadow_render);
 
 private:
     struct PlayerVertex {
