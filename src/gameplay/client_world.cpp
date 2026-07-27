@@ -772,7 +772,6 @@ void ClientWorld::receive_voice_message(VoiceMsg& msg) {
     m_voice_queue.emplace(msg.opus_data(), pos);
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
-const entt::registry& ClientWorld::get_registry() { return m_registry; }
 int ClientWorld::get_per_tick_time() const { return m_per_tick_time; }
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;

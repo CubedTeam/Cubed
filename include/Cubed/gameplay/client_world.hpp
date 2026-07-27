@@ -15,7 +15,6 @@
 
 #include <absl/container/flat_hash_set.h>
 #include <deque>
-#include <entt/entt.hpp>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
@@ -102,24 +101,12 @@ public:
     void send_chat_message(ChatMessage& message);
     void receive_voice_message(VoiceMsg& msg);
     bool enable_voice_chat() const;
-    const entt::registry& get_registry();
     int get_per_tick_time() const override;
     template <typename Fn>
     void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
         m_ticktimers.emplace(
             std::piecewise_construct, std::forward_as_tuple(std::string(id)),
             std::forward_as_tuple(threshold, std::forward<Fn>(f)));
-    }
-
-    template <typename... Components>
-    entt::entity create_entity(Components&&... components) {
-        auto e = m_registry.create();
-
-        (m_registry.emplace<std::remove_cvref_t<Components>>(
-             e, std::forward<Components>(components)),
-         ...);
-
-        return e;
     }
 
 private:
@@ -151,10 +138,7 @@ private:
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
 
-    entt::registry m_registry;
-
     ClientPlayer m_player;
-    std::unordered_map<std::string, entt::entity> m_player_entities;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;
