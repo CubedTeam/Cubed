@@ -10,8 +10,7 @@
 namespace {} // namespace
 
 namespace Cubed {
-LocalPlayer::LocalPlayer(ClientWorld& world)
-    : Entity(0, "cubed:player"), m_world(world) {}
+LocalPlayer::LocalPlayer(ClientWorld& world) : m_world(world) {}
 LocalPlayer::~LocalPlayer() {}
 
 const glm::vec3& LocalPlayer::get_front() const { return m_front; }
@@ -361,7 +360,8 @@ void LocalPlayer::update_move(float delta_time) {
             glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed};
     }
 
-    SpeedSystem::update(delta_time, *this);
+    SpeedSystem::update(delta_time, m_velocity, m_move_state, m_movement,
+                        m_direction, m_gravity);
 
     update_direction();
 
@@ -374,10 +374,12 @@ void LocalPlayer::update_move(float delta_time) {
     }
 
     if (m_game_mode == SPECTATOR) {
-        player_pos += PhysicalSystem::get_move_distance(delta_time, *this);
+        player_pos += PhysicalSystem::get_move_distance(delta_time, m_direction,
+                                                        m_velocity);
     } else {
         auto [x, y, z] =
-            PhysicalSystem::update(delta_time, *this, m_world, player_pos);
+            PhysicalSystem::update(delta_time, m_world, player_pos, m_velocity,
+                                   m_direction, m_move_state, m_hitbox);
         if (!x || !z) {
             m_sprinting = false;
         }
@@ -552,6 +554,9 @@ void LocalPlayer::reset_input_status() {
 }
 
 void LocalPlayer::init(std::string_view name) {
+
+    m_hitbox = HitboxManager::hitbox("cubed:player").id;
+
     {
         std::lock_guard lock(m_player_pos_mutex);
         m_pos.value = {0.0f, 255.0f, 0.0f};
@@ -590,4 +595,16 @@ void LocalPlayer::init(std::string_view name) {
 
 bool LocalPlayer::is_underwater() const { return m_underwater; }
 void LocalPlayer::set_underwater(bool u) { m_underwater = u; }
+
+glm::vec3& LocalPlayer::max_speed() { return m_velocity.max; }
+float& LocalPlayer::acceleration() { return m_movement.acceleration; }
+float& LocalPlayer::deceleration() { return m_movement.deceleration; }
+float& LocalPlayer::g() { return m_gravity.value; }
+void LocalPlayer::set_gait(Gait gait) { m_walk_pose.gait = gait; }
+float LocalPlayer::yaw() const { return m_angle.yaw; }
+float LocalPlayer::pitch() const { return m_angle.pitch; }
+float& LocalPlayer::roll() { return m_angle.roll; }
+float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
+Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }
+
 } // namespace Cubed

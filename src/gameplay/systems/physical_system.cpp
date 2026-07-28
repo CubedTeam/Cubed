@@ -99,21 +99,28 @@ bool update_z(const glm::vec3& pos, const glm::vec3& distance, World& world,
 }
 
 } // namespace
-std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, Entity& e,
+std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, ServerEntity& e,
                                                     World& world) {
-    glm::vec3 pos = e.pos().value;
+    glm::vec3 pos = e.transform.position.value;
     auto ans = update(dt, e, world, pos);
-    e.pos().value = pos;
+    e.transform.position.value = pos;
     return ans;
 }
 
-std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, Entity& e,
+std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, ServerEntity& e,
                                                     World& world,
                                                     glm::vec3& moved_pos) {
-    auto distance = get_move_distance(dt, e);
-    auto& m_velocity = e.velocity();
-    auto& m_move_state = e.move_state();
-    auto box = HitboxManager::hitbox(e.info().hitbox);
+
+    return update(dt, world, moved_pos, e.velocity, e.direction, e.move_state,
+                  e.hitbox);
+}
+
+std::tuple<bool, bool, bool>
+PhysicalSystem::update(float dt, World& world, glm::vec3& moved_pos,
+                       Velocity& v, Direction& direction, MoveState& move_state,
+                       HitboxID hitbox) {
+    auto distance = get_move_distance(dt, direction, v);
+    auto box = HitboxManager::hitbox(hitbox);
     bool x = false;
     bool y = false;
     bool z = false;
@@ -121,17 +128,17 @@ std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, Entity& e,
         moved_pos.x += distance.x;
         x = true;
     } else {
-        m_velocity.value.x = 0.0f;
+        v.value.x = 0.0f;
     }
 
     if (update_y(moved_pos, distance, world, box.box)) {
         moved_pos.y += distance.y;
         y = true;
     } else {
-        m_velocity.value.y = 0.0f;
+        v.value.y = 0.0f;
         if (distance.y < 0) {
-            m_move_state.can_up = true;
-            m_move_state.is_fly = false;
+            move_state.can_up = true;
+            move_state.is_fly = false;
         }
     }
 
@@ -139,16 +146,14 @@ std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, Entity& e,
         moved_pos.z += distance.z;
         z = true;
     } else {
-        m_velocity.value.z = 0.0f;
+        v.value.z = 0.0f;
     }
     return {x, y, z};
 }
 
-glm::vec3 PhysicalSystem::get_move_distance(float dt, const Entity& e) {
-    auto& m_direction = e.direction();
-    auto& m_velocity = e.velocity();
-    return glm::vec3{m_direction.value.x * m_velocity.value.x * dt,
-                     m_velocity.value.y * dt,
-                     m_direction.value.z * m_velocity.value.z * dt};
+glm::vec3 PhysicalSystem::get_move_distance(float dt, const Direction& d,
+                                            const Velocity& v) {
+    return glm::vec3{d.value.x * v.value.x * dt, v.value.y * dt,
+                     d.value.z * v.value.z * dt};
 }
 } // namespace Cubed

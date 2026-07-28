@@ -1,7 +1,12 @@
 #pragma once
-#include "Cubed/gameplay/entity.hpp"
+
+#include "Cubed/gameplay/ecs/animation.hpp"
+#include "Cubed/gameplay/ecs/identity.hpp"
+#include "Cubed/gameplay/ecs/transform.hpp"
+#include "Cubed/gameplay/player.hpp"
 namespace Cubed {
-struct PlayerData {
+
+struct ClientPlayer {
     Position pos{};
     Position render_pos{};
     EntityInfo entity{};

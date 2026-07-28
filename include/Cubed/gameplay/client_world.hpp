@@ -5,15 +5,14 @@
 #include "Cubed/gameplay/chat_message.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
+#include "Cubed/gameplay/client_player_manager.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/gameplay/network_client.hpp"
-#include "Cubed/gameplay/player_data.hpp"
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
-#include "Cubed/tools/sparse_vector.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <deque>
@@ -34,7 +33,6 @@ public:
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client);
     void update(float dt);
-    void update_players(float dt);
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
     LocalPlayer& get_player();
@@ -55,7 +53,6 @@ public:
     void receive_block_change(const BlockChangeRsp& rsp);
     void receive_time(const UpdateTime& rsp);
 
-    void receive_remote_player(const PlayerInfoRsp& rsp);
     void receive_player_logout(const LogoutRsp& rsp);
     void receive_player_water_sound(const PlayerWaterSound& rsp);
     void send_player_water_sound(bool underwater, const glm::vec3& pos);
@@ -74,8 +71,6 @@ public:
     void reset_key_status();
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
-    const std::vector<PlayerRenderData>& render_player_data() const;
-    std::vector<PlayerRenderData>& render_player_data();
 
     glm::vec3 sunlight_dir() const;
     bool sphere_collide_world(glm::vec3 center, float radius) const;
@@ -88,6 +83,7 @@ public:
     const AudioEngine& get_audio() const;
     Config& get_config();
     WorldScene& world_scene();
+    ClientPlayerManager& player_manager();
     void set_direct_exit();
 
     void receive_chat_message(ChatMsg& msg);
@@ -131,18 +127,13 @@ private:
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
 
-    LocalPlayer m_player;
+    ClientPlayerManager m_player_manager;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;
     WorldScene& m_world_scene;
     std::vector<glm::vec4> m_planes;
     std::jthread m_client_thread;
-
-    mutable std::shared_mutex m_players_date_mutex;
-    using PlayerHandle = SparseVector<PlayerData>::Handle;
-    SparseVector<PlayerData> m_players_data;
-    std::unordered_map<std::string, PlayerHandle> m_players_handle;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
@@ -152,7 +143,6 @@ private:
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
-    std::vector<PlayerRenderData> m_render_player_data;
 
     tbb::concurrent_unordered_map<std::string, TickTimer> m_ticktimers;
     std::unordered_map<std::string, Timer> m_timers;
@@ -175,8 +165,6 @@ private:
     Random m_random;
 
     void client_run(std::stop_token token);
-
-    void report_player_info();
 
     void set_block(const glm::ivec3& pos, unsigned id);
 

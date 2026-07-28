@@ -2,9 +2,14 @@
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
-#include "Cubed/gameplay/entity.hpp"
+#include "Cubed/gameplay/ecs/animation.hpp"
+#include "Cubed/gameplay/ecs/identity.hpp"
+#include "Cubed/gameplay/ecs/movement.hpp"
+#include "Cubed/gameplay/ecs/state.hpp"
+#include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/hitbox.hpp"
 #include "Cubed/gameplay/item_stack.hpp"
 #include "Cubed/gameplay/player.hpp"
 #include "Cubed/input/event.hpp"
@@ -17,7 +22,7 @@
 namespace Cubed {
 
 class ClientWorld;
-class LocalPlayer : public Entity {
+class LocalPlayer {
 public:
     static constexpr size_t HOTBAR_SUM = 10;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
@@ -35,6 +40,7 @@ public:
     bool update_scroll(float yoffset);
 
     void update_chunk_set(const ChunkPosSet& set);
+
     const ChunkPosSet& get_chunk_pos_set() const;
     ChunkPosSet get_chunk_pos_set();
 
@@ -77,6 +83,17 @@ public:
     void set_hotbar(int pos, const ItemStack& item);
     std::span<const ItemStack, HOTBAR_SUM> get_hotbar() const;
 
+    glm::vec3& max_speed();
+    float& acceleration();
+    float& deceleration();
+    float& g();
+    void set_gait(Gait gait);
+    float yaw() const;
+    float pitch() const;
+    float& roll();
+    float& walk_time();
+    Gait get_gait() const;
+
 private:
     using enum GameMode;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
@@ -84,8 +101,18 @@ private:
     float m_max_y_speed = 7.5f;
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
-    Movement m_movement{};
-    Gravity m_gravity{};
+
+    EntityInfo m_info;
+    Position m_pos;
+    WalkPose m_walk_pose;
+    Velocity m_velocity;
+    Orientation m_angle;
+    Movement m_movement;
+    Gravity m_gravity;
+    MoveState m_move_state;
+    Direction m_direction;
+    HitboxID m_hitbox = 0;
+
     float m_place_time = PLACE_BLOCK_INTERVAL;
 
     std::array<ItemStack, HOTBAR_SUM> m_hotbar;

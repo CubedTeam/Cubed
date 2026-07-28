@@ -107,7 +107,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
             case std::to_underlying(PacketEnum::PLAYER_INFO_RSP): {
                 auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
-                    m_world.receive_remote_player(*rsp);
+                    m_world.player_manager().receive_remote_player(*rsp);
                 }
             } break;
             case std::to_underlying(PacketEnum::LOGOUT_RSP): {
