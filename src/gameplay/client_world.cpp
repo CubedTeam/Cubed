@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/entity.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/math_tools.hpp"
@@ -299,7 +300,8 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
 
         for (const auto& player : m_players_data) {
 
-            AABB box = ClientPlayer::get_aabb(player.pos.value);
+            AABB box = HitboxManager::aabb("cubed:player");
+            box.center += player.pos.value;
             if (box.intersects(block_box)) {
                 return;
             }

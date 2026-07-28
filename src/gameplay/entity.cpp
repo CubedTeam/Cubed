@@ -20,4 +20,14 @@ Movement& Entity::movement() { return m_movement; }
 Gravity& Entity::gravity() { return m_gravity; }
 MoveState& Entity::move_state() { return m_move_state; }
 Direction& Entity::direction() { return m_direction; }
+
+const Velocity& Entity::velocity() const { return m_velocity; }
+const Position& Entity::pos() const { return m_pos; }
+const WalkPose& Entity::walk_pose() const { return m_walk_pose; }
+const Orientation& Entity::angle() const { return m_angle; }
+const Movement& Entity::movement() const { return m_movement; }
+const Gravity& Entity::gravity() const { return m_gravity; }
+const MoveState& Entity::move_state() const { return m_move_state; }
+const Direction& Entity::direction() const { return m_direction; }
+
 } // namespace Cubed

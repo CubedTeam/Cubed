@@ -1,12 +1,20 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 
+#include "Cubed/gameplay/player.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <nlohmann/json.hpp>
 namespace fs = std::filesystem;
 using nlohmann::json;
 namespace Cubed {
-HitboxManager::HitboxManager() {}
+HitboxManager::HitboxManager() {
+
+    glm::vec3 half = PLAYER_SIZE * 0.5f;
+
+    glm::vec3 center{0.0f, half.y, 0.0f};
+    m_hitboxes.emplace("cubed:player", AABB{center, half});
+}
+
 HitboxManager::~HitboxManager() {}
 
 HitboxManager& HitboxManager::instance() {

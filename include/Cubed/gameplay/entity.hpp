@@ -92,6 +92,15 @@ public:
     MoveState& move_state();
     Direction& direction();
 
+    const Velocity& velocity() const;
+    const Position& pos() const;
+    const WalkPose& walk_pose() const;
+    const Orientation& angle() const;
+    const Movement& movement() const;
+    const Gravity& gravity() const;
+    const MoveState& move_state() const;
+    const Direction& direction() const;
+
 protected:
     Position m_pos;
     WalkPose m_walk_pose;

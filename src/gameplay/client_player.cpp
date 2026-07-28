@@ -4,6 +4,8 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/hitbox_manager.hpp"
+#include "Cubed/gameplay/systems/physical_system.hpp"
 #include "Cubed/gameplay/systems/speed_system.hpp"
 namespace {} // namespace
 
@@ -11,13 +13,6 @@ namespace Cubed {
 ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
 
-AABB ClientPlayer::get_aabb(const glm::vec3& pos) {
-    glm::vec3 half = M_SIZE * 0.5f;
-
-    glm::vec3 center{pos.x, pos.y + half.y, pos.z};
-
-    return AABB{center, half};
-}
 const glm::vec3& ClientPlayer::get_front() const { return m_front; }
 
 const std::optional<LookBlock>& ClientPlayer::get_look_block_pos() const {
@@ -318,7 +313,8 @@ void ClientPlayer::place_block(float dt) {
             glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
             if (!m_world.is_solid(near_pos)) {
                 AABB block_box = ClientWorld::get_block_aabb(near_pos);
-                AABB player_box = get_aabb(get_player_pos());
+                AABB player_box = HitboxManager::aabb("cubed:player");
+                player_box.center += get_player_pos();
                 if (!player_box.intersects(block_box)) {
                     m_world.report_block_change(near_pos, type);
                 }
@@ -368,11 +364,6 @@ void ClientPlayer::update_move(float delta_time) {
 
     update_direction();
 
-    move_distance = {m_direction.value.x * m_velocity.value.x * delta_time,
-                     0.0f,
-                     m_direction.value.z * m_velocity.value.z * delta_time};
-    move_distance.y = m_velocity.value.y * delta_time;
-
     // ensure the thread safe
     glm::vec3 player_pos;
 
@@ -381,12 +372,15 @@ void ClientPlayer::update_move(float delta_time) {
         player_pos = m_pos.value;
     }
 
-    // y
-    update_y_move(player_pos);
-    // x
-    update_x_move(player_pos);
-
-    update_z_move(player_pos);
+    if (m_game_mode == SPECTATOR) {
+        player_pos += PhysicalSystem::get_move_distance(delta_time, *this);
+    } else {
+        auto [x, y, z] =
+            PhysicalSystem::update(delta_time, *this, m_world, player_pos);
+        if (!x || !z) {
+            m_sprinting = false;
+        }
+    }
 
     if (player_pos.y < -15.0f) {
         Logger::warn("y is tow low");
@@ -410,109 +404,6 @@ void ClientPlayer::update_move(float delta_time) {
 
     for (auto& [key, timer] : m_timers) {
         timer.update(delta_time);
-    }
-}
-
-void ClientPlayer::update_x_move(glm::vec3& player_pos) {
-    player_pos.x += move_distance.x;
-    if (m_game_mode == SPECTATOR) {
-        return;
-    }
-    AABB player_box = get_aabb(player_pos);
-    glm::vec3 min = player_box.min();
-    glm::vec3 max = player_box.max();
-
-    int minx = std::floor(min.x);
-    int maxx = std::floor(max.x);
-    int miny = std::floor(min.y);
-    int maxy = std::floor(max.y);
-    int minz = std::floor(min.z);
-    int maxz = std::floor(max.z);
-
-    for (int x = minx; x <= maxx; ++x) {
-        for (int y = miny; y <= maxy; ++y) {
-            for (int z = minz; z <= maxz; ++z) {
-                glm::ivec3 block_pos{x, y, z};
-                if (!m_world.can_pass_block(block_pos)) {
-                    AABB block_box = ClientWorld::get_block_aabb(block_pos);
-                    if (player_box.intersects(block_box)) {
-                        m_sprinting = false;
-                        player_pos.x -= move_distance.x;
-                        return;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void ClientPlayer::update_y_move(glm::vec3& player_pos) {
-    player_pos.y += move_distance.y;
-    if (m_game_mode == SPECTATOR) {
-        return;
-    }
-    AABB player_box = get_aabb(player_pos);
-    glm::vec3 min = player_box.min();
-    glm::vec3 max = player_box.max();
-
-    int minx = std::floor(min.x);
-    int maxx = std::floor(max.x);
-    int miny = std::floor(min.y);
-    int maxy = std::floor(max.y);
-    int minz = std::floor(min.z);
-    int maxz = std::floor(max.z);
-
-    for (int x = minx; x <= maxx; ++x) {
-        for (int y = miny; y <= maxy; ++y) {
-            for (int z = minz; z <= maxz; ++z) {
-                glm::ivec3 block_pos{x, y, z};
-                if (!m_world.can_pass_block(block_pos)) {
-                    AABB block_box = ClientWorld::get_block_aabb(block_pos);
-                    if (player_box.intersects(block_box)) {
-                        player_pos.y -= move_distance.y;
-                        m_velocity.value.y = 0.0f;
-                        if (move_distance.y < 0) {
-                            m_move_state.can_up = true;
-                            m_move_state.is_fly = false;
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void ClientPlayer::update_z_move(glm::vec3& player_pos) {
-    player_pos.z += move_distance.z;
-    if (m_game_mode == SPECTATOR) {
-        return;
-    }
-    AABB player_box = get_aabb(player_pos);
-    glm::vec3 min = player_box.min();
-    glm::vec3 max = player_box.max();
-
-    int minx = std::floor(min.x);
-    int maxx = std::floor(max.x);
-    int miny = std::floor(min.y);
-    int maxy = std::floor(max.y);
-    int minz = std::floor(min.z);
-    int maxz = std::floor(max.z);
-
-    for (int x = minx; x <= maxx; ++x) {
-        for (int y = miny; y <= maxy; ++y) {
-            for (int z = minz; z <= maxz; ++z) {
-                glm::ivec3 block_pos{x, y, z};
-                if (!m_world.can_pass_block(block_pos)) {
-                    AABB block_box = ClientWorld::get_block_aabb(block_pos);
-                    if (player_box.intersects(block_box)) {
-                        m_sprinting = false;
-                        player_pos.z -= move_distance.z;
-                        return;
-                    }
-                }
-            }
-        }
     }
 }
 

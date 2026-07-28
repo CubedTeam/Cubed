@@ -1,5 +1,4 @@
 #pragma once
-#include "Cubed/AABB.hpp"
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
@@ -39,7 +38,6 @@ public:
     const ChunkPosSet& get_chunk_pos_set() const;
     ChunkPosSet get_chunk_pos_set();
 
-    static AABB get_aabb(const glm::vec3& pos);
     const glm::vec3& get_front() const;
 
     const std::optional<LookBlock>& get_look_block_pos() const;
@@ -102,13 +100,11 @@ private:
     bool m_sprinting = false;
     bool m_underwater = false;
 
-    glm::vec3 move_distance{0.0f, 0.0f, 0.0f};
     // player is tow block tall, the pos is the lower pos
     ChunkPos m_last_chunk_pos{0, 0};
 
     glm::vec3 m_front{0, 0, -1};
     glm::vec3 m_right{0, 0, 0};
-    static constexpr glm::vec3 M_SIZE{0.6f, 1.8f, 0.6f};
 
     MouseState m_mouse_state{};
     GameMode m_game_mode = CREATIVE;
@@ -128,10 +124,6 @@ private:
     void update_lookup_block();
 
     void update_move(float delta_time);
-
-    void update_x_move(glm::vec3& player_pos);
-    void update_y_move(glm::vec3& player_pos);
-    void update_z_move(glm::vec3& player_pos);
 
     void update_player_chunk();
 

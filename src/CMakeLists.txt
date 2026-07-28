@@ -98,4 +98,6 @@ target_sources(${PROJECT_NAME}
         gameplay/chunk.cpp
         gameplay/hitbox_manager.cpp
         gameplay/entity.cpp
+        gameplay/systems/physical_system.cpp
+        gameplay/systems/speed_system.cpp
 )
