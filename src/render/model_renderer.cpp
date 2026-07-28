@@ -6,10 +6,9 @@
 namespace Cubed {
 ModelRender::ModelRender(Renderer& renderer) : m_renderer(renderer) {}
 
-void ModelRender::render_model(const std::string& name, const glm::vec3& pos,
+void ModelRender::render_model(ModelID id, const glm::vec3& pos,
                                Camera& camera) {
-    auto& model_manager = m_renderer.model_manager();
-    auto& root = model_manager.get_model(name);
+    auto& root = ModelManager::model(id).node;
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos);
     auto& shader = m_renderer.get_shader("model_shader");
     glm::mat4 view = camera.get_camera_lookat();
@@ -17,10 +16,9 @@ void ModelRender::render_model(const std::string& name, const glm::vec3& pos,
     render_node(root, transform, view, shader, false);
 }
 
-void ModelRender::shadow_pass(const std::string& name, const glm::vec3& pos,
+void ModelRender::shadow_pass(ModelID id, const glm::vec3& pos,
                               Camera& camera) {
-    auto& model_manager = m_renderer.model_manager();
-    auto& root = model_manager.get_model(name);
+    auto& root = ModelManager::model(id).node;
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos);
     auto& shader = m_renderer.get_shader("depth_model");
     glm::mat4 view = camera.get_camera_lookat();

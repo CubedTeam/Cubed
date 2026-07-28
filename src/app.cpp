@@ -20,8 +20,7 @@ App::App()
 
     : m_game_config(ASSETS_PATH "config.toml"), m_window(m_game_config),
       m_texture_manager(m_game_config), m_audio(m_game_config),
-      m_renderer(m_texture_manager, m_game_config, m_model_manager),
-      m_scene_manager(*this) {}
+      m_renderer(m_texture_manager, m_game_config), m_scene_manager(*this) {}
 
 App::~App() {
     stop_text_input();
@@ -86,7 +85,6 @@ void App::init(int argc, char** argv) {
     Logger::info("Renderer Init Success");
     // MapTable::init_map();
     m_texture_manager.init_texture();
-    m_model_manager.init();
     Logger::info("Texture Load Success");
 
     m_scene_manager.request_push(SceneType::MAIN_MENU);

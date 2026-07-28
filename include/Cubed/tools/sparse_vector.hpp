@@ -236,7 +236,7 @@ public:
         }
     };
 
-    template <class U> Handle insert(U&& value) {
+    template <class U> [[nodiscard]] Handle insert(U&& value) {
         uint32_t id;
         if (!m_free_list.empty()) {
             id = m_free_list.back();

@@ -6,10 +6,10 @@ namespace Cubed {
 namespace {
 
 bool update_x(const glm::vec3& pos, const glm::vec3& distance, World& world,
-              const AABB& box) {
+              const Hitbox& box) {
     glm::vec3 p = pos;
     p.x += distance.x;
-    AABB b = box;
+    Hitbox b = box;
     b.center += p;
     glm::vec3 min = b.min();
     glm::vec3 max = b.max();
@@ -25,7 +25,7 @@ bool update_x(const glm::vec3& pos, const glm::vec3& distance, World& world,
             for (int z = minz; z <= maxz; ++z) {
                 glm::ivec3 block_pos{x, y, z};
                 if (!world.can_pass_block(block_pos)) {
-                    AABB block_box = World::get_block_aabb(block_pos);
+                    Hitbox block_box = World::get_block_aabb(block_pos);
                     if (b.intersects(block_box)) {
                         return false;
                     }
@@ -37,10 +37,10 @@ bool update_x(const glm::vec3& pos, const glm::vec3& distance, World& world,
 }
 
 bool update_y(const glm::vec3& pos, const glm::vec3& distance, World& world,
-              const AABB& box) {
+              const Hitbox& box) {
     glm::vec3 p = pos;
     p.y += distance.y;
-    AABB b = box;
+    Hitbox b = box;
     b.center += p;
     glm::vec3 min = b.min();
     glm::vec3 max = b.max();
@@ -56,7 +56,7 @@ bool update_y(const glm::vec3& pos, const glm::vec3& distance, World& world,
             for (int z = minz; z <= maxz; ++z) {
                 glm::ivec3 block_pos{x, y, z};
                 if (!world.can_pass_block(block_pos)) {
-                    AABB block_box = World::get_block_aabb(block_pos);
+                    Hitbox block_box = World::get_block_aabb(block_pos);
                     if (b.intersects(block_box)) {
                         return false;
                     }
@@ -68,10 +68,10 @@ bool update_y(const glm::vec3& pos, const glm::vec3& distance, World& world,
 }
 
 bool update_z(const glm::vec3& pos, const glm::vec3& distance, World& world,
-              const AABB& box) {
+              const Hitbox& box) {
     glm::vec3 p = pos;
     p.z += distance.z;
-    AABB b = box;
+    Hitbox b = box;
     b.center += p;
     glm::vec3 min = b.min();
     glm::vec3 max = b.max();
@@ -87,7 +87,7 @@ bool update_z(const glm::vec3& pos, const glm::vec3& distance, World& world,
             for (int z = minz; z <= maxz; ++z) {
                 glm::ivec3 block_pos{x, y, z};
                 if (!world.can_pass_block(block_pos)) {
-                    AABB block_box = World::get_block_aabb(block_pos);
+                    Hitbox block_box = World::get_block_aabb(block_pos);
                     if (b.intersects(block_box)) {
                         return false;
                     }
@@ -113,18 +113,18 @@ std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, Entity& e,
     auto distance = get_move_distance(dt, e);
     auto& m_velocity = e.velocity();
     auto& m_move_state = e.move_state();
-    AABB box = HitboxManager::aabb("cubed:player");
+    auto box = HitboxManager::hitbox(e.info().hitbox);
     bool x = false;
     bool y = false;
     bool z = false;
-    if (update_x(moved_pos, distance, world, box)) {
+    if (update_x(moved_pos, distance, world, box.box)) {
         moved_pos.x += distance.x;
         x = true;
     } else {
         m_velocity.value.x = 0.0f;
     }
 
-    if (update_y(moved_pos, distance, world, box)) {
+    if (update_y(moved_pos, distance, world, box.box)) {
         moved_pos.y += distance.y;
         y = true;
     } else {
@@ -135,7 +135,7 @@ std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, Entity& e,
         }
     }
 
-    if (update_z(moved_pos, distance, world, box)) {
+    if (update_z(moved_pos, distance, world, box.box)) {
         moved_pos.z += distance.z;
         z = true;
     } else {

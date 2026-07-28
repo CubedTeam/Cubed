@@ -2,9 +2,24 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
+#include "Cubed/tools/name_space.hpp"
 namespace Cubed {
 
-ModelManager::ModelManager() {}
+ModelManager& ModelManager::instance() {
+    static ModelManager inst;
+    return inst;
+}
+
+[[nodiscard]]
+ModelManager::Handle ModelManager::model(const std::string& model_name) {
+    return instance().get_model(model_name);
+}
+[[nodiscard]]
+ModelManager::Handle ModelManager::model(ModelID id) {
+    return instance().get_model(id);
+}
+
+ModelManager::ModelManager() { init(); }
 
 ModelManager::~ModelManager() {}
 
@@ -12,15 +27,15 @@ void ModelManager::init() {
 
 };
 
-const ModelNode& ModelManager::get_model(const std::string& model_name) {
+ModelManager::Handle ModelManager::get_model(const std::string& model_name) {
     return get_model(get_model_id(model_name));
 }
 
-const ModelNode& ModelManager::get_model(ModelID id) {
+ModelManager::Handle ModelManager::get_model(ModelID id) {
 
     ModelMap::const_accessor cacc;
     if (!m_models.find(cacc, id)) {
-        return cacc->second;
+        return {cacc->second, cacc->first};
     }
     return load_model(get_model_name(id));
 }
@@ -32,8 +47,7 @@ ModelID ModelManager::get_model_id(const std::string& name) {
     if (m_id_map.find(cacc, name)) {
         return cacc->second;
     }
-    ASSERT_MSG(false, std::format("ModelManager: Can't find {}", name));
-    return 0;
+    return load_model(name).id;
 }
 
 const std::string& ModelManager::get_model_name(ModelID id) {
@@ -46,23 +60,24 @@ const std::string& ModelManager::get_model_name(ModelID id) {
     return n;
 }
 
-const ModelNode& ModelManager::load_model(std::string_view model_name) {
+ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
     auto p = model_name.find(':');
     if (p == std::string::npos) {
         Logger::error("Can't Parse Model name {}", model_name);
         ASSERT(false);
     }
-    auto name = model_name.substr(p + 1);
-    auto space = model_name.substr(0, p);
-    if (name.empty()) {
+    auto space = parse_namespace(model_name);
+    if (space.size() < 2) {
         Logger::error("Can't Parse Model name {}", model_name);
         ASSERT(false);
     }
     std::string path;
-    if (space == "cubed") {
-        path = std::format("{}model/creature/{}", ASSETS_PATH, name);
+    if (space[0] == "cubed") {
+        path = std::format("{}model/creature/{}/{}.gbl", ASSETS_PATH, space[1],
+                           space[1]);
     } else {
-        path = std::format("./{}/model/creature/{}", space, name);
+        path = std::format("./{}/model/creature/{}/{}.gbl", space[0], space[1],
+                           space[1]);
     }
     auto model = m_loader.load(path);
     ModelMap::accessor acc;
@@ -70,11 +85,14 @@ const ModelNode& ModelManager::load_model(std::string_view model_name) {
         acc->second = std::move(model);
     } else {
         Logger::error("Can't Insert Model {}", model_name);
-        ASSERT(false);
+        ModelMap::const_accessor cacc;
+        if (m_models.find(cacc, get_model_id(std::string(model_name)))) {
+            return {cacc->second, cacc->first};
+        }
     }
     m_id_map.emplace(model_name, acc->first);
     m_name_map.emplace(acc->first, model_name);
-    return acc->second;
+    return {acc->second, acc->first};
 }
 
 } // namespace Cubed

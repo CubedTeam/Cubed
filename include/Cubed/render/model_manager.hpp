@@ -7,14 +7,26 @@
 namespace Cubed {
 class ModelManager {
 public:
+    struct Handle {
+        const ModelNode& node;
+        ModelID id = 0;
+    };
+
     ModelManager();
     ModelManager(const ModelManager&) = delete;
     ModelManager(ModelManager&&) = delete;
     ModelManager& operator=(const ModelManager&) = delete;
     ModelManager& operator=(ModelManager&&) = delete;
+    static ModelManager& instance();
     ~ModelManager();
-    const ModelNode& get_model(const std::string& model_name);
-    const ModelNode& get_model(ModelID id);
+    [[nodiscard]]
+    Handle get_model(const std::string& model_name);
+    [[nodiscard]]
+    Handle get_model(ModelID id);
+    [[nodiscard]]
+    static Handle model(const std::string& model_name);
+    [[nodiscard]]
+    static Handle model(ModelID id);
     ModelID get_model_id(const std::string& name);
     const std::string& get_model_name(ModelID id);
     void init();
@@ -28,6 +40,6 @@ private:
     ModelMap m_models;
     IDMap m_id_map;
     NameMap m_name_map;
-    const ModelNode& load_model(std::string_view model_name);
+    Handle load_model(std::string_view model_name);
 };
 } // namespace Cubed

@@ -1,24 +1,37 @@
 #pragma once
-#include "Cubed/AABB.hpp"
+#include "Cubed/gameplay/hitbox.hpp"
 
 #include <tbb/concurrent_hash_map.h>
 namespace Cubed {
 class HitboxManager {
 public:
+    struct Handle {
+        Hitbox box;
+        HitboxID id = 0;
+    };
     HitboxManager();
     ~HitboxManager();
     static HitboxManager& instance();
 
-    AABB get_aabb(const std::string& key);
-
-    static AABB aabb(const std::string& key);
+    [[nodiscard]]
+    Handle get_hitbox(const std::string& key);
+    [[nodiscard]]
+    Handle get_hitbox(HitboxID id);
+    [[nodiscard]]
+    static Handle hitbox(const std::string& name);
+    [[nodiscard]]
+    static Handle hitbox(HitboxID id);
+    HitboxID get_hitbox_id(const std::string& name);
+    const std::string& get_hitbox_name(HitboxID id);
 
 private:
-    using HitBoxMap = tbb::concurrent_hash_map<std::string, AABB>;
-    using cacc = HitBoxMap::const_accessor;
-    using acc = HitBoxMap::accessor;
-    HitBoxMap m_hitboxes;
-
-    AABB load(const std::string& path);
+    using HitboxMap = tbb::concurrent_hash_map<HitboxID, Hitbox>;
+    using IDMap = tbb::concurrent_hash_map<std::string, HitboxID>;
+    using NameMap = tbb::concurrent_hash_map<HitboxID, std::string>;
+    HitboxID m_next = 0;
+    IDMap m_id_map;
+    NameMap m_name_map;
+    HitboxMap m_hitboxes;
+    Handle load(std::string_view name);
 };
 } // namespace Cubed

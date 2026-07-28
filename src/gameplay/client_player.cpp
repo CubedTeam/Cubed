@@ -10,7 +10,8 @@
 namespace {} // namespace
 
 namespace Cubed {
-ClientPlayer::ClientPlayer(ClientWorld& world) : m_world(world) {}
+ClientPlayer::ClientPlayer(ClientWorld& world)
+    : Entity(0, "cubed:player"), m_world(world) {}
 ClientPlayer::~ClientPlayer() {}
 
 const glm::vec3& ClientPlayer::get_front() const { return m_front; }
@@ -312,10 +313,10 @@ void ClientPlayer::place_block(float dt) {
         if (type != 0) {
             glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
             if (!m_world.is_solid(near_pos)) {
-                AABB block_box = ClientWorld::get_block_aabb(near_pos);
-                AABB player_box = HitboxManager::aabb("cubed:player");
-                player_box.center += get_player_pos();
-                if (!player_box.intersects(block_box)) {
+                Hitbox block_box = ClientWorld::get_block_aabb(near_pos);
+                auto player_box = HitboxManager::hitbox("cubed:player");
+                player_box.box.center += get_player_pos();
+                if (!player_box.box.intersects(block_box)) {
                     m_world.report_block_change(near_pos, type);
                 }
             }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/gameplay/model.hpp"
 #include "Cubed/render/model_node.hpp"
 #include "Cubed/shader.hpp"
 
@@ -10,11 +11,9 @@ class Camera;
 class ModelRender {
 public:
     ModelRender(Renderer& renderer);
-    void render_model(const std::string& name, const glm::vec3& pos,
-                      Camera& camera);
+    void render_model(ModelID id, const glm::vec3& pos, Camera& camera);
 
-    void shadow_pass(const std::string& name, const glm::vec3& pos,
-                     Camera& camera);
+    void shadow_pass(ModelID id, const glm::vec3& pos, Camera& camera);
 
 private:
     Renderer& m_renderer;

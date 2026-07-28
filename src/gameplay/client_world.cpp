@@ -295,14 +295,14 @@ void ClientWorld::push_delete_vao(std::unique_ptr<VertexArray>& vao) {
 void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
     if (id != 0) {
-        AABB block_box = get_block_aabb(pos);
+        Hitbox block_box = get_block_aabb(pos);
         std::shared_lock lock(m_players_date_mutex);
 
         for (const auto& player : m_players_data) {
 
-            AABB box = HitboxManager::aabb("cubed:player");
-            box.center += player.pos.value;
-            if (box.intersects(block_box)) {
+            auto box = HitboxManager::hitbox("cubed:player");
+            box.box.center += player.pos.value;
+            if (box.box.intersects(block_box)) {
                 return;
             }
         }

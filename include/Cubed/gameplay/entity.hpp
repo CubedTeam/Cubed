@@ -1,12 +1,13 @@
 #pragma once
-#include "Cubed/AABB.hpp"
 #include "Cubed/constants.hpp"
+#include "Cubed/gameplay/hitbox.hpp"
+#include "Cubed/gameplay/model.hpp"
 #include "Cubed/gameplay/player.hpp"
 
 #include <glm/glm.hpp>
 #include <string>
 namespace Cubed {
-
+using EntityID = uint64_t;
 struct Position {
     glm::vec3 value{0.0f};
 };
@@ -22,6 +23,9 @@ struct WalkPose {
 struct EntityInfo {
     std::string name;
     std::string uuid;
+    EntityID id;
+    HitboxID hitbox;
+    ModelID model;
 };
 
 struct Health {
@@ -38,10 +42,6 @@ struct Orientation {
 struct Velocity {
     glm::vec3 value{0.0f};
     glm::vec3 max{4.5f, 7.5f, 7.5f};
-};
-
-struct HitBoxes {
-    std::vector<AABB> boxex;
 };
 
 struct Movement {
@@ -72,6 +72,8 @@ struct Direction {
 
 class Entity {
 public:
+    Entity(EntityID id, const std::string& name);
+
     glm::vec3& max_speed();
     float& acceleration();
     float& deceleration();
@@ -91,6 +93,7 @@ public:
     Gravity& gravity();
     MoveState& move_state();
     Direction& direction();
+    EntityInfo& info();
 
     const Velocity& velocity() const;
     const Position& pos() const;
@@ -100,8 +103,10 @@ public:
     const Gravity& gravity() const;
     const MoveState& move_state() const;
     const Direction& direction() const;
+    const EntityInfo& info() const;
 
 protected:
+    EntityInfo m_info;
     Position m_pos;
     WalkPose m_walk_pose;
     Velocity m_velocity;

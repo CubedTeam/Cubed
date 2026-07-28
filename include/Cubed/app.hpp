@@ -3,7 +3,6 @@
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/dev_panel.hpp"
-#include "Cubed/render/model_manager.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/texture_manager.hpp"
@@ -50,7 +49,6 @@ private:
     Window m_window;
 
     TextureManager m_texture_manager;
-    ModelManager m_model_manager;
     AudioEngine m_audio;
 
     Renderer m_renderer;

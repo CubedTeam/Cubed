@@ -26,8 +26,7 @@ class Renderer {
 public:
     constexpr static int NUM_VAO = 7;
 
-    Renderer(TextureManager& texture_manager, Config& config,
-             ModelManager& model_manager);
+    Renderer(TextureManager& texture_manager, Config& config);
     ~Renderer();
     void reload_config();
     void init();
@@ -82,12 +81,10 @@ public:
 
     bool handle_event(const Event& e);
 
-    ModelManager& model_manager();
     ModelRender& model_renderer();
 
 private:
     TextureManager& m_texture_manager;
-    ModelManager& m_model_manager;
     bool m_init = false;
 
     float m_aspect = 0.0f;
