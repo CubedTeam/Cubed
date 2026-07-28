@@ -330,7 +330,7 @@ void Window::set_imgui_enabled(bool enable) {
     if (m_camera) {
         auto player = m_camera->player();
         if (player) {
-            player->reset_key_status();
+            player->reset_input_status();
         }
     }
 }

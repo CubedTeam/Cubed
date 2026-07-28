@@ -516,6 +516,7 @@ void DevPanel::show_player_tab_item() {
             m_player->deceleration() = DEFAULT_DECELERATION;
             m_player->g() = DEFAULT_G;
             m_player->change_mode(GameMode::CREATIVE);
+            m_player->fly_y_speed() = 7.5f;
             m_player->set_gait(Gait::WALK);
             m_player_profile.game_mode = 0;
             m_player_profile.gait = 0;

@@ -65,7 +65,7 @@ public:
     void set_uuid(std::string_view uuid);
     std::string get_uuid() const;
     const std::string& get_name() const;
-    void reset_key_status();
+    void reset_input_status();
     void init(std::string_view name);
 
     bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
@@ -83,7 +83,7 @@ private:
     using enum GameMode;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
     float m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
-
+    float m_max_y_speed = 7.5f;
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
     Movement m_movement{};
@@ -93,12 +93,8 @@ private:
     std::array<ItemStack, HOTBAR_SUM> m_hotbar;
     float m_sensitivity = 0.15f;
 
-    float m_fly_y_speed = 7.5f;
-    bool can_up = true;
-
     float space_on_time = 0.0f;
     bool space_on = false;
-    bool is_fly = false;
 
     int m_selected_hotbar = 0;
 
@@ -106,7 +102,6 @@ private:
     bool m_sprinting = false;
     bool m_underwater = false;
 
-    glm::vec3 direction = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 move_distance{0.0f, 0.0f, 0.0f};
     // player is tow block tall, the pos is the lower pos
     ChunkPos m_last_chunk_pos{0, 0};
@@ -115,7 +110,6 @@ private:
     glm::vec3 m_right{0, 0, 0};
     static constexpr glm::vec3 M_SIZE{0.6f, 1.8f, 0.6f};
 
-    MoveState m_move_state{};
     MouseState m_mouse_state{};
     GameMode m_game_mode = CREATIVE;
     std::optional<LookBlock> m_look_block = std::nullopt;

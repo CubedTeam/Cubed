@@ -37,7 +37,7 @@ struct Orientation {
 
 struct Velocity {
     glm::vec3 value{0.0f};
-    glm::vec3 max{4.5f};
+    glm::vec3 max{4.5f, 7.5f, 7.5f};
 };
 
 struct HitBoxes {
@@ -54,6 +54,22 @@ struct Gravity {
     float value = DEFAULT_G;
 };
 
+struct MoveState {
+    bool forward = false;
+    bool back = false;
+    bool left = false;
+    bool right = false;
+    bool down = false;
+    bool up = false;
+
+    bool is_fly = false;
+    bool can_up = true;
+};
+
+struct Direction {
+    glm::vec3 value{0.0f};
+};
+
 class Entity {
 public:
     glm::vec3& max_speed();
@@ -67,13 +83,24 @@ public:
     float& walk_time();
     Gait get_gait() const;
 
+    Velocity& velocity();
+    Position& pos();
+    WalkPose& walk_pose();
+    Orientation& angle();
+    Movement& movement();
+    Gravity& gravity();
+    MoveState& move_state();
+    Direction& direction();
+
 protected:
     Position m_pos;
-    WalkPose m_walk_pos;
+    WalkPose m_walk_pose;
     Velocity m_velocity;
     Orientation m_angle;
     Movement m_movement;
     Gravity m_gravity;
+    MoveState m_move_state;
+    Direction m_direction;
 };
 
 } // namespace Cubed

@@ -4,7 +4,7 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
-
+#include "Cubed/gameplay/systems/speed_system.hpp"
 namespace {} // namespace
 
 namespace Cubed {
@@ -108,13 +108,15 @@ void ClientPlayer::change_mode(GameMode mode) {
     m_game_mode = mode;
     Logger::info("Change GameMode to {}", to_str(mode));
     if (mode == CREATIVE) {
-        is_fly = false;
+        m_move_state.is_fly = false;
         m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
-        m_velocity.max = glm::vec3{m_max_walk_speed, 0.0f, m_max_walk_speed};
+        m_velocity.max =
+            glm::vec3{m_max_walk_speed, m_max_y_speed, m_max_walk_speed};
     } else if (mode == SPECTATOR) {
-        is_fly = true;
-        m_walk_pos.gait = Gait::RUN;
-        m_velocity.max = glm::vec3{m_max_run_speed, 0.0f, m_max_run_speed};
+        m_move_state.is_fly = true;
+        m_walk_pose.gait = Gait::RUN;
+        m_velocity.max =
+            glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed};
     }
 }
 void ClientPlayer::reload_config() {
@@ -128,9 +130,9 @@ void ClientPlayer::set_player_pos(const glm::vec3& pos) {
 }
 
 void ClientPlayer::update(float delta_time) {
-    WalkPose pos = m_walk_pos;
+    WalkPose pos = m_walk_pose;
     pos.gait = compute_gait();
-    m_walk_pos = pos;
+    m_walk_pose = pos;
     update_move(delta_time);
     update_lookup_block();
     place_block(delta_time);
@@ -175,7 +177,7 @@ bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
             m_move_state.up = true;
             if (space_on) {
                 if (m_game_mode == CREATIVE) {
-                    is_fly = !is_fly;
+                    m_move_state.is_fly = !m_move_state.is_fly;
                     m_velocity.value.y = 0.0f;
                 }
                 space_on = false;
@@ -277,7 +279,7 @@ void ClientPlayer::update_direction() {
     move_dir = move_dir_front + move_dir_right;
 
     if (glm::length(move_dir) > 0.001f) {
-        direction = glm::normalize(move_dir);
+        m_direction.value = glm::normalize(move_dir);
     }
 }
 
@@ -340,26 +342,10 @@ void ClientPlayer::update_move(float delta_time) {
     if (delta_time > 1.0f) {
         return;
     }
+
     if (m_velocity.value.x < 0.01f || m_velocity.value.z < 0.01f) {
         m_sprinting = false;
     }
-    // ensure the thread safe
-    glm::vec3 player_pos;
-
-    {
-        std::shared_lock lock(m_player_pos_mutex);
-        player_pos = m_pos.value;
-    }
-
-    if (m_game_mode != SPECTATOR) {
-        m_velocity.max =
-            (m_walk_pos.gait == Gait::RUN)
-                ? glm::vec3{m_max_run_speed, 0.0f, m_max_run_speed}
-                : glm::vec3{m_max_walk_speed, 0.0f, m_max_walk_speed};
-    } else {
-        m_velocity.max = glm::vec3{m_max_run_speed, 0.0f, m_max_run_speed};
-    }
-
     if (space_on) {
         space_on_time += delta_time;
         if (space_on_time >= MAX_SPACE_ON_TIME) {
@@ -368,59 +354,33 @@ void ClientPlayer::update_move(float delta_time) {
         }
     }
 
-    // calculate speed
-    if (m_move_state.forward || m_move_state.back || m_move_state.left ||
-        m_move_state.right) {
-        direction = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_velocity.value.x += m_movement.acceleration * delta_time;
-        m_velocity.value.z += m_movement.acceleration * delta_time;
-        if (m_velocity.value.x > m_velocity.max.x) {
-            m_velocity.value.x = m_velocity.max.x;
-        }
-        if (m_velocity.value.z > m_velocity.max.z) {
-            m_velocity.value.z = m_velocity.max.z;
-        }
+    if (m_game_mode != SPECTATOR) {
+        m_velocity.max =
+            (m_walk_pose.gait == Gait::RUN)
+                ? glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed}
+                : glm::vec3{m_max_walk_speed, m_max_y_speed, m_max_walk_speed};
     } else {
-        m_velocity.value.x += -m_movement.deceleration * delta_time;
-        m_velocity.value.z += -m_movement.deceleration * delta_time;
-        if (m_velocity.value.z < 0.0f) {
-            m_velocity.value.z = 0.0f;
-        }
-        if (m_velocity.value.x < 0.0f) {
-            m_velocity.value.x = 0.0f;
-        }
-        if (m_velocity.value.z < 0.0f && m_velocity.value.x < 0.0f) {
-            direction = glm::vec3(0.0f, 0.0f, 0.0f);
-        }
+        m_velocity.max =
+            glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed};
     }
+
+    SpeedSystem::update(delta_time, *this);
 
     update_direction();
 
-    move_distance = {direction.x * m_velocity.value.x * delta_time, 0.0f,
-                     direction.z * m_velocity.value.z * delta_time};
+    move_distance = {m_direction.value.x * m_velocity.value.x * delta_time,
+                     0.0f,
+                     m_direction.value.z * m_velocity.value.z * delta_time};
+    move_distance.y = m_velocity.value.y * delta_time;
 
-    if (is_fly) {
-        if (m_move_state.up) {
-            m_velocity.value.y = m_fly_y_speed;
-        }
+    // ensure the thread safe
+    glm::vec3 player_pos;
 
-        if (m_move_state.down) {
-            m_velocity.value.y = -m_fly_y_speed;
-        }
-
-        if (!m_move_state.down && !m_move_state.up) {
-            m_velocity.value.y = 0.0f;
-        }
-    } else {
-        if (m_move_state.up && can_up) {
-            m_velocity.value.y = m_movement.jump_power;
-            can_up = false;
-        }
-
-        m_velocity.value.y += -m_gravity.value * delta_time;
+    {
+        std::shared_lock lock(m_player_pos_mutex);
+        player_pos = m_pos.value;
     }
 
-    move_distance.y = m_velocity.value.y * delta_time;
     // y
     update_y_move(player_pos);
     // x
@@ -512,8 +472,8 @@ void ClientPlayer::update_y_move(glm::vec3& player_pos) {
                         player_pos.y -= move_distance.y;
                         m_velocity.value.y = 0.0f;
                         if (move_distance.y < 0) {
-                            can_up = true;
-                            is_fly = false;
+                            m_move_state.can_up = true;
+                            m_move_state.is_fly = false;
                         }
                         return;
                     }
@@ -669,7 +629,7 @@ ClientPlayer::ChunkPosSet ClientPlayer::get_chunk_pos_set() {
 
 float& ClientPlayer::max_walk_speed() { return m_max_walk_speed; }
 float& ClientPlayer::max_run_speed() { return m_max_run_speed; }
-float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
+float& ClientPlayer::fly_y_speed() { return m_max_y_speed; }
 const ItemStack& ClientPlayer::get_current_itemstack() const {
     return m_hotbar[m_selected_hotbar];
 };
@@ -688,7 +648,7 @@ std::string ClientPlayer::get_uuid() const {
 }
 const std::string& ClientPlayer::get_name() const { return m_name; }
 
-void ClientPlayer::reset_key_status() {
+void ClientPlayer::reset_input_status() {
     m_mouse_state.left = false;
     m_mouse_state.right = false;
     m_move_state.left = false;
@@ -708,7 +668,7 @@ void ClientPlayer::init(std::string_view name) {
     m_name = name;
 
     m_timers.try_emplace("Player Walk Sound", WALK_SOUND_INTERVAL, [this]() {
-        if (!m_moving || is_fly) {
+        if (!m_moving || m_move_state.is_fly) {
             return;
         }
         glm::ivec3 block;
