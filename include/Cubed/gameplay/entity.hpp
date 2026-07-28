@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/AABB.hpp"
+#include "Cubed/constants.hpp"
 #include "Cubed/gameplay/player.hpp"
 
 #include <glm/glm.hpp>
@@ -40,6 +41,16 @@ struct Velocity {
 
 struct HitBoxes {
     std::vector<AABB> boxex;
+};
+
+struct Movement {
+    float acceleration = DEFAULT_ACCELERATION;
+    float deceleration = DEFAULT_DECELERATION;
+    float jump_power = 0;
+};
+
+struct Gravity {
+    float value = DEFAULT_G;
 };
 
 } // namespace Cubed

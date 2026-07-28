@@ -3,6 +3,7 @@
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
+#include "Cubed/gameplay/entity.hpp"
 #include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/item_stack.hpp"
@@ -91,15 +92,14 @@ private:
     using enum GameMode;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
     float m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
-    float m_acceleration = DEFAULT_ACCELERATION;
-    float m_deceleration = DEFAULT_DECELERATION;
-    float m_g = DEFAULT_G;
+
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
-
+    Movement m_movement{};
+    Gravity m_gravity{};
     float m_place_time = PLACE_BLOCK_INTERVAL;
-    std::atomic<float> m_yaw = 0.0f;
-    std::atomic<float> m_pitch = 0.0f;
+    Orientation m_angle;
+    WalkPose m_walk_pos;
     std::array<ItemStack, HOTBAR_SUM> m_hotbar;
     float m_sensitivity = 0.15f;
 
@@ -131,7 +131,6 @@ private:
     glm::vec3 m_right{0, 0, 0};
     static constexpr glm::vec3 M_SIZE{0.6f, 1.8f, 0.6f};
 
-    std::atomic<Gait> m_gait = Gait::STOP;
     MoveState m_move_state{};
     MouseState m_mouse_state{};
     GameMode m_game_mode = CREATIVE;
@@ -140,9 +139,6 @@ private:
     mutable std::shared_mutex m_uuid_mutex;
     std::string m_uuid;
     ClientWorld& m_world;
-
-    float m_angle{0.0f};
-    float m_walk_time{0.0f};
 
     std::unordered_map<std::string, Timer> m_timers;
 

@@ -20,7 +20,7 @@ AABB ClientPlayer::get_aabb(const glm::vec3& pos) {
 }
 const glm::vec3& ClientPlayer::get_front() const { return m_front; }
 
-Gait ClientPlayer::get_gait() const { return m_gait.load(); }
+Gait ClientPlayer::get_gait() const { return m_walk_pos.gait; }
 
 const std::optional<LookBlock>& ClientPlayer::get_look_block_pos() const {
     return m_look_block;
@@ -124,7 +124,9 @@ void ClientPlayer::reload_config() {
 void ClientPlayer::set_player_pos(const glm::vec3& pos) { m_player_pos = pos; }
 
 void ClientPlayer::update(float delta_time) {
-    m_gait = compute_gait();
+    WalkPose pos = m_walk_pos;
+    pos.gait = compute_gait();
+    m_walk_pos = pos;
     update_move(delta_time);
     update_lookup_block();
     place_block(delta_time);
@@ -233,18 +235,17 @@ bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
 }
 
 void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
-    m_yaw += offset_x * m_sensitivity;
-    m_pitch += offset_y * m_sensitivity;
+    Orientation& angle = m_angle;
+    angle.yaw += offset_x * m_sensitivity;
+    angle.pitch += offset_y * m_sensitivity;
 
     // m_yaw = std::fmod(m_yaw.load(), 360.0);
 
-    m_pitch = std::clamp(m_pitch.load(), -89.0f, 89.0f);
+    angle.pitch = std::clamp(angle.pitch, -89.0f, 89.0f);
 
-    m_front.x =
-        sin(glm::radians(m_yaw.load())) * cos(glm::radians(m_pitch.load()));
-    m_front.y = sin(glm::radians(m_pitch.load()));
-    m_front.z =
-        -cos(glm::radians(m_yaw.load())) * cos(glm::radians(m_pitch.load()));
+    m_front.x = sin(glm::radians(angle.yaw)) * cos(glm::radians(angle.pitch));
+    m_front.y = sin(glm::radians(angle.pitch));
+    m_front.z = -cos(glm::radians(angle.yaw)) * cos(glm::radians(angle.pitch));
 
     m_front = glm::normalize(m_front);
 }
@@ -345,7 +346,7 @@ void ClientPlayer::update_move(float delta_time) {
 
     if (m_game_mode != SPECTATOR) {
         m_max_speed =
-            (m_gait == Gait::RUN) ? m_max_run_speed : m_max_walk_speed;
+            (m_walk_pos.gait == Gait::RUN) ? m_max_run_speed : m_max_walk_speed;
     } else {
         m_max_speed = m_max_run_speed;
     }
@@ -362,12 +363,12 @@ void ClientPlayer::update_move(float delta_time) {
     if (m_move_state.forward || m_move_state.back || m_move_state.left ||
         m_move_state.right) {
         direction = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_xz_speed += m_acceleration * delta_time;
+        m_xz_speed += m_movement.acceleration * delta_time;
         if (m_xz_speed > m_max_speed) {
             m_xz_speed = m_max_speed;
         }
     } else {
-        m_xz_speed += -m_deceleration * delta_time;
+        m_xz_speed += -m_movement.deceleration * delta_time;
         if (m_xz_speed < 0) {
             m_xz_speed = 0;
             direction = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -397,7 +398,7 @@ void ClientPlayer::update_move(float delta_time) {
             can_up = false;
         }
 
-        m_y_speed += -m_g * delta_time;
+        m_y_speed += -m_gravity.value * delta_time;
     }
 
     move_distance.y = m_y_speed * delta_time;
@@ -650,14 +651,14 @@ ClientPlayer::ChunkPosSet ClientPlayer::get_chunk_pos_set() {
 float& ClientPlayer::max_walk_speed() { return m_max_walk_speed; }
 float& ClientPlayer::max_run_speed() { return m_max_run_speed; }
 float& ClientPlayer::max_speed() { return m_max_speed; }
-float& ClientPlayer::acceleration() { return m_acceleration; }
-float& ClientPlayer::deceleration() { return m_deceleration; }
-float& ClientPlayer::g() { return m_g; }
+float& ClientPlayer::acceleration() { return m_movement.acceleration; }
+float& ClientPlayer::deceleration() { return m_movement.deceleration; }
+float& ClientPlayer::g() { return m_gravity.value; }
 float& ClientPlayer::fly_y_speed() { return m_fly_y_speed; }
 const ItemStack& ClientPlayer::get_current_itemstack() const {
     return m_hotbar[m_selected_hotbar];
 };
-void ClientPlayer::set_gait(Gait gait) { m_gait = gait; }
+void ClientPlayer::set_gait(Gait gait) { m_walk_pos.gait = gait; }
 GameMode& ClientPlayer::game_mode() { return m_game_mode; }
 ClientWorld& ClientPlayer::get_world() { return m_world; }
 
@@ -712,8 +713,8 @@ void ClientPlayer::init(std::string_view name) {
 bool ClientPlayer::is_underwater() const { return m_underwater; }
 void ClientPlayer::set_underwater(bool u) { m_underwater = u; }
 
-float ClientPlayer::yaw() const { return m_yaw; }
-float ClientPlayer::pitch() const { return m_pitch; }
-float& ClientPlayer::angle() { return m_angle; }
-float& ClientPlayer::walk_time() { return m_walk_time; }
+float ClientPlayer::yaw() const { return m_angle.yaw; }
+float ClientPlayer::pitch() const { return m_angle.pitch; }
+float& ClientPlayer::angle() { return m_angle.roll; }
+float& ClientPlayer::walk_time() { return m_walk_pos.walk_time; }
 } // namespace Cubed
