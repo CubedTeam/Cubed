@@ -37,7 +37,7 @@ target_sources(${PROJECT_NAME}
         gameplay/server_chunk.cpp
         gameplay/client_chunk.cpp
         gameplay/server_player.cpp
-        gameplay/client_player.cpp
+        gameplay/local_player.cpp
         gameplay/session.cpp
         gameplay/network_client.cpp
         render/player_renderer.cpp

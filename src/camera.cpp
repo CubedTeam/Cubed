@@ -1,7 +1,7 @@
 #include "Cubed/camera.hpp"
 
-#include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 
 namespace {
@@ -58,7 +58,7 @@ void Camera::update_move_camera() {
     }
 }
 
-void Camera::camera_init(ClientPlayer* player) {
+void Camera::camera_init(LocalPlayer* player) {
     m_player = player;
     update_move_camera();
     hot_reload();
@@ -100,7 +100,7 @@ void Camera::change_perspective() {
 bool Camera::is_first_person() const {
     return m_perspective == Perspective::FIRST_PERSON;
 }
-ClientPlayer* Camera::player() { return m_player; }
+LocalPlayer* Camera::player() { return m_player; }
 bool Camera::handle_event(const Event& e) {
     return std::visit(
         Overloaded{[this](const MouseMoveEvent& e) {

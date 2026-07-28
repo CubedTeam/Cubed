@@ -1,4 +1,4 @@
-#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/local_player.hpp"
 
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
@@ -10,26 +10,26 @@
 namespace {} // namespace
 
 namespace Cubed {
-ClientPlayer::ClientPlayer(ClientWorld& world)
+LocalPlayer::LocalPlayer(ClientWorld& world)
     : Entity(0, "cubed:player"), m_world(world) {}
-ClientPlayer::~ClientPlayer() {}
+LocalPlayer::~LocalPlayer() {}
 
-const glm::vec3& ClientPlayer::get_front() const { return m_front; }
+const glm::vec3& LocalPlayer::get_front() const { return m_front; }
 
-const std::optional<LookBlock>& ClientPlayer::get_look_block_pos() const {
+const std::optional<LookBlock>& LocalPlayer::get_look_block_pos() const {
     return m_look_block;
 }
-glm::vec3 ClientPlayer::get_player_pos() const {
+glm::vec3 LocalPlayer::get_player_pos() const {
 
     std::shared_lock lock(m_player_pos_mutex);
     return m_pos.value;
 }
 
-const MoveState& ClientPlayer::get_move_state() const { return m_move_state; }
+const MoveState& LocalPlayer::get_move_state() const { return m_move_state; }
 
-bool ClientPlayer::ray_cast(const glm::vec3& start, const glm::vec3& front,
-                            glm::ivec3& block_pos, glm::vec3& normal,
-                            float distance) {
+bool LocalPlayer::ray_cast(const glm::vec3& start, const glm::vec3& front,
+                           glm::ivec3& block_pos, glm::vec3& normal,
+                           float distance) {
     glm::vec3 dir = glm::normalize(front);
     // float step = 0.1f;
     glm::ivec3 cur = glm::floor(start);
@@ -100,7 +100,7 @@ bool ClientPlayer::ray_cast(const glm::vec3& start, const glm::vec3& front,
     return false;
 }
 
-void ClientPlayer::change_mode(GameMode mode) {
+void LocalPlayer::change_mode(GameMode mode) {
     m_game_mode = mode;
     Logger::info("Change GameMode to {}", to_str(mode));
     if (mode == CREATIVE) {
@@ -115,17 +115,17 @@ void ClientPlayer::change_mode(GameMode mode) {
             glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed};
     }
 }
-void ClientPlayer::reload_config() {
+void LocalPlayer::reload_config() {
     auto& config = m_world.get_config();
     m_sensitivity = config.get("player.mouse_sensitivity", 0.15f);
 }
-void ClientPlayer::set_player_pos(const glm::vec3& pos) {
+void LocalPlayer::set_player_pos(const glm::vec3& pos) {
 
     std::lock_guard lock(m_player_pos_mutex);
     m_pos.value = pos;
 }
 
-void ClientPlayer::update(float delta_time) {
+void LocalPlayer::update(float delta_time) {
     WalkPose pos = m_walk_pose;
     pos.gait = compute_gait();
     m_walk_pose = pos;
@@ -138,7 +138,7 @@ void ClientPlayer::update(float delta_time) {
     d_rep("speed", "Speed(x, y, z): {:.2} m/s {:.2} m/s {:.2} m/s",
           m_velocity.value.x, m_velocity.value.y, m_velocity.value.z);
 }
-bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
+bool LocalPlayer::update_player_move_state(Key key, KeyAction action) {
     if (key == Key::W) {
         if (action == KeyAction::PRESS) {
             m_move_state.forward = true;
@@ -238,7 +238,7 @@ bool ClientPlayer::update_player_move_state(Key key, KeyAction action) {
     return true;
 }
 
-void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
+void LocalPlayer::update_front_vec(float offset_x, float offset_y) {
     Orientation& angle = m_angle;
     angle.yaw += offset_x * m_sensitivity;
     angle.pitch += offset_y * m_sensitivity;
@@ -254,7 +254,7 @@ void ClientPlayer::update_front_vec(float offset_x, float offset_y) {
     m_front = glm::normalize(m_front);
 }
 
-void ClientPlayer::update_direction() {
+void LocalPlayer::update_direction() {
     m_right = glm::normalize(glm::cross(m_front, glm::vec3(0.0f, 1.0f, 0.0f)));
 
     glm::vec3 move_dir_front = glm::vec3(0.0f);
@@ -279,7 +279,7 @@ void ClientPlayer::update_direction() {
     }
 }
 
-void ClientPlayer::update_lookup_block() {
+void LocalPlayer::update_lookup_block() {
     // calculate the block that is looked
     glm::ivec3 block_pos;
     glm::vec3 block_normal;
@@ -292,7 +292,7 @@ void ClientPlayer::update_lookup_block() {
         m_look_block = std::nullopt;
     }
 }
-void ClientPlayer::place_block(float dt) {
+void LocalPlayer::place_block(float dt) {
 
     if (m_look_block == std::nullopt) {
         return;
@@ -324,17 +324,17 @@ void ClientPlayer::place_block(float dt) {
     }
 }
 
-int ClientPlayer::selected_hotbar() const { return m_selected_hotbar; }
-void ClientPlayer::set_hotbar(int pos, const ItemStack& item) {
+int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
+void LocalPlayer::set_hotbar(int pos, const ItemStack& item) {
     ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_SUM);
     m_hotbar[pos] = item;
 }
-std::span<const ItemStack, ClientPlayer::HOTBAR_SUM>
-ClientPlayer::get_hotbar() const {
+std::span<const ItemStack, LocalPlayer::HOTBAR_SUM>
+LocalPlayer::get_hotbar() const {
     return m_hotbar;
 }
 
-void ClientPlayer::update_move(float delta_time) {
+void LocalPlayer::update_move(float delta_time) {
     // if frame rate less than 1 frame per second, don't update
     if (delta_time > 1.0f) {
         return;
@@ -408,7 +408,7 @@ void ClientPlayer::update_move(float delta_time) {
     }
 }
 
-void ClientPlayer::update_player_chunk() {
+void LocalPlayer::update_player_chunk() {
     float x, z;
     {
         std::shared_lock lock(m_player_pos_mutex);
@@ -424,7 +424,7 @@ void ClientPlayer::update_player_chunk() {
     }
 }
 
-Gait ClientPlayer::compute_gait() const {
+Gait LocalPlayer::compute_gait() const {
     if (m_velocity.value.x < 0.01f && m_velocity.value.z < 0.01f)
         return Gait::STOP;
 
@@ -434,7 +434,7 @@ Gait ClientPlayer::compute_gait() const {
     return Gait::WALK;
 }
 
-bool ClientPlayer::update_scroll(float yoffset) {
+bool LocalPlayer::update_scroll(float yoffset) {
     if (m_game_mode == SPECTATOR) {
         if (yoffset > 0) {
             if (m_max_run_speed < 500.0f) {
@@ -462,7 +462,7 @@ bool ClientPlayer::update_scroll(float yoffset) {
     return true;
 }
 
-bool ClientPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
+bool LocalPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS) {
         if (e.key == MouseKey::LEFT_BUTTON) {
             m_mouse_state.left = true;
@@ -488,7 +488,7 @@ bool ClientPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     return false;
 }
 
-bool ClientPlayer::handle_key_event(const KeyEvent& e) {
+bool LocalPlayer::handle_key_event(const KeyEvent& e) {
 
     if (update_player_move_state(e.key, e.action)) {
         return true;
@@ -496,51 +496,51 @@ bool ClientPlayer::handle_key_event(const KeyEvent& e) {
 
     return false;
 }
-bool ClientPlayer::handle_mouse_wheel_event(const MouseWheelEvent& e) {
+bool LocalPlayer::handle_mouse_wheel_event(const MouseWheelEvent& e) {
     if (update_scroll(e.offset)) {
         return true;
     }
     return false;
 }
 
-void ClientPlayer::update_chunk_set(const ChunkPosSet& set) {
+void LocalPlayer::update_chunk_set(const ChunkPosSet& set) {
     std::lock_guard lock(m_chunk_pos_mutex);
     m_player_chunk_pos_set.clear();
     m_player_chunk_pos_set.insert(set.begin(), set.end());
 }
 
-const ClientPlayer::ChunkPosSet& ClientPlayer::get_chunk_pos_set() const {
+const LocalPlayer::ChunkPosSet& LocalPlayer::get_chunk_pos_set() const {
     std::shared_lock lock(m_chunk_pos_mutex);
     return m_player_chunk_pos_set;
 }
 
-ClientPlayer::ChunkPosSet ClientPlayer::get_chunk_pos_set() {
+LocalPlayer::ChunkPosSet LocalPlayer::get_chunk_pos_set() {
     std::lock_guard lock(m_chunk_pos_mutex);
     return m_player_chunk_pos_set;
 }
 
-float& ClientPlayer::max_walk_speed() { return m_max_walk_speed; }
-float& ClientPlayer::max_run_speed() { return m_max_run_speed; }
-float& ClientPlayer::fly_y_speed() { return m_max_y_speed; }
-const ItemStack& ClientPlayer::get_current_itemstack() const {
+float& LocalPlayer::max_walk_speed() { return m_max_walk_speed; }
+float& LocalPlayer::max_run_speed() { return m_max_run_speed; }
+float& LocalPlayer::fly_y_speed() { return m_max_y_speed; }
+const ItemStack& LocalPlayer::get_current_itemstack() const {
     return m_hotbar[m_selected_hotbar];
 };
 
-GameMode& ClientPlayer::game_mode() { return m_game_mode; }
-ClientWorld& ClientPlayer::get_world() { return m_world; }
+GameMode& LocalPlayer::game_mode() { return m_game_mode; }
+ClientWorld& LocalPlayer::get_world() { return m_world; }
 
-void ClientPlayer::set_uuid(std::string_view uuid) {
+void LocalPlayer::set_uuid(std::string_view uuid) {
     std::lock_guard lock(m_uuid_mutex);
     m_uuid = uuid;
 }
-std::string ClientPlayer::get_uuid() const {
+std::string LocalPlayer::get_uuid() const {
 
     std::shared_lock lock(m_uuid_mutex);
     return m_uuid;
 }
-const std::string& ClientPlayer::get_name() const { return m_name; }
+const std::string& LocalPlayer::get_name() const { return m_name; }
 
-void ClientPlayer::reset_input_status() {
+void LocalPlayer::reset_input_status() {
     m_mouse_state.left = false;
     m_mouse_state.right = false;
     m_move_state.left = false;
@@ -551,7 +551,7 @@ void ClientPlayer::reset_input_status() {
     m_move_state.up = false;
 }
 
-void ClientPlayer::init(std::string_view name) {
+void LocalPlayer::init(std::string_view name) {
     {
         std::lock_guard lock(m_player_pos_mutex);
         m_pos.value = {0.0f, 255.0f, 0.0f};
@@ -588,6 +588,6 @@ void ClientPlayer::init(std::string_view name) {
     }
 }
 
-bool ClientPlayer::is_underwater() const { return m_underwater; }
-void ClientPlayer::set_underwater(bool u) { m_underwater = u; }
+bool LocalPlayer::is_underwater() const { return m_underwater; }
+void LocalPlayer::set_underwater(bool u) { m_underwater = u; }
 } // namespace Cubed

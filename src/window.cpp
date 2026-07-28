@@ -1,7 +1,7 @@
 #include "Cubed/window.hpp"
 
 #include "Cubed/camera.hpp"
-#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/env_tools.hpp"
 #include "Cubed/tools/font.hpp"

@@ -3,7 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/cave_path.hpp"
-#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/gameplay/river.path.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/log.hpp"

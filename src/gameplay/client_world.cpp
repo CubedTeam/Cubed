@@ -61,8 +61,8 @@ const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
     return m_player.get_look_block_pos();
 }
 
-ClientPlayer& ClientWorld::get_player() { return m_player; }
-const ClientPlayer& ClientWorld::get_player() const { return m_player; }
+LocalPlayer& ClientWorld::get_player() { return m_player; }
+const LocalPlayer& ClientWorld::get_player() const { return m_player; }
 int ClientWorld::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;
@@ -930,13 +930,13 @@ void ClientWorld::update_players(float dt) {
             m_audio.play_3d(sound, player.render_pos.value);
         };
         if (player.walk.gait == Gait::WALK) {
-            if (player.walk.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
+            if (player.walk.moving_time >= LocalPlayer::WALK_SOUND_INTERVAL) {
                 player.walk.moving_time = 0.0f;
                 play_walk_sound();
             }
         }
         if (player.walk.gait == Gait::RUN) {
-            if (player.walk.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
+            if (player.walk.moving_time >= LocalPlayer::RUN_SOUND_INTERVAL) {
                 player.walk.moving_time = 0.0f;
                 play_walk_sound();
             }

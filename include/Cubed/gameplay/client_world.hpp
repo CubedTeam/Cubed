@@ -5,8 +5,8 @@
 #include "Cubed/gameplay/chat_message.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
-#include "Cubed/gameplay/client_player.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/gameplay/network_client.hpp"
 #include "Cubed/gameplay/player_data.hpp"
 #include "Cubed/gameplay/world.hpp"
@@ -37,8 +37,8 @@ public:
     void update_players(float dt);
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
-    ClientPlayer& get_player();
-    const ClientPlayer& get_player() const;
+    LocalPlayer& get_player();
+    const LocalPlayer& get_player() const;
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;
     bool can_pass_block(const glm::ivec3& block_pos) const override;
@@ -131,7 +131,7 @@ private:
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
 
-    ClientPlayer m_player;
+    LocalPlayer m_player;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;

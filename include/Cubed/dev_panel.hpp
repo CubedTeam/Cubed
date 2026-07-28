@@ -7,7 +7,7 @@
 namespace Cubed {
 
 class WorldScene;
-class ClientPlayer;
+class LocalPlayer;
 class App;
 class DevPanel {
     struct ConfigView {
@@ -42,7 +42,7 @@ private:
     WorldScene& m_world_scene;
     Config& m_config;
     ConfigView m_config_view;
-    ClientPlayer* m_player;
+    LocalPlayer* m_player;
     PlayerProfile m_player_profile;
     bool m_need_save_config = false;
     bool m_gen_thread_running = true;

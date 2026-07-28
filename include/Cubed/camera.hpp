@@ -8,7 +8,7 @@
 
 namespace Cubed {
 
-class ClientPlayer;
+class LocalPlayer;
 
 class Camera {
 private:
@@ -18,7 +18,7 @@ private:
         THIRD_PERSON_FRONT,
     };
 
-    ClientPlayer* m_player;
+    LocalPlayer* m_player;
     float m_last_mouse_x, m_last_mouse_y;
     glm::vec3 m_camera_pos;
     bool m_under_water = false;
@@ -35,7 +35,7 @@ public:
 
     void update_move_camera();
 
-    void camera_init(ClientPlayer* player);
+    void camera_init(LocalPlayer* player);
     void hot_reload();
     void update_cursor_position_camera(float offset_x, float offset_y);
 
@@ -47,7 +47,7 @@ public:
     void change_perspective();
     bool is_first_person() const;
     bool handle_event(const Event& e);
-    ClientPlayer* player();
+    LocalPlayer* player();
 };
 
 } // namespace Cubed

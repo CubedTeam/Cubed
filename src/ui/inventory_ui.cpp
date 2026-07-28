@@ -175,7 +175,7 @@ ItemSlot* InventoryUI::get_hovered_slot() {
     return nullptr;
 }
 std::pair<ItemSlot*, size_t> InventoryUI::get_hovered_hotbar_slot() {
-    for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
+    for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
         auto& slot = m_hotbar[i];
         if (slot->hovered()) {
 

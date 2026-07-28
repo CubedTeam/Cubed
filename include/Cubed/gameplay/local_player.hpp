@@ -17,14 +17,14 @@
 namespace Cubed {
 
 class ClientWorld;
-class ClientPlayer : public Entity {
+class LocalPlayer : public Entity {
 public:
     static constexpr size_t HOTBAR_SUM = 10;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
     static constexpr float RUN_SOUND_INTERVAL = 0.3f;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
-    ClientPlayer(ClientWorld& world);
-    ~ClientPlayer();
+    LocalPlayer(ClientWorld& world);
+    ~LocalPlayer();
 
     bool handle_mouse_button_event(const MouseButtonEvent& e);
     bool handle_key_event(const KeyEvent& e);
