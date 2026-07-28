@@ -109,10 +109,12 @@ void ClientPlayer::change_mode(GameMode mode) {
     Logger::info("Change GameMode to {}", to_str(mode));
     if (mode == CREATIVE) {
         is_fly = false;
-        m_velocity.max = glm::vec3{m_max_walk_speed};
+        m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
+        m_velocity.max = glm::vec3{m_max_walk_speed, 0.0f, m_max_walk_speed};
     } else if (mode == SPECTATOR) {
         is_fly = true;
-        m_velocity.max = glm::vec3{m_max_run_speed};
+        m_walk_pos.gait = Gait::RUN;
+        m_velocity.max = glm::vec3{m_max_run_speed, 0.0f, m_max_run_speed};
     }
 }
 void ClientPlayer::reload_config() {
@@ -350,11 +352,12 @@ void ClientPlayer::update_move(float delta_time) {
     }
 
     if (m_game_mode != SPECTATOR) {
-        m_velocity.max = (m_walk_pos.gait == Gait::RUN)
-                             ? glm::vec3{m_max_run_speed}
-                             : glm::vec3{m_max_walk_speed};
+        m_velocity.max =
+            (m_walk_pos.gait == Gait::RUN)
+                ? glm::vec3{m_max_run_speed, 0.0f, m_max_run_speed}
+                : glm::vec3{m_max_walk_speed, 0.0f, m_max_walk_speed};
     } else {
-        m_velocity.max = glm::vec3{m_max_run_speed};
+        m_velocity.max = glm::vec3{m_max_run_speed, 0.0f, m_max_run_speed};
     }
 
     if (space_on) {
@@ -582,12 +585,12 @@ Gait ClientPlayer::compute_gait() const {
 bool ClientPlayer::update_scroll(float yoffset) {
     if (m_game_mode == SPECTATOR) {
         if (yoffset > 0) {
-            if (m_velocity.max.x < 500.0f || m_velocity.max.z < 500.0f) {
-                m_velocity.max += glm::vec3(1.0f, 0.0f, 1.0f);
+            if (m_max_run_speed < 500.0f) {
+                m_max_run_speed += 1.0f;
             }
         } else {
-            if (m_velocity.max.x > 1.0f || m_velocity.max.z > 1.0f) {
-                m_velocity.max -= glm::vec3(1.0f, 0.0f, 1.0f);
+            if (m_max_run_speed > 1.0f) {
+                m_max_run_speed -= 1.0f;
             }
         }
     }
@@ -697,6 +700,10 @@ void ClientPlayer::reset_key_status() {
 }
 
 void ClientPlayer::init(std::string_view name) {
+    {
+        std::lock_guard lock(m_player_pos_mutex);
+        m_pos.value = {0.0f, 255.0f, 0.0f};
+    }
 
     m_name = name;
 

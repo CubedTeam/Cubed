@@ -502,7 +502,11 @@ void DevPanel::show_player_tab_item() {
 
         } else if (m_player->game_mode() == GameMode::SPECTATOR) {
             m_player_profile.game_mode = 1;
-            ImGui::SliderFloat("MaxSpeed", &m_player->max_speed(), 1.0f,
+            ImGui::SliderFloat("MaxSpeed x", &m_player->max_speed().x, 1.0f,
+                               500.0f);
+            ImGui::SliderFloat("MaxSpeed y", &m_player->max_speed().y, 1.0f,
+                               500.0f);
+            ImGui::SliderFloat("MaxSpeed z", &m_player->max_speed().z, 1.0f,
                                500.0f);
         }
         if (ImGui::Button("reset")) {
