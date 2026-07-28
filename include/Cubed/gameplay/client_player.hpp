@@ -18,7 +18,7 @@
 namespace Cubed {
 
 class ClientWorld;
-class ClientPlayer {
+class ClientPlayer : public Entity {
 public:
     static constexpr size_t HOTBAR_SUM = 10;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
@@ -41,7 +41,7 @@ public:
 
     static AABB get_aabb(const glm::vec3& pos);
     const glm::vec3& get_front() const;
-    Gait get_gait() const;
+
     const std::optional<LookBlock>& get_look_block_pos() const;
     // thread safe
     glm::vec3 get_player_pos() const;
@@ -54,15 +54,10 @@ public:
 
     float& max_walk_speed();
     float& max_run_speed();
-    float& max_speed();
-    float& acceleration();
-    float& deceleration();
-    float& g();
     float& fly_y_speed();
 
     const ItemStack& get_current_itemstack() const;
 
-    void set_gait(Gait gait);
     GameMode& game_mode();
 
     ClientWorld& get_world();
@@ -73,10 +68,6 @@ public:
     void reset_key_status();
     void init(std::string_view name);
 
-    float yaw() const;
-    float pitch() const;
-    float& angle();
-    float& walk_time();
     bool ray_cast(const glm::vec3& start, const glm::vec3& dir,
                   glm::ivec3& block_pos, glm::vec3& normal,
                   float distance = 4.0f);
@@ -98,21 +89,16 @@ private:
     Movement m_movement{};
     Gravity m_gravity{};
     float m_place_time = PLACE_BLOCK_INTERVAL;
-    Orientation m_angle;
-    WalkPose m_walk_pos;
+
     std::array<ItemStack, HOTBAR_SUM> m_hotbar;
     float m_sensitivity = 0.15f;
 
-    float m_max_speed = m_max_walk_speed;
-    float m_y_speed = 0.0f;
     float m_fly_y_speed = 7.5f;
     bool can_up = true;
 
     float space_on_time = 0.0f;
     bool space_on = false;
     bool is_fly = false;
-
-    float m_xz_speed = 0.0f;
 
     int m_selected_hotbar = 0;
 
@@ -123,8 +109,6 @@ private:
     glm::vec3 direction = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 move_distance{0.0f, 0.0f, 0.0f};
     // player is tow block tall, the pos is the lower pos
-
-    glm::vec3 m_player_pos{0.0f, 255.0f, 0.0f};
     ChunkPos m_last_chunk_pos{0, 0};
 
     glm::vec3 m_front{0, 0, -1};

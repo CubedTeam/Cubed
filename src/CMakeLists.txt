@@ -97,4 +97,5 @@ target_sources(${PROJECT_NAME}
         render/model_renderer.cpp
         gameplay/chunk.cpp
         gameplay/hitbox_manager.cpp
+        gameplay/entity.cpp
 )

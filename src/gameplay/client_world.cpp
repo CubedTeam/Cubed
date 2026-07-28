@@ -956,7 +956,7 @@ void ClientWorld::update_players(float dt) {
         {
             auto gait = m_player.get_gait();
             auto& walk_time = m_player.walk_time();
-            auto& angle = m_player.angle();
+            auto& angle = m_player.roll();
             if (gait == Gait::WALK || gait == Gait::RUN) {
 
                 walk_time += dt;

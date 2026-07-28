@@ -37,6 +37,7 @@ struct Orientation {
 
 struct Velocity {
     glm::vec3 value{0.0f};
+    glm::vec3 max{4.5f};
 };
 
 struct HitBoxes {
@@ -46,11 +47,33 @@ struct HitBoxes {
 struct Movement {
     float acceleration = DEFAULT_ACCELERATION;
     float deceleration = DEFAULT_DECELERATION;
-    float jump_power = 0;
+    float jump_power = 7.5f;
 };
 
 struct Gravity {
     float value = DEFAULT_G;
+};
+
+class Entity {
+public:
+    glm::vec3& max_speed();
+    float& acceleration();
+    float& deceleration();
+    float& g();
+    void set_gait(Gait gait);
+    float yaw() const;
+    float pitch() const;
+    float& roll();
+    float& walk_time();
+    Gait get_gait() const;
+
+protected:
+    Position m_pos;
+    WalkPose m_walk_pos;
+    Velocity m_velocity;
+    Orientation m_angle;
+    Movement m_movement;
+    Gravity m_gravity;
 };
 
 } // namespace Cubed
