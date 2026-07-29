@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/chat_message.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
+#include "Cubed/gameplay/client_entity_manager.hpp"
 #include "Cubed/gameplay/client_player_manager.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/local_player.hpp"
@@ -84,6 +85,7 @@ public:
     Config& get_config();
     WorldScene& world_scene();
     ClientPlayerManager& player_manager();
+    ClientEntityManager& entity_manager();
     void set_direct_exit();
 
     void receive_chat_message(ChatMsg& msg);
@@ -92,10 +94,10 @@ public:
     bool enable_voice_chat() const;
     int get_per_tick_time() const override;
     template <typename Fn>
-    void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
-        m_ticktimers.emplace(
-            std::piecewise_construct, std::forward_as_tuple(std::string(id)),
-            std::forward_as_tuple(threshold, std::forward<Fn>(f)));
+    void register_timer(std::string_view id, float threshold, Fn&& f) {
+        m_timers.emplace(std::piecewise_construct,
+                         std::forward_as_tuple(std::string(id)),
+                         std::forward_as_tuple(threshold, std::forward<Fn>(f)));
     }
 
 private:
@@ -126,14 +128,13 @@ private:
 
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
-
+    ClientEntityManager m_entity_manager;
     ClientPlayerManager m_player_manager;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;
     WorldScene& m_world_scene;
     std::vector<glm::vec4> m_planes;
-    std::jthread m_client_thread;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
@@ -144,7 +145,6 @@ private:
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
 
-    tbb::concurrent_unordered_map<std::string, TickTimer> m_ticktimers;
     std::unordered_map<std::string, Timer> m_timers;
     std::atomic<bool> m_exit_direct{false};
     std::atomic<bool> m_game_running{false};
@@ -163,8 +163,6 @@ private:
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_thread_pool;
 
     Random m_random;
-
-    void client_run(std::stop_token token);
 
     void set_block(const glm::ivec3& pos, unsigned id);
 

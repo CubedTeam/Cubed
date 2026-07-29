@@ -142,7 +142,13 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.receive_voice_message(*msg);
                 }
-            }
+            } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_CREATE): {
+                auto* msg = Arena::Create<S2CEntityCreate>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().receive_entity_create(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

@@ -23,8 +23,8 @@ struct ChunkRenderData {
 } // namespace
 
 ClientWorld::ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene)
-    : m_player_manager(*this), m_audio(auido), m_config(config),
-      m_world_scene(scene) {}
+    : m_entity_manager(*this), m_player_manager(*this), m_audio(auido),
+      m_config(config), m_world_scene(scene) {}
 
 ClientWorld::~ClientWorld() {
     m_client->close();
@@ -51,7 +51,7 @@ ClientWorld::~ClientWorld() {
         std::lock_guard lk(m_delete_vao_mutex);
         m_pending_delete_vao.clear();
     }
-    m_ticktimers.clear();
+    m_timers.clear();
 }
 
 const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
@@ -363,6 +363,7 @@ void ClientWorld::send_player_water_sound(bool underwater,
 
 void ClientWorld::init(std::string_view player_name,
                        std::shared_ptr<NetworkClient> client) {
+    m_entity_manager.init();
     m_player_manager.init(player_name);
     m_client = client;
 
@@ -371,10 +372,10 @@ void ClientWorld::init(std::string_view player_name,
     m_random.init(ChunkGenerator::seed());
 
     // timer
-    register_ticktimer("player_pos", 1, [this]() {
+    register_timer("player_pos", 0.05f, [this]() {
         m_player_manager.report_player_info(m_client.get());
     });
-    m_timers.try_emplace("Birds Sound", 60.0f, [this]() {
+    register_timer("Birds Sound", 60.0f, [this]() {
         auto player_pos = m_player_manager.get_local().get_player_pos();
         if (player_pos.y < SEA_LEVEL) {
             return;
@@ -390,7 +391,7 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
-    m_timers.try_emplace("Ocean Wave", 3.0f, [this]() {
+    register_timer("Ocean Wave", 3.0f, [this]() {
         auto player_pos = m_player_manager.get_local().get_player_pos();
         if (player_pos.y < SEA_LEVEL - 10 || player_pos.y > SEA_LEVEL + 10) {
             return;
@@ -410,7 +411,7 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
-    m_timers.try_emplace("under water bubble", 1.5f, [this]() {
+    register_timer("under water bubble", 1.5f, [this]() {
         if (m_player_manager.get_local().is_underwater()) {
             auto ans = m_random.random_int(1, 2);
             std::string sound =
@@ -420,7 +421,7 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
-    m_timers.try_emplace("bgm change", 350.0f, [this]() {
+    register_timer("bgm change", 350.0f, [this]() {
         if (m_day_tick >= 17000 || m_day_tick < 5000) {
             m_audio.change_bgm("bgm/bgm002.ogg");
         } else {
@@ -455,11 +456,11 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
     }
     // response
     m_player_manager.get_local().set_uuid(uuid);
-
+    /*
     m_client_thread = std::jthread([this](std::stop_token token) {
         m_game_running = true;
         client_run(token);
-    });
+    });*/
 
     // Wait for 20 ticks, after the server's central chunk is generated, then
     // request chunks
@@ -470,10 +471,11 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
 }
 
 void ClientWorld::stop_client_thread() {
+    /*
     m_client_thread.request_stop();
     if (m_client_thread.joinable()) {
         m_client_thread.join();
-    }
+    }*/
     m_game_running = false;
 }
 void ClientWorld::start_thread_pool() {
@@ -512,6 +514,7 @@ void ClientWorld::reload_config(bool chunk_build) {
     m_player_manager.reload_config();
 }
 
+/*
 void ClientWorld::client_run(std::stop_token stoken) {
     Logger::info("Client Thread Started");
     using Clock = std::chrono::steady_clock;
@@ -527,6 +530,7 @@ void ClientWorld::client_run(std::stop_token stoken) {
         std::this_thread::sleep_until(next);
     }
 }
+*/
 
 void ClientWorld::update_chunk(const ChunkPosSet& old, const ChunkPosSet& now) {
 
@@ -677,6 +681,7 @@ const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
 WorldScene& ClientWorld::world_scene() { return m_world_scene; }
 ClientPlayerManager& ClientWorld::player_manager() { return m_player_manager; }
+ClientEntityManager& ClientWorld::entity_manager() { return m_entity_manager; }
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
