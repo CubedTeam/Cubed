@@ -99,21 +99,6 @@ bool update_z(const glm::vec3& pos, const glm::vec3& distance, World& world,
 }
 
 } // namespace
-std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, ServerEntity& e,
-                                                    World& world) {
-    glm::vec3 pos = e.transform.position.value;
-    auto ans = update(dt, e, world, pos);
-    e.transform.position.value = pos;
-    return ans;
-}
-
-std::tuple<bool, bool, bool> PhysicalSystem::update(float dt, ServerEntity& e,
-                                                    World& world,
-                                                    glm::vec3& moved_pos) {
-
-    return update(dt, world, moved_pos, e.velocity, e.direction, e.move_state,
-                  e.hitbox);
-}
 
 std::tuple<bool, bool, bool>
 PhysicalSystem::update(float dt, World& world, glm::vec3& moved_pos,

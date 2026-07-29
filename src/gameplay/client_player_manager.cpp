@@ -1,4 +1,3 @@
-#pragma once
 #include "Cubed/gameplay/client_player_manager.hpp"
 
 #include "Cubed/gameplay/client_world.hpp"

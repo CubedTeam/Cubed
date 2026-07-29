@@ -100,4 +100,6 @@ target_sources(${PROJECT_NAME}
         gameplay/systems/physical_system.cpp
         gameplay/systems/speed_system.cpp
         gameplay/client_player_manager.cpp
+        gameplay/server_entity_manager.cpp
+        gameplay/client_entity_manager.cpp
 )

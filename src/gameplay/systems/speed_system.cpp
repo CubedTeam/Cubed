@@ -1,9 +1,6 @@
 #include "Cubed/gameplay/systems/speed_system.hpp"
 
 namespace Cubed {
-void SpeedSystem::update(float dt, ServerEntity& e) {
-    update(dt, e.velocity, e.move_state, e.movement, e.direction, e.gravity);
-}
 
 void SpeedSystem::update(float dt, Velocity& v, MoveState& move_state,
                          Movement& movement, Direction& direction,

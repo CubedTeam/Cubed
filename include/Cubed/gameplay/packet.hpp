@@ -60,6 +60,7 @@ enum class PacketEnum : uint16_t {
     BLOCK_CHANGE_REQ = 3003,
     BLOCK_CHANGE_RSP = 3004,
     S2C_CLEAR_ALL_CHUNKS = 3005,
+    S2C_ENTITY_CREATE = 3006,
     UPDATE_TIME = 3006,
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
@@ -110,6 +111,9 @@ template <> constexpr uint16_t get_packet_id<BlockChangeRsp>() {
 }
 template <> constexpr uint16_t get_packet_id<S2C_ClearAllChunks>() {
     return std::to_underlying(PacketEnum::S2C_CLEAR_ALL_CHUNKS);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityCreate>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_CREATE);
 }
 template <> constexpr uint16_t get_packet_id<UpdateTime>() {
     return std::to_underlying(PacketEnum::UPDATE_TIME);

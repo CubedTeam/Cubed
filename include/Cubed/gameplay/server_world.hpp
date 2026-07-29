@@ -7,6 +7,7 @@
 #include "Cubed/gameplay/packet.hpp" // IWYU pragma: keep
 #include "Cubed/gameplay/river_worm.hpp"
 #include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server_entity_manager.hpp"
 #include "Cubed/gameplay/server_player.hpp"
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
@@ -87,6 +88,8 @@ public:
     void handle_voice_message(VoiceMsg& msg);
     int chunk_size() const;
 
+    std::vector<std::shared_ptr<Session>> get_all_session() const;
+
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;
     bool can_pass_block(const glm::ivec3& block_pos) const override;
@@ -132,7 +135,7 @@ private:
     using uuid_cacc = PlayerUUIDMap::const_accessor;
 
     Config& m_config;
-
+    ServerEntityManager m_entity_manager;
     // key = uuid
     PlayerHashMap m_players;
     ChunkHashMap m_chunks;
@@ -162,7 +165,7 @@ private:
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
 
-    mutable std::shared_mutex m_player_mutex;
+    mutable std::shared_mutex m_players_mutex;
     std::mutex m_need_gen_queue_mutex;
     std::condition_variable_any m_gen_cv;
 

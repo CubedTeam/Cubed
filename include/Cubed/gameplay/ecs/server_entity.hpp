@@ -1,32 +1,27 @@
 #pragma once
-#include "Cubed/gameplay/ecs/entity.hpp"
 #include "Cubed/gameplay/ecs/health.hpp"
-#include "Cubed/gameplay/ecs/identity.hpp"
 #include "Cubed/gameplay/ecs/movement.hpp"
 #include "Cubed/gameplay/ecs/state.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/gameplay/hitbox.hpp"
 namespace Cubed {
-struct ServerEntity {
 
-    Entity entity;
+struct BaseServerCreature {
+    Transform transform{};
 
-    EntityInfo info;
+    Velocity velocity{};
 
-    Transform transform;
+    Movement movement{};
 
-    Velocity velocity;
+    MoveState move_state{};
 
-    Movement movement;
+    Direction direction{};
 
-    MoveState move_state;
+    Gravity gravity{};
 
-    Direction direction;
+    Health health{};
 
-    Gravity gravity;
-
-    Health health;
-
-    HitboxID hitbox;
+    HitboxID hitbox{};
 };
+
 } // namespace Cubed

@@ -16,7 +16,8 @@ using namespace google::protobuf;
 namespace fs = std::filesystem;
 using nlohmann::json;
 namespace Cubed {
-ServerWorld::ServerWorld(Config& config) : m_config(config) {}
+ServerWorld::ServerWorld(Config& config)
+    : m_config(config), m_entity_manager(*this) {}
 
 ServerWorld::~ServerWorld() { stop(); }
 
@@ -85,7 +86,7 @@ void ServerWorld::send_time() {
     rsp->set_day_tick(m_day_tick);
     rsp->set_game_tick(m_game_ticks);
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         for (auto& [uuid, player] : m_players) {
             player.get_session()->send(make_packet(*rsp), 3);
         }
@@ -96,7 +97,7 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
                              ChunkPos pos) {
 
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         auto it = m_players.find(uuid);
         if (it == m_players.end()) {
             return;
@@ -159,7 +160,7 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
     }
     std::shared_ptr<Session> s;
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         auto it = m_players.find(uuid);
         if (it != m_players.end()) {
             s = it->second.get_session();
@@ -176,10 +177,12 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
 
 void ServerWorld::init_world() {
 
+    m_entity_manager.init();
+
     register_timer("player disconnect", 5, [this]() {
         std::vector<std::string> disconnect;
         {
-            std::shared_lock lock(m_player_mutex);
+            std::shared_lock lock(m_players_mutex);
             for (auto& [uuid, player] : m_players) {
                 if (player.is_disconnect(m_game_ticks)) {
                     disconnect.emplace_back(uuid);
@@ -243,7 +246,7 @@ void ServerWorld::gen_chunks_internal(const std::string& uuid) {
     ChunkPosSet old_set;
     sync_and_collect_missing_chunks(need_gen_chunks_pos, required_chunks_set);
     {
-        std::lock_guard lock(m_player_mutex);
+        std::lock_guard lock(m_players_mutex);
         auto it = m_players.find(uuid);
         if (it == m_players.end()) {
             return;
@@ -564,7 +567,7 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     auto yaw = prsp.yaw();
     auto pitch = prsp.pitch();
     {
-        std::lock_guard lock(m_player_mutex);
+        std::lock_guard lock(m_players_mutex);
         auto it = m_players.find(uuid);
         if (it == m_players.end()) {
             Logger::warn("Player {} is not in this Server", uuid);
@@ -583,7 +586,7 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     // update other player pos;
     std::vector<std::shared_ptr<Session>> other;
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         for (auto& [o_uuid, player] : m_players) {
             if (o_uuid == uuid) {
                 continue;
@@ -624,7 +627,7 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     std::vector<std::shared_ptr<Session>> other;
 
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         for (auto& [o_uuid, player] : m_players) {
             if (o_uuid == uuid) {
                 continue;
@@ -660,7 +663,7 @@ void ServerWorld::handle_player_login(const std::string& name,
     Logger::info("Player {} (uuid {}) join the world", name, uuid);
     bool sucess = true;
     {
-        std::lock_guard lock(m_player_mutex);
+        std::lock_guard lock(m_players_mutex);
         auto [_, inserted] = m_players.emplace(
             std::piecewise_construct, std::forward_as_tuple(std::string(uuid)),
             std::forward_as_tuple(name, uuid, *this, session, m_game_ticks));
@@ -710,7 +713,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     ChunkPosSet old_set;
     std::string name;
     {
-        std::lock_guard lock(m_player_mutex);
+        std::lock_guard lock(m_players_mutex);
         auto it = m_players.find(uuid);
         if (it != m_players.end()) {
             name = it->second.get_name();
@@ -737,7 +740,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
 
     std::vector<std::shared_ptr<Session>> sessions;
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         for (auto& [uuid, player] : m_players) {
             sessions.emplace_back(player.get_session());
         }
@@ -754,7 +757,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
 }
 
 glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
-    std::shared_lock lock(m_player_mutex);
+    std::shared_lock lock(m_players_mutex);
     auto it = m_players.find(uuid);
     if (it == m_players.end()) {
         Logger::error("Can't find player uuid {}", uuid);
@@ -766,7 +769,7 @@ glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
 void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
                                    ChunkPos pos) {
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         auto it = m_players.find(uuid);
         if (it == m_players.end()) {
             return;
@@ -804,7 +807,7 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
         std::vector<std::shared_ptr<Session>> session;
 
         {
-            std::shared_lock lock(m_player_mutex);
+            std::shared_lock lock(m_players_mutex);
             for (auto& [key, player] : m_players) {
                 if (key == uuid) {
                     continue;
@@ -851,7 +854,7 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     std::vector<std::shared_ptr<Session>> sessions;
     auto chunk_pos = get_chunk_pos(x, z);
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         for (auto& [uuid, player] : m_players) {
             if (player.has_player(chunk_pos)) {
                 auto session = player.get_session();
@@ -934,7 +937,7 @@ void ServerWorld::send_server_stop() {
     Arena arena;
     auto* rsp = Arena::Create<LogoutRsp>(&arena);
     rsp->set_server_stop(true);
-    std::shared_lock lock(m_player_mutex);
+    std::shared_lock lock(m_players_mutex);
     for (auto& [uuid, player] : m_players) {
         player.get_session()->send(make_packet(*rsp), 0);
     }
@@ -947,7 +950,7 @@ void ServerWorld::boardcast_message(const std::string& name,
 
     std::vector<std::shared_ptr<Session>> m_session;
     {
-        std::shared_lock lock(m_player_mutex);
+        std::shared_lock lock(m_players_mutex);
         for (auto& [_, p] : m_players) {
             m_session.emplace_back(p.get_session());
         }
@@ -989,6 +992,15 @@ void ServerWorld::set_chunk_load_style(int id) {
 }
 
 int ServerWorld::chunk_size() const { return m_chunks.size(); }
+
+std::vector<std::shared_ptr<Session>> ServerWorld::get_all_session() const {
+    std::shared_lock lock(m_players_mutex);
+    std::vector<std::shared_ptr<Session>> sessions;
+    for (const auto& [_, player] : m_players) {
+        sessions.emplace_back(player.get_session());
+    }
+    return sessions;
+}
 
 int ServerWorld::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);

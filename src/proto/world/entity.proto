@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "common/vector3.proto";
+
+message S2CEntityCreate {
+    uint64 id = 1;
+    string name = 2;
+    Vec3 pos = 3;
+}
