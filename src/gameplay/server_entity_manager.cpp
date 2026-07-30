@@ -21,9 +21,39 @@ void ServerEntityManager::init() {
                           std::move(c), PigTag{});
     });
 }
+void ServerEntityManager::update() { handle_task(); }
+
+void ServerEntityManager::handle_task() {
+    TaskPair pair;
+    while (m_tasks.try_pop(pair)) {
+        switch (pair.first) {
+        case Command::CREATE: {
+            auto* c = std::get_if<EntityCreateElement>(&pair.second);
+            ASSERT(c);
+            create_entity(c->name, c->pos);
+        } break;
+        case Command::SEND_ALL_ENTITIES: {
+            auto* c = std::get_if<std::shared_ptr<Session>>(&pair.second);
+            ASSERT(c);
+            send_all_entities(*c);
+        } break;
+        }
+    }
+}
 
 void ServerEntityManager::add_entity(std::string_view name,
                                      const glm::vec3& pos) {
+    m_tasks.emplace(Command::CREATE,
+                    EntityCreateElement{std::string(name), pos});
+}
+
+void ServerEntityManager::handle_player_login(
+    std::shared_ptr<Session> session) {
+    m_tasks.emplace(Command::SEND_ALL_ENTITIES, std::move(session));
+}
+
+void ServerEntityManager::create_entity(std::string_view name,
+                                        const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
     auto e = m_factories[name]();
     acc c;
@@ -33,6 +63,20 @@ void ServerEntityManager::add_entity(std::string_view name,
         t->transform.position.value = pos;
     }
     send_entity_create(e, name, pos);
+}
+
+void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
+    auto view = m_registry.view<Entity, EntityInfo, BaseServerCreature>();
+    for (auto& entity : view) {
+        auto [e, info, base] =
+            view.get<Entity, EntityInfo, BaseServerCreature>(entity);
+        Arena arena;
+        auto* s2c = Arena::Create<S2CEntityCreate>(&arena);
+        s2c->set_id(e.id);
+        s2c->set_name(info.name);
+        Tools::set_net_pos(s2c, base.transform.position.value);
+        session->send(make_packet(*s2c));
+    }
 }
 
 void ServerEntityManager::send_entity_create(EntityID id, std::string_view name,

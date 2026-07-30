@@ -178,7 +178,7 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
 void ServerWorld::init_world() {
 
     m_entity_manager.init();
-
+    m_entity_manager.add_entity("cubed:pig", {0, 90, 0});
     register_timer("player disconnect", 5, [this]() {
         std::vector<std::string> disconnect;
         {
@@ -527,6 +527,7 @@ void ServerWorld::hot_reload() {
 
 void ServerWorld::update() {
     // poll_finished_chunks();
+    m_entity_manager.update();
     {
         bool consumed = false;
         std::unique_ptr<ServerChunk> chunk;
@@ -706,6 +707,7 @@ void ServerWorld::handle_player_login(const std::string& name,
 
     boardcast_message("Server", std::format("Player {} Join Game", name),
                       Color::YELLOW, true);
+    m_entity_manager.handle_player_login(session);
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {

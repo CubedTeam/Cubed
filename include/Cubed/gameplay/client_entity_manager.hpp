@@ -20,6 +20,8 @@ public:
 
     void receive_entity_create(S2CEntityCreate& s2c);
 
+    const entt::registry& get_registry() const;
+
 private:
     struct EntityCreateElement {
         EntityID id;
@@ -41,7 +43,14 @@ private:
 
     void handle_task();
 
-    template <typename... Args> void add_entity(EntityID id, Args&&... args) {
+    template <typename... Args>
+    void create_entity_in_registry(EntityID id, Args&&... args) {
+        {
+            cacc a;
+            if (m_entities.find(a, id)) {
+                return;
+            }
+        }
         auto entity = m_registry.create();
 
         ((m_registry.emplace<std::remove_cvref_t<Args>>(

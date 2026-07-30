@@ -93,7 +93,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
             } break;
             case std::to_underlying(PacketEnum::BLOCK_CHANGE_RSP): {
                 auto* rsp = Arena::Create<BlockChangeRsp>(&arena);
-                Logger::info("Client: Receive Block Change rsp");
+
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_block_change(*rsp);
                 }
@@ -148,6 +148,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.entity_manager().receive_entity_create(*msg);
                 }
+
             } break;
             }
         }

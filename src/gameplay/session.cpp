@@ -82,7 +82,7 @@ asio::awaitable<void> Session::read_loop() {
             }
             if (cmd_id == std::to_underlying(PacketEnum::BLOCK_CHANGE_REQ)) {
                 auto* req = Arena::Create<BlockChangeReq>(&arena);
-                Logger::info("Session: Receive Block Change req");
+
                 if (decode_packet(*req, body_data, header)) {
                     m_server_world.handle_block_change(*req);
                 }

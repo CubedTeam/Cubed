@@ -34,7 +34,7 @@ ModelManager::Handle ModelManager::get_model(const std::string& model_name) {
 ModelManager::Handle ModelManager::get_model(ModelID id) {
 
     ModelMap::const_accessor cacc;
-    if (!m_models.find(cacc, id)) {
+    if (m_models.find(cacc, id)) {
         return {cacc->second, cacc->first};
     }
     return load_model(get_model_name(id));
@@ -73,10 +73,10 @@ ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
     }
     std::string path;
     if (space[0] == "cubed") {
-        path = std::format("{}model/creature/{}/{}.gbl", ASSETS_PATH, space[1],
+        path = std::format("{}model/creature/{}/{}.glb", ASSETS_PATH, space[1],
                            space[1]);
     } else {
-        path = std::format("./{}/model/creature/{}/{}.gbl", space[0], space[1],
+        path = std::format("./{}/model/creature/{}/{}.glb", space[0], space[1],
                            space[1]);
     }
     auto model = m_loader.load(path);

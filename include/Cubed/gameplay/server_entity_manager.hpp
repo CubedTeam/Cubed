@@ -4,30 +4,45 @@
 
 #include <entt/entt.hpp>
 #include <tbb/concurrent_hash_map.h>
+#include <tbb/concurrent_queue.h>
 namespace Cubed {
 class ServerWorld;
+class Session;
 class ServerEntityManager {
 public:
     ServerEntityManager(ServerWorld& world);
 
     void init();
+    void update();
     // not thread safe
     void add_entity(std::string_view name, const glm::vec3& pos);
 
+    void handle_player_login(std::shared_ptr<Session> session);
+
 private:
+    enum class Command { CREATE, SEND_ALL_ENTITIES };
+    struct EntityCreateElement {
+        std::string name;
+        glm::vec3 pos;
+    };
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;
     using acc = EntityMap::accessor;
     using cacc = EntityMap::const_accessor;
     using CreateFunc = std::function<EntityID()>;
+    using TaskElement =
+        std::variant<std::shared_ptr<Session>, EntityCreateElement>;
+    using TaskPair = std::pair<Command, TaskElement>;
     ServerWorld& m_world;
+    tbb::concurrent_queue<TaskPair> m_tasks;
     entt::registry m_registry;
     EntityID m_next = 0;
     EntityMap m_entities;
     std::unordered_map<std::string_view, CreateFunc> m_factories;
-
+    void create_entity(std::string_view name, const glm::vec3& pos);
     void send_entity_create(EntityID id, std::string_view name,
                             const glm::vec3& pos);
-
+    void handle_task();
+    void send_all_entities(std::shared_ptr<Session>& session);
     template <typename... Args> EntityID add_entity(Args&&... args) {
         auto entity = m_registry.create();
 

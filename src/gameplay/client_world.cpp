@@ -731,6 +731,7 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
 
 void ClientWorld::update(float delta_time) {
     m_player_manager.update(delta_time);
+    m_entity_manager.update();
     {
         std::lock_guard lk(m_delete_vbo_mutex);
         m_pending_delete_vbo.clear();
