@@ -11,5 +11,11 @@ template <Ptr T> void set_net_pos(T ptr, const glm::vec3& pos) {
     p->set_y(pos.y);
     p->set_z(pos.z);
 }
+inline glm::vec3 get_net_pos(const Vec3* p) {
+    return glm::vec3{p->x(), p->y(), p->z()};
+}
+inline glm::vec3 get_net_pos(const Vec3& p) {
+    return glm::vec3{p.x(), p.y(), p.z()};
+}
 } // namespace Tools
 } // namespace Cubed

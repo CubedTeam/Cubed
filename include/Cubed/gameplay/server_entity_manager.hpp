@@ -44,7 +44,8 @@ private:
     void handle_entity_destory(EntityID id);
     void handle_task();
     void send_all_entities(std::shared_ptr<Session>& session);
-    template <typename... Args> EntityID add_entity(Args&&... args) {
+    template <typename... Args>
+    EntityID create_entity_in_factory(Args&&... args) {
         auto entity = m_registry.create();
 
         ((m_registry.emplace<std::remove_cvref_t<Args>>(

@@ -682,6 +682,9 @@ Config& ClientWorld::get_config() { return m_config; }
 WorldScene& ClientWorld::world_scene() { return m_world_scene; }
 ClientPlayerManager& ClientWorld::player_manager() { return m_player_manager; }
 ClientEntityManager& ClientWorld::entity_manager() { return m_entity_manager; }
+std::shared_ptr<NetworkClient> ClientWorld::get_client() const {
+    return m_client;
+}
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }
 void ClientWorld::request_exit() {
     if (m_receive_exit) {

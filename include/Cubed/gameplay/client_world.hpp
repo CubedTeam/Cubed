@@ -86,6 +86,7 @@ public:
     WorldScene& world_scene();
     ClientPlayerManager& player_manager();
     ClientEntityManager& entity_manager();
+    std::shared_ptr<NetworkClient> get_client() const;
     void set_direct_exit();
 
     void receive_chat_message(ChatMsg& msg);

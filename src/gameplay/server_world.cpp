@@ -5,6 +5,7 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"
+#include "Cubed/tools/net_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 
 #include <nlohmann/json.hpp>
@@ -870,6 +871,14 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
             x->send(make_packet(*rsp), 1);
         }
     }
+}
+
+void ServerWorld::handle_entity_create(C2SEntityCreateRequest& req) {
+
+    m_entity_manager.add_entity(req.name(), Tools::get_net_pos(req.pos()));
+}
+void ServerWorld::handle_entity_destory(C2SEntityDestoryRequest& req) {
+    m_entity_manager.destory(req.id());
 }
 
 int ServerWorld::rendering_distance() const {

@@ -111,6 +111,20 @@ asio::awaitable<void> Session::read_loop() {
                     m_server_world.handle_voice_message(*msg);
                 }
             }
+            if (cmd_id ==
+                std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQUEST)) {
+                auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_entity_create(*msg);
+                }
+            }
+            if (cmd_id ==
+                std::to_underlying(PacketEnum::C2S_ENTITY_DESTORY_REQUEST)) {
+                auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_entity_destory(*msg);
+                }
+            }
         }
     } catch (const asio::system_error& e) {
         auto ec = e.code();

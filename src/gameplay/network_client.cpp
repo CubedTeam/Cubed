@@ -153,7 +153,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
             case std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY): {
                 auto* msg = Arena::Create<S2CEntityDestory>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
-                    m_world.entity_manager().destory(msg->id());
+                    m_world.entity_manager().receive_entity_destory(msg->id());
                 }
             } break;
             }

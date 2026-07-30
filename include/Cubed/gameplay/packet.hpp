@@ -63,6 +63,8 @@ enum class PacketEnum : uint16_t {
     UPDATE_TIME = 3006,
     S2C_ENTITY_CREATE = 3007,
     S2C_ENTITY_DESTORY = 3008,
+    C2S_ENTITY_CREATE_REQUEST = 3009,
+    C2S_ENTITY_DESTORY_REQUEST = 3010,
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
     PING = 9001,
@@ -118,6 +120,12 @@ template <> constexpr uint16_t get_packet_id<S2CEntityCreate>() {
 }
 template <> constexpr uint16_t get_packet_id<S2CEntityDestory>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY);
+}
+template <> constexpr uint16_t get_packet_id<C2SEntityCreateRequest>() {
+    return std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQUEST);
+}
+template <> constexpr uint16_t get_packet_id<C2SEntityDestoryRequest>() {
+    return std::to_underlying(PacketEnum::C2S_ENTITY_DESTORY_REQUEST);
 }
 template <> constexpr uint16_t get_packet_id<UpdateTime>() {
     return std::to_underlying(PacketEnum::UPDATE_TIME);
@@ -186,6 +194,12 @@ Packet make_packet(const T& msg) {
     std::memcpy(packet->data() + HEADER_LEN, payload.data(), payload.size());
 
     return packet;
+}
+
+template <typename T>
+    requires std::derived_from<T, google::protobuf::Message>
+Packet make_packet(const T* msg) {
+    return make_packet(*msg);
 }
 
 inline PacketHeader decode_packet_header(std::span<const uint8_t> header) {

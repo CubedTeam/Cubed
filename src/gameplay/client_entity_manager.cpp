@@ -7,6 +7,10 @@
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/net_utils.hpp"
+
+using namespace google::protobuf;
+
 namespace Cubed {
 ClientEntityManager::ClientEntityManager(ClientWorld& world) : m_world(world) {}
 void ClientEntityManager::update() { handle_task(); }
@@ -20,8 +24,9 @@ void ClientEntityManager::init() {
     });
 }
 // not thread safe
-void ClientEntityManager::add_entity(EntityID id, std::string_view name,
-                                     const glm::vec3& pos) {
+void ClientEntityManager::handle_entity_create(EntityID id,
+                                               std::string_view name,
+                                               const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
     m_factories[name](id);
     acc a;
@@ -39,8 +44,26 @@ void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
     m_tasks.emplace(Command::CREATE, std::move(c));
 }
 
-void ClientEntityManager::destory(EntityID id) {
+void ClientEntityManager::receive_entity_destory(EntityID id) {
     m_tasks.emplace(Command::DESTORY, id);
+}
+
+void ClientEntityManager::destory(EntityID id) {
+    auto client = m_world.get_client();
+    Arena arena;
+    auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
+    msg->set_id(id);
+    msg->set_uuid(m_world.get_player().get_uuid());
+    client->send(make_packet(*msg));
+}
+void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
+    auto client = m_world.get_client();
+    Arena arena;
+    auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
+    msg->set_name(name);
+    msg->set_uuid(m_world.get_player().get_uuid());
+    Tools::set_net_pos(msg, pos);
+    client->send(make_packet(msg));
 }
 
 void ClientEntityManager::handle_task() {
@@ -50,7 +73,7 @@ void ClientEntityManager::handle_task() {
         case Command::CREATE: {
             auto* p = std::get_if<EntityCreateElement>(&pair.second);
             ASSERT(p);
-            add_entity(p->id, p->name, p->pos);
+            handle_entity_create(p->id, p->name, p->pos);
 
         } break;
         case Command::DESTORY: {

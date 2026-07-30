@@ -15,11 +15,13 @@ public:
     ClientEntityManager(ClientWorld& world);
     void update();
     void init();
-    // not thread safe
-    void add_entity(EntityID id, std::string_view name, const glm::vec3& pos);
 
     void receive_entity_create(S2CEntityCreate& s2c);
+    void receive_entity_destory(EntityID id);
+
     void destory(EntityID id);
+    void create(std::string_view name, const glm::vec3& pos);
+
     const entt::registry& get_registry() const;
 
 private:
@@ -43,6 +45,9 @@ private:
 
     void handle_task();
     void handle_entity_destory(EntityID id);
+    // not thread safe
+    void handle_entity_create(EntityID id, std::string_view name,
+                              const glm::vec3& pos);
     template <typename... Args>
     void create_entity_in_registry(EntityID id, Args&&... args) {
         {

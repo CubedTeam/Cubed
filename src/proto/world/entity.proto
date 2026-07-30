@@ -11,3 +11,14 @@ message S2CEntityCreate {
 message S2CEntityDestory {
     uint64 id = 1;
 }
+
+message C2SEntityDestoryRequest {
+    string uuid = 1;
+    uint64 id = 2;
+}
+
+message C2SEntityCreateRequest {
+    string uuid = 1;
+    string name = 2;
+    Vec3 pos = 3;
+}

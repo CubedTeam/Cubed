@@ -86,6 +86,10 @@ public:
 
     void handle_chat_message(ChatMsg& msg);
     void handle_voice_message(VoiceMsg& msg);
+
+    void handle_entity_create(C2SEntityCreateRequest& req);
+    void handle_entity_destory(C2SEntityDestoryRequest& req);
+
     int chunk_size() const;
 
     std::vector<std::shared_ptr<Session>> get_all_session() const;
