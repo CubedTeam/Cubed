@@ -39,17 +39,36 @@ void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
     m_tasks.emplace(Command::CREATE, std::move(c));
 }
 
+void ClientEntityManager::destory(EntityID id) {
+    m_tasks.emplace(Command::DESTORY, id);
+}
+
 void ClientEntityManager::handle_task() {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {
         switch (pair.first) {
-        case Command::CREATE:
+        case Command::CREATE: {
             auto* p = std::get_if<EntityCreateElement>(&pair.second);
             ASSERT(p);
             add_entity(p->id, p->name, p->pos);
-            break;
+
+        } break;
+        case Command::DESTORY: {
+            auto* p = std::get_if<EntityID>(&pair.second);
+            ASSERT(p);
+            handle_entity_destory(*p);
+        } break;
         }
     }
+}
+
+void ClientEntityManager::handle_entity_destory(EntityID id) {
+    acc a;
+    if (!m_entities.find(a, id)) {
+        return;
+    }
+    m_registry.destroy(a->second);
+    m_entities.erase(a);
 }
 
 const entt::registry& ClientEntityManager::get_registry() const {

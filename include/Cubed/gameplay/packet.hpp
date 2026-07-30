@@ -62,6 +62,7 @@ enum class PacketEnum : uint16_t {
     S2C_CLEAR_ALL_CHUNKS = 3005,
     UPDATE_TIME = 3006,
     S2C_ENTITY_CREATE = 3007,
+    S2C_ENTITY_DESTORY = 3008,
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
     PING = 9001,
@@ -114,6 +115,9 @@ template <> constexpr uint16_t get_packet_id<S2C_ClearAllChunks>() {
 }
 template <> constexpr uint16_t get_packet_id<S2CEntityCreate>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_CREATE);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityDestory>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY);
 }
 template <> constexpr uint16_t get_packet_id<UpdateTime>() {
     return std::to_underlying(PacketEnum::UPDATE_TIME);

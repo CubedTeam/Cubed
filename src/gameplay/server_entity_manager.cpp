@@ -37,6 +37,11 @@ void ServerEntityManager::handle_task() {
             ASSERT(c);
             send_all_entities(*c);
         } break;
+        case Command::DESTORY: {
+            auto* c = std::get_if<EntityID>(&pair.second);
+            ASSERT(c);
+            handle_entity_destory(*c);
+        } break;
         }
     }
 }
@@ -45,6 +50,10 @@ void ServerEntityManager::add_entity(std::string_view name,
                                      const glm::vec3& pos) {
     m_tasks.emplace(Command::CREATE,
                     EntityCreateElement{std::string(name), pos});
+}
+
+void ServerEntityManager::destory(EntityID id) {
+    m_tasks.emplace(Command::DESTORY, id);
 }
 
 void ServerEntityManager::handle_player_login(
@@ -62,7 +71,7 @@ void ServerEntityManager::create_entity(std::string_view name,
         ASSERT(t);
         t->transform.position.value = pos;
     }
-    send_entity_create(e, name, pos);
+    handle_entity_create(e, name, pos);
 }
 
 void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
@@ -79,8 +88,9 @@ void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
     }
 }
 
-void ServerEntityManager::send_entity_create(EntityID id, std::string_view name,
-                                             const glm::vec3& pos) {
+void ServerEntityManager::handle_entity_create(EntityID id,
+                                               std::string_view name,
+                                               const glm::vec3& pos) {
     auto sessions = m_world.get_all_session();
 
     Arena arena;
@@ -89,6 +99,22 @@ void ServerEntityManager::send_entity_create(EntityID id, std::string_view name,
     s2c->set_name(name);
     Tools::set_net_pos(s2c, pos);
 
+    for (auto& s : sessions) {
+        s->send(make_packet(*s2c));
+    }
+}
+
+void ServerEntityManager::handle_entity_destory(EntityID id) {
+    acc a;
+    if (!m_entities.find(a, id)) {
+        return;
+    }
+    m_registry.destroy(a->second);
+    m_entities.erase(a);
+    auto sessions = m_world.get_all_session();
+    Arena arena;
+    auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
+    s2c->set_id(id);
     for (auto& s : sessions) {
         s->send(make_packet(*s2c));
     }

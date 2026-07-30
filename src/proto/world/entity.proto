@@ -7,3 +7,7 @@ message S2CEntityCreate {
     string name = 2;
     Vec3 pos = 3;
 }
+
+message S2CEntityDestory {
+    uint64 id = 1;
+}

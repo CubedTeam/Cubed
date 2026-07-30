@@ -16,11 +16,11 @@ public:
     void update();
     // not thread safe
     void add_entity(std::string_view name, const glm::vec3& pos);
-
+    void destory(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
 
 private:
-    enum class Command { CREATE, SEND_ALL_ENTITIES };
+    enum class Command { CREATE, SEND_ALL_ENTITIES, DESTORY };
     struct EntityCreateElement {
         std::string name;
         glm::vec3 pos;
@@ -30,7 +30,7 @@ private:
     using cacc = EntityMap::const_accessor;
     using CreateFunc = std::function<EntityID()>;
     using TaskElement =
-        std::variant<std::shared_ptr<Session>, EntityCreateElement>;
+        std::variant<std::shared_ptr<Session>, EntityCreateElement, EntityID>;
     using TaskPair = std::pair<Command, TaskElement>;
     ServerWorld& m_world;
     tbb::concurrent_queue<TaskPair> m_tasks;
@@ -39,8 +39,9 @@ private:
     EntityMap m_entities;
     std::unordered_map<std::string_view, CreateFunc> m_factories;
     void create_entity(std::string_view name, const glm::vec3& pos);
-    void send_entity_create(EntityID id, std::string_view name,
-                            const glm::vec3& pos);
+    void handle_entity_create(EntityID id, std::string_view name,
+                              const glm::vec3& pos);
+    void handle_entity_destory(EntityID id);
     void handle_task();
     void send_all_entities(std::shared_ptr<Session>& session);
     template <typename... Args> EntityID add_entity(Args&&... args) {

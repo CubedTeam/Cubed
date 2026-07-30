@@ -150,6 +150,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 }
 
             } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY): {
+                auto* msg = Arena::Create<S2CEntityDestory>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().destory(msg->id());
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

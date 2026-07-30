@@ -10,7 +10,7 @@ namespace Cubed {
 class ClientWorld;
 class ClientEntityManager {
 public:
-    enum class Command { CREATE };
+    enum class Command { CREATE, DESTORY };
 
     ClientEntityManager(ClientWorld& world);
     void update();
@@ -19,7 +19,7 @@ public:
     void add_entity(EntityID id, std::string_view name, const glm::vec3& pos);
 
     void receive_entity_create(S2CEntityCreate& s2c);
-
+    void destory(EntityID id);
     const entt::registry& get_registry() const;
 
 private:
@@ -32,7 +32,7 @@ private:
     using acc = EntityMap::accessor;
     using cacc = EntityMap::const_accessor;
     using CreateFunc = std::function<void(EntityID id)>;
-    using TaskElement = std::variant<EntityCreateElement>;
+    using TaskElement = std::variant<EntityCreateElement, EntityID>;
     using TaskPair = std::pair<Command, TaskElement>;
 
     ClientWorld& m_world;
@@ -42,7 +42,7 @@ private:
     tbb::concurrent_queue<TaskPair> m_tasks;
 
     void handle_task();
-
+    void handle_entity_destory(EntityID id);
     template <typename... Args>
     void create_entity_in_registry(EntityID id, Args&&... args) {
         {
