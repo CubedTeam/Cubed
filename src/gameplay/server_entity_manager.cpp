@@ -6,6 +6,9 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/gameplay/session.hpp"
+#include "Cubed/gameplay/systems/physical_system.hpp"
+#include "Cubed/gameplay/systems/speed_system.hpp"
+#include "Cubed/gameplay/systems/wander_ai_system.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/net_utils.hpp"
 using namespace google::protobuf;
@@ -25,8 +28,15 @@ void ServerEntityManager::init() {
 void ServerEntityManager::update() {
     handle_task();
     update_ai();
+    update_move();
 }
 
+void ServerEntityManager::update_ai() { WanderAISystem::update(m_registry); }
+void ServerEntityManager::update_move() {
+    SpeedSystem::update(
+        static_cast<float>(m_world.get_per_tick_time()) / 1000.0f, m_registry);
+    PhysicalSystem::update(m_world, m_registry);
+}
 void ServerEntityManager::handle_task() {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {

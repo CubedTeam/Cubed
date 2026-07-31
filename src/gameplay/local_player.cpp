@@ -473,7 +473,7 @@ void LocalPlayer::update_move(float dt) {
     if (m_game_mode == SPECTATOR) {
         player_pos += get_move_distance(dt);
     } else {
-        auto [x, y, z] = update_physical(dt);
+        auto [x, y, z] = update_physical(dt, player_pos);
         if (!x || !z) {
             m_sprinting = false;
         }
@@ -736,22 +736,23 @@ void LocalPlayer::update_speed(float dt) {
     }
 }
 
-std::tuple<bool, bool, bool> LocalPlayer::update_physical(float dt) {
+std::tuple<bool, bool, bool> LocalPlayer::update_physical(float dt,
+                                                          glm::vec3& pos) {
 
     auto distance = get_move_distance(dt);
     auto box = HitboxManager::hitbox(m_hitbox);
     bool x = false;
     bool y = false;
     bool z = false;
-    if (update_x(m_pos.value, distance, m_world, box.box)) {
-        m_pos.value.x += distance.x;
+    if (update_x(pos, distance, m_world, box.box)) {
+        pos.x += distance.x;
         x = true;
     } else {
         m_velocity.value.x = 0.0f;
     }
 
-    if (update_y(m_pos.value, distance, m_world, box.box)) {
-        m_pos.value.y += distance.y;
+    if (update_y(pos, distance, m_world, box.box)) {
+        pos.y += distance.y;
         y = true;
     } else {
         m_velocity.value.y = 0.0f;
@@ -761,8 +762,8 @@ std::tuple<bool, bool, bool> LocalPlayer::update_physical(float dt) {
         }
     }
 
-    if (update_z(m_pos.value, distance, m_world, box.box)) {
-        m_pos.value.z += distance.z;
+    if (update_z(pos, distance, m_world, box.box)) {
+        pos.z += distance.z;
         z = true;
     } else {
         m_velocity.value.z = 0.0f;

@@ -156,7 +156,7 @@ private:
     Gait compute_gait() const;
 
     void update_speed(float dt);
-    std::tuple<bool, bool, bool> update_physical(float dt);
+    std::tuple<bool, bool, bool> update_physical(float dt, glm::vec3& pos);
     glm::vec3 get_move_distance(float dt);
 };
 } // namespace Cubed
