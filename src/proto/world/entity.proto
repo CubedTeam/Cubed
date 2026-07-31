@@ -22,3 +22,8 @@ message C2SEntityCreateRequest {
     string name = 2;
     Vec3 pos = 3;
 }
+
+message S2CEntityUpdate {
+    uint64 id = 1;
+    Vec3 pos = 2;
+}

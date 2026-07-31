@@ -10,14 +10,15 @@ namespace Cubed {
 class ClientWorld;
 class ClientEntityManager {
 public:
-    enum class Command { CREATE, DESTORY };
+    enum class Command { CREATE, DESTORY, UPDATE };
 
     ClientEntityManager(ClientWorld& world);
     void update();
     void init();
 
-    void receive_entity_create(S2CEntityCreate& s2c);
+    void receive_entity_create(S2CEntityCreate& msg);
     void receive_entity_destory(EntityID id);
+    void receive_entity_update(S2CEntityUpdate& msg);
 
     void destory(EntityID id);
     void create(std::string_view name, const glm::vec3& pos);
@@ -30,11 +31,17 @@ private:
         std::string name;
         glm::vec3 pos;
     };
+
+    struct UpdateInfo {
+        EntityID id;
+        glm::vec3 pos;
+    };
+
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;
     using acc = EntityMap::accessor;
     using cacc = EntityMap::const_accessor;
     using CreateFunc = std::function<void(EntityID id)>;
-    using TaskElement = std::variant<EntityCreateElement, EntityID>;
+    using TaskElement = std::variant<EntityCreateElement, EntityID, UpdateInfo>;
     using TaskPair = std::pair<Command, TaskElement>;
 
     ClientWorld& m_world;
@@ -48,6 +55,7 @@ private:
     // not thread safe
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
+    void handle_entity_update(UpdateInfo& info);
     template <typename... Args>
     void create_entity_in_registry(EntityID id, Args&&... args) {
         {

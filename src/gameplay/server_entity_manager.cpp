@@ -22,7 +22,10 @@ void ServerEntityManager::init() {
                                         std::move(c), PigTag{});
     });
 }
-void ServerEntityManager::update() { handle_task(); }
+void ServerEntityManager::update() {
+    handle_task();
+    update_ai();
+}
 
 void ServerEntityManager::handle_task() {
     TaskPair pair;

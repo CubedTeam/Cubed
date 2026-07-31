@@ -51,10 +51,12 @@ enum class PacketEnum : uint16_t {
     LOGIN_RSP = 1002,
     LOGOUT_REQ = 1003,
     LOGOUT_RSP = 1004,
+
     PLAYER_INFO = 2001,
     C2S_PLAYER_INFO = 2002,
     PLAYER_INFO_RSP = 2003,
     PLAYER_WATER_SOUND = 2004,
+
     CHUNK_DATA_REQ = 3001,
     CHUNK_DATA_RSP = 3002,
     BLOCK_CHANGE_REQ = 3003,
@@ -65,8 +67,11 @@ enum class PacketEnum : uint16_t {
     S2C_ENTITY_DESTORY = 3008,
     C2S_ENTITY_CREATE_REQUEST = 3009,
     C2S_ENTITY_DESTORY_REQUEST = 3010,
+    S2C_ENTITY_UPDATE = 3011,
+
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
+
     PING = 9001,
     PONG = 9002
 
@@ -144,6 +149,9 @@ template <> constexpr uint16_t get_packet_id<ChatMsg>() {
 }
 template <> constexpr uint16_t get_packet_id<VoiceMsg>() {
     return std::to_underlying(PacketEnum::VOICE_MSG);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityUpdate>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE);
 }
 
 template <typename T>

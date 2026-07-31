@@ -36,8 +36,23 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     c->transform.position.value = pos;
 }
 
+void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
+    entt::entity e;
+    {
+        cacc a;
+        if (m_entities.find(a, info.id)) {
+            e = a->second;
+        } else {
+            return;
+        }
+    }
+    auto creature = m_registry.try_get<BaseClientCreature>(e);
+    ASSERT(creature);
+    creature->transform.position.value = info.pos;
+}
+
 void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
-    EntityCreateElement c;
+    EntityCreateElement c{};
     c.id = s2c.id();
     c.name = s2c.name();
     c.pos = {s2c.pos().x(), s2c.pos().y(), s2c.pos().z()};
@@ -46,6 +61,13 @@ void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
 
 void ClientEntityManager::receive_entity_destory(EntityID id) {
     m_tasks.emplace(Command::DESTORY, id);
+}
+
+void ClientEntityManager::receive_entity_update(S2CEntityUpdate& msg) {
+    UpdateInfo e;
+    e.id = msg.id();
+    e.pos = Tools::get_net_pos(msg.pos());
+    m_tasks.emplace(Command::UPDATE, std::move(e));
 }
 
 void ClientEntityManager::destory(EntityID id) {
@@ -81,6 +103,11 @@ void ClientEntityManager::handle_task() {
             ASSERT(p);
             handle_entity_destory(*p);
         } break;
+        case Command::UPDATE: {
+            auto* p = std::get_if<UpdateInfo>(&pair.second);
+            ASSERT(p);
+            handle_entity_update(*p);
+        }
         }
     }
 }
