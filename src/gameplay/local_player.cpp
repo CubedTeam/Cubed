@@ -5,12 +5,110 @@
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
-#include "Cubed/gameplay/systems/physical_system.hpp"
-#include "Cubed/gameplay/systems/speed_system.hpp"
-namespace {} // namespace
 
 namespace Cubed {
-LocalPlayer::LocalPlayer(ClientWorld& world) : m_world(world) {}
+
+namespace {
+
+bool update_x(const glm::vec3& pos, const glm::vec3& distance,
+              ClientWorld& world, const Hitbox& box) {
+    glm::vec3 p = pos;
+    p.x += distance.x;
+    Hitbox b = box;
+    b.center += p;
+    glm::vec3 min = b.min();
+    glm::vec3 max = b.max();
+    int minx = std::floor(min.x);
+    int maxx = std::floor(max.x);
+    int miny = std::floor(min.y);
+    int maxy = std::floor(max.y);
+    int minz = std::floor(min.z);
+    int maxz = std::floor(max.z);
+
+    for (int x = minx; x <= maxx; ++x) {
+        for (int y = miny; y <= maxy; ++y) {
+            for (int z = minz; z <= maxz; ++z) {
+                glm::ivec3 block_pos{x, y, z};
+                if (!world.can_pass_block(block_pos)) {
+                    Hitbox block_box = World::get_block_aabb(block_pos);
+                    if (b.intersects(block_box)) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool update_y(const glm::vec3& pos, const glm::vec3& distance,
+              ClientWorld& world, const Hitbox& box) {
+    glm::vec3 p = pos;
+    p.y += distance.y;
+    Hitbox b = box;
+    b.center += p;
+    glm::vec3 min = b.min();
+    glm::vec3 max = b.max();
+    int minx = std::floor(min.x);
+    int maxx = std::floor(max.x);
+    int miny = std::floor(min.y);
+    int maxy = std::floor(max.y);
+    int minz = std::floor(min.z);
+    int maxz = std::floor(max.z);
+
+    for (int x = minx; x <= maxx; ++x) {
+        for (int y = miny; y <= maxy; ++y) {
+            for (int z = minz; z <= maxz; ++z) {
+                glm::ivec3 block_pos{x, y, z};
+                if (!world.can_pass_block(block_pos)) {
+                    Hitbox block_box = World::get_block_aabb(block_pos);
+                    if (b.intersects(block_box)) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool update_z(const glm::vec3& pos, const glm::vec3& distance,
+              ClientWorld& world, const Hitbox& box) {
+    glm::vec3 p = pos;
+    p.z += distance.z;
+    Hitbox b = box;
+    b.center += p;
+    glm::vec3 min = b.min();
+    glm::vec3 max = b.max();
+    int minx = std::floor(min.x);
+    int maxx = std::floor(max.x);
+    int miny = std::floor(min.y);
+    int maxy = std::floor(max.y);
+    int minz = std::floor(min.z);
+    int maxz = std::floor(max.z);
+
+    for (int x = minx; x <= maxx; ++x) {
+        for (int y = miny; y <= maxy; ++y) {
+            for (int z = minz; z <= maxz; ++z) {
+                glm::ivec3 block_pos{x, y, z};
+                if (!world.can_pass_block(block_pos)) {
+                    Hitbox block_box = World::get_block_aabb(block_pos);
+                    if (b.intersects(block_box)) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+} // namespace
+
+LocalPlayer::LocalPlayer(ClientWorld& world) : m_world(world) {
+
+    m_hitbox = HitboxManager::instance().get_hitbox_id("cubed:player");
+}
 LocalPlayer::~LocalPlayer() {}
 
 const glm::vec3& LocalPlayer::get_front() const { return m_front; }
@@ -333,9 +431,9 @@ LocalPlayer::get_hotbar() const {
     return m_hotbar;
 }
 
-void LocalPlayer::update_move(float delta_time) {
+void LocalPlayer::update_move(float dt) {
     // if frame rate less than 1 frame per second, don't update
-    if (delta_time > 1.0f) {
+    if (dt > 1.0f) {
         return;
     }
 
@@ -343,7 +441,7 @@ void LocalPlayer::update_move(float delta_time) {
         m_sprinting = false;
     }
     if (space_on) {
-        space_on_time += delta_time;
+        space_on_time += dt;
         if (space_on_time >= MAX_SPACE_ON_TIME) {
             space_on = false;
             space_on_time = 0.0f;
@@ -360,8 +458,7 @@ void LocalPlayer::update_move(float delta_time) {
             glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed};
     }
 
-    SpeedSystem::update(delta_time, m_velocity, m_move_state, m_movement,
-                        m_direction, m_gravity);
+    update_speed(dt);
 
     update_direction();
 
@@ -374,12 +471,9 @@ void LocalPlayer::update_move(float delta_time) {
     }
 
     if (m_game_mode == SPECTATOR) {
-        player_pos += PhysicalSystem::get_move_distance(delta_time, m_direction,
-                                                        m_velocity);
+        player_pos += get_move_distance(dt);
     } else {
-        auto [x, y, z] =
-            PhysicalSystem::update(delta_time, m_world, player_pos, m_velocity,
-                                   m_direction, m_move_state, m_hitbox);
+        auto [x, y, z] = update_physical(dt);
         if (!x || !z) {
             m_sprinting = false;
         }
@@ -406,7 +500,7 @@ void LocalPlayer::update_move(float delta_time) {
     }
 
     for (auto& [key, timer] : m_timers) {
-        timer.update(delta_time);
+        timer.update(dt);
     }
 }
 
@@ -591,6 +685,96 @@ void LocalPlayer::init(std::string_view name) {
     for (int i = 0; i < 10; i++) {
         m_hotbar[i].type = i;
     }
+}
+
+void LocalPlayer::update_speed(float dt) {
+    // calculate speed
+    auto& v = m_velocity;
+    if (m_move_state.forward || m_move_state.back || m_move_state.left ||
+        m_move_state.right) {
+        m_direction.value = glm::vec3(0.0f, 0.0f, 0.0f);
+        v.value.x += m_movement.acceleration * dt;
+        v.value.z += m_movement.acceleration * dt;
+        if (v.value.x > v.max.x) {
+            v.value.x = v.max.x;
+        }
+        if (v.value.z > v.max.z) {
+            v.value.z = v.max.z;
+        }
+    } else {
+        v.value.x += -m_movement.deceleration * dt;
+        v.value.z += -m_movement.deceleration * dt;
+        if (v.value.z < 0.0f) {
+            v.value.z = 0.0f;
+        }
+        if (v.value.x < 0.0f) {
+            v.value.x = 0.0f;
+        }
+        if (v.value.z < 0.0f && v.value.x < 0.0f) {
+            m_direction.value = glm::vec3(0.0f, 0.0f, 0.0f);
+        }
+    }
+    if (m_move_state.is_fly) {
+        if (m_move_state.up) {
+            v.value.y = v.max.y;
+        }
+
+        if (m_move_state.down) {
+            v.value.y = -v.max.y;
+        }
+
+        if (!m_move_state.down && !m_move_state.up) {
+            v.value.y = 0.0f;
+        }
+    } else {
+        if (m_move_state.up && m_move_state.can_up) {
+            v.value.y = m_movement.jump_power;
+            m_move_state.can_up = false;
+        }
+
+        v.value.y += -m_gravity.value * dt;
+    }
+}
+
+std::tuple<bool, bool, bool> LocalPlayer::update_physical(float dt) {
+
+    auto distance = get_move_distance(dt);
+    auto box = HitboxManager::hitbox(m_hitbox);
+    bool x = false;
+    bool y = false;
+    bool z = false;
+    if (update_x(m_pos.value, distance, m_world, box.box)) {
+        m_pos.value.x += distance.x;
+        x = true;
+    } else {
+        m_velocity.value.x = 0.0f;
+    }
+
+    if (update_y(m_pos.value, distance, m_world, box.box)) {
+        m_pos.value.y += distance.y;
+        y = true;
+    } else {
+        m_velocity.value.y = 0.0f;
+        if (distance.y < 0) {
+            m_move_state.can_up = true;
+            m_move_state.is_fly = false;
+        }
+    }
+
+    if (update_z(m_pos.value, distance, m_world, box.box)) {
+        m_pos.value.z += distance.z;
+        z = true;
+    } else {
+        m_velocity.value.z = 0.0f;
+    }
+    return {x, y, z};
+}
+
+glm::vec3 LocalPlayer::get_move_distance(float dt) {
+    const auto& d = m_direction;
+    const auto& v = m_velocity;
+    return glm::vec3{d.value.x * v.value.x * dt, v.value.y * dt,
+                     d.value.z * v.value.z * dt};
 }
 
 bool LocalPlayer::is_underwater() const { return m_underwater; }

@@ -149,12 +149,14 @@ private:
 
     void update_direction();
     void update_lookup_block();
-
-    void update_move(float delta_time);
-
+    void update_move(float dt);
     void update_player_chunk();
 
     void play_walk_sound(float dt);
     Gait compute_gait() const;
+
+    void update_speed(float dt);
+    std::tuple<bool, bool, bool> update_physical(float dt);
+    glm::vec3 get_move_distance(float dt);
 };
 } // namespace Cubed

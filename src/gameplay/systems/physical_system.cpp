@@ -1,12 +1,14 @@
 #include "Cubed/gameplay/systems/physical_system.hpp"
 
+#include "Cubed/gameplay/ecs/server_entity.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
+#include "Cubed/gameplay/server_world.hpp"
 namespace Cubed {
 
 namespace {
 
-bool update_x(const glm::vec3& pos, const glm::vec3& distance, World& world,
-              const Hitbox& box) {
+bool update_x(const glm::vec3& pos, const glm::vec3& distance,
+              ServerWorld& world, const Hitbox& box) {
     glm::vec3 p = pos;
     p.x += distance.x;
     Hitbox b = box;
@@ -36,8 +38,8 @@ bool update_x(const glm::vec3& pos, const glm::vec3& distance, World& world,
     return true;
 }
 
-bool update_y(const glm::vec3& pos, const glm::vec3& distance, World& world,
-              const Hitbox& box) {
+bool update_y(const glm::vec3& pos, const glm::vec3& distance,
+              ServerWorld& world, const Hitbox& box) {
     glm::vec3 p = pos;
     p.y += distance.y;
     Hitbox b = box;
@@ -67,8 +69,8 @@ bool update_y(const glm::vec3& pos, const glm::vec3& distance, World& world,
     return true;
 }
 
-bool update_z(const glm::vec3& pos, const glm::vec3& distance, World& world,
-              const Hitbox& box) {
+bool update_z(const glm::vec3& pos, const glm::vec3& distance,
+              ServerWorld& world, const Hitbox& box) {
     glm::vec3 p = pos;
     p.z += distance.z;
     Hitbox b = box;
@@ -100,45 +102,41 @@ bool update_z(const glm::vec3& pos, const glm::vec3& distance, World& world,
 
 } // namespace
 
-std::tuple<bool, bool, bool>
-PhysicalSystem::update(float dt, World& world, glm::vec3& moved_pos,
-                       Velocity& v, Direction& direction, MoveState& move_state,
-                       HitboxID hitbox) {
-    auto distance = get_move_distance(dt, direction, v);
-    auto box = HitboxManager::hitbox(hitbox);
-    bool x = false;
-    bool y = false;
-    bool z = false;
-    if (update_x(moved_pos, distance, world, box.box)) {
-        moved_pos.x += distance.x;
-        x = true;
-    } else {
-        v.value.x = 0.0f;
-    }
+void PhysicalSystem::update(ServerWorld& world, entt::registry& registry) {
 
-    if (update_y(moved_pos, distance, world, box.box)) {
-        moved_pos.y += distance.y;
-        y = true;
-    } else {
-        v.value.y = 0.0f;
-        if (distance.y < 0) {
-            move_state.can_up = true;
-            move_state.is_fly = false;
+    auto view = registry.view<BaseServerCreature>();
+    for (auto e : view) {
+        auto& creature = view.get<BaseServerCreature>(e);
+        auto distance =
+            get_move_distance(creature.direction, creature.velocity);
+        auto box = HitboxManager::hitbox(creature.hitbox);
+        auto& pos = creature.transform.position.value;
+        auto& v = creature.velocity;
+        if (update_x(pos, distance, world, box.box)) {
+            pos.x += distance.x;
+
+        } else {
+            v.value.x = 0.0f;
+        }
+
+        if (update_y(pos, distance, world, box.box)) {
+            pos.y += distance.y;
+
+        } else {
+            v.value.y = 0.0f;
+        }
+
+        if (update_z(pos, distance, world, box.box)) {
+            pos.z += distance.z;
+
+        } else {
+            v.value.z = 0.0f;
         }
     }
-
-    if (update_z(moved_pos, distance, world, box.box)) {
-        moved_pos.z += distance.z;
-        z = true;
-    } else {
-        v.value.z = 0.0f;
-    }
-    return {x, y, z};
 }
 
-glm::vec3 PhysicalSystem::get_move_distance(float dt, const Direction& d,
-                                            const Velocity& v) {
-    return glm::vec3{d.value.x * v.value.x * dt, v.value.y * dt,
-                     d.value.z * v.value.z * dt};
+glm::vec3 PhysicalSystem::get_move_distance(const Direction& d,
+                                            const TickVelocity& v) {
+    return glm::vec3{d.value.x * v.value.x, v.value.y, d.value.z * v.value.z};
 }
 } // namespace Cubed

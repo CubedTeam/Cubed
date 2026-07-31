@@ -8,7 +8,7 @@ namespace Cubed {
 struct BaseServerCreature {
     Transform transform{};
 
-    Velocity velocity{};
+    TickVelocity velocity{};
 
     Movement movement{};
 
