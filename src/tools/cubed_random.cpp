@@ -1,8 +1,11 @@
 #include "Cubed/tools/cubed_random.hpp"
 
+#include <cmath>
+#include <numbers>
 namespace Cubed {
 
 Random::Random() {}
+
 Random::Random(unsigned seed) { init(seed); }
 bool Random::random_bool(double probability) {
     if (probability <= 0.0)
@@ -44,4 +47,12 @@ float Random::random_float(float min, float max) {
 
     return result;
 }
+
+glm::vec3 Random::random_direction_horizontal() {
+    float x = std::cos(random_float(0.0f, 2 * std::numbers::pi));
+    float z = std::sin(random_float(0.0f, 2 * std::numbers::pi));
+
+    return glm::vec3{x, 0.0f, z};
+}
+
 } // namespace Cubed

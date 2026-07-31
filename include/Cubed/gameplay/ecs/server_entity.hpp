@@ -1,7 +1,6 @@
 #pragma once
 #include "Cubed/gameplay/ecs/health.hpp"
 #include "Cubed/gameplay/ecs/movement.hpp"
-#include "Cubed/gameplay/ecs/state.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/gameplay/hitbox.hpp"
 namespace Cubed {
@@ -12,8 +11,6 @@ struct BaseServerCreature {
     Velocity velocity{};
 
     Movement movement{};
-
-    MoveState move_state{};
 
     Direction direction{};
 
