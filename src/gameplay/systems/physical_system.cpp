@@ -107,8 +107,7 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry) {
     auto view = registry.view<BaseServerCreature>();
     for (auto e : view) {
         auto& creature = view.get<BaseServerCreature>(e);
-        auto distance =
-            get_move_distance(creature.direction, creature.velocity);
+        auto distance = get_move_distance(creature.velocity);
         auto box = HitboxManager::hitbox(creature.hitbox);
         auto& pos = creature.transform.position.value;
         auto& v = creature.velocity;
@@ -135,8 +134,7 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry) {
     }
 }
 
-glm::vec3 PhysicalSystem::get_move_distance(const Direction& d,
-                                            const TickVelocity& v) {
-    return glm::vec3{d.value.x * v.value.x, v.value.y, d.value.z * v.value.z};
+glm::vec3 PhysicalSystem::get_move_distance(const TickVelocity& v) {
+    return v.value; // Per-tick forward distance equals the velocity magnitud
 }
 } // namespace Cubed

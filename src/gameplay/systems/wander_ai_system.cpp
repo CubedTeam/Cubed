@@ -32,7 +32,8 @@ void WanderAISystem::do_ai(BaseServerCreature& creature,
         creature.direction.value = r.random_direction_horizontal();
     }
     if (r.random_bool(MOVE_PROBABILITY)) {
-        move_boost.duration = r.random_int(5, 8);
+
+        move_boost.duration = r.random_int(20, 40);
         move_boost.count = 0;
     }
 }

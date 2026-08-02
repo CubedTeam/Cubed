@@ -10,31 +10,31 @@ void SpeedSystem::update(float dt, entt::registry& registry) {
 
     for (auto e : view) {
         auto [creature, moveboost] = view.get<BaseServerCreature, MoveBoost>(e);
+        auto& v = creature.velocity.value;
         if (moveboost.count <= moveboost.duration) {
             ++moveboost.count;
-            creature.velocity.value +=
-                creature.direction.value * creature.movement.acceleration;
-        } else if (glm::dot(creature.velocity.value, creature.velocity.value) >=
-                   0.001f) {
-            creature.velocity.value -=
-                creature.direction.value * creature.movement.deceleration;
+            v += creature.direction.value * creature.movement.acceleration;
         } else {
-            creature.velocity.value = glm::vec3(0.0f);
+            // Decelerated by friction in all directions
+            auto decay = [](float& c, float d) {
+                if (c > 0.0f)
+                    c = std::max(0.0f, c - d);
+                else if (c < 0.0f)
+                    c = std::min(0.0f, c + d);
+            };
+            decay(v.x, creature.movement.deceleration);
+            decay(v.z, creature.movement.deceleration);
         }
-        creature.velocity.value.y += -creature.gravity.value * dt;
-        auto v_clamp = [](float& v, float max) {
+        v.y += -creature.gravity.value * dt;
+        auto v_clamp = [](float& c, float max) {
             if (max < 0.0f) {
-                return;
+                return; //-1 = unlimited
             }
-            auto sign = v < 0.0f ? -1.0f : 1.0f;
-            v = sign * std::clamp(std::abs(v), 0.0f, max);
-            if (v < 0.0f) {
-                v = 0.0f;
-            }
+            c = std::clamp(c, -max, max);
         };
-        v_clamp(creature.velocity.value.x, creature.velocity.max.x);
-        v_clamp(creature.velocity.value.y, creature.velocity.max.y);
-        v_clamp(creature.velocity.value.z, creature.velocity.max.z);
+        v_clamp(v.x, creature.velocity.max.x);
+        v_clamp(v.y, creature.velocity.max.y);
+        v_clamp(v.z, creature.velocity.max.z);
     }
 }
 
