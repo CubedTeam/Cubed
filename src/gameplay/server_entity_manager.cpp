@@ -20,9 +20,9 @@ void ServerEntityManager::init() {
     m_factories.try_emplace("cubed:pig", [this]() {
         BaseServerCreature c;
         c.hitbox = HitboxManager::instance().get_hitbox_id("cubed:pig");
-        return create_entity_in_factory(Entity{m_next},
-                                        EntityInfo{"cubed:pig", ""},
-                                        std::move(c), PigTag{});
+        return create_entity_in_factory(
+            Entity{m_next}, EntityInfo{"cubed:pig", ""}, std::move(c), PigTag{},
+            AIBase{}, WanderAITag{}, MoveBoost{});
     });
 }
 void ServerEntityManager::update() {
