@@ -29,14 +29,35 @@ void ServerEntityManager::update() {
     handle_task();
     update_ai();
     update_move();
+
+    update_send();
 }
 
 void ServerEntityManager::update_ai() { WanderAISystem::update(m_registry); }
+
 void ServerEntityManager::update_move() {
     SpeedSystem::update(
         static_cast<float>(m_world.get_per_tick_time()) / 1000.0f, m_registry);
     PhysicalSystem::update(m_world, m_registry);
 }
+
+void ServerEntityManager::update_send() {
+    auto sessions = m_world.get_all_session();
+    auto view = m_registry.view<Entity, BaseServerCreature>();
+
+    for (auto& e : view) {
+        auto [entity, creature] = view.get<Entity, BaseServerCreature>(e);
+        Arena arena;
+        auto* p = Arena::Create<S2CEntityUpdate>(&arena);
+        p->set_id(entity.id);
+        Tools::set_net_pos(p, creature.transform.position.value);
+
+        for (auto& s : sessions) {
+            s->send(make_packet(p));
+        }
+    }
+}
+
 void ServerEntityManager::handle_task() {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {

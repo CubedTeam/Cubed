@@ -46,6 +46,7 @@ private:
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai();
     void update_move();
+    void update_send();
     template <typename... Args>
     EntityID create_entity_in_factory(Args&&... args) {
         auto entity = m_registry.create();
