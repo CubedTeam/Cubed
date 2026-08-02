@@ -5,8 +5,8 @@
 #include "Cubed/tools/cubed_random.hpp"
 
 namespace {
-constexpr double DIRECTION_PROBABILITY = 0.1;
-constexpr double MOVE_PROBABILITY = 0.1;
+constexpr double DIRECTION_PROBABILITY = 0.01;
+constexpr double MOVE_PROBABILITY = 0.01;
 } // namespace
 
 namespace Cubed {

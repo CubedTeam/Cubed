@@ -86,15 +86,19 @@ HitboxManager::Handle HitboxManager::load(std::string_view name) {
         std::ifstream s{p};
         json j = json::parse(s);
         if (j.contains("boxes")) {
-            if (j["boxes"].contains("center")) {
-                center.x = j["boxes"]["center"].at(0).get<float>();
-                center.y = j["boxes"]["center"].at(1).get<float>();
-                center.z = j["boxes"]["center"].at(2).get<float>();
+            const json* box = &j["boxes"];
+            if (box->is_array() && !box->empty()) {
+                box = &(*box)[0];
             }
-            if (j["boxes"].contains("half")) {
-                half.x = j["boxes"]["half"].at(0).get<float>();
-                half.y = j["boxes"]["half"].at(1).get<float>();
-                half.z = j["boxes"]["half"].at(2).get<float>();
+            if (box->contains("center")) {
+                center.x = (*box)["center"].at(0).get<float>();
+                center.y = (*box)["center"].at(1).get<float>();
+                center.z = (*box)["center"].at(2).get<float>();
+            }
+            if (box->contains("half")) {
+                half.x = (*box)["half"].at(0).get<float>();
+                half.y = (*box)["half"].at(1).get<float>();
+                half.z = (*box)["half"].at(2).get<float>();
             }
         }
         {

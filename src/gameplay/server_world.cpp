@@ -179,7 +179,7 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
 void ServerWorld::init_world() {
 
     m_entity_manager.init();
-    m_entity_manager.add_entity("cubed:pig", {0, 90, 0});
+    m_entity_manager.add_entity("cubed:pig", {0, 225, 0});
     register_timer("player disconnect", 5, [this]() {
         std::vector<std::string> disconnect;
         {

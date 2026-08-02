@@ -20,6 +20,9 @@ void ServerEntityManager::init() {
     m_factories.try_emplace("cubed:pig", [this]() {
         BaseServerCreature c;
         c.hitbox = HitboxManager::instance().get_hitbox_id("cubed:pig");
+        c.gravity.value = 1.0f;
+        c.movement.acceleration = 1.0f;
+        c.movement.deceleration = 1.0f;
         return create_entity_in_factory(
             Entity{m_next}, EntityInfo{"cubed:pig", ""}, std::move(c), PigTag{},
             AIBase{}, WanderAITag{}, MoveBoost{});

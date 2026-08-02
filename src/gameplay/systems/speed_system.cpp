@@ -23,11 +23,14 @@ void SpeedSystem::update(float dt, entt::registry& registry) {
         }
         creature.velocity.value.y += -creature.gravity.value * dt;
         auto v_clamp = [](float& v, float max) {
-            auto temp = std::abs(v);
-            max = std::abs(max);
-            temp = std::clamp(temp, 0.0f, max);
-
-            v = temp;
+            if (max < 0.0f) {
+                return;
+            }
+            auto sign = v < 0.0f ? -1.0f : 1.0f;
+            v = sign * std::clamp(std::abs(v), 0.0f, max);
+            if (v < 0.0f) {
+                v = 0.0f;
+            }
         };
         v_clamp(creature.velocity.value.x, creature.velocity.max.x);
         v_clamp(creature.velocity.value.y, creature.velocity.max.y);
