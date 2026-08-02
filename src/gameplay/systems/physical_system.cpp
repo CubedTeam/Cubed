@@ -111,25 +111,52 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry) {
         auto box = HitboxManager::hitbox(creature.hitbox);
         auto& pos = creature.transform.position.value;
         auto& v = creature.velocity;
-        if (update_x(pos, distance, world, box.box)) {
-            pos.x += distance.x;
-
-        } else {
-            v.value.x = 0.0f;
-        }
-
+        bool ground =
+            !update_y(pos, glm::vec3{0.0f, -0.1f, 0.0f}, world, box.box);
+        bool stepped = false;
         if (update_y(pos, distance, world, box.box)) {
             pos.y += distance.y;
 
         } else {
             v.value.y = 0.0f;
         }
+        if (update_x(pos, distance, world, box.box)) {
+            pos.x += distance.x;
+
+        } else {
+            if (ground && !stepped) {
+
+                glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
+                if (update_x(step_pos, distance, world, box.box)) {
+                    pos.x += distance.x;
+                    pos.y += 1.0f;
+                    stepped = true;
+                } else {
+                    v.value.x = 0.0f;
+                }
+            } else {
+                v.value.x = 0.0f;
+            }
+        }
 
         if (update_z(pos, distance, world, box.box)) {
             pos.z += distance.z;
 
         } else {
-            v.value.z = 0.0f;
+            if (ground && !stepped) {
+
+                glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
+                if (update_z(step_pos, distance, world, box.box)) {
+                    pos.z += distance.z;
+                    pos.y += 1.0f;
+                    stepped = true;
+
+                } else {
+                    v.value.z = 0.0f;
+                }
+            } else {
+                v.value.z = 0.0f;
+            }
         }
     }
 }
