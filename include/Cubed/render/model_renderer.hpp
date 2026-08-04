@@ -11,9 +11,11 @@ class Camera;
 class ModelRender {
 public:
     ModelRender(Renderer& renderer);
-    void render_model(ModelID id, const glm::vec3& pos, Camera& camera);
+    void render_model(ModelID id, const glm::vec3& pos, float yaw,
+                      Camera& camera);
 
-    void shadow_pass(ModelID id, const glm::vec3& pos, Camera& camera);
+    void shadow_pass(ModelID id, const glm::vec3& pos, float yaw,
+                     Camera& camera);
 
 private:
     Renderer& m_renderer;

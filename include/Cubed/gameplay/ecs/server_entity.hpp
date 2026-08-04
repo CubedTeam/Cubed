@@ -12,8 +12,6 @@ struct BaseServerCreature {
 
     Movement movement{};
 
-    Direction direction{};
-
     Gravity gravity{};
 
     Health health{};

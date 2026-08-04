@@ -29,7 +29,7 @@ void WanderAISystem::do_ai(BaseServerCreature& creature,
                            MoveBoost& move_boost) {
     thread_local Random r{std::random_device()()};
     if (r.random_bool(DIRECTION_PROBABILITY)) {
-        creature.direction.value = r.random_direction_horizontal();
+        creature.transform.direction.value = r.random_direction_horizontal();
     }
     if (r.random_bool(MOVE_PROBABILITY)) {
 

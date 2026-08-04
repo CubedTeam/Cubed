@@ -13,7 +13,8 @@ void SpeedSystem::update(float dt, entt::registry& registry) {
         auto& v = creature.velocity.value;
         if (moveboost.count <= moveboost.duration) {
             ++moveboost.count;
-            v += creature.direction.value * creature.movement.acceleration;
+            v += creature.transform.direction.value *
+                 creature.movement.acceleration;
         } else {
             // Decelerated by friction in all directions
             auto decay = [](float& c, float d) {

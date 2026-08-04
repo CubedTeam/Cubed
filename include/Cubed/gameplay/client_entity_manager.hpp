@@ -35,6 +35,7 @@ private:
     struct UpdateInfo {
         EntityID id;
         glm::vec3 pos;
+        glm::vec3 direction;
     };
 
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;

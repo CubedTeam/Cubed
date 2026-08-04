@@ -875,7 +875,7 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
 
 void ServerWorld::handle_entity_create(C2SEntityCreateRequest& req) {
 
-    m_entity_manager.add_entity(req.name(), Tools::get_net_pos(req.pos()));
+    m_entity_manager.add_entity(req.name(), Tools::get_net_vec3(req.pos()));
 }
 void ServerWorld::handle_entity_destory(C2SEntityDestoryRequest& req) {
     m_entity_manager.destory(req.id());

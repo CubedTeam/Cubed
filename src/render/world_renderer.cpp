@@ -300,8 +300,11 @@ void WorldRenderer::shadow_entity(ClientWorld& world,
     auto view = registry.view<BaseClientCreature>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
+        float yaw = std::atan2(creature.transform.direction.value.x,
+                               creature.transform.direction.value.z);
+
         m_renderer.model_renderer().shadow_pass(
-            creature.model, creature.transform.position.value,
+            creature.model, creature.transform.position.value, yaw,
             world.world_scene().camera());
     }
     m_player_renderer.render(shader, world, true);
@@ -721,8 +724,10 @@ void WorldRenderer::render_entity(ClientWorld& world) {
     auto view = registry.view<BaseClientCreature>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
+        float yaw = std::atan2(creature.transform.direction.value.x,
+                               creature.transform.direction.value.z);
         m_renderer.model_renderer().render_model(
-            creature.model, creature.transform.position.value,
+            creature.model, creature.transform.position.value, yaw,
             world.world_scene().camera());
     }
 

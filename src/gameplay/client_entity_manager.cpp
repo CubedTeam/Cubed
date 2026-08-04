@@ -49,6 +49,7 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
     auto creature = m_registry.try_get<BaseClientCreature>(e);
     ASSERT(creature);
     creature->transform.position.value = info.pos;
+    creature->transform.direction.value = info.direction;
 }
 
 void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
@@ -66,7 +67,8 @@ void ClientEntityManager::receive_entity_destory(EntityID id) {
 void ClientEntityManager::receive_entity_update(S2CEntityUpdate& msg) {
     UpdateInfo e;
     e.id = msg.id();
-    e.pos = Tools::get_net_pos(msg.pos());
+    e.pos = Tools::get_net_vec3(msg.pos());
+    e.direction = Tools::get_net_vec3(msg.direction());
     m_tasks.emplace(Command::UPDATE, std::move(e));
 }
 

@@ -56,6 +56,9 @@ void ServerEntityManager::update_send() {
         p->set_id(entity.id);
         Tools::set_net_pos(p, creature.transform.position.value);
 
+        Tools::set_net_vec3(p->mutable_direction(),
+                            creature.transform.direction.value);
+
         for (auto& s : sessions) {
             s->send(make_packet(p));
         }
