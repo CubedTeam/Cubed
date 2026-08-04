@@ -8,14 +8,15 @@
 #include "Cubed/tools/net_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 
-#include <nlohmann/json.hpp>
 #include <ranges>
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
 #include <utility>
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace google::protobuf;
+using namespace rapidjson;
 namespace fs = std::filesystem;
-using nlohmann::json;
 namespace Cubed {
 ServerWorld::ServerWorld(Config& config)
     : m_config(config), m_entity_manager(*this) {}
@@ -212,8 +213,13 @@ void ServerWorld::init_world() {
     try {
         fs::path path = std::format("{}SensitiveLexicon.json", ASSETS_PATH);
         std::ifstream s{path};
-        json j = json::parse(s);
-        m_filter.load(j);
+        if (!s.is_open()) {
+            throw std::runtime_error("can't open SensitiveLexicon.json");
+        }
+        IStreamWrapper isw(s);
+        Document doc;
+        doc.ParseStream(isw);
+        m_filter.load(doc);
     } catch (const std::exception& e) {
         Logger::error("Load SensitiveLexicon.json Fail");
         m_enable_filter = false;

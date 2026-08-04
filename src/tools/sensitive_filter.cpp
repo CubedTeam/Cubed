@@ -2,18 +2,25 @@
 
 #include <queue>
 #include <utf8cpp/utf8.h>
-using nlohmann::json;
+using namespace rapidjson;
 namespace Cubed {
 SensitiveFilter::SensitiveFilter() {
 
 };
 
-void SensitiveFilter::load(const nlohmann::json& j) {
+void SensitiveFilter::load(const Document& doc) {
     trie.clear();
     trie.emplace_back();
-    for (const auto& item : j["words"]) {
-
-        auto str = item.get<std::string>();
+    if (!doc.HasMember("words")) {
+        return;
+    }
+    const Value& words = doc["words"];
+    for (SizeType i = 0; i < words.Size(); ++i) {
+        const auto& w = words[i];
+        if (!w.IsString()) {
+            continue;
+        }
+        std::string str(w.GetString(), w.GetStringLength());
         std::u32string word;
         utf8::utf8to32(str.begin(), str.end(), std::back_inserter(word));
         insert(word);

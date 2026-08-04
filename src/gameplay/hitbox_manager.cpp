@@ -5,9 +5,10 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/name_space.hpp"
 
-#include <nlohmann/json.hpp>
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
 namespace fs = std::filesystem;
-using nlohmann::json;
+using namespace rapidjson;
 namespace Cubed {
 HitboxManager::HitboxManager() {
 
@@ -84,21 +85,30 @@ HitboxManager::Handle HitboxManager::load(std::string_view name) {
         glm::vec3 center;
         glm::vec3 half;
         std::ifstream s{p};
-        json j = json::parse(s);
-        if (j.contains("boxes")) {
-            const json* box = &j["boxes"];
-            if (box->is_array() && !box->empty()) {
-                box = &(*box)[0];
-            }
-            if (box->contains("center")) {
-                center.x = (*box)["center"].at(0).get<float>();
-                center.y = (*box)["center"].at(1).get<float>();
-                center.z = (*box)["center"].at(2).get<float>();
-            }
-            if (box->contains("half")) {
-                half.x = (*box)["half"].at(0).get<float>();
-                half.y = (*box)["half"].at(1).get<float>();
-                half.z = (*box)["half"].at(2).get<float>();
+        IStreamWrapper isw(s);
+        Document doc;
+        doc.ParseStream(isw);
+        if (doc.HasParseError()) {
+            auto code = doc.GetParseError();
+
+            throw std::runtime_error(
+                std::format("Parse {} failed, error code {}", p.string(),
+                            static_cast<int>(code)));
+        }
+        if (doc.HasMember("boxes")) {
+            const Value& box = doc["boxes"];
+            if (box.IsArray()) {
+                const Value& b = box[0];
+                if (b.HasMember("center")) {
+                    center.x = b["center"][0].GetFloat();
+                    center.y = b["center"][1].GetFloat();
+                    center.z = b["center"][2].GetFloat();
+                }
+                if (b.HasMember("half")) {
+                    half.x = b["half"][0].GetFloat();
+                    half.y = b["half"][1].GetFloat();
+                    half.z = b["half"][2].GetFloat();
+                }
             }
         }
         {

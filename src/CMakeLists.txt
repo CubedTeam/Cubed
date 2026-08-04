@@ -103,4 +103,5 @@ target_sources(${PROJECT_NAME}
         gameplay/server_entity_manager.cpp
         gameplay/client_entity_manager.cpp
         gameplay/systems/wander_ai_system.cpp
+        tools/json_utils.cpp
 )
