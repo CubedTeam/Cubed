@@ -6,6 +6,11 @@
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/image.hpp"
+
+namespace {
+constexpr int SELECTED_ITEM_SIZE = 128;
+}
+
 namespace Cubed {
 InventoryUI::InventoryUI(WorldScene& scene) : m_scene(scene) {}
 
@@ -80,8 +85,10 @@ void InventoryUI::init() {
     }
     {
         auto& image = back->add_child<Image>();
-        image.set_texture(nullptr, true);
-        image.set_scale(0.25f);
+
+        image.set_width(SELECTED_ITEM_SIZE);
+        image.set_height(SELECTED_ITEM_SIZE);
+
         image.set_anchor(Anchor::FOLLOW_MOUSE).set_offset({0, 0});
         image.set_visible(false);
         m_selected_image = &image;
@@ -137,7 +144,7 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
                     if (m_selected_id != 0) {
                         auto it = item_textures.find(m_selected_id);
                         ASSERT(it != item_textures.end());
-                        m_selected_image->set_texture(it->second.get(), true);
+                        m_selected_image->set_texture(it->second.get(), false);
                         m_selected_image->set_visible(true);
                         return true;
                     }
@@ -150,7 +157,7 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
                     if (m_selected_id != 0) {
                         auto it = item_textures.find(m_selected_id);
                         ASSERT(it != item_textures.end());
-                        m_selected_image->set_texture(it->second.get(), true);
+                        m_selected_image->set_texture(it->second.get(), false);
                         m_hotbar[pos]->set_item(0, nullptr);
                         auto& player = m_scene.client_world().get_player();
                         player.set_hotbar(pos, {0, 0});
@@ -161,7 +168,7 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             }
         }
         if (m_selected_image->has_texture()) {
-            m_selected_image->set_texture(nullptr, true);
+            m_selected_image->set_texture(nullptr, false);
             m_selected_image->set_visible(false);
             auto [slot, pos] = get_hovered_hotbar_slot();
             if (slot) {

@@ -11,7 +11,6 @@ namespace {
 constexpr int BLOCK_SIZE = 16;
 constexpr int BLOCK_NORMAL_SIZE = 128;
 constexpr int CROSS_PLANE_SIZE = 16;
-constexpr int BLOCK_ITEM_SIZE = 512;
 constexpr int BLOCK_STATUS_SIZE = 16;
 constexpr int SKIN_SIZE = 64;
 
@@ -133,8 +132,8 @@ void TextureManager::init_item_texture() {
         std::unique_ptr<Texture> texture =
             std::make_unique<Texture>(TextureType::TEXTURE_2D);
         texture->tex_image_2d(TextureFormat::RGBA8, TextureFormat::RGBA,
-                              GL_UNSIGNED_BYTE, data.data, BLOCK_ITEM_SIZE,
-                              BLOCK_ITEM_SIZE);
+                              GL_UNSIGNED_BYTE, data.data, data.width,
+                              data.height);
 
         texture->set_nearest();
 

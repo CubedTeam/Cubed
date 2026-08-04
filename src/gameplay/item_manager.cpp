@@ -69,7 +69,13 @@ void ItemManager::add(const std::filesystem::path& path) {
         std::string type = doc["type"].GetString();
         data.kind = get_item_kind(type);
     }
-
+    if (data.kind == ItemKind::SPAWN_EGG) {
+        if (doc.HasMember("creature")) {
+            data.property = doc["creature"].GetString();
+        } else {
+            data.property = "cubed:pig";
+        }
+    }
     acc a;
     if (m_map.emplace(a, data.id, std::move(data))) {
         if (!m_id_map.emplace(a->second.name, a->first)) {

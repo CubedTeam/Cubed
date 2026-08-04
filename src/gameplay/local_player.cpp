@@ -424,6 +424,14 @@ void LocalPlayer::place_block(float dt) {
                 }
             }
         }
+        if (data.kind == ItemKind::SPAWN_EGG) {
+            auto* name = std::get_if<std::string>(&data.property);
+            ASSERT(name);
+            glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
+            if (!m_world.is_solid(near_pos)) {
+                m_world.entity_manager().create(*name, near_pos);
+            }
+        }
     }
 }
 

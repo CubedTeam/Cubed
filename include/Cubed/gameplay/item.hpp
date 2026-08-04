@@ -29,7 +29,7 @@ inline constexpr ItemKind get_item_kind(std::string_view kind) {
     if (kind == "block") {
         return ItemKind::BLOCK;
     }
-    if (kind == "SPAWN_EGG") {
+    if (kind == "spawn_egg") {
         return ItemKind::SPAWN_EGG;
     }
     return ItemKind::NONE;
