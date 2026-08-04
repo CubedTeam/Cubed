@@ -297,15 +297,15 @@ void WorldRenderer::shadow_entity(ClientWorld& world,
     shader.set_loc("lightSpaceMatrix", light_matrix);
     glEnable(GL_DEPTH_TEST);
     auto& registry = world.entity_manager().get_registry();
-    auto view = registry.view<BaseClientCreature>();
+    auto view = registry.view<BaseClientCreature, RenderTransform>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
-        float yaw = std::atan2(creature.transform.direction.value.x,
-                               creature.transform.direction.value.z);
+        auto& t = view.get<RenderTransform>(entity);
+        float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
 
-        m_renderer.model_renderer().shadow_pass(
-            creature.model, creature.transform.position.value, yaw,
-            world.world_scene().camera());
+        m_renderer.model_renderer().shadow_pass(creature.model,
+                                                t.position.value, yaw,
+                                                world.world_scene().camera());
     }
     m_player_renderer.render(shader, world, true);
 }
@@ -721,14 +721,14 @@ void WorldRenderer::render_entity(ClientWorld& world) {
     glEnable(GL_DEPTH_TEST);
 
     auto& registry = world.entity_manager().get_registry();
-    auto view = registry.view<BaseClientCreature>();
+    auto view = registry.view<BaseClientCreature, RenderTransform>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
-        float yaw = std::atan2(creature.transform.direction.value.x,
-                               creature.transform.direction.value.z);
-        m_renderer.model_renderer().render_model(
-            creature.model, creature.transform.position.value, yaw,
-            world.world_scene().camera());
+        auto& t = view.get<RenderTransform>(entity);
+        float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
+        m_renderer.model_renderer().render_model(creature.model,
+                                                 t.position.value, yaw,
+                                                 world.world_scene().camera());
     }
 
     m_player_renderer.render(shader, world, false);

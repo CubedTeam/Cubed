@@ -21,4 +21,10 @@ struct Transform {
     Direction direction{};
 };
 
+struct RenderTransform {
+    Position position{};
+    Orientation orientation{};
+    Direction direction{};
+};
+
 } // namespace Cubed

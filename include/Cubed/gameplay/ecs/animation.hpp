@@ -10,4 +10,5 @@ struct WalkPose {
     // for sound play
     float moving_time = 0.0f;
 };
+
 } // namespace Cubed

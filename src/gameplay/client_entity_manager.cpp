@@ -20,7 +20,7 @@ void ClientEntityManager::init() {
         BaseClientCreature c;
         c.model = ModelManager::instance().get_model_id("cubed:pig");
         create_entity_in_registry(id, Entity{id}, EntityInfo{"cubed:pig", ""},
-                                  std::move(c), PigTag{});
+                                  std::move(c), PigTag{}, RenderTransform{});
     });
 }
 // not thread safe
@@ -34,6 +34,9 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     auto* c = m_registry.try_get<BaseClientCreature>(a->second);
     ASSERT(c);
     c->transform.position.value = pos;
+    auto* r = m_registry.try_get<RenderTransform>(a->second);
+    ASSERT(r);
+    r->position.value = pos;
 }
 
 void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
@@ -50,6 +53,13 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
     ASSERT(creature);
     creature->transform.position.value = info.pos;
     creature->transform.direction.value = info.direction;
+
+    auto r = m_registry.try_get<RenderTransform>(e);
+    ASSERT(r);
+    r->direction.value =
+        glm::mix(r->direction.value, creature->transform.direction.value, 0.15);
+    r->position.value =
+        glm::mix(r->position.value, creature->transform.position.value, 0.15);
 }
 
 void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
