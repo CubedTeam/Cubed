@@ -2,5 +2,6 @@
     "id": 9,
     "name": "grass",
     "description": "",
-    "texture": "texture/item/block/grass.png"
+    "texture": "texture/item/block/grass.png",
+    "type": "block"
 }

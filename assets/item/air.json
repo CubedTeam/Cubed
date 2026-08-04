@@ -1,5 +1,6 @@
 {
     "id": 0,
     "name": "air",
-    "description": ""
+    "description": "",
+    "type": "block"
 }

@@ -105,4 +105,5 @@ target_sources(${PROJECT_NAME}
         gameplay/systems/wander_ai_system.cpp
         tools/json_utils.cpp
         gameplay/item_manager.cpp
+        gameplay/block_manager.cpp
 )

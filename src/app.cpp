@@ -2,6 +2,7 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
@@ -74,6 +75,7 @@ void App::init(int argc, char** argv) {
         Localization::instance().load_language(
             m_game_config.get("language", default_value));
     }
+    BlockManager::init();
     ItemManager::instance().init();
     m_window.init(m_argument);
     m_window.imgui_init();
@@ -81,7 +83,7 @@ void App::init(int argc, char** argv) {
     Logger::info("Window Init Success");
 
     m_audio.init();
-    BlockManager::init();
+
     m_renderer.init();
     Logger::info("Renderer Init Success");
     // MapTable::init_map();

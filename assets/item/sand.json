@@ -2,5 +2,6 @@
     "id": 4,
     "name": "sand",
     "description": "",
-    "texture": "texture/item/block/sand.png"
+    "texture": "texture/item/block/sand.png",
+    "type": "block"
 }

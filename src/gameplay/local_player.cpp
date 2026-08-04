@@ -3,9 +3,10 @@
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
-
+#include "Cubed/gameplay/item_manager.hpp"
 namespace Cubed {
 
 namespace {
@@ -406,7 +407,10 @@ void LocalPlayer::place_block(float dt) {
         }
     }
     if (m_mouse_state.right) {
-        auto type = m_hotbar[m_selected_hotbar].type;
+        auto& data = ItemManager::get(m_hotbar[m_selected_hotbar].id);
+        auto* t = std::get_if<BlockType>(&data.property);
+        ASSERT(t);
+        auto type = *t;
         if (type != 0) {
             glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
             if (!m_world.is_solid(near_pos)) {
@@ -683,7 +687,7 @@ void LocalPlayer::init(std::string_view name) {
     });
 
     for (int i = 0; i < 10; i++) {
-        m_hotbar[i].type = i;
+        m_hotbar[i].id = i;
     }
 }
 

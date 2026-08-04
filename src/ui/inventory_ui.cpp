@@ -1,6 +1,7 @@
 #include "Cubed/ui/inventory_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/column_layout.hpp"
@@ -20,21 +21,26 @@ void InventoryUI::init() {
     auto& column = back->add_child<ColumnLayout>();
     column.set_anchor(Anchor::CENTER);
     column.set_child_anchor(ColumnLayoutAnchor::LEFT);
-    auto& block_textures = texture_manager.get_item_textures();
-    auto sum = block_textures.size();
+    auto& item_textures = texture_manager.get_item_textures();
+    auto sum = item_textures.size();
     {
         auto& row_layout = column.add_child<RowLayout>();
         auto row = &row_layout;
-        for (size_t i = 1; i < sum; ++i) {
-            if ((i - 1) % 10 == 0) {
+        size_t i = 0;
+        for (auto& [id, texture] : item_textures) {
+            if (i % 10 == 0) {
                 auto& r = column.add_child<RowLayout>();
                 row = &r;
             }
             auto& slot = row->add_child<ItemSlot>();
             slot.set_default_background(texture_manager);
             slot.set_scale(5.0f);
-            slot.set_item(i, block_textures[i].get());
+
+            slot.set_item(id, texture.get());
             m_slots.emplace_back(&slot);
+            ++i;
+        }
+        for (size_t i = 1; i < sum; ++i) {
         }
     }
     {
@@ -62,10 +68,12 @@ void InventoryUI::init() {
             auto& item = row.add_child<ItemSlot>();
             item.set_default_background(texture_manager);
             item.set_scale(5.0f);
-            if (h.type == 0) {
+            if (h.id == 0) {
                 item.set_item(0, nullptr);
             } else {
-                item.set_item(h.type, block_textures[h.type].get());
+                auto it = item_textures.find(h.id);
+                ASSERT(it != item_textures.end());
+                item.set_item(h.id, it->second.get());
             }
             m_hotbar.emplace_back(&item);
         }
@@ -89,7 +97,7 @@ void InventoryUI::update(float dt) {
 void InventoryUI::update_item_info() {
     auto show_item_info = [this](ItemSlot* slot) {
         if (slot && !m_selected_image->has_texture()) {
-            auto type = slot->block();
+            auto type = slot->id();
             if (type != 0) {
                 m_item_info->set_text(BlockManager::local_name(type))
                     .set_visible(true);
@@ -117,16 +125,17 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
 
         auto& texture_manager = m_scene.scene_manager().app().texture_manager();
-        auto& blocks = texture_manager.get_item_textures();
+        auto& item_textures = texture_manager.get_item_textures();
         if (!m_selected_image->has_texture()) {
 
             {
                 auto slot = get_hovered_slot();
                 if (slot) {
-                    m_selected_block = slot->block();
-                    if (m_selected_block != 0) {
-                        m_selected_image->set_texture(
-                            blocks[m_selected_block].get(), true);
+                    m_selected_id = slot->id();
+                    if (m_selected_id != 0) {
+                        auto it = item_textures.find(m_selected_id);
+                        ASSERT(it != item_textures.end());
+                        m_selected_image->set_texture(it->second.get(), true);
                         m_selected_image->set_visible(true);
                         return true;
                     }
@@ -135,10 +144,11 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             {
                 auto [slot, pos] = get_hovered_hotbar_slot();
                 if (slot) {
-                    m_selected_block = slot->block();
-                    if (m_selected_block != 0) {
-                        m_selected_image->set_texture(
-                            blocks[m_selected_block].get(), true);
+                    m_selected_id = slot->id();
+                    if (m_selected_id != 0) {
+                        auto it = item_textures.find(m_selected_id);
+                        ASSERT(it != item_textures.end());
+                        m_selected_image->set_texture(it->second.get(), true);
                         m_hotbar[pos]->set_item(0, nullptr);
                         auto& player = m_scene.client_world().get_player();
                         player.set_hotbar(pos, {0, 0});
@@ -154,10 +164,11 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             auto [slot, pos] = get_hovered_hotbar_slot();
             if (slot) {
                 auto& player = m_scene.client_world().get_player();
-                player.set_hotbar(pos, {m_selected_block, 1});
-                if (m_selected_block != 0) {
-                    m_hotbar[pos]->set_item(m_selected_block,
-                                            blocks[m_selected_block].get());
+                player.set_hotbar(pos, {m_selected_id, 1});
+                if (m_selected_id != 0) {
+                    auto it = item_textures.find(m_selected_id);
+                    ASSERT(it != item_textures.end());
+                    m_hotbar[pos]->set_item(m_selected_id, it->second.get());
                 }
             }
             return true;

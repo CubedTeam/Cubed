@@ -131,7 +131,7 @@ void WorldUIManager::update_hotbar() {
     auto hotbar = player.get_hotbar();
     size_t selected = player.selected_hotbar();
     for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
-        auto type = hotbar[i].type;
+        auto type = hotbar[i].id;
         if (selected == i) {
             m_hotbar_slot[i]->set_border_visale(true);
         } else {
@@ -140,7 +140,9 @@ void WorldUIManager::update_hotbar() {
         if (type == 0) {
             m_hotbar_slot[i]->set_item(0, nullptr);
         } else {
-            m_hotbar_slot[i]->set_item(type, item_texture[type].get());
+            auto it = item_texture.find(type);
+            ASSERT(it != item_texture.end());
+            m_hotbar_slot[i]->set_item(type, it->second.get());
         }
     }
 }
