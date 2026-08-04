@@ -528,6 +528,7 @@ void ServerWorld::hot_reload() {
 
 void ServerWorld::update() {
     // poll_finished_chunks();
+    send_time();
     m_entity_manager.update();
     {
         bool consumed = false;
@@ -554,7 +555,6 @@ void ServerWorld::update() {
         }
     }
 
-    send_time();
     for (auto& [id, timer] : m_timers) {
         timer.update();
     }
