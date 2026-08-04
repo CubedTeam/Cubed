@@ -2,6 +2,7 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -73,7 +74,7 @@ void App::init(int argc, char** argv) {
         Localization::instance().load_language(
             m_game_config.get("language", default_value));
     }
-
+    ItemManager::instance().init();
     m_window.init(m_argument);
     m_window.imgui_init();
     m_opengl_init = true;
