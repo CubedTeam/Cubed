@@ -79,6 +79,7 @@ void ItemManager::add(const std::filesystem::path& path) {
         if (a->second.kind == ItemKind::BLOCK) {
             BlockType b = BlockManager::id_from_name(a->second.name);
             m_block_to_id_map.emplace(b, a->first);
+            a->second.property = b;
         }
 
     } else {
@@ -91,7 +92,7 @@ const ItemData& ItemManager::get_item_data(std::string_view key) const {
     {
         IDMap::const_accessor cacc;
 
-        if (m_id_map.find(cacc, key)) {
+        if (m_id_map.find(cacc, std::string(key))) {
             id = cacc->second;
         } else {
             Logger::error("Can't Find key {} in id map", key);

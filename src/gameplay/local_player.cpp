@@ -408,17 +408,19 @@ void LocalPlayer::place_block(float dt) {
     }
     if (m_mouse_state.right) {
         auto& data = ItemManager::get(m_hotbar[m_selected_hotbar].id);
-        auto* t = std::get_if<BlockType>(&data.property);
-        ASSERT(t);
-        auto type = *t;
-        if (type != 0) {
-            glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
-            if (!m_world.is_solid(near_pos)) {
-                Hitbox block_box = ClientWorld::get_block_aabb(near_pos);
-                auto player_box = HitboxManager::hitbox("cubed:player");
-                player_box.box.center += get_player_pos();
-                if (!player_box.box.intersects(block_box)) {
-                    m_world.report_block_change(near_pos, type);
+        if (data.kind == ItemKind::BLOCK) {
+            auto* t = std::get_if<BlockType>(&data.property);
+            ASSERT(t);
+            auto type = *t;
+            if (type != 0) {
+                glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
+                if (!m_world.is_solid(near_pos)) {
+                    Hitbox block_box = ClientWorld::get_block_aabb(near_pos);
+                    auto player_box = HitboxManager::hitbox("cubed:player");
+                    player_box.box.center += get_player_pos();
+                    if (!player_box.box.intersects(block_box)) {
+                        m_world.report_block_change(near_pos, type);
+                    }
                 }
             }
         }

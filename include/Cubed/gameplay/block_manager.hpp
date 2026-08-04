@@ -40,6 +40,7 @@ private:
     static inline IDMap m_id_map;
     static inline bool is_init = false;
     static inline CrossPlaneMap m_cross_plane_map;
-    static void set_up_cross_plane_map();
+    static void set_up_cross_plane_map(
+        const std::vector<std::pair<bool, BlockType>>& types);
 };
 } // namespace Cubed

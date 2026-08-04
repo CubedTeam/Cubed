@@ -25,7 +25,7 @@ private:
     using acc = ItemMap::accessor;
     using cacc = ItemMap::const_accessor;
 
-    using IDMap = tbb::concurrent_hash_map<std::string_view, ItemID>;
+    using IDMap = tbb::concurrent_hash_map<std::string, ItemID>;
     using BlockToIDMap = tbb::concurrent_hash_map<BlockType, ItemID>;
     void add(const std::filesystem::path& path);
 

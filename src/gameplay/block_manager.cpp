@@ -5,6 +5,7 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/toml.utils.hpp"
 
+#include <algorithm>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -122,7 +123,7 @@ float BlockManager::roughness(BlockType id) {
 
 void BlockManager::init() {
     fs::path data_path{block_data_dir};
-
+    std::vector<std::pair<bool, BlockType>> types;
     for (auto entry : fs::recursive_directory_iterator(data_path)) {
         if (!entry.is_regular_file()) {
             continue;
@@ -169,9 +170,12 @@ void BlockManager::init() {
         if (!m_datas.emplace(static_cast<BlockType>(*id), std::move(data))) {
             Logger::error("Block Type {} already exist!", *id);
         }
+        m_id_map.emplace(*name, static_cast<BlockType>(*id));
+        types.emplace_back(*is_cross_plane, static_cast<BlockType>(*id));
     }
-
-    set_up_cross_plane_map();
+    std::sort(types.begin(), types.end(),
+              [](const auto& a, const auto& b) { return a.second < b.second; });
+    set_up_cross_plane_map(types);
     is_init = true;
 }
 
@@ -197,11 +201,12 @@ BlockType BlockManager::id_from_name(const std::string& name) {
     return 0;
 }
 
-void BlockManager::set_up_cross_plane_map() {
+void BlockManager::set_up_cross_plane_map(
+    const std::vector<std::pair<bool, BlockType>>& types) {
     unsigned cur_id = 0;
-    for (const auto& [id, data] : m_datas) {
-        if (data.is_cross_plane) {
-            m_cross_plane_map.emplace(data.id, cur_id);
+    for (auto id : types) {
+        if (id.first) {
+            m_cross_plane_map.emplace(id.second, cur_id);
 
             cur_id++;
         }

@@ -122,9 +122,13 @@ void TextureManager::load_block_texture(unsigned id) {
     }
 }
 
-void TextureManager::load_item_texture() {
+void TextureManager::init_item_texture() {
     for (ItemID i = 0; i < ItemManager::size(); ++i) {
         auto& item = ItemManager::get(i);
+        if (item.path.empty()) {
+            m_item_textures.try_emplace(item.id, nullptr);
+            continue;
+        }
         auto data = Tools::load_image_data(item.path);
         std::unique_ptr<Texture> texture =
             std::make_unique<Texture>(TextureType::TEXTURE_2D);
@@ -279,6 +283,7 @@ void TextureManager::init_texture() {
     Logger::info("Map Init Success");
 
     init_block();
+    init_item_texture();
     init_block_status();
     init_ui();
     init_skin();

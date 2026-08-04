@@ -1,12 +1,11 @@
 #include "Cubed/ui/inventory_ui.hpp"
 
 #include "Cubed/app.hpp"
-#include "Cubed/gameplay/block_manager.hpp"
+#include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/image.hpp"
-
 namespace Cubed {
 InventoryUI::InventoryUI(WorldScene& scene) : m_scene(scene) {}
 
@@ -22,12 +21,15 @@ void InventoryUI::init() {
     column.set_anchor(Anchor::CENTER);
     column.set_child_anchor(ColumnLayoutAnchor::LEFT);
     auto& item_textures = texture_manager.get_item_textures();
-    auto sum = item_textures.size();
+
     {
         auto& row_layout = column.add_child<RowLayout>();
         auto row = &row_layout;
         size_t i = 0;
         for (auto& [id, texture] : item_textures) {
+            if (id == 0) {
+                continue;
+            }
             if (i % 10 == 0) {
                 auto& r = column.add_child<RowLayout>();
                 row = &r;
@@ -39,8 +41,6 @@ void InventoryUI::init() {
             slot.set_item(id, texture.get());
             m_slots.emplace_back(&slot);
             ++i;
-        }
-        for (size_t i = 1; i < sum; ++i) {
         }
     }
     {
@@ -97,10 +97,12 @@ void InventoryUI::update(float dt) {
 void InventoryUI::update_item_info() {
     auto show_item_info = [this](ItemSlot* slot) {
         if (slot && !m_selected_image->has_texture()) {
+
             auto type = slot->id();
+
             if (type != 0) {
-                m_item_info->set_text(BlockManager::local_name(type))
-                    .set_visible(true);
+                auto& data = ItemManager::get(type);
+                m_item_info->set_text(data.name).set_visible(true);
                 return true;
             }
         }
