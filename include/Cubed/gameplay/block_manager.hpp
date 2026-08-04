@@ -34,7 +34,7 @@ private:
     using IDMap = tbb::concurrent_hash_map<std::string, BlockType>;
     using CrossPlaneMap = tbb::concurrent_hash_map<BlockType, BlockType>;
 
-    static const BlockData EMPTY;
+    static inline const BlockData EMPTY;
 
     static inline BlockMap m_datas;
     static inline IDMap m_id_map;

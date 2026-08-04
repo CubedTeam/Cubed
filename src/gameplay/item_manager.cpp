@@ -15,6 +15,7 @@ ItemManager::ItemManager() {}
 
 ItemManager& ItemManager::instance() {
     static ItemManager inst;
+
     return inst;
 }
 

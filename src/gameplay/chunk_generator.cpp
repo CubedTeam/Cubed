@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/chunk_generator.hpp"
 
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/builders/desert_builder.hpp"
 #include "Cubed/gameplay/builders/forest_builder.hpp"
 #include "Cubed/gameplay/builders/mountain_builder.hpp"

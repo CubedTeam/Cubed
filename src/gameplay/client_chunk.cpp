@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/client_chunk.hpp"
 
+#include "Cubed/gameplay/block_manager.hpp"
 namespace Cubed {
 using OptionalBlockVectorArray =
     std::array<std::optional<std::vector<BlockType>>, 4>;

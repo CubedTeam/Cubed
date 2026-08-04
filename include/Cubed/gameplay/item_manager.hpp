@@ -34,6 +34,6 @@ private:
     IDMap m_id_map;
     BlockToIDMap m_block_to_id_map;
 
-    static constexpr ItemData EMPTY;
+    static inline const ItemData EMPTY;
 };
 } // namespace Cubed

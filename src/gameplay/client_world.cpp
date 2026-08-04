@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/client_world.hpp"
 
 #include "Cubed/config.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"

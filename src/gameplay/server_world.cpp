@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/server_world.hpp"
 
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
