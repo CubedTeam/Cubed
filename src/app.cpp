@@ -90,7 +90,14 @@ void App::init(int argc, char** argv) {
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");
 
-    m_scene_manager.request_push(SceneType::MAIN_MENU);
+    m_scene_manager.push(SceneType::MAIN_MENU);
+    if (m_argument.direct_enter) {
+        if (m_argument.port) {
+            m_scene_manager.request_push(SceneType::WORLD);
+        } else {
+            throw std::runtime_error("You need use -p to specify a port");
+        }
+    }
     last_tick = SDL_GetTicks();
     current_tick = SDL_GetTicks();
     {
@@ -181,7 +188,9 @@ void App::handle_argument(int argc, char** argv) {
             {"--enable-filelog",
              [&](ArgParser&) { m_argument.enable_filelog = true; }},
             {"--enale-consolelog",
-             [&](ArgParser&) { m_argument.enable_consolelog = true; }}
+             [&](ArgParser&) { m_argument.enable_consolelog = true; }},
+            {"--direct-enter",
+             [&](ArgParser&) { m_argument.direct_enter = true; }}
 
         };
     ArgParser parser(argc, argv);

@@ -36,6 +36,7 @@ public:
 
     App& app();
     WorldSceneParam& world_scene_param();
+    void push(SceneType type);
 
 private:
     enum class OperationType { PUSH, POP, CHANGE };
@@ -51,7 +52,7 @@ private:
     std::stack<std::unique_ptr<Scene>> m_scenes;
     void process_operation();
     void change(SceneType type);
-    void push(SceneType type);
+
     void pop(bool re_enter = true);
 
     std::unique_ptr<Scene> create_scene(SceneType);
