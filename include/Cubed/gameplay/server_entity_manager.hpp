@@ -15,7 +15,7 @@ public:
     void init();
     void update();
     // not thread safe
-    void add_entity(std::string_view name, const glm::vec3& pos);
+    void add_entity(std::string_view name, const glm::vec3& world_pos);
     void destory(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
 

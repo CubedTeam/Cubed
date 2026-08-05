@@ -95,6 +95,7 @@ public:
     std::vector<std::shared_ptr<Session>> get_all_session() const;
 
     uint32_t get_chunk_ref_count(const glm::vec3& pos) const;
+    ServerEntityManager& entity_manager();
 
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;

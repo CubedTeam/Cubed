@@ -1114,5 +1114,5 @@ BlockType ServerWorld::get_block_tpye(const glm::ivec3& block_pos) const {
 }
 
 int ServerWorld::get_per_tick_time() const { return m_per_tick_time; }
-
+ServerEntityManager& ServerWorld::entity_manager() { return m_entity_manager; }
 } // namespace Cubed

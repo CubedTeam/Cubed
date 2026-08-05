@@ -37,6 +37,8 @@ void ServerEntityManager::update() {
     for (auto e : view) {
         const auto& c = view.get<BaseServerCreature>(e);
         if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
+            const auto& entity = m_registry.get<Entity>(e);
+            destory(entity.id);
             continue;
         }
         update_ai(e);
@@ -102,9 +104,9 @@ void ServerEntityManager::handle_task() {
 }
 
 void ServerEntityManager::add_entity(std::string_view name,
-                                     const glm::vec3& pos) {
+                                     const glm::vec3& world_pos) {
     m_tasks.emplace(Command::CREATE,
-                    EntityCreateElement{std::string(name), pos});
+                    EntityCreateElement{std::string(name), world_pos});
 }
 
 void ServerEntityManager::destory(EntityID id) {

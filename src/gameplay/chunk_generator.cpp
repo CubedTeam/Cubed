@@ -9,6 +9,7 @@
 #include "Cubed/gameplay/builders/river_builder.hpp"
 #include "Cubed/gameplay/builders/snowy_plain_builder.hpp"
 #include "Cubed/gameplay/cave_path.hpp"
+#include "Cubed/gameplay/creatures/spawn.hpp"
 #include "Cubed/gameplay/river.path.hpp"
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_world.hpp"
@@ -17,6 +18,8 @@
 #include "Cubed/tools/cubed_hash.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/perlin_noise.hpp"
+
+#include <algorithm>
 namespace Cubed {
 
 namespace {
@@ -802,6 +805,35 @@ void ChunkGenerator::generate_river() {
 
     if (is_river) {
         m_chunk.biome(RIVER);
+    }
+}
+
+void ChunkGenerator::spawn_creature() {
+    auto biome = m_chunk.biome();
+    const auto& blocks = m_chunk.blocks();
+    const auto& heightmap = m_chunk.heightmap();
+    const auto& chunk_pos = m_chunk.chunk_pos();
+    if (std::ranges::contains(SpawnDefaults::PIG.biomes, biome)) {
+
+        if (m_random.random_bool(SpawnDefaults::PIG.probability)) {
+            int want =
+                m_random.random_int(0, SpawnDefaults::PIG.max_spawn_count);
+            for (int i = 0; i < want; ++i) {
+                int x = m_random.random_int(0, CHUNK_SIZE - 1);
+                int z = m_random.random_int(0, CHUNK_SIZE - 1);
+                int y = static_cast<int>(heightmap[x][z]);
+                glm::vec3 pos(x, y + 1, z);
+                auto type = blocks[Chunk::index(pos)];
+                if (type != 0) {
+                    continue;
+                }
+                auto [world_x, world_y, world_z] = Chunk::block_to_world(
+                    x, y + 1, z, chunk_pos.x, chunk_pos.z);
+                m_chunk.world().entity_manager().add_entity(
+                    SpawnDefaults::PIG.name,
+                    glm::vec3{world_x, world_y, world_z});
+            }
+        }
     }
 }
 
