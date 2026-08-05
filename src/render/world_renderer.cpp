@@ -300,6 +300,10 @@ void WorldRenderer::shadow_entity(ClientWorld& world,
     auto view = registry.view<BaseClientCreature, RenderTransform>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
+        auto pos = creature.transform.position.value;
+        if (!world.is_render(pos)) {
+            continue;
+        }
         auto& t = view.get<RenderTransform>(entity);
         float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
 
@@ -724,6 +728,10 @@ void WorldRenderer::render_entity(ClientWorld& world) {
     auto view = registry.view<BaseClientCreature, RenderTransform>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
+        auto pos = creature.transform.position.value;
+        if (!world.is_render(pos)) {
+            continue;
+        }
         auto& t = view.get<RenderTransform>(entity);
         float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
         m_renderer.model_renderer().render_model(creature.model,

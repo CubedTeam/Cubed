@@ -94,6 +94,9 @@ public:
     void receive_voice_message(VoiceMsg& msg);
     bool enable_voice_chat() const;
     int get_per_tick_time() const override;
+
+    bool is_render(const glm::vec3& pos) const;
+
     template <typename Fn>
     void register_timer(std::string_view id, float threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,

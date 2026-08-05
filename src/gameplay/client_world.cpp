@@ -725,6 +725,13 @@ void ClientWorld::receive_voice_message(VoiceMsg& msg) {
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
 int ClientWorld::get_per_tick_time() const { return m_per_tick_time; }
+
+bool ClientWorld::is_render(const glm::vec3& pos) const {
+    ChunkPos p = get_chunk_pos(pos.x, pos.z);
+    chunk_cacc cacc;
+    return m_chunks.find(cacc, p);
+}
+
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);
