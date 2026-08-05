@@ -22,6 +22,7 @@
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -92,7 +93,7 @@ public:
 
     int chunk_size() const;
 
-    std::vector<std::shared_ptr<Session>> get_all_session() const;
+    tbb::concurrent_vector<std::shared_ptr<Session>> get_all_session() const;
 
     uint32_t get_chunk_ref_count(const glm::vec3& pos) const;
     ServerEntityManager& entity_manager();
@@ -114,7 +115,27 @@ private:
     struct ChunkEntity {
         ChunkState state;
         std::shared_ptr<ServerChunk> chunk;
-        uint32_t ref_count = 0;
+        std::atomic<uint32_t> ref_count = 0;
+        ChunkEntity() = default;
+        ChunkEntity(ChunkState s, std::shared_ptr<ServerChunk> c = {})
+            : state(s), chunk(std::move(c)) {}
+
+        ChunkEntity& operator=(ChunkEntity&& o) noexcept {
+            if (this == &o) {
+                return *this;
+            }
+
+            state = std::exchange(o.state, ServerWorld::ChunkState::NONE);
+            chunk = std::move(o.chunk);
+            ref_count = o.ref_count.exchange(0);
+            return *this;
+        }
+
+        ChunkEntity(ChunkEntity&& o) noexcept
+            : state(std::exchange(o.state, ServerWorld::ChunkState::NONE)),
+              chunk(std::move(o.chunk)), ref_count(o.ref_count.exchange(0)) {}
+        ChunkEntity(const ChunkEntity&) = delete;
+        ChunkEntity& operator=(const ChunkEntity&) = delete;
     };
 
     enum class ChunkLoadStyle { RANDOM, CENTER };

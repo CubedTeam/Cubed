@@ -5,6 +5,7 @@
 #include <entt/entt.hpp>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_vector.h>
 namespace Cubed {
 class ServerWorld;
 class Session;
@@ -46,8 +47,9 @@ private:
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai(entt::entity e);
     void update_move(entt::entity e);
-    void update_send(entt::entity e,
-                     std::span<std::shared_ptr<Session>> sessions);
+    void
+    update_send(entt::entity e,
+                tbb::concurrent_vector<std::shared_ptr<Session>>& sessions);
     template <typename... Args>
     EntityID create_entity_in_factory(Args&&... args) {
         auto entity = m_registry.create();

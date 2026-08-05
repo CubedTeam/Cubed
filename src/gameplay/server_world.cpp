@@ -182,7 +182,6 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
 void ServerWorld::init_world(RunMode mode) {
     m_runmode = mode;
     m_entity_manager.init();
-    m_entity_manager.add_entity("cubed:pig", {0, 225, 0});
     register_timer("player disconnect", 5, [this]() {
         std::vector<std::string> disconnect;
         {
@@ -319,7 +318,7 @@ void ServerWorld::sync_and_collect_missing_chunks(
         chunk_acc acc;
         if (m_chunks.insert(acc, pos)) {
             need_gen_chunks_pos.push_back(pos);
-            acc->second = ChunkEntity{ChunkState::GENERATING, nullptr, 0};
+            acc->second = ChunkEntity{ChunkState::GENERATING};
         }
     }
 }
@@ -1028,9 +1027,10 @@ void ServerWorld::set_chunk_load_style(int id) {
 
 int ServerWorld::chunk_size() const { return m_chunks.size(); }
 
-std::vector<std::shared_ptr<Session>> ServerWorld::get_all_session() const {
+tbb::concurrent_vector<std::shared_ptr<Session>>
+ServerWorld::get_all_session() const {
     std::shared_lock lock(m_players_mutex);
-    std::vector<std::shared_ptr<Session>> sessions;
+    tbb::concurrent_vector<std::shared_ptr<Session>> sessions;
     for (const auto& [_, player] : m_players) {
         sessions.emplace_back(player.get_session());
     }

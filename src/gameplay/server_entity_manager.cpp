@@ -33,18 +33,31 @@ void ServerEntityManager::update() {
     handle_task();
 
     auto view = m_registry.view<BaseServerCreature>();
-    auto sessions = m_world.get_all_session();
-    for (auto e : view) {
-        const auto& c = view.get<BaseServerCreature>(e);
-        if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
-            const auto& entity = m_registry.get<Entity>(e);
-            destory(entity.id);
-            continue;
-        }
-        update_ai(e);
-        update_move(e);
-        update_send(e, sessions);
+
+    auto pool = m_world.get_compute_pool();
+    if (!pool) {
+        return;
     }
+    auto sessions = m_world.get_all_session();
+    std::vector<entt::entity> entities;
+    for (auto e : view) {
+        entities.push_back(e);
+    }
+    // parallel block touches disjoint entities only;
+    // structural registry changes stay on the server thread via m_tasks.
+    parallel_do(
+        *pool, entities.begin(), entities.end(), pool->thread_sum(),
+        [this, &sessions](entt::entity e) {
+            const auto& c = m_registry.get<BaseServerCreature>(e);
+            if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
+                const auto& entity = m_registry.get<Entity>(e);
+                destory(entity.id);
+                return;
+            }
+            update_ai(e);
+            update_move(e);
+            update_send(e, sessions);
+        });
 }
 
 void ServerEntityManager::update_ai(entt::entity e) {
@@ -59,7 +72,8 @@ void ServerEntityManager::update_move(entt::entity e) {
 }
 
 void ServerEntityManager::update_send(
-    entt::entity e, std::span<std::shared_ptr<Session>> sessions) {
+    entt::entity e,
+    tbb::concurrent_vector<std::shared_ptr<Session>>& sessions) {
 
     if (!m_registry.all_of<Entity, BaseServerCreature>(e)) {
         return;
