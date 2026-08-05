@@ -6,7 +6,7 @@
 namespace Cubed {
 class WanderAISystem {
 public:
-    static void update(entt::registry& registry);
+    static void update(entt::registry& registry, entt::entity e);
 
 private:
     static void do_ai(BaseServerCreature& creature, MoveBoost& move_boost);

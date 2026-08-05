@@ -1020,6 +1020,15 @@ std::vector<std::shared_ptr<Session>> ServerWorld::get_all_session() const {
     return sessions;
 }
 
+uint32_t ServerWorld::get_chunk_ref_count(const glm::vec3& pos) const {
+    ChunkPos p = get_chunk_pos(pos.x, pos.z);
+    chunk_cacc cacc;
+    if (!m_chunks.find(cacc, p)) {
+        return 0;
+    }
+    return cacc->second.ref_count;
+}
+
 int ServerWorld::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;

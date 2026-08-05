@@ -10,18 +10,18 @@ constexpr double MOVE_PROBABILITY = 0.01;
 } // namespace
 
 namespace Cubed {
-void WanderAISystem::update(entt::registry& registry) {
-    auto view =
-        registry.view<AIBase, WanderAITag, BaseServerCreature, MoveBoost>();
+void WanderAISystem::update(entt::registry& registry, entt::entity e) {
+    if (!registry.all_of<AIBase, WanderAITag, BaseServerCreature, MoveBoost>(
+            e)) {
+        return;
+    }
 
-    for (auto e : view) {
-        auto [ai, creature, move_boost] =
-            view.get<AIBase, BaseServerCreature, MoveBoost>(e);
-        ++ai.count;
-        if (ai.count >= ai.interval) {
-            ai.count = 0;
-            do_ai(creature, move_boost);
-        }
+    auto [ai, creature, move_boost] =
+        registry.get<AIBase, BaseServerCreature, MoveBoost>(e);
+    ++ai.count;
+    if (ai.count >= ai.interval) {
+        ai.count = 0;
+        do_ai(creature, move_boost);
     }
 }
 

@@ -44,9 +44,10 @@ private:
     void handle_entity_destory(EntityID id);
     void handle_task();
     void send_all_entities(std::shared_ptr<Session>& session);
-    void update_ai();
-    void update_move();
-    void update_send();
+    void update_ai(entt::entity e);
+    void update_move(entt::entity e);
+    void update_send(entt::entity e,
+                     std::span<std::shared_ptr<Session>> sessions);
     template <typename... Args>
     EntityID create_entity_in_factory(Args&&... args) {
         auto entity = m_registry.create();

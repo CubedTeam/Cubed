@@ -31,37 +31,50 @@ void ServerEntityManager::init() {
 }
 void ServerEntityManager::update() {
     handle_task();
-    update_ai();
-    update_move();
 
-    update_send();
-}
-
-void ServerEntityManager::update_ai() { WanderAISystem::update(m_registry); }
-
-void ServerEntityManager::update_move() {
-    SpeedSystem::update(
-        static_cast<float>(m_world.get_per_tick_time()) / 1000.0f, m_registry);
-    PhysicalSystem::update(m_world, m_registry);
-}
-
-void ServerEntityManager::update_send() {
+    auto view = m_registry.view<BaseServerCreature>();
     auto sessions = m_world.get_all_session();
-    auto view = m_registry.view<Entity, BaseServerCreature>();
-
-    for (auto& e : view) {
-        auto [entity, creature] = view.get<Entity, BaseServerCreature>(e);
-        Arena arena;
-        auto* p = Arena::Create<S2CEntityUpdate>(&arena);
-        p->set_id(entity.id);
-        Tools::set_net_pos(p, creature.transform.position.value);
-
-        Tools::set_net_vec3(p->mutable_direction(),
-                            creature.transform.direction.value);
-
-        for (auto& s : sessions) {
-            s->send(make_packet(p));
+    for (auto e : view) {
+        const auto& c = view.get<BaseServerCreature>(e);
+        if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
+            continue;
         }
+        update_ai(e);
+        update_move(e);
+        update_send(e, sessions);
+    }
+}
+
+void ServerEntityManager::update_ai(entt::entity e) {
+    WanderAISystem::update(m_registry, e);
+}
+
+void ServerEntityManager::update_move(entt::entity e) {
+    SpeedSystem::update(static_cast<float>(m_world.get_per_tick_time()) /
+                            1000.0f,
+                        m_registry, e);
+    PhysicalSystem::update(m_world, m_registry, e);
+}
+
+void ServerEntityManager::update_send(
+    entt::entity e, std::span<std::shared_ptr<Session>> sessions) {
+
+    if (!m_registry.all_of<Entity, BaseServerCreature>(e)) {
+        return;
+    }
+
+    const auto [entity, creature] =
+        m_registry.get<Entity, BaseServerCreature>(e);
+    Arena arena;
+    auto* p = Arena::Create<S2CEntityUpdate>(&arena);
+    p->set_id(entity.id);
+    Tools::set_net_pos(p, creature.transform.position.value);
+
+    Tools::set_net_vec3(p->mutable_direction(),
+                        creature.transform.direction.value);
+
+    for (auto& s : sessions) {
+        s->send(make_packet(p));
     }
 }
 

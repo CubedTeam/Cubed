@@ -8,7 +8,8 @@ class PhysicalSystem {
 public:
     static glm::vec3 get_move_distance(const TickVelocity& v);
 
-    static void update(ServerWorld& world, entt::registry& registry);
+    static void update(ServerWorld& world, entt::registry& registry,
+                       entt::entity e);
 
 private:
 };

@@ -102,61 +102,62 @@ bool update_z(const glm::vec3& pos, const glm::vec3& distance,
 
 } // namespace
 
-void PhysicalSystem::update(ServerWorld& world, entt::registry& registry) {
+void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
+                            entt::entity e) {
 
-    auto view = registry.view<BaseServerCreature>();
-    for (auto e : view) {
-        auto& creature = view.get<BaseServerCreature>(e);
-        auto distance = get_move_distance(creature.velocity);
-        auto box = HitboxManager::hitbox(creature.hitbox);
-        auto& pos = creature.transform.position.value;
-        auto& v = creature.velocity;
-        bool ground =
-            !update_y(pos, glm::vec3{0.0f, -0.1f, 0.0f}, world, box.box);
-        bool stepped = false;
-        if (update_y(pos, distance, world, box.box)) {
-            pos.y += distance.y;
+    if (!registry.all_of<BaseServerCreature>(e)) {
+        return;
+    }
 
-        } else {
-            v.value.y = 0.0f;
-        }
-        if (update_x(pos, distance, world, box.box)) {
-            pos.x += distance.x;
+    auto& creature = registry.get<BaseServerCreature>(e);
+    auto distance = get_move_distance(creature.velocity);
+    auto box = HitboxManager::hitbox(creature.hitbox);
+    auto& pos = creature.transform.position.value;
+    auto& v = creature.velocity;
+    bool ground = !update_y(pos, glm::vec3{0.0f, -0.1f, 0.0f}, world, box.box);
+    bool stepped = false;
+    if (update_y(pos, distance, world, box.box)) {
+        pos.y += distance.y;
 
-        } else {
-            if (ground && !stepped) {
+    } else {
+        v.value.y = 0.0f;
+    }
+    if (update_x(pos, distance, world, box.box)) {
+        pos.x += distance.x;
 
-                glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
-                if (update_x(step_pos, distance, world, box.box)) {
-                    pos.x += distance.x;
-                    pos.y += 1.0f;
-                    stepped = true;
-                } else {
-                    v.value.x = 0.0f;
-                }
+    } else {
+        if (ground && !stepped) {
+
+            glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
+            if (update_x(step_pos, distance, world, box.box)) {
+                pos.x += distance.x;
+                pos.y += 1.0f;
+                stepped = true;
             } else {
                 v.value.x = 0.0f;
             }
-        }
-
-        if (update_z(pos, distance, world, box.box)) {
-            pos.z += distance.z;
-
         } else {
-            if (ground && !stepped) {
+            v.value.x = 0.0f;
+        }
+    }
 
-                glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
-                if (update_z(step_pos, distance, world, box.box)) {
-                    pos.z += distance.z;
-                    pos.y += 1.0f;
-                    stepped = true;
+    if (update_z(pos, distance, world, box.box)) {
+        pos.z += distance.z;
 
-                } else {
-                    v.value.z = 0.0f;
-                }
+    } else {
+        if (ground && !stepped) {
+
+            glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
+            if (update_z(step_pos, distance, world, box.box)) {
+                pos.z += distance.z;
+                pos.y += 1.0f;
+                stepped = true;
+
             } else {
                 v.value.z = 0.0f;
             }
+        } else {
+            v.value.z = 0.0f;
         }
     }
 }
