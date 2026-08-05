@@ -6,6 +6,7 @@
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
+#include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
@@ -363,7 +364,8 @@ void ClientWorld::send_player_water_sound(bool underwater,
 }
 
 void ClientWorld::init(std::string_view player_name,
-                       std::shared_ptr<NetworkClient> client) {
+                       std::shared_ptr<NetworkClient> client, RunMode mode) {
+    m_runmode = mode;
     m_entity_manager.init();
     m_player_manager.init(player_name);
     m_client = client;
@@ -480,8 +482,8 @@ void ClientWorld::stop_client_thread() {
     m_game_running = false;
 }
 void ClientWorld::start_thread_pool() {
-    int max_threads = std::thread::hardware_concurrency();
-    int threads = std::min<size_t>(max_threads, 4);
+    auto threads = Tools::get_client_threads(m_runmode);
+    Logger::info("Client pool threads {}", threads);
     change_pool_threads(threads);
 }
 void ClientWorld::stop_thread_pool() {
@@ -500,7 +502,6 @@ void ClientWorld::change_pool_threads(int threads) {
         m_max_threads = 1;
     }
     int used_thread = std::clamp(threads, 1, m_max_threads);
-    Logger::info("Create New Thread Pool Use {} Threads", used_thread);
     m_thread_pool.store(std::make_shared<PriorityThreadPool>(used_thread));
 }
 

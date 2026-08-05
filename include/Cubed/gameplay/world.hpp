@@ -26,4 +26,7 @@ public:
                 glm::vec3{0.5f, 0.5f, 0.5f}};
     }
 };
+
+enum class RunMode { CLIENT_ONLY, SERVER_ONLY, HYBRID };
+
 } // namespace Cubed

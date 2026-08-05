@@ -34,7 +34,7 @@ public:
     ~ServerWorld();
     void stop();
     void handle_player_exit(const std::string& uuid);
-    void init_world();
+    void init_world(RunMode mode);
     void need_gen(std::string uuid);
     void update();
     void hot_reload();
@@ -96,7 +96,7 @@ public:
 
     uint32_t get_chunk_ref_count(const glm::vec3& pos) const;
     ServerEntityManager& entity_manager();
-
+    std::shared_ptr<ThreadPool> get_compute_pool();
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;
     bool can_pass_block(const glm::ivec3& block_pos) const override;
@@ -142,6 +142,7 @@ private:
     using uuid_cacc = PlayerUUIDMap::const_accessor;
 
     Config& m_config;
+    std::atomic<RunMode> m_runmode{RunMode::HYBRID};
     ServerEntityManager m_entity_manager;
     // key = uuid
     PlayerHashMap m_players;
@@ -163,8 +164,9 @@ private:
     std::atomic<bool> m_init{false};
     std::atomic<bool> m_stopped{false};
     std::atomic<int> m_rendering_distance{24};
-    std::atomic<int> m_gen_pool_threads{0};
-    std::atomic<int> m_net_pool_threads{0};
+    std::atomic<int> m_gen_threads{0};
+    std::atomic<int> m_net_threads{0};
+    std::atomic<int> m_compute_threads{0};
     std::atomic<int> m_max_threads{1};
     std::atomic<size_t> m_player_sum{0};
     std::atomic<TickType> m_game_ticks{0};
@@ -180,6 +182,7 @@ private:
 
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_gen_thread_pool;
     std::atomic<std::shared_ptr<ThreadPool>> m_net_thread_pool;
+    std::atomic<std::shared_ptr<ThreadPool>> m_compute_thread_pool;
 
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::CENTER};
 

@@ -7,6 +7,7 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/net_utils.hpp"
+#include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 
 #include <ranges>
@@ -178,8 +179,8 @@ void ServerWorld::send_chunk(int task_id, const std::string& uuid,
     s->send(make_packet(*rsp));
 }
 
-void ServerWorld::init_world() {
-
+void ServerWorld::init_world(RunMode mode) {
+    m_runmode = mode;
     m_entity_manager.init();
     m_entity_manager.add_entity("cubed:pig", {0, 225, 0});
     register_timer("player disconnect", 5, [this]() {
@@ -361,7 +362,7 @@ void ServerWorld::submit_new_chunks(const std::string& uuid,
                       return dist2(a.first) < dist2(b.first);
                   });
 
-        const int CHUNKS_PER_PRIORITY = m_gen_pool_threads;
+        const int CHUNKS_PER_PRIORITY = m_gen_threads;
 
         for (size_t i = 0; i < tasks.size(); ++i) {
             int priority = 10 + static_cast<int>(i / CHUNKS_PER_PRIORITY);
@@ -411,20 +412,30 @@ void ServerWorld::start_server_thread() {
 }
 
 void ServerWorld::start_thread_pool() {
-    int max_thread = std::thread::hardware_concurrency();
-    if (m_gen_pool_threads == 0) {
-        m_gen_pool_threads = change_pool_threads(m_gen_thread_pool,
-                                                 max_thread - RESERVED_THREADS);
+    if (m_gen_threads == 0) {
+        auto gen_threads = Tools::get_server_gen_threads(m_runmode);
+        Logger::info("Server Gen pool threads {}", gen_threads);
+        m_gen_threads = change_pool_threads(m_gen_thread_pool, gen_threads);
     } else {
-        m_gen_pool_threads =
-            change_pool_threads(m_gen_thread_pool, m_gen_pool_threads);
+        m_gen_threads = change_pool_threads(m_gen_thread_pool, m_gen_threads);
     }
 
-    if (m_net_pool_threads == 0) {
-        m_net_pool_threads = change_pool_threads(m_net_thread_pool, 4);
+    if (m_net_threads == 0) {
+        auto net_threads = Tools::get_server_net_pool_threads(m_runmode);
+        Logger::info("Server Net pool threads {}", net_threads);
+        m_net_threads = change_pool_threads(m_net_thread_pool, net_threads);
     } else {
-        m_net_pool_threads =
-            change_pool_threads(m_net_thread_pool, m_net_pool_threads);
+        m_net_threads = change_pool_threads(m_net_thread_pool, m_net_threads);
+    }
+
+    if (m_compute_threads == 0) {
+        auto compute_threads = Tools::get_server_compute_treads(m_runmode);
+        Logger::info("Server compute pool threads {}", compute_threads);
+        m_compute_threads =
+            change_pool_threads(m_compute_thread_pool, compute_threads);
+    } else {
+        m_compute_threads =
+            change_pool_threads(m_compute_thread_pool, m_compute_threads);
     }
 }
 
@@ -459,6 +470,13 @@ void ServerWorld::stop_thread_pool() {
     }
     m_net_thread_pool.store(nullptr);
     Logger::info("Net Thread Pool Stopped");
+
+    auto c = m_compute_thread_pool.load();
+    if (c) {
+        c->stop();
+    }
+    m_compute_thread_pool.store(nullptr);
+    Logger::info("Compute Thread Pool Stopped");
 }
 
 void ServerWorld::serever_run(std::stop_token stoken) {
@@ -910,16 +928,16 @@ void ServerWorld::per_tick_time(int ms) { m_per_tick_time = ms; }
 
 bool ServerWorld::is_tick_running() const { return m_tick_running.load(); }
 void ServerWorld::tick_running(bool run) { m_tick_running = run; }
-int ServerWorld::gen_pool_threads() const { return m_gen_pool_threads.load(); }
+int ServerWorld::gen_pool_threads() const { return m_gen_threads.load(); }
 int ServerWorld::max_threads() const { return m_max_threads.load(); }
 
 void ServerWorld::change_pool_threads(ThreadPoolKind kind, int threads) {
     switch (kind) {
     case ThreadPoolKind::NET:
-        m_net_pool_threads = change_pool_threads(m_net_thread_pool, threads);
+        m_net_threads = change_pool_threads(m_net_thread_pool, threads);
         break;
     case ThreadPoolKind::GEN:
-        m_gen_pool_threads = change_pool_threads(m_gen_thread_pool, threads);
+        m_gen_threads = change_pool_threads(m_gen_thread_pool, threads);
         break;
     }
 }
@@ -946,7 +964,6 @@ int ServerWorld::change_pool_threads(
         m_max_threads = 1;
     }
     int used_thread = std::clamp(threads, 1, m_max_threads.load());
-    Logger::info("Create New Thread Pool Use {} Threads", used_thread);
     thread_pool.store(std::make_shared<PriorityThreadPool>(used_thread));
     return used_thread;
 }
@@ -1115,4 +1132,7 @@ BlockType ServerWorld::get_block_tpye(const glm::ivec3& block_pos) const {
 
 int ServerWorld::get_per_tick_time() const { return m_per_tick_time; }
 ServerEntityManager& ServerWorld::entity_manager() { return m_entity_manager; }
+std::shared_ptr<ThreadPool> ServerWorld::get_compute_pool() {
+    return m_compute_thread_pool.load();
+}
 } // namespace Cubed

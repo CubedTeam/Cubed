@@ -32,7 +32,7 @@ public:
     ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene);
     ~ClientWorld();
     void init(std::string_view player_name,
-              std::shared_ptr<NetworkClient> client);
+              std::shared_ptr<NetworkClient> client, RunMode mode);
     void update(float dt);
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
@@ -132,6 +132,7 @@ private:
 
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
+    std::atomic<RunMode> m_runmode = RunMode::HYBRID;
     ClientEntityManager m_entity_manager;
     ClientPlayerManager m_player_manager;
     ChunkHashMap m_chunks;

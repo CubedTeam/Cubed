@@ -92,14 +92,10 @@ void NetworkServer::net_run() {
     Logger::info("Server Started!");
 }
 
-void NetworkServer::start_server(int port) {
+void NetworkServer::start_server(int port, RunMode mode) {
     m_port = port;
     m_config.set("port", m_port);
-    start_server();
-}
-
-void NetworkServer::start_server() {
-    m_world.init_world();
+    m_world.init_world(mode);
     net_run();
     m_started = true;
 }

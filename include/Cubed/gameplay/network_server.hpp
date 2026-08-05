@@ -14,8 +14,7 @@ public:
     void stop();
 
     // Run in another thread after initialization is complete
-    void start_server(int port);
-    void start_server();
+    void start_server(int port, RunMode mode);
     int port() const;
     ServerWorld& server_world();
 
