@@ -19,6 +19,7 @@ using ItemProperty = std::variant<BlockType, std::string>;
 struct ItemData {
     ItemID id = 0;
     std::string name;
+    std::string local_name;
     std::string description;
     std::string path;
     ItemKind kind = ItemKind::NONE;

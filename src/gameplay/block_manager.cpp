@@ -1,6 +1,5 @@
 #include "Cubed/gameplay/block_manager.hpp"
 
-#include "Cubed/localization.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/toml.utils.hpp"
@@ -35,14 +34,6 @@ const std::string& BlockManager::name_form_id(BlockType id) {
         return EMPTY.name;
     }
     return c->second.name;
-}
-std::string BlockManager::local_name(BlockType id) {
-    cacc c;
-    if (!m_datas.find(c, id)) {
-        ASSERT(false);
-        return EMPTY.name_key;
-    }
-    return tr(c->second.name_key);
 }
 bool BlockManager::is_gas(BlockType id) {
     cacc c;
@@ -160,12 +151,18 @@ void BlockManager::init() {
         auto is_blend = safe_get_value(block, "is_blend", false);
         auto is_transitional = safe_get_value(block, "is_transitional", false);
         auto roughness = safe_get_value(block, "roughness", 1.0);
-        auto name_key = safe_get_value(block, "name_key", "Unknow_key");
-        BlockData data{
-            *name,           *name_key,        static_cast<BlockType>(*id),
-            *is_liquid,      *is_passable,     *is_cross_plane,
-            *is_transparent, *is_gas,          *is_discard,
-            *is_blend,       *is_transitional, static_cast<float>(*roughness)};
+
+        BlockData data{*name,
+                       static_cast<BlockType>(*id),
+                       *is_liquid,
+                       *is_passable,
+                       *is_cross_plane,
+                       *is_transparent,
+                       *is_gas,
+                       *is_discard,
+                       *is_blend,
+                       *is_transitional,
+                       static_cast<float>(*roughness)};
 
         if (!m_datas.emplace(static_cast<BlockType>(*id), std::move(data))) {
             Logger::error("Block Type {} already exist!", *id);

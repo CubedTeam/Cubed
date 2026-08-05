@@ -109,7 +109,7 @@ void InventoryUI::update_item_info() {
 
             if (type != 0) {
                 auto& data = ItemManager::get(type);
-                m_item_info->set_text(data.name).set_visible(true);
+                m_item_info->set_text(data.local_name).set_visible(true);
                 return true;
             }
         }

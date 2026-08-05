@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/item_manager.hpp"
 
 #include "Cubed/gameplay/block_manager.hpp"
+#include "Cubed/localization.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 
@@ -76,6 +77,7 @@ void ItemManager::add(const std::filesystem::path& path) {
             data.property = "cubed:pig";
         }
     }
+    data.local_name = tr(std::format("item.{}.name", data.name));
     acc a;
     if (m_map.emplace(a, data.id, std::move(data))) {
         if (!m_id_map.emplace(a->second.name, a->first)) {

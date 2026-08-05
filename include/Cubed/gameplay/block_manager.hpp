@@ -11,7 +11,6 @@ public:
     static unsigned sums();
     static unsigned cross_plane_sum();
     static const std::string& name_form_id(BlockType id);
-    static std::string local_name(BlockType id);
     static bool is_gas(BlockType id);
     static bool is_liquid(BlockType id);
 
