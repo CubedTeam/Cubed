@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/gameplay/ecs/entity.hpp"
+#include "Cubed/gameplay/gait.hpp"
 #include "glm/ext/vector_float3.hpp"
 
 #include <entt/entt.hpp>
@@ -26,6 +27,14 @@ private:
         std::string name;
         glm::vec3 pos;
     };
+
+    struct EntitySendData {
+        EntityID id;
+        glm::vec3 pos;
+        glm::vec3 dir;
+        Gait gait;
+    };
+
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;
     using acc = EntityMap::accessor;
     using cacc = EntityMap::const_accessor;
@@ -47,9 +56,8 @@ private:
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai(entt::entity e);
     void update_move(entt::entity e);
-    void
-    update_send(entt::entity e,
-                tbb::concurrent_vector<std::shared_ptr<Session>>& sessions);
+    void update_send(entt::entity e,
+                     tbb::concurrent_vector<EntitySendData>& sessions);
     template <typename... Args>
     EntityID create_entity_in_factory(Args&&... args) {
         auto entity = m_registry.create();

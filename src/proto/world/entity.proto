@@ -29,3 +29,7 @@ message S2CEntityUpdate {
     Vec3 direction = 3;
     int32 gait = 4;
 }
+
+message S2CEntityUpdateBatch {
+    repeated S2CEntityUpdate updates = 1;
+}

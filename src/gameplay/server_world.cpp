@@ -89,11 +89,10 @@ void ServerWorld::send_time() {
 
     rsp->set_day_tick(m_day_tick);
     rsp->set_game_tick(m_game_ticks);
-    {
-        std::shared_lock lock(m_players_mutex);
-        for (auto& [uuid, player] : m_players) {
-            player.get_session()->send(make_packet(*rsp), 3);
-        }
+    auto sessions = get_all_session();
+    auto packet = make_packet(*rsp);
+    for (auto& s : sessions) {
+        s->send(packet, 3);
     }
 }
 
@@ -608,7 +607,7 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
 
         name = it->second.get_name();
     }
-    ChunkPos pos = get_chunk_pos(x, z);
+    ChunkPos c_pos = get_chunk_pos(x, z);
     // update other player pos;
     std::vector<std::shared_ptr<Session>> other;
     {
@@ -617,28 +616,31 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
             if (o_uuid == uuid) {
                 continue;
             }
-            if (player.has_player(pos)) {
+            if (player.has_player(c_pos)) {
                 other.emplace_back(player.get_session());
             }
         }
     }
 
+    Arena arena;
+    auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
+    rsp->set_uuid(uuid);
+    rsp->set_name(name);
+    auto* pos = rsp->mutable_pos();
+    pos->set_x(x);
+    pos->set_y(y);
+    pos->set_z(z);
+    rsp->set_yaw(yaw);
+    rsp->set_pitch(pitch);
+    rsp->set_gait(prsp.gait());
+    auto packet = make_packet(*rsp);
+
     for (auto& session : other) {
         if (!session) {
             continue;
         }
-        Arena arena;
-        auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
-        rsp->set_uuid(uuid);
-        rsp->set_name(name);
-        auto* pos = rsp->mutable_pos();
-        pos->set_x(x);
-        pos->set_y(y);
-        pos->set_z(z);
-        rsp->set_yaw(yaw);
-        rsp->set_pitch(pitch);
-        rsp->set_gait(prsp.gait());
-        session->send(make_packet(*rsp), 0);
+
+        session->send(packet, 0);
     }
 }
 
@@ -673,13 +675,13 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     p->set_x(x);
     p->set_y(y);
     p->set_z(z);
-
+    auto packet = make_packet(*r);
     for (auto& session : other) {
         if (!session) {
             continue;
         }
 
-        session->send(make_packet(*r), 5);
+        session->send(packet, 5);
     }
 }
 
@@ -765,17 +767,12 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     rsp->set_server_stop(false);
     exit_session->send(make_packet(*rsp), 0);
 
-    std::vector<std::shared_ptr<Session>> sessions;
-    {
-        std::shared_lock lock(m_players_mutex);
-        for (auto& [uuid, player] : m_players) {
-            sessions.emplace_back(player.get_session());
-        }
-    }
+    auto sessions = get_all_session();
 
+    auto packet = make_packet(*rsp);
     for (auto& s : sessions) {
         if (s) {
-            s->send(make_packet(*rsp), 0);
+            s->send(packet, 0);
         }
     }
 
@@ -856,9 +853,9 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
         pos->set_x(p.x);
         pos->set_y(p.y);
         pos->set_z(p.z);
-
+        auto packet = make_packet(*msg);
         for (auto& s : session) {
-            s->send(make_packet(*msg), 5);
+            s->send(packet, 5);
         }
     });
 }
@@ -889,10 +886,10 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
             }
         }
     }
-
+    auto packet = make_packet(*rsp);
     for (auto& x : sessions) {
         if (x) {
-            x->send(make_packet(*rsp), 1);
+            x->send(packet, 1);
         }
     }
 }
@@ -971,9 +968,10 @@ void ServerWorld::send_server_stop() {
     Arena arena;
     auto* rsp = Arena::Create<LogoutRsp>(&arena);
     rsp->set_server_stop(true);
-    std::shared_lock lock(m_players_mutex);
-    for (auto& [uuid, player] : m_players) {
-        player.get_session()->send(make_packet(*rsp), 0);
+    auto sessions = get_all_session();
+    auto packet = make_packet(*rsp);
+    for (auto& s : sessions) {
+        s->send(packet, 0);
     }
     Logger::info("Send Server Mesaage Success");
 }
@@ -1002,9 +1000,9 @@ void ServerWorld::boardcast_message(const std::string& name,
 
     msg->set_color(std::to_underlying(color));
     msg->set_system_msg(system_msg);
-
+    auto packet = make_packet(*msg);
     for (auto& s : m_session) {
-        s->send(make_packet(*msg));
+        s->send(packet);
     }
 }
 

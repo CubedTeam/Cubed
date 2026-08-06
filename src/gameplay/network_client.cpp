@@ -162,6 +162,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.entity_manager().receive_entity_update(*msg);
                 }
             } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE_BATCH): {
+                auto* msg = Arena::Create<S2CEntityUpdateBatch>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().receive_entity_update(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

@@ -19,8 +19,8 @@ public:
 
     void receive_entity_create(S2CEntityCreate& msg);
     void receive_entity_destory(EntityID id);
-    void receive_entity_update(S2CEntityUpdate& msg);
-
+    void receive_entity_update(const S2CEntityUpdate& msg);
+    void receive_entity_update(S2CEntityUpdateBatch& msg);
     void destory(EntityID id);
     void create(std::string_view name, const glm::vec3& pos);
 

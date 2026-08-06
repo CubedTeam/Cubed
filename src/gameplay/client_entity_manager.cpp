@@ -87,13 +87,19 @@ void ClientEntityManager::receive_entity_destory(EntityID id) {
     m_tasks.emplace(Command::DESTORY, id);
 }
 
-void ClientEntityManager::receive_entity_update(S2CEntityUpdate& msg) {
+void ClientEntityManager::receive_entity_update(const S2CEntityUpdate& msg) {
     UpdateInfo e;
     e.id = msg.id();
     e.pos = Tools::get_net_vec3(msg.pos());
     e.direction = Tools::get_net_vec3(msg.direction());
     e.gait = get_gait_from_id(msg.gait());
     m_tasks.emplace(Command::UPDATE, std::move(e));
+}
+
+void ClientEntityManager::receive_entity_update(S2CEntityUpdateBatch& msg) {
+    for (auto& u : msg.updates()) {
+        receive_entity_update(u);
+    }
 }
 
 void ClientEntityManager::destory(EntityID id) {

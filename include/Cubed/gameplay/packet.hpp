@@ -68,6 +68,7 @@ enum class PacketEnum : uint16_t {
     C2S_ENTITY_CREATE_REQUEST = 3009,
     C2S_ENTITY_DESTORY_REQUEST = 3010,
     S2C_ENTITY_UPDATE = 3011,
+    S2C_ENTITY_UPDATE_BATCH = 3012,
 
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
@@ -152,6 +153,9 @@ template <> constexpr uint16_t get_packet_id<VoiceMsg>() {
 }
 template <> constexpr uint16_t get_packet_id<S2CEntityUpdate>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityUpdateBatch>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE_BATCH);
 }
 
 template <typename T>

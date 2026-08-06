@@ -45,11 +45,12 @@ void ServerEntityManager::update() {
     for (auto e : view) {
         entities.push_back(e);
     }
+    tbb::concurrent_vector<EntitySendData> send_data;
     // parallel block touches disjoint entities only;
     // structural registry changes stay on the server thread via m_tasks.
     parallel_do(
         *pool, entities.begin(), entities.end(), pool->thread_sum(),
-        [this, &sessions](entt::entity e) {
+        [this, &send_data](entt::entity e) {
             const auto& c = m_registry.get<BaseServerCreature>(e);
             if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
                 const auto& entity = m_registry.get<Entity>(e);
@@ -58,8 +59,23 @@ void ServerEntityManager::update() {
             }
             update_ai(e);
             update_move(e);
-            update_send(e, sessions);
+            update_send(e, send_data);
         });
+    if (!send_data.empty()) {
+        Arena arena;
+        auto* msg = Arena::Create<S2CEntityUpdateBatch>(&arena);
+        for (auto& data : send_data) {
+            auto* u = msg->add_updates();
+            u->set_id(data.id);
+            Tools::set_net_pos(u, data.pos);
+            Tools::set_net_vec3(u->mutable_direction(), data.dir);
+            u->set_gait(get_gait_id(data.gait));
+        }
+        auto packet = make_packet(msg);
+        for (auto& player : sessions) {
+            player->send(packet);
+        }
+    }
 }
 
 void ServerEntityManager::update_ai(entt::entity e) {
@@ -74,8 +90,7 @@ void ServerEntityManager::update_move(entt::entity e) {
 }
 
 void ServerEntityManager::update_send(
-    entt::entity e,
-    tbb::concurrent_vector<std::shared_ptr<Session>>& sessions) {
+    entt::entity e, tbb::concurrent_vector<EntitySendData>& send_data) {
 
     if (!m_registry.all_of<Entity, BaseServerCreature>(e)) {
         return;
@@ -83,23 +98,17 @@ void ServerEntityManager::update_send(
 
     const auto [entity, creature] =
         m_registry.get<Entity, BaseServerCreature>(e);
-    Arena arena;
-    auto* p = Arena::Create<S2CEntityUpdate>(&arena);
-    p->set_id(entity.id);
-    Tools::set_net_pos(p, creature.transform.position.value);
-
-    Tools::set_net_vec3(p->mutable_direction(),
-                        creature.transform.direction.value);
+    EntitySendData data;
+    data.id = entity.id;
+    data.pos = creature.transform.position.value;
+    data.dir = creature.transform.direction.value;
     const auto& v = creature.velocity.value;
     if (v.x * v.x + v.z * v.z > 1e-4f) {
-        p->set_gait(get_gait_id(Gait::WALK));
+        data.gait = Gait::WALK;
     } else {
-        p->set_gait(get_gait_id(Gait::STOP));
+        data.gait = Gait::STOP;
     }
-
-    for (auto& s : sessions) {
-        s->send(make_packet(p));
-    }
+    send_data.emplace_back(std::move(data));
 }
 
 void ServerEntityManager::handle_task() {
@@ -177,9 +186,9 @@ void ServerEntityManager::handle_entity_create(EntityID id,
     s2c->set_id(id);
     s2c->set_name(name);
     Tools::set_net_pos(s2c, pos);
-
+    auto packet = make_packet(*s2c);
     for (auto& s : sessions) {
-        s->send(make_packet(*s2c));
+        s->send(packet);
     }
 }
 
@@ -194,8 +203,9 @@ void ServerEntityManager::handle_entity_destory(EntityID id) {
     Arena arena;
     auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
     s2c->set_id(id);
+    auto packet = make_packet(*s2c);
     for (auto& s : sessions) {
-        s->send(make_packet(*s2c));
+        s->send(packet);
     }
 }
 
