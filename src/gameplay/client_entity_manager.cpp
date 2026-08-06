@@ -14,7 +14,7 @@ using namespace google::protobuf;
 namespace Cubed {
 ClientEntityManager::ClientEntityManager(ClientWorld& world) : m_world(world) {}
 void ClientEntityManager::update(float dt) {
-    handle_task();
+    handle_task(dt);
 
     auto view = m_registry.view<BaseClientCreature>();
     for (auto e : view) {
@@ -51,7 +51,7 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     r->position.value = pos;
 }
 
-void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
+void ClientEntityManager::handle_entity_update(UpdateInfo& info, float dt) {
     entt::entity e;
     {
         cacc a;
@@ -68,10 +68,11 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
     creature->pose.gait = info.gait;
     auto r = m_registry.try_get<RenderTransform>(e);
     ASSERT(r);
-    r->direction.value =
-        glm::mix(r->direction.value, creature->transform.direction.value, 0.15);
+    float alpha = 1 - std::exp(-dt / 0.1);
+    r->direction.value = glm::mix(r->direction.value,
+                                  creature->transform.direction.value, alpha);
     r->position.value =
-        glm::mix(r->position.value, creature->transform.position.value, 0.15);
+        glm::mix(r->position.value, creature->transform.position.value, alpha);
 }
 
 void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
@@ -113,7 +114,7 @@ void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
     client->send(make_packet(msg));
 }
 
-void ClientEntityManager::handle_task() {
+void ClientEntityManager::handle_task(float dt) {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {
         switch (pair.first) {
@@ -131,7 +132,7 @@ void ClientEntityManager::handle_task() {
         case Command::UPDATE: {
             auto* p = std::get_if<UpdateInfo>(&pair.second);
             ASSERT(p);
-            handle_entity_update(*p);
+            handle_entity_update(*p, dt);
         }
         }
     }

@@ -53,12 +53,12 @@ private:
     std::unordered_map<std::string_view, CreateFunc> m_factories;
     tbb::concurrent_queue<TaskPair> m_tasks;
 
-    void handle_task();
+    void handle_task(float dt);
     void handle_entity_destory(EntityID id);
     // not thread safe
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
-    void handle_entity_update(UpdateInfo& info);
+    void handle_entity_update(UpdateInfo& info, float dt);
     template <typename... Args>
     void create_entity_in_registry(EntityID id, Args&&... args) {
         {
