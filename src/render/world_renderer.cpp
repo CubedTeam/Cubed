@@ -307,9 +307,9 @@ void WorldRenderer::shadow_entity(ClientWorld& world,
         auto& t = view.get<RenderTransform>(entity);
         float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
 
-        m_renderer.model_renderer().shadow_pass(creature.model,
-                                                t.position.value, yaw,
-                                                world.world_scene().camera());
+        m_renderer.model_renderer().shadow_pass(
+            creature.model, t.position.value, yaw, world.world_scene().camera(),
+            creature.pose);
     }
     m_player_renderer.render(shader, world, true);
 }
@@ -734,9 +734,9 @@ void WorldRenderer::render_entity(ClientWorld& world) {
         }
         auto& t = view.get<RenderTransform>(entity);
         float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
-        m_renderer.model_renderer().render_model(creature.model,
-                                                 t.position.value, yaw,
-                                                 world.world_scene().camera());
+        m_renderer.model_renderer().render_model(
+            creature.model, t.position.value, yaw, world.world_scene().camera(),
+            creature.pose);
     }
 
     m_player_renderer.render(shader, world, false);

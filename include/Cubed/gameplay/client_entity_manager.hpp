@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/gameplay/ecs/entity.hpp"
+#include "Cubed/gameplay/gait.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "world/entity.pb.h"
 
@@ -13,7 +14,7 @@ public:
     enum class Command { CREATE, DESTORY, UPDATE };
 
     ClientEntityManager(ClientWorld& world);
-    void update();
+    void update(float dt);
     void init();
 
     void receive_entity_create(S2CEntityCreate& msg);
@@ -36,6 +37,7 @@ private:
         EntityID id;
         glm::vec3 pos;
         glm::vec3 direction;
+        Gait gait;
     };
 
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;

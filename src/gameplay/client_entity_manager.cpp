@@ -13,7 +13,19 @@ using namespace google::protobuf;
 
 namespace Cubed {
 ClientEntityManager::ClientEntityManager(ClientWorld& world) : m_world(world) {}
-void ClientEntityManager::update() { handle_task(); }
+void ClientEntityManager::update(float dt) {
+    handle_task();
+
+    auto view = m_registry.view<BaseClientCreature>();
+    for (auto e : view) {
+        auto& c = view.get<BaseClientCreature>(e);
+        if (c.pose.gait == Gait::STOP) {
+            c.pose.walk_time = 0.0f;
+        } else {
+            c.pose.walk_time += dt;
+        }
+    }
+}
 
 void ClientEntityManager::init() {
     m_factories.emplace("cubed:pig", [this](EntityID id) {
@@ -53,7 +65,7 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info) {
     ASSERT(creature);
     creature->transform.position.value = info.pos;
     creature->transform.direction.value = info.direction;
-
+    creature->pose.gait = info.gait;
     auto r = m_registry.try_get<RenderTransform>(e);
     ASSERT(r);
     r->direction.value =
@@ -79,6 +91,7 @@ void ClientEntityManager::receive_entity_update(S2CEntityUpdate& msg) {
     e.id = msg.id();
     e.pos = Tools::get_net_vec3(msg.pos());
     e.direction = Tools::get_net_vec3(msg.direction());
+    e.gait = get_gait_from_id(msg.gait());
     m_tasks.emplace(Command::UPDATE, std::move(e));
 }
 

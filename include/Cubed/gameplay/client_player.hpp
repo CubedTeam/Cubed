@@ -3,7 +3,6 @@
 #include "Cubed/gameplay/ecs/animation.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
-#include "Cubed/gameplay/player.hpp"
 namespace Cubed {
 
 struct ClientPlayer {

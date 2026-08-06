@@ -3,6 +3,12 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/name_space.hpp"
+
+#include <filesystem>
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
+
+namespace fs = std::filesystem;
 namespace Cubed {
 
 ModelManager& ModelManager::instance() {
@@ -80,6 +86,9 @@ ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
                            space[1]);
     }
     auto model = m_loader.load(path);
+    fs::path anim_path = path;
+    anim_path = anim_path.parent_path() / "animation.json";
+    load_anim_config(model, anim_path);
     ModelMap::accessor acc;
     if (m_models.insert(acc, m_next++)) {
         acc->second = std::move(model);
@@ -93,6 +102,52 @@ ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
     m_id_map.emplace(model_name, acc->first);
     m_name_map.emplace(acc->first, model_name);
     return {acc->second, acc->first};
+}
+
+void ModelManager::load_anim_config(ModelNode& node, const std::string& path) {
+    if (!fs::is_regular_file(path)) {
+        return;
+    }
+    std::ifstream s(path);
+    if (!s.is_open()) {
+        return;
+    }
+    rapidjson::IStreamWrapper isw(s);
+    rapidjson::Document doc;
+    doc.ParseStream(isw);
+    if (doc.HasParseError()) {
+        Logger::warn("Can't parse anim config {}", path);
+        return;
+    }
+    ModelAnimConfig cfg;
+    if (doc.HasMember("walk")) {
+        cfg.walk_speed = doc["walk"]["speed"].GetFloat();
+        cfg.walk_amp = doc["walk"]["amplitude"].GetFloat();
+    }
+    if (doc.HasMember("run")) {
+        cfg.run_speed = doc["run"]["speed"].GetFloat();
+        cfg.run_amp = doc["run"]["amplitude"].GetFloat();
+    }
+    if (doc.HasMember("body_bob")) {
+        cfg.body_bob = doc["body_bob"].GetFloat();
+    }
+    if (doc.HasMember("head")) {
+        NodeAnimRule r;
+        r.node = doc["head"]["node"].GetString();
+        r.role = NodeAnimRule::Role::HEAD;
+        cfg.head_amp = doc["head"]["amplitude"].GetFloat();
+        cfg.nodes.push_back(std::move(r));
+    }
+    if (doc.HasMember("legs")) {
+        for (auto& leg : doc["legs"].GetArray()) {
+            NodeAnimRule r;
+            r.node = leg["node"].GetString();
+            r.role = NodeAnimRule::Role::LEG;
+            r.phase = leg["phase"].GetFloat();
+            cfg.nodes.push_back(std::move(r));
+        }
+    }
+    node.anim = std::move(cfg);
 }
 
 } // namespace Cubed

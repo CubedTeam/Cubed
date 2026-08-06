@@ -11,7 +11,6 @@
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/hitbox.hpp"
 #include "Cubed/gameplay/item_stack.hpp"
-#include "Cubed/gameplay/player.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/input/input.hpp"
 

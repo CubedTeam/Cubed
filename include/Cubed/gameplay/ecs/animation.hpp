@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cubed/gameplay/player.hpp"
+#include "Cubed/gameplay/gait.hpp"
 namespace Cubed {
 
 struct WalkPose {

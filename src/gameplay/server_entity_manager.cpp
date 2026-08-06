@@ -3,6 +3,7 @@
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
 #include "Cubed/gameplay/ecs/server_entity.hpp"
+#include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server_world.hpp"
 #include "Cubed/gameplay/session.hpp"
@@ -11,6 +12,7 @@
 #include "Cubed/gameplay/systems/wander_ai_system.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/net_utils.hpp"
+
 using namespace google::protobuf;
 
 namespace Cubed {
@@ -88,6 +90,12 @@ void ServerEntityManager::update_send(
 
     Tools::set_net_vec3(p->mutable_direction(),
                         creature.transform.direction.value);
+    const auto& v = creature.velocity.value;
+    if (v.x * v.x + v.z * v.z > 1e-4f) {
+        p->set_gait(get_gait_id(Gait::WALK));
+    } else {
+        p->set_gait(get_gait_id(Gait::STOP));
+    }
 
     for (auto& s : sessions) {
         s->send(make_packet(p));

@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
+#include <string_view>
 namespace Cubed {
 
 struct Mesh {
@@ -32,11 +33,47 @@ struct Mesh {
                        (void*)offsetof(Vertex3D, nx));
     };
 };
+struct NodeAnimRule {
+    enum class Role { NONE, LEG, HEAD };
+    std::string node;
+    Role role = Role::NONE;
+    float phase = 0.0f;
+};
+
+struct ModelAnimConfig {
+    float walk_speed = 6.0f;
+    float walk_amp = 25.0f;
+    float run_speed = 12.0f;
+    float run_amp = 40.0f;
+    float body_bob = 0.05f;
+    float head_amp = 4.0f;
+    std::vector<NodeAnimRule> nodes;
+
+    const NodeAnimRule* rule_for(std::string_view name) const {
+        for (const auto& r : nodes) {
+            if (r.node == name) {
+                return &r;
+            }
+        }
+        return nullptr;
+    }
+
+    bool has_role(NodeAnimRule::Role role) const {
+        for (const auto& r : nodes) {
+            if (r.role == role) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
 struct ModelNode {
     std::string name;
     glm::mat4 transform{1.0f};
+
     std::vector<Mesh> meshes;
     std::vector<ModelNode> children;
+    ModelAnimConfig anim;
 };
 
 } // namespace Cubed
