@@ -76,9 +76,10 @@ void ModelRender::render_instance(ModelID id, size_t sum, const Camera& camera,
     auto& shader = shadow ? m_renderer.get_shader("depth_model_instance")
                           : m_renderer.get_shader("model_instance");
     glm::mat4 view = camera.get_camera_lookat();
-    shader.set_loc("proj_matrix", m_renderer.p_mat());
+
     if (shadow) {
     } else {
+        shader.set_loc("proj_matrix", m_renderer.p_mat());
         shader.set_loc("view_matrix", view);
     }
     for (const auto& entry : batch.entries) {

@@ -110,7 +110,7 @@ inline size_t get_server_gen_threads(RunMode mode) {
 
         auto update_pool = get_server_compute_treads(mode);
 
-        auto client_pool = get_client_threads(mode);
+        auto client = get_client_threads(mode) + CLIENT_RESERVED_THREADS;
 
         size_t remain = available;
 
@@ -118,7 +118,7 @@ inline size_t get_server_gen_threads(RunMode mode) {
 
         remain -= std::min(remain, update_pool);
 
-        remain -= std::min(remain, client_pool);
+        remain -= std::min(remain, client);
 
         return std::max<size_t>(1, remain);
     }
