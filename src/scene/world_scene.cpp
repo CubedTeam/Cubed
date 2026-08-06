@@ -129,21 +129,20 @@ void WorldScene::on_enter() {
     load_config();
     m_error_ui.init();
     m_client = std::make_shared<NetworkClient>(m_client_world);
-    RunMode mode = RunMode::HYBRID;
     if (m_argument.direct_enter) {
         if (m_argument.ip) {
-            mode = RunMode::CLIENT_ONLY;
+            m_runmode = RunMode::CLIENT_ONLY;
         }
     } else {
         if (!m_scene_manager.world_scene_param().host_game) {
-            mode = RunMode::CLIENT_ONLY;
+            m_runmode = RunMode::CLIENT_ONLY;
         }
     }
 
     if (m_argument.direct_enter) {
         if (!m_argument.ip) {
             ChunkGenerator::init();
-            m_server.start_server(*m_argument.port, mode);
+            m_server.start_server(*m_argument.port, m_runmode);
             m_client->start("127.0.0.1", *m_argument.port);
         } else {
             m_client->start(*m_argument.ip, *m_argument.port);
@@ -159,7 +158,7 @@ void WorldScene::on_enter() {
             } else {
                 ChunkGenerator::init();
             }
-            m_server.start_server(param.port, mode);
+            m_server.start_server(param.port, m_runmode);
         }
 
         m_client->start(param.ip, param.port);
@@ -169,7 +168,7 @@ void WorldScene::on_enter() {
     try {
 
         m_client_world.init(m_argument.player.value_or("Unknown"), m_client,
-                            mode);
+                            m_runmode);
 
         Logger::info("World Init Success");
         m_camera.camera_init(&m_client_world.get_player());
@@ -461,6 +460,9 @@ void WorldScene::handle_chat_message(ChatMessage& message) {
 bool WorldScene::is_recording() const {
     return m_client_world.get_audio().audio_recording().is_recording();
 }
+
+RunMode WorldScene::runmode() const { return m_runmode; }
+
 void WorldScene::set_error(std::string_view error) {
     Logger::error("WorldScene Error Set {}", error);
     m_error_ui.set_error(error);

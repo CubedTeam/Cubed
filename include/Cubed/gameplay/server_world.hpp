@@ -98,6 +98,8 @@ public:
     uint32_t get_chunk_ref_count(const glm::vec3& pos) const;
     ServerEntityManager& entity_manager();
     std::shared_ptr<ThreadPool> get_compute_pool();
+    size_t player_sum() const;
+
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;
     bool can_pass_block(const glm::ivec3& block_pos) const override;

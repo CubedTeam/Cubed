@@ -896,7 +896,7 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
 
 void ServerWorld::handle_entity_create(C2SEntityCreateRequest& req) {
 
-    m_entity_manager.add_entity(req.name(), Tools::get_net_vec3(req.pos()));
+    m_entity_manager.add_creature(req.name(), Tools::get_net_vec3(req.pos()));
 }
 void ServerWorld::handle_entity_destory(C2SEntityDestoryRequest& req) {
     m_entity_manager.destory(req.id());
@@ -1133,4 +1133,7 @@ ServerEntityManager& ServerWorld::entity_manager() { return m_entity_manager; }
 std::shared_ptr<ThreadPool> ServerWorld::get_compute_pool() {
     return m_compute_thread_pool.load();
 }
+
+size_t ServerWorld::player_sum() const { return m_player_sum.load(); }
+
 } // namespace Cubed

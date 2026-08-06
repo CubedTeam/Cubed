@@ -829,7 +829,7 @@ void ChunkGenerator::spawn_creature() {
                 }
                 auto [world_x, world_y, world_z] = Chunk::block_to_world(
                     x, y + 1, z, chunk_pos.x, chunk_pos.z);
-                m_chunk.world().entity_manager().add_entity(
+                m_chunk.world().entity_manager().add_creature(
                     SpawnDefaults::PIG.name,
                     glm::vec3{world_x, world_y, world_z});
             }

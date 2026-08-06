@@ -31,8 +31,9 @@ void ClientEntityManager::init() {
     m_factories.emplace("cubed:pig", [this](EntityID id) {
         BaseClientCreature c;
         c.model = ModelManager::instance().get_model_id("cubed:pig");
-        create_entity_in_registry(id, Entity{id}, EntityInfo{"cubed:pig", ""},
-                                  std::move(c), PigTag{}, RenderTransform{});
+        create_entity_in_registry(id, Entity{id, EntityType::CREATURE},
+                                  EntityInfo{"cubed:pig", ""}, std::move(c),
+                                  PigTag{}, RenderTransform{});
     });
 }
 // not thread safe

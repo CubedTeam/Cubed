@@ -27,8 +27,8 @@ void ServerEntityManager::init() {
         c.movement.deceleration = PigDefaults::DECELERATION;
         c.velocity.max.x = c.velocity.max.z = PigDefaults::MAX_SPEED;
         return create_entity_in_factory(
-            Entity{m_next}, EntityInfo{"cubed:pig", ""}, std::move(c), PigTag{},
-            AIBase{}, WanderAITag{}, MoveBoost{});
+            Entity{m_next, EntityType::CREATURE}, EntityInfo{"cubed:pig", ""},
+            std::move(c), PigTag{}, AIBase{}, WanderAITag{}, MoveBoost{});
     });
 }
 void ServerEntityManager::update() {
@@ -134,8 +134,13 @@ void ServerEntityManager::handle_task() {
     }
 }
 
-void ServerEntityManager::add_entity(std::string_view name,
-                                     const glm::vec3& world_pos) {
+void ServerEntityManager::add_creature(std::string_view name,
+                                       const glm::vec3& world_pos) {
+    if (m_creature_sum.fetch_add(1) >= max_creature_sum()) {
+        m_creature_sum.fetch_sub(1);
+        return;
+    }
+    ++m_entity_sum;
     m_tasks.emplace(Command::CREATE,
                     EntityCreateElement{std::string(name), world_pos});
 }
@@ -149,6 +154,15 @@ void ServerEntityManager::handle_player_login(
     m_tasks.emplace(Command::SEND_ALL_ENTITIES, std::move(session));
 }
 
+size_t ServerEntityManager::max_creature_sum() const {
+    return PER_CREATURE_LIMITS * m_world.player_sum();
+}
+
+size_t ServerEntityManager::creature_sum() const {
+    return m_creature_sum.load();
+}
+size_t ServerEntityManager::entity_sum() const { return m_entity_sum.load(); }
+
 void ServerEntityManager::create_entity(std::string_view name,
                                         const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
@@ -159,6 +173,7 @@ void ServerEntityManager::create_entity(std::string_view name,
         ASSERT(t);
         t->transform.position.value = pos;
     }
+
     handle_entity_create(e, name, pos);
 }
 
@@ -193,12 +208,23 @@ void ServerEntityManager::handle_entity_create(EntityID id,
 }
 
 void ServerEntityManager::handle_entity_destory(EntityID id) {
+    if (m_entity_sum == 0) {
+        Logger::error("entity sum is 0!");
+        return;
+    }
     acc a;
     if (!m_entities.find(a, id)) {
         return;
     }
+    auto e = m_registry.try_get<Entity>(a->second);
+    ASSERT(e);
+    if (e->type == EntityType::CREATURE) {
+        --m_creature_sum;
+    }
     m_registry.destroy(a->second);
     m_entities.erase(a);
+
+    --m_entity_sum;
     auto sessions = m_world.get_all_session();
     Arena arena;
     auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
