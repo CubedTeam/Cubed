@@ -4,6 +4,7 @@
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"
+#include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/render/renderer_constants.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -15,28 +16,48 @@
 namespace Cubed {
 
 namespace {
-WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world) {
+WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
+                                                      Renderer& renderer) {
+
+    glm::mat4 mvp_mat =
+        renderer.p_mat() * world.world_scene().camera().get_camera_lookat();
+
+    auto& m_planes = world.planes();
+
+    Math::extract_frustum_planes(mvp_mat, m_planes);
+    size_t cnt = 0;
     std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
         instances_data_map;
     auto& registry = world.entity_manager().get_registry();
-    auto view = registry.view<BaseClientCreature, RenderTransform>();
+    auto view =
+        registry.view<BaseClientCreature, RenderTransform, EntityInfo>();
     for (auto entity : view) {
         auto& creature = view.get<BaseClientCreature>(entity);
         auto pos = creature.transform.position.value;
         if (!world.is_render(pos)) {
             continue;
         }
+        auto& info = view.get<EntityInfo>(entity);
         auto& t = view.get<RenderTransform>(entity);
+        auto aabb = HitboxManager::hitbox(info.name);
+        aabb.box.center += t.position.value;
+        if (!Math::is_aabb_in_frustum(aabb.box.center, aabb.box.half + 1.0f,
+                                      m_planes)) {
+            continue;
+        }
+
         float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
         ModelRender::InstanceData data;
         data.pos = t.position.value;
         data.yaw = yaw;
         data.pose = creature.pose;
         instances_data_map[creature.model].emplace_back(std::move(data));
+        ++cnt;
         // m_renderer.model_renderer().shadow_pass(
         //     creature.model, t.position.value, yaw,
         //     world.world_scene().camera(), creature.pose);
     }
+    d_rep("rendered_entities", "Rendered Entities: {}", cnt);
     return instances_data_map;
 };
 
@@ -131,7 +152,7 @@ void WorldRenderer::day_night_calculation(ClientWorld& world) {
 }
 
 WorldRenderer::InstanceDataMap WorldRenderer::entity_build(ClientWorld& world) {
-    auto instances_data_map = get_instances_data_map(world);
+    auto instances_data_map = get_instances_data_map(world, m_renderer);
     for (auto& [id, data] : instances_data_map) {
         m_renderer.model_renderer().build_vertices(id, data);
     }
