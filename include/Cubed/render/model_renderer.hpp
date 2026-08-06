@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 #include <span>
+#include <unordered_map>
+#include <vector>
 namespace Cubed {
 class Renderer;
 class Camera;
@@ -32,8 +34,9 @@ public:
 
     ModelRender(Renderer& renderer);
 
-    void render_instance(ModelID id, std::span<const InstanceData> instances,
-                         const Camera& camera, bool shadow);
+    void render_instance(ModelID id, size_t sum, const Camera& camera,
+                         bool shadow);
+    void build_vertices(ModelID id, std::span<const InstanceData> instances);
 
 private:
     Renderer& m_renderer;

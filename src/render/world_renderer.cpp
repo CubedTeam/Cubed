@@ -15,8 +15,7 @@
 namespace Cubed {
 
 namespace {
-std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
-get_instances_data_map(ClientWorld& world) {
+WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world) {
     std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
         instances_data_map;
     auto& registry = world.entity_manager().get_registry();
@@ -40,6 +39,7 @@ get_instances_data_map(ClientWorld& world) {
     }
     return instances_data_map;
 };
+
 } // namespace
 
 WorldRenderer::WorldRenderer(Renderer& renderer)
@@ -74,13 +74,15 @@ void WorldRenderer::render(ClientWorld& world) {
 
     day_night_calculation(world);
 
+    auto map = entity_build(world);
+
     render_sky(world);
     if (m_shader_on) {
-        shadow_map_generate(world);
+        shadow_map_generate(world, map);
     }
     render_world(world);
     render_outline(world);
-    render_entity(world);
+    render_entity(world, map);
 
     FrameBuffer::unbind();
 
@@ -126,6 +128,14 @@ void WorldRenderer::day_night_calculation(ClientWorld& world) {
         glm::mix(NIGHT_AMBIENT_COLOR, ambient_color, day_factor);
 
     m_ambient_strength = glm::mix(0.45f, 0.25f, day_factor);
+}
+
+WorldRenderer::InstanceDataMap WorldRenderer::entity_build(ClientWorld& world) {
+    auto instances_data_map = get_instances_data_map(world);
+    for (auto& [id, data] : instances_data_map) {
+        m_renderer.model_renderer().build_vertices(id, data);
+    }
+    return instances_data_map;
 }
 
 void WorldRenderer::render_sky(ClientWorld& world) {
@@ -321,16 +331,16 @@ void WorldRenderer::render_outline(ClientWorld& world) {
 }
 
 void WorldRenderer::shadow_entity(ClientWorld& world,
-                                  const glm::mat4& light_matrix) {
+                                  const glm::mat4& light_matrix,
+                                  const InstanceDataMap& map) {
     glEnable(GL_DEPTH_TEST);
     {
         auto& shader = m_renderer.get_shader("depth_model_instance");
         shader.use();
         shader.set_loc("lightSpaceMatrix", light_matrix);
-        auto instances_data_map = get_instances_data_map(world);
-        for (auto& [id, data] : instances_data_map) {
+        for (auto& [id, data] : map) {
             m_renderer.model_renderer().render_instance(
-                id, data, world.world_scene().camera(), true);
+                id, data.size(), world.world_scene().camera(), true);
         }
     }
 
@@ -342,7 +352,8 @@ void WorldRenderer::shadow_entity(ClientWorld& world,
     }
 }
 
-void WorldRenderer::shadow_map_generate(ClientWorld& world) {
+void WorldRenderer::shadow_map_generate(ClientWorld& world,
+                                        const InstanceDataMap& map) {
     float texels_per_unit = 0.0f;
     const auto& lightdir = m_parallel_light.lightdir;
 
@@ -445,7 +456,7 @@ void WorldRenderer::shadow_map_generate(ClientWorld& world) {
         }
     }
 
-    shadow_entity(world, light_space_matrix);
+    shadow_entity(world, light_space_matrix, map);
 }
 
 void WorldRenderer::render_underwater(ClientWorld& world) {
@@ -727,7 +738,8 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     glBindVertexArray(0);
 }
 
-void WorldRenderer::render_entity(ClientWorld& world) {
+void WorldRenderer::render_entity(ClientWorld& world,
+                                  const InstanceDataMap& map) {
 
     // shader.set_loc("renderDistance", m_world.rendering_distance());
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);
@@ -752,10 +764,9 @@ void WorldRenderer::render_entity(ClientWorld& world) {
         model.set_loc("samples", m_samples);
         m_depth_map_texture->bind(0);
 
-        auto instances_data_map = get_instances_data_map(world);
-        for (auto& [id, data] : instances_data_map) {
+        for (auto& [id, data] : map) {
             m_renderer.model_renderer().render_instance(
-                id, data, world.world_scene().camera(), false);
+                id, data.size(), world.world_scene().camera(), false);
         }
     }
 

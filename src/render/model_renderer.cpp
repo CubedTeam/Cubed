@@ -17,10 +17,8 @@ float swing_angle(const WalkPose& pose, float speed, float amp_deg) {
 } // namespace
 
 ModelRender::ModelRender(Renderer& renderer) : m_renderer(renderer) {}
-
-void ModelRender::render_instance(ModelID id,
-                                  std::span<const InstanceData> instances,
-                                  const Camera& camera, bool shadow) {
+void ModelRender::build_vertices(ModelID id,
+                                 std::span<const InstanceData> instances) {
     if (instances.empty()) {
         return;
     }
@@ -68,6 +66,12 @@ void ModelRender::render_instance(ModelID id,
     batch.instance_vbo->buffer_sub_data(
         batch.instance_matrices.data(),
         instances.size() * batch.node_count * sizeof(glm::mat4), 0);
+}
+void ModelRender::render_instance(ModelID id, size_t sum, const Camera& camera,
+                                  bool shadow) {
+
+    auto& root = ModelManager::model(id).node;
+    auto& batch = get_batch(id, root);
 
     auto& shader = shadow ? m_renderer.get_shader("depth_model_instance")
                           : m_renderer.get_shader("model_instance");
@@ -83,7 +87,7 @@ void ModelRender::render_instance(ModelID id,
         }
         entry.mesh->vao->bind();
         glDrawElementsInstanced(GL_TRIANGLES, entry.mesh->indices.size(),
-                                GL_UNSIGNED_INT, 0, instances.size());
+                                GL_UNSIGNED_INT, 0, sum);
     }
 }
 
