@@ -26,6 +26,8 @@ public:
     GLuint id() const;
     void buffer_data(const void* data, GLsizeiptr size,
                      BufferUsage usage = BufferUsage::STATIC_DRAW) const;
+    void buffer_sub_data(const void* data, GLsizeiptr size,
+                         GLintptr offset) const;
 
 private:
     GLuint m_vbo = 0;

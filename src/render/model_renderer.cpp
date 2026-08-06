@@ -18,77 +18,112 @@ float swing_angle(const WalkPose& pose, float speed, float amp_deg) {
 
 ModelRender::ModelRender(Renderer& renderer) : m_renderer(renderer) {}
 
-void ModelRender::render_model(ModelID id, const glm::vec3& pos, float yaw,
-                               Camera& camera, const WalkPose& pose) {
+void ModelRender::render_instance(ModelID id,
+                                  std::span<const InstanceData> instances,
+                                  const Camera& camera, bool shadow) {
+    if (instances.empty()) {
+        return;
+    }
     auto& root = ModelManager::model(id).node;
-    glm::vec3 bob_pos = pos;
-    if (pose.gait != Gait::STOP &&
-        root.anim.has_role(NodeAnimRule::Role::LEG)) {
-        bob_pos.y += std::abs(glm::sin(pose.walk_time * root.anim.walk_speed)) *
-                     root.anim.body_bob;
+    auto& batch = get_batch(id, root);
+    const size_t PER_INSTANCE_SIZE = batch.node_count * sizeof(glm::mat4);
+    if (instances.size() > batch.capacity) {
+        batch.capacity = instances.size() * 2;
+        batch.instance_matrices.resize(batch.capacity * batch.node_count);
+        batch.instance_vbo = std::make_unique<VertexBuffer>();
+        batch.instance_vbo->buffer_data(batch.instance_matrices.data(),
+                                        batch.instance_matrices.size() *
+                                            sizeof(glm::mat4),
+                                        BufferUsage::DYNAMIC_DRAW);
+        for (const auto& entry : batch.entries) {
+            for (int col = 0; col < 4; ++col) {
+                entry.mesh->vao->attribute(
+                    3 + col, 4, GL_FLOAT, PER_INSTANCE_SIZE,
+                    (void*)(entry.node_slot * sizeof(glm::mat4) +
+                            col * sizeof(glm::vec4)));
+                entry.mesh->vao->divisor(3 + col);
+            }
+        }
     }
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), bob_pos) *
-                          glm::rotate(glm::mat4(1.0f), yaw, {0, 1, 0});
-    auto& shader = m_renderer.get_shader("model_shader");
+    for (size_t i = 0; i < instances.size(); ++i) {
+        glm::vec3 bob_pos = instances[i].pos;
+        if (instances[i].pose.gait != Gait::STOP &&
+            root.anim.has_role(NodeAnimRule::Role::LEG)) {
+            float speed = instances[i].pose.gait == Gait::RUN
+                              ? root.anim.run_speed
+                              : root.anim.walk_speed;
+            bob_pos.y +=
+                std::abs(glm::sin(instances[i].pose.walk_time * speed)) *
+                root.anim.body_bob;
+        }
+
+        glm::mat4 transform =
+            glm::translate(glm::mat4(1.0f), bob_pos) *
+            glm::rotate(glm::mat4(1.0f), instances[i].yaw, {0, 1, 0});
+        collect_matrices(root, transform, instances[i].pose, root.anim,
+                         batch.instance_matrices, i * batch.node_count);
+    }
+
+    batch.instance_vbo->buffer_sub_data(
+        batch.instance_matrices.data(),
+        instances.size() * batch.node_count * sizeof(glm::mat4), 0);
+
+    auto& shader = shadow ? m_renderer.get_shader("depth_model_instance")
+                          : m_renderer.get_shader("model_instance");
     glm::mat4 view = camera.get_camera_lookat();
     shader.set_loc("proj_matrix", m_renderer.p_mat());
-    render_node(root, transform, view, shader, false, pose, root.anim);
-}
-
-void ModelRender::shadow_pass(ModelID id, const glm::vec3& pos, float yaw,
-                              Camera& camera, const WalkPose& pose) {
-    auto& root = ModelManager::model(id).node;
-    glm::vec3 bob_pos = pos;
-    if (pose.gait != Gait::STOP &&
-        root.anim.has_role(NodeAnimRule::Role::LEG)) {
-        bob_pos.y += std::abs(glm::sin(pose.walk_time * root.anim.walk_speed)) *
-                     root.anim.body_bob;
-    }
-
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), bob_pos) *
-                          glm::rotate(glm::mat4(1.0f), yaw, {0, 1, 0});
-
-    auto& shader = m_renderer.get_shader("depth_model");
-    glm::mat4 view = camera.get_camera_lookat();
-
-    render_node(root, transform, view, shader, true, pose, root.anim);
-}
-
-void ModelRender::render_node(const ModelNode& node, const glm::mat4& parent,
-                              const glm::mat4& view, const Shader& shader,
-                              bool shadow, const WalkPose& pose,
-                              const ModelAnimConfig& cfg) {
-
-    glm::mat4 transform = parent * pose_node(node, cfg, pose);
     if (shadow) {
-        shader.set_loc("modelMatrix", transform);
     } else {
-        glm::mat4 mv_matrix = view * transform;
-        shader.set_loc("modelMatrix", transform);
-        shader.set_loc("mv_matrix", mv_matrix);
-        shader.set_loc("norm_matrix", glm::transpose(glm::inverse(mv_matrix)));
+        shader.set_loc("view_matrix", view);
     }
-
-    for (auto& mesh : node.meshes) {
-        render_mesh(mesh, shadow);
-    }
-
-    for (auto& child : node.children) {
-        render_node(child, transform, view, shader, shadow, pose, cfg);
+    for (const auto& entry : batch.entries) {
+        if (entry.mesh->texture) {
+            entry.mesh->texture->bind(1);
+        }
+        entry.mesh->vao->bind();
+        glDrawElementsInstanced(GL_TRIANGLES, entry.mesh->indices.size(),
+                                GL_UNSIGNED_INT, 0, instances.size());
     }
 }
 
-void ModelRender::render_mesh(const Mesh& mesh, bool) {
-    mesh.vao->bind();
-    if (mesh.texture) {
-        mesh.texture->bind(1);
-    } else {
-        Logger::error("Model Texture Not Find");
+size_t ModelRender::collect_matrices(const ModelNode& node,
+                                     const glm::mat4& parent,
+                                     const WalkPose& pose,
+                                     const ModelAnimConfig& cfg,
+                                     std::vector<glm::mat4>& out, size_t slot) {
+    glm::mat4 transform = parent * pose_node(node, cfg, pose);
+    out[slot] = transform;
+    size_t next = slot + 1;
+    for (const auto& clild : node.children) {
+        next = collect_matrices(clild, transform, pose, cfg, out, next);
+    }
+    return next;
+}
+
+ModelRender::ModelBatch& ModelRender::get_batch(ModelID id,
+                                                const ModelNode& root) {
+    auto it = m_batches.find(id);
+    if (it != m_batches.end()) {
+        return it->second;
+    }
+    ModelBatch batch;
+    batch.node_count = flatten_nodes(root, 0, batch);
+    return m_batches.try_emplace(id, std::move(batch)).first->second;
+}
+
+size_t ModelRender::flatten_nodes(const ModelNode& node, size_t slot,
+                                  ModelBatch& batch) {
+    size_t node_slot = slot++;
+    for (const auto& mesh : node.meshes) {
+        batch.entries.emplace_back(&mesh, node_slot);
     }
 
-    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()),
-                   GL_UNSIGNED_INT, 0);
+    for (const auto& child : node.children) {
+        slot = flatten_nodes(child, slot, batch);
+    }
+
+    return slot;
 }
 
 glm::mat4 ModelRender::pose_node(const ModelNode& node,

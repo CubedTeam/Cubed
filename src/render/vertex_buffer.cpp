@@ -48,5 +48,10 @@ void VertexBuffer::buffer_data(const void* data, GLsizeiptr size,
 
     glBufferData(target, size, data, std::to_underlying(usage));
 }
+void VertexBuffer::buffer_sub_data(const void* data, GLsizeiptr size,
+                                   GLintptr offset) const {
+    bind();
+    glBufferSubData(get_buffer_target(), offset, size, data);
+}
 
 } // namespace Cubed

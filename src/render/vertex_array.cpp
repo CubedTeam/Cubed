@@ -35,5 +35,8 @@ void VertexArray::attribute(GLuint index, GLint size, GLenum type,
                           stride, ptr);
     glEnableVertexAttribArray(index);
 }
-
+void VertexArray::divisor(GLuint index, GLuint divisor) {
+    bind();
+    glVertexAttribDivisor(index, divisor);
+}
 } // namespace Cubed

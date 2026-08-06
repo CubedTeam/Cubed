@@ -35,6 +35,11 @@ void ShaderManager::init() {
                     "shaders/rect_f_shader.glsl");
     register_shader("model_shader", "shaders/model_vert.glsl",
                     "shaders/model_frag.glsl");
+    register_shader("model_instance", "shaders/model_instance_vert.glsl",
+                    "shaders/model_frag.glsl");
+    register_shader("depth_model_instance",
+                    "shaders/depth_model_instance_vert.glsl",
+                    "shaders/depth_model_frag.glsl");
 }
 
 void ShaderManager::register_shader(const std::string& name,

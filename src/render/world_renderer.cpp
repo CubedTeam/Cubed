@@ -11,7 +11,37 @@
 #include "Cubed/tools/math_tools.hpp"
 
 #include <SDL3/SDL_timer.h>
+#include <unordered_map>
 namespace Cubed {
+
+namespace {
+std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
+get_instances_data_map(ClientWorld& world) {
+    std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
+        instances_data_map;
+    auto& registry = world.entity_manager().get_registry();
+    auto view = registry.view<BaseClientCreature, RenderTransform>();
+    for (auto entity : view) {
+        auto& creature = view.get<BaseClientCreature>(entity);
+        auto pos = creature.transform.position.value;
+        if (!world.is_render(pos)) {
+            continue;
+        }
+        auto& t = view.get<RenderTransform>(entity);
+        float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
+        ModelRender::InstanceData data;
+        data.pos = t.position.value;
+        data.yaw = yaw;
+        data.pose = creature.pose;
+        instances_data_map[creature.model].emplace_back(std::move(data));
+        // m_renderer.model_renderer().shadow_pass(
+        //     creature.model, t.position.value, yaw,
+        //     world.world_scene().camera(), creature.pose);
+    }
+    return instances_data_map;
+};
+} // namespace
+
 WorldRenderer::WorldRenderer(Renderer& renderer)
     : m_renderer(renderer), m_player_renderer(renderer),
       m_texture_manager(renderer.texture_mamger()) {}
@@ -292,26 +322,24 @@ void WorldRenderer::render_outline(ClientWorld& world) {
 
 void WorldRenderer::shadow_entity(ClientWorld& world,
                                   const glm::mat4& light_matrix) {
-    auto& shader = m_renderer.get_shader("depth_model");
-    shader.use();
-    shader.set_loc("lightSpaceMatrix", light_matrix);
     glEnable(GL_DEPTH_TEST);
-    auto& registry = world.entity_manager().get_registry();
-    auto view = registry.view<BaseClientCreature, RenderTransform>();
-    for (auto entity : view) {
-        auto& creature = view.get<BaseClientCreature>(entity);
-        auto pos = creature.transform.position.value;
-        if (!world.is_render(pos)) {
-            continue;
+    {
+        auto& shader = m_renderer.get_shader("depth_model_instance");
+        shader.use();
+        shader.set_loc("lightSpaceMatrix", light_matrix);
+        auto instances_data_map = get_instances_data_map(world);
+        for (auto& [id, data] : instances_data_map) {
+            m_renderer.model_renderer().render_instance(
+                id, data, world.world_scene().camera(), true);
         }
-        auto& t = view.get<RenderTransform>(entity);
-        float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
-
-        m_renderer.model_renderer().shadow_pass(
-            creature.model, t.position.value, yaw, world.world_scene().camera(),
-            creature.pose);
     }
-    m_player_renderer.render(shader, world, true);
+
+    {
+        auto& shader = m_renderer.get_shader("depth_model");
+        shader.use();
+        shader.set_loc("lightSpaceMatrix", light_matrix);
+        m_player_renderer.render(shader, world, true);
+    }
 }
 
 void WorldRenderer::shadow_map_generate(ClientWorld& world) {
@@ -700,46 +728,57 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
 }
 
 void WorldRenderer::render_entity(ClientWorld& world) {
-    auto& shader = m_renderer.get_shader("model_shader");
-    shader.use();
-    glm::vec3 light_dir_view =
-        glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
-
-    shader.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
-    shader.set_loc("ambientStrength", m_ambient_strength);
-    shader.set_loc("sunlightColor", m_parallel_light.directional_light_color);
-    shader.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
-    shader.set_loc("sunlightDir", light_dir_view);
-    shader.set_loc("shadowMode", m_shadow_mode);
-    shader.set_loc("shader_on", m_shader_on);
-    shader.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
-    shader.set_loc("minRadius", m_min_radius);
-    shader.set_loc("maxRadius", m_max_radius);
-    shader.set_loc("samples", m_samples);
 
     // shader.set_loc("renderDistance", m_world.rendering_distance());
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);
-
-    m_depth_map_texture->bind(0);
-
     glEnable(GL_DEPTH_TEST);
+    {
+        auto& model = m_renderer.get_shader("model_instance");
+        model.use();
+        glm::vec3 light_dir_view =
+            glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
 
-    auto& registry = world.entity_manager().get_registry();
-    auto view = registry.view<BaseClientCreature, RenderTransform>();
-    for (auto entity : view) {
-        auto& creature = view.get<BaseClientCreature>(entity);
-        auto pos = creature.transform.position.value;
-        if (!world.is_render(pos)) {
-            continue;
+        model.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
+        model.set_loc("ambientStrength", m_ambient_strength);
+        model.set_loc("sunlightColor",
+                      m_parallel_light.directional_light_color);
+        model.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
+        model.set_loc("sunlightDir", light_dir_view);
+        model.set_loc("shadowMode", m_shadow_mode);
+        model.set_loc("shader_on", m_shader_on);
+        model.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
+        model.set_loc("minRadius", m_min_radius);
+        model.set_loc("maxRadius", m_max_radius);
+        model.set_loc("samples", m_samples);
+        m_depth_map_texture->bind(0);
+
+        auto instances_data_map = get_instances_data_map(world);
+        for (auto& [id, data] : instances_data_map) {
+            m_renderer.model_renderer().render_instance(
+                id, data, world.world_scene().camera(), false);
         }
-        auto& t = view.get<RenderTransform>(entity);
-        float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
-        m_renderer.model_renderer().render_model(
-            creature.model, t.position.value, yaw, world.world_scene().camera(),
-            creature.pose);
     }
 
-    m_player_renderer.render(shader, world, false);
+    {
+        auto& model = m_renderer.get_shader("model_shader");
+        model.use();
+        glm::vec3 light_dir_view =
+            glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
+
+        model.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
+        model.set_loc("ambientStrength", m_ambient_strength);
+        model.set_loc("sunlightColor",
+                      m_parallel_light.directional_light_color);
+        model.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
+        model.set_loc("sunlightDir", light_dir_view);
+        model.set_loc("shadowMode", m_shadow_mode);
+        model.set_loc("shader_on", m_shader_on);
+        model.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
+        model.set_loc("minRadius", m_min_radius);
+        model.set_loc("maxRadius", m_max_radius);
+        model.set_loc("samples", m_samples);
+        m_player_renderer.render(model, world, false);
+    }
 }
 
 glm::vec3 WorldRenderer::quantize_sun_direction(const glm::vec3& lightdir,
