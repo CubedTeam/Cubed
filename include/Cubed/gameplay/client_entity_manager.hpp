@@ -1,6 +1,7 @@
 #pragma once
 #include "Cubed/gameplay/ecs/entity.hpp"
 #include "Cubed/gameplay/gait.hpp"
+#include "Cubed/tools/cubed_random.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "world/entity.pb.h"
 
@@ -25,6 +26,8 @@ public:
     void create(std::string_view name, const glm::vec3& pos);
 
     const entt::registry& get_registry() const;
+
+    void player_sound(float dt);
 
 private:
     struct EntityCreateElement {
@@ -52,7 +55,7 @@ private:
     EntityMap m_entities;
     std::unordered_map<std::string_view, CreateFunc> m_factories;
     tbb::concurrent_queue<TaskPair> m_tasks;
-
+    Random m_random;
     void handle_task(float dt);
     void handle_entity_destory(EntityID id);
     // not thread safe

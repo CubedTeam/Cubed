@@ -7,8 +7,8 @@
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/net_utils.hpp"
-
 using namespace google::protobuf;
 
 namespace Cubed {
@@ -25,15 +25,20 @@ void ClientEntityManager::update(float dt) {
             c.pose.walk_time += dt;
         }
     }
+
+    player_sound(dt);
 }
 
 void ClientEntityManager::init() {
+    m_random.init(std::random_device()());
     m_factories.emplace("cubed:pig", [this](EntityID id) {
         BaseClientCreature c;
         c.model = ModelManager::instance().get_model_id("cubed:pig");
+        float next_call_time = m_random.random_float(8.0f, 25.0f);
         create_entity_in_registry(id, Entity{id, EntityType::CREATURE},
                                   EntityInfo{"cubed:pig", ""}, std::move(c),
-                                  PigTag{}, RenderTransform{});
+                                  PigTag{}, RenderTransform{},
+                                  SoundTime{next_call_time});
     });
 }
 // not thread safe
@@ -157,4 +162,27 @@ void ClientEntityManager::handle_entity_destory(EntityID id) {
 const entt::registry& ClientEntityManager::get_registry() const {
     return m_registry;
 }
+
+void ClientEntityManager::player_sound(float dt) {
+    auto& audio = m_world.get_audio();
+    auto player_pos = m_world.player_manager().get_local().get_player_pos();
+    auto view = m_registry.view<EntityInfo, BaseClientCreature, SoundTime>();
+
+    for (auto e : view) {
+        const auto [info, creature] =
+            view.get<EntityInfo, BaseClientCreature>(e);
+        if (Math::distance2(player_pos, creature.transform.position.value) >
+            10 * 10) {
+            continue;
+        }
+        auto& sound_time = view.get<SoundTime>(e);
+        sound_time.next_call_time -= dt;
+        if (sound_time.next_call_time <= 0.0f) {
+            audio.play_3d("creature/pig/call.mp3",
+                          creature.transform.position.value);
+            sound_time.next_call_time = m_random.random_float(8.0f, 25.0f);
+        }
+    }
+}
+
 } // namespace Cubed

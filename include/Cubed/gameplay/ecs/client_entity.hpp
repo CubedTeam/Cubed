@@ -11,4 +11,9 @@ struct BaseClientCreature {
 
     ModelID model;
 };
+
+struct SoundTime {
+    float next_call_time;
+};
+
 } // namespace Cubed
