@@ -54,7 +54,8 @@ void ScreenshotUI::update_layout(int width, int height) {
             if (!fs::is_regular_file(entry)) {
                 continue;
             }
-            if (!std::ranges::find(IMAGE_EXT, entry.path().extension())) {
+            if (std::ranges::find(IMAGE_EXT, entry.path().extension()) ==
+                IMAGE_EXT.end()) {
                 continue;
             }
             ImageInfo info;

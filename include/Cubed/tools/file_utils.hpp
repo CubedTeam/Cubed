@@ -17,9 +17,18 @@ namespace Cubed::Tools {
 
 inline void open_file_manager(const std::filesystem::path& path) {
 #ifdef _WIN32
-
-    ShellExecuteW(nullptr, L"open", path.wstring().c_str(), nullptr, nullptr,
-                  SW_SHOWNORMAL);
+    auto abs_path = std::filesystem::absolute(path);
+    if (!std::filesystem::exists(abs_path)) {
+        Logger::warn("Path does not exist: {}", abs_path.string());
+        return;
+    }
+    HINSTANCE result =
+        ShellExecuteW(nullptr, L"open", abs_path.wstring().c_str(), nullptr,
+                      nullptr, SW_SHOWNORMAL);
+    if ((INT_PTR)result <= 32) {
+        Logger::warn("ShellExecuteW failed for path: {}, error code: {}",
+                     path.string(), (int)(INT_PTR)result);
+    }
 
 #elif __linux__
 

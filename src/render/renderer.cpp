@@ -311,11 +311,11 @@ void Renderer::handle_screenshot() {
     fs::create_directories(path);
     fs::path image =
         path / std::format("screenshot {}.png", Tools::get_time_date_str());
-    if (!stbi_write_png(image.c_str(), width, height, 4, flipped_pixels.data(),
-                        width * 4)) {
-        Logger::error("Failed to write {} image", image.c_str());
+    if (!stbi_write_png(image.string().c_str(), width, height, 4,
+                        flipped_pixels.data(), width * 4)) {
+        Logger::error("Failed to write {} image", image.string());
     } else {
-        Logger::info("save {} success!", image.c_str());
+        Logger::info("save {} success!", image.string());
     }
 }
 

@@ -88,7 +88,7 @@ ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
     auto model = m_loader.load(path);
     fs::path anim_path = path;
     anim_path = anim_path.parent_path() / "animation.json";
-    load_anim_config(model, anim_path);
+    load_anim_config(model, anim_path.string());
     ModelMap::accessor acc;
     if (m_models.insert(acc, m_next++)) {
         acc->second = std::move(model);

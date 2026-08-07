@@ -1,8 +1,10 @@
 #pragma once
-
 #include <rapidjson/document.h>
+#include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
+
 namespace Cubed {
 class SensitiveFilter {
 public:

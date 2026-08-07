@@ -7,6 +7,7 @@
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_vector.h>
+#include <variant>
 namespace Cubed {
 class ServerWorld;
 class Session;
