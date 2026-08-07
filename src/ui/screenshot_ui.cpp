@@ -114,4 +114,10 @@ void ScreenshotUI::update_layout(int width, int height) {
 
     m_root_widget = std::move(bg);
 }
+
+bool ScreenshotUI::handle_window_resize_event(const WindowResizeEvent& e) {
+    update_layout(e.width, e.height);
+    return UIManager::handle_window_resize_event(e);
+}
+
 } // namespace Cubed

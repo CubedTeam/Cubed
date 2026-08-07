@@ -13,11 +13,13 @@ public:
     ScreenshotUI& operator=(const ScreenshotUI&) = delete;
     ScreenshotUI& operator=(ScreenshotUI&&) = delete;
 
-    void init();
+    void init() override;
 
     void update_layout(int width, int height);
 
 private:
+    bool handle_window_resize_event(const WindowResizeEvent& e) override;
+
     ScreenshotScene& m_scene;
 };
 } // namespace Cubed
