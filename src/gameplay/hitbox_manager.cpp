@@ -1,6 +1,5 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 
-#include "Cubed/gameplay/player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/name_space.hpp"
@@ -10,19 +9,7 @@
 namespace fs = std::filesystem;
 using namespace rapidjson;
 namespace Cubed {
-HitboxManager::HitboxManager() {
-
-    glm::vec3 half = PLAYER_SIZE * 0.5f;
-
-    glm::vec3 center{0.0f, half.y, 0.0f};
-
-    HitboxMap::accessor a;
-    if (m_hitboxes.insert(
-            a, std::pair<HitboxID, Hitbox>{m_next++, Hitbox{center, half}})) {
-        m_name_map.emplace(a->first, "cubed:player");
-        m_id_map.emplace("cubed:player", a->first);
-    }
-}
+HitboxManager::HitboxManager() { HitboxMap::accessor a; }
 
 HitboxManager::~HitboxManager() {}
 
