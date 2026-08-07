@@ -25,7 +25,7 @@ class DevPanel;
 class Renderer {
 public:
     constexpr static int NUM_VAO = 7;
-
+    constexpr static const char* SCREENSHOT_PATH = "./screenshot";
     Renderer(TextureManager& texture_manager, Config& config);
     ~Renderer();
     void reload_config();
@@ -83,6 +83,8 @@ public:
 
     ModelRender& model_renderer();
 
+    void save_screenshot();
+
 private:
     TextureManager& m_texture_manager;
     bool m_init = false;
@@ -97,6 +99,8 @@ private:
 
     float m_window_width = 0.0f;
     float m_window_height = 0.0f;
+
+    bool m_save_screenshot = false;
 
     glm::mat4 m_world_proj_matrix;
 
@@ -129,6 +133,7 @@ private:
     void updata_framebuffer(int width, int height);
     void init_quad();
     void init_text();
+    void handle_screenshot();
 };
 
 } // namespace Cubed
