@@ -7,12 +7,14 @@
 #include "Cubed/tools/file_utils.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
+#include "Cubed/ui/combo_button.hpp"
 #include "Cubed/ui/row_layout.hpp"
 #include "Cubed/ui/scroll_view.hpp"
 
 #include <algorithm>
 #include <array>
 #include <filesystem>
+
 namespace fs = std::filesystem;
 namespace {
 constexpr std::array<std::string_view, 4> IMAGE_EXT{".jpg", ".jpeg", ".png",
@@ -61,6 +63,17 @@ void ScreenshotUI::update_layout(int width, int height) {
             info.texture->set_linear();
             info.height = info.texture->height() * IMAGE_SCALE;
             info.width = info.texture->width() * IMAGE_SCALE;
+            std::error_code ec;
+            auto ftime = fs::last_write_time(entry, ec);
+            if (!ec) {
+                auto sys_time =
+                    std::chrono::clock_cast<std::chrono::system_clock>(ftime);
+                info.time =
+                    std::chrono::time_point_cast<std::chrono::nanoseconds>(
+                        sys_time)
+                        .time_since_epoch();
+            }
+
             m_image_infos.emplace_back(std::move(info));
         }
         constexpr int PADDING = 50;
@@ -88,6 +101,18 @@ void ScreenshotUI::update_layout(int width, int height) {
             row->set_spacing(SPACING);
         };
 
+        std::sort(m_image_infos.begin(), m_image_infos.end(),
+                  [this](const ImageInfo& a, const ImageInfo& b) {
+                      switch (m_sort_type) {
+                      case SortType::NEWEST_FIRST:
+                          return a.time > b.time;
+                      case SortType::OLDEST_FIRST:
+                          return a.time < b.time;
+                      default:
+                          return a.time > b.time;
+                      }
+                  });
+
         for (auto& image : m_image_infos) {
             if (!row) {
                 create_row();
@@ -111,14 +136,47 @@ void ScreenshotUI::update_layout(int width, int height) {
             .set_color(Color::WHITE)
             .set_anchor(Anchor::CENTER);
     }
+
+    {
+        auto& combo = bg->add_child<ComboButton>();
+        combo.set_anchor(Anchor::TOP_RIGHT);
+        combo.set_offset(title.get_offset());
+
+        switch (m_sort_type) {
+        case SortType::NEWEST_FIRST:
+            combo.set_index(0);
+            break;
+        case SortType::OLDEST_FIRST:
+            combo.set_index(1);
+            break;
+        default:
+            combo.set_index(0);
+        }
+        combo.set_combo_text("file.sort_type", "type");
+        std::vector<ComboPair> combos;
+
+        combos.emplace_back(tr("file.newest_first"), [this]() {
+            m_sort_type = SortType::NEWEST_FIRST;
+            m_need_rebuild = true;
+        });
+        combos.emplace_back(tr("file.oldest_first"), [this]() {
+            m_sort_type = SortType::OLDEST_FIRST;
+            m_need_rebuild = true;
+        });
+        combo.set_default_image(texture_manager);
+        combo.set_combos(combos);
+    }
+
     auto& bottom_row = bg->add_child<RowLayout>();
     bottom_row.set_spacing(10);
     bottom_row.set_anchor(Anchor::BOTTOM_CENTER).set_offset({0, -30});
+
     auto& open_file = bottom_row.add_child<Button>();
     open_file.set_default_image(texture_manager)
         .set_text(tr("button.show_in_file_manager"))
         .set_clicked(
             []() { Tools::open_file_manager(Renderer::SCREENSHOT_PATH); });
+
     auto& return_button = bottom_row.add_child<Button>();
     return_button.set_default_image(texture_manager);
     return_button.set_text(tr("button.return"));
@@ -162,6 +220,15 @@ void ScreenshotUI::open_lightbox(const Texture* image) {
         m_lightbox_image->set_anchor(Anchor::CENTER);
     }
     m_lightbox->set_visible(true);
+}
+
+void ScreenshotUI::update(float dt) {
+
+    if (m_need_rebuild) {
+        m_need_rebuild = false;
+        update_layout(Widget::get_window_width(), Widget::get_window_height());
+    }
+    UIManager::update(dt);
 }
 
 bool ScreenshotUI::handle_window_resize_event(const WindowResizeEvent& e) {
