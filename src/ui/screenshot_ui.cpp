@@ -4,6 +4,7 @@
 #include "Cubed/localization.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/screenshot_scene.hpp"
+#include "Cubed/tools/file_utils.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/row_layout.hpp"
@@ -45,6 +46,7 @@ void ScreenshotUI::update_layout(int width, int height) {
 
     constexpr float IMAGE_SCALE = 0.25;
     ScrollView* sv = nullptr;
+    fs::create_directories(path);
     if (fs::exists(path)) {
         for (auto& entry : fs::recursive_directory_iterator(path)) {
             if (!fs::is_regular_file(entry)) {
@@ -109,20 +111,27 @@ void ScreenshotUI::update_layout(int width, int height) {
             .set_color(Color::WHITE)
             .set_anchor(Anchor::CENTER);
     }
-    auto& return_button = bg->add_child<Button>();
+    auto& bottom_row = bg->add_child<RowLayout>();
+    bottom_row.set_spacing(10);
+    bottom_row.set_anchor(Anchor::BOTTOM_CENTER).set_offset({0, -30});
+    auto& open_file = bottom_row.add_child<Button>();
+    open_file.set_default_image(texture_manager)
+        .set_text(tr("button.show_in_file_manager"))
+        .set_clicked(
+            []() { Tools::open_file_manager(Renderer::SCREENSHOT_PATH); });
+    auto& return_button = bottom_row.add_child<Button>();
     return_button.set_default_image(texture_manager);
-    return_button.set_anchor(Anchor::BOTTOM_CENTER);
-    return_button.set_offset({0, -30});
     return_button.set_text(tr("button.return"));
     return_button.set_clicked(
         [this]() { m_scene.scene_manager().request_pop(); });
     if (sv) {
         float scroll_height = height - sv->get_offset().y +
-                              return_button.get_offset().y -
+                              bottom_row.get_offset().y -
                               return_button.height();
 
         sv->set_height(std::max(0.0f, scroll_height));
     }
+
     auto& rect = bg->add_child<Rect>();
     rect.set_fill_parent(true);
     rect.set_color(Color::BLACK).set_alpha(0.5f);

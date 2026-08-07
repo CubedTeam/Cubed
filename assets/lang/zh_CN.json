@@ -48,5 +48,6 @@
     "item.stone.name": "石头",
     "item.water.name": "水",
     "item.pig_spawn_egg.name": "猪猪刷怪蛋",
-    "screenshot.no_screenshot": "没有截图"
+    "screenshot.no_screenshot": "没有截图",
+    "button.show_in_file_manager": "在文件管理器中显示"
 }

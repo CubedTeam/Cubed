@@ -48,5 +48,6 @@
     "item.stone.name": "stone",
     "item.water.name": "water",
     "item.pig_spawn_egg.name": "pig spawn egg",
-    "screenshot.no_screenshot": "No Screenshot"
+    "screenshot.no_screenshot": "No Screenshot",
+    "button.show_in_file_manager": "Show In File Manager"
 }
