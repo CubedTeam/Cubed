@@ -4,9 +4,70 @@
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/tools/math_tools.hpp"
+#include "Cubed/tools/time_tools.hpp"
 using namespace google::protobuf;
 
 namespace Cubed {
+
+namespace {
+constexpr double ENTITY_RENDER_DELAY_MS = 100.0; // two tick time
+constexpr size_t ENTITY_SNAPSHOT_MAX = 16;
+
+// AI-generated: shortest-path angle lerp (degrees)
+float lerp_angle(float from, float to, float t) {
+    float delta = std::fmod(to - from, 360.0f);
+    if (delta > 180.0f) {
+        delta -= 360.0f;
+    } else if (delta < -180.0f) {
+        delta += 360.0f;
+    }
+    return from + delta * t;
+}
+
+ClientPlayerSnapshot
+interpolate_snapshot(const std::deque<ClientPlayerSnapshot>& history,
+                     double render_time) {
+
+    if (history.empty()) {
+        return {};
+    }
+
+    if (history.size() == 1) {
+        return history.front();
+    }
+
+    auto upper = std::lower_bound(
+        history.begin(), history.end(), render_time,
+        [](const ClientPlayerSnapshot& s, double t) { return s.time_ms < t; });
+
+    if (upper == history.end()) {
+        return history.back();
+    }
+
+    if (upper == history.begin()) {
+        return *upper;
+    }
+
+    auto lower = upper - 1;
+
+    double span = upper->time_ms - lower->time_ms;
+
+    float t = span > 0.0 ? float((render_time - lower->time_ms) / span) : 1.0f;
+
+    t = std::clamp(t, 0.0f, 1.0f);
+
+    ClientPlayerSnapshot out;
+
+    out.pos = glm::mix(lower->pos, upper->pos, t);
+
+    out.pitch = lerp_angle(lower->pitch, upper->pitch, t);
+
+    out.yaw = lerp_angle(lower->yaw, upper->yaw, t);
+
+    return out;
+}
+} // namespace
+
 ClientPlayerManager::ClientPlayerManager(ClientWorld& world)
     : m_world(world), m_local(world) {}
 ClientPlayerManager::~ClientPlayerManager() {
@@ -55,6 +116,8 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
             data.pos.value = pos;
             data.render_pos.value = pos;
             data.walk.gait = get_gait_from_id(rsp.gait());
+            data.history.value.emplace_back(
+                static_cast<double>(Tools::get_time_ticks()), pos, yaw, pitch);
             auto handle = m_players.emplace(std::move(data));
             m_players_handle.try_emplace(rsp.uuid(), handle);
         } else {
@@ -65,6 +128,12 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
                 data.walk.gait = get_gait_from_id(rsp.gait());
                 data.angle.yaw = yaw;
                 data.angle.pitch = pitch;
+                data.history.value.push_back(
+                    {static_cast<double>(Tools::get_time_ticks()), pos, yaw,
+                     pitch});
+                while (data.history.value.size() > ENTITY_SNAPSHOT_MAX) {
+                    data.history.value.pop_front();
+                }
             }
         }
         // Logger::info("Player {} pos Update", rsp.name());
@@ -111,17 +180,15 @@ void ClientPlayerManager::update_players_data(float dt) {
     auto m_rendering_distance = m_world.rendering_distance();
     auto update_renderinfo = [this, dt,
                               m_rendering_distance](ClientPlayer& player) {
-        player.render_pos.value =
-            glm::mix(player.render_pos.value, player.pos.value, 0.15f);
-        if (Math::distance2(player.render_pos.value, m_local.get_player_pos()) >
-            m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
-                CHUNK_SIZE) {
-            return;
-        }
-        player.render_angle.yaw =
-            glm::mix(player.render_angle.yaw, player.angle.yaw, 0.15);
-        player.render_angle.pitch =
-            glm::mix(player.render_angle.pitch, player.angle.pitch, 0.15);
+        double render_time = static_cast<double>(Tools::get_time_ticks()) -
+                             ENTITY_RENDER_DELAY_MS;
+        auto snapshot = interpolate_snapshot(player.history.value, render_time);
+
+        player.render_pos.value = snapshot.pos;
+
+        player.render_angle.yaw = snapshot.yaw;
+
+        player.render_angle.pitch = snapshot.pitch;
 
         if (player.walk.gait == Gait::WALK || player.walk.gait == Gait::RUN) {
 
@@ -138,12 +205,19 @@ void ClientPlayerManager::update_players_data(float dt) {
                 glm::mix(player.render_angle.roll, 0.0f, t);
         }
 
+        if (Math::distance2(player.render_pos.value, m_local.get_player_pos()) >
+            m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
+                CHUNK_SIZE) {
+            return;
+        }
+
         // walking sound
         if (player.walk.gait == Gait::STOP) {
             player.walk.moving_time = 0.0f;
         } else {
             player.walk.moving_time += dt;
         }
+
         auto play_walk_sound = [&]() {
             glm::ivec3 block = glm::floor(player.render_pos.value);
             block.y -= 1;
@@ -155,18 +229,21 @@ void ClientPlayerManager::update_players_data(float dt) {
             std::string sound = "block/" + name + "/walk.ogg";
             m_world.get_audio().play_3d(sound, player.render_pos.value);
         };
+
         if (player.walk.gait == Gait::WALK) {
             if (player.walk.moving_time >= LocalPlayer::WALK_SOUND_INTERVAL) {
                 player.walk.moving_time = 0.0f;
                 play_walk_sound();
             }
         }
+
         if (player.walk.gait == Gait::RUN) {
             if (player.walk.moving_time >= LocalPlayer::RUN_SOUND_INTERVAL) {
                 player.walk.moving_time = 0.0f;
                 play_walk_sound();
             }
         }
+
         PlayerRenderData render_data;
         render_data.render_pos = player.render_pos;
         render_data.angle = player.render_angle;

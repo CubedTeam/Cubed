@@ -3,15 +3,27 @@
 #include "Cubed/gameplay/ecs/animation.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
+
+#include <deque>
 namespace Cubed {
 
+struct ClientPlayerSnapshot {
+    double time_ms = 0.0f;
+    glm::vec3 pos{0.0f};
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+};
+struct ClientPlayerState {
+    std::deque<ClientPlayerSnapshot> value;
+};
 struct ClientPlayer {
     Position pos{};
-    Position render_pos{};
     EntityInfo entity{};
     WalkPose walk{};
     Orientation angle{};
+    Position render_pos{};
     Orientation render_angle{};
+    ClientPlayerState history{};
 };
 
 struct PlayerRenderData {
