@@ -28,6 +28,11 @@ public:
     Widget& operator=(Widget&&) = delete;
 
     Widget(Widget* parent);
+
+    static void set_window_size(int width, int height);
+    static int get_window_height();
+    static int get_window_width();
+
     virtual ~Widget() = default;
     virtual void update(float dt);
     virtual void render(Renderer& renderer);
@@ -35,7 +40,7 @@ public:
     virtual Widget& set_offset(glm::vec2 offset);
     virtual Widget& add_offset(glm::vec2 offset);
     virtual glm::vec2 get_offset() const;
-    static void set_window_size(int width, int height);
+
     virtual Widget& set_visible(bool visible);
     // Returns the final display size
 
@@ -58,6 +63,8 @@ public:
     virtual bool handle_window_resize_event(const WindowResizeEvent& e);
     virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
     virtual bool handle_text_input_event(const TextInputEvent& e);
+
+    virtual bool is_visible() const;
     void set_order(TraversalOrder order);
 
     template <typename T, typename... Args> T& add_child(Args&&... args) {

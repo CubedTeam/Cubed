@@ -103,7 +103,18 @@ Button& Button::set_background_image(const std::string& path,
 Button& Button::set_default_image(TextureManager& texture_manager) {
     return set_background_image(DEFAULT_BUTTON_IMAGE, texture_manager);
 }
-
+Button& Button::set_texture(const Texture* texture, bool change_button_size) {
+    if (!texture) {
+        Logger::error("Button Background Image is nullptr");
+        return *this;
+    }
+    m_background->set_texture(texture, false);
+    if (change_button_size) {
+        set_width(texture->width());
+        set_height(texture->height());
+    }
+    return *this;
+}
 Button& Button::set_text(const std::string& text) {
     m_foreground->set_text(text);
     update_text_scale();

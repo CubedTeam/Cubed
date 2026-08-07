@@ -174,6 +174,9 @@ void Widget::set_window_size(int width, int height) {
     return;
 }
 
+int Widget::get_window_height() { return m_window_height; }
+int Widget::get_window_width() { return m_window_width; }
+
 Widget& Widget::set_visible(bool visible) {
     m_visible = visible;
     return *this;
@@ -335,4 +338,5 @@ bool Widget::handle_text_input_event(const TextInputEvent& e) {
     return false;
 }
 void Widget::set_order(TraversalOrder order) { m_order = order; }
+bool Widget::is_visible() const { return m_visible; }
 } // namespace Cubed
