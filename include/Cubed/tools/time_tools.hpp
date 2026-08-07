@@ -4,6 +4,7 @@
 #include <cstdint>
 namespace Cubed {
 namespace Tools {
+// return ms
 inline uint64_t get_time_ticks() { return SDL_GetTicks(); }
 } // namespace Tools
 

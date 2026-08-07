@@ -9,12 +9,74 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/net_utils.hpp"
+#include "Cubed/tools/time_tools.hpp"
 using namespace google::protobuf;
 
 namespace Cubed {
+
+namespace {
+constexpr double ENTITY_RENDER_DELAY_MS = 100.0; // two tick time
+constexpr size_t ENTITY_SNAPSHOT_MAX = 16;
+
+ClientEntitySnapshot
+interpolate_snapshot(const std::deque<ClientEntitySnapshot>& history,
+                     double render_time) {
+
+    if (history.empty()) {
+        return {};
+    }
+
+    if (history.size() == 1) {
+        return history.front();
+    }
+
+    auto upper = std::lower_bound(
+        history.begin(), history.end(), render_time,
+        [](const ClientEntitySnapshot& s, double t) { return s.time_ms < t; });
+
+    if (upper == history.end()) {
+        return history.back();
+    }
+
+    if (upper == history.begin()) {
+        return *upper;
+    }
+
+    auto lower = upper - 1;
+
+    double span = upper->time_ms - lower->time_ms;
+
+    float t = span > 0.0 ? float((render_time - lower->time_ms) / span) : 1.0f;
+
+    t = std::clamp(t, 0.0f, 1.0f);
+
+    ClientEntitySnapshot out;
+
+    out.pos = glm::mix(lower->pos, upper->pos, t);
+
+    glm::vec3 mixed = glm::mix(lower->dir, upper->dir, t);
+
+    out.dir =
+        glm::length(mixed) > 1e-6f ? glm::normalize(mixed) : glm::vec3{0.0f};
+    return out;
+}
+} // namespace
+
 ClientEntityManager::ClientEntityManager(ClientWorld& world) : m_world(world) {}
 void ClientEntityManager::update(float dt) {
     handle_task(dt);
+    {
+        auto view = m_registry.view<ClientEntityState, RenderTransform>();
+        double render_time = static_cast<double>(Tools::get_time_ticks()) -
+                             ENTITY_RENDER_DELAY_MS;
+        for (auto e : view) {
+            auto& state = view.get<ClientEntityState>(e);
+            auto& r = view.get<RenderTransform>(e);
+            auto snap = interpolate_snapshot(state.history, render_time);
+            r.position.value = snap.pos;
+            r.direction.value = snap.dir;
+        }
+    }
 
     auto view = m_registry.view<BaseClientCreature>();
     for (auto e : view) {
@@ -35,10 +97,10 @@ void ClientEntityManager::init() {
         BaseClientCreature c;
         c.model = ModelManager::instance().get_model_id("cubed:pig");
         float next_call_time = m_random.random_float(8.0f, 25.0f);
-        create_entity_in_registry(id, Entity{id, EntityType::CREATURE},
-                                  EntityInfo{"cubed:pig", ""}, std::move(c),
-                                  PigTag{}, RenderTransform{},
-                                  SoundTime{next_call_time});
+        create_entity_in_registry(
+            id, Entity{id, EntityType::CREATURE}, EntityInfo{"cubed:pig", ""},
+            std::move(c), PigTag{}, RenderTransform{},
+            SoundTime{next_call_time}, ClientEntityState{});
     });
 }
 // not thread safe
@@ -55,9 +117,13 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     auto* r = m_registry.try_get<RenderTransform>(a->second);
     ASSERT(r);
     r->position.value = pos;
+    auto* s = m_registry.try_get<ClientEntityState>(a->second);
+    ASSERT(s);
+    s->history.emplace_back(static_cast<double>(Tools::get_time_ticks()), pos,
+                            glm::vec3{0, 0, 0});
 }
 
-void ClientEntityManager::handle_entity_update(UpdateInfo& info, float dt) {
+void ClientEntityManager::handle_entity_update(UpdateInfo& info, float) {
     entt::entity e;
     {
         cacc a;
@@ -72,13 +138,14 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info, float dt) {
     creature->transform.position.value = info.pos;
     creature->transform.direction.value = info.direction;
     creature->pose.gait = info.gait;
-    auto r = m_registry.try_get<RenderTransform>(e);
-    ASSERT(r);
-    float alpha = 1 - std::exp(-dt / 0.1);
-    r->direction.value = glm::mix(r->direction.value,
-                                  creature->transform.direction.value, alpha);
-    r->position.value =
-        glm::mix(r->position.value, creature->transform.position.value, alpha);
+
+    auto state = m_registry.try_get<ClientEntityState>(e);
+    ASSERT(state);
+    state->history.push_back({static_cast<double>(Tools::get_time_ticks()),
+                              info.pos, info.direction});
+    while (state->history.size() > ENTITY_SNAPSHOT_MAX) {
+        state->history.pop_front();
+    }
 }
 
 void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
