@@ -20,7 +20,8 @@ public:
     const Texture* get_block_status_array() const;
     const Texture* get_texture_array() const;
     const Texture* get_cross_plane_array() const;
-    const Texture* get_image_texture(const std::string& path);
+    const Texture* get_image_texture(const std::string& path,
+                                     bool full_path = false);
     const Texture* get_pbr_texture() const;
     const ItemTextureMap& get_item_textures() const;
     const Texture* get_skin() const;
@@ -49,7 +50,8 @@ private:
     void load_block_texture(unsigned block_id);
     void init_item_texture();
     void load_cross_plane_texture(unsigned id);
-    const Texture* load_image_texture(const std::string& path);
+    const Texture* load_image_texture(const std::string& path,
+                                      bool full_path = false);
     void load_pbr_texture(unsigned id);
     void init_item();
     void init_block();

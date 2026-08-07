@@ -9,7 +9,8 @@ enum class SceneType {
     CREDITS,
     SETTINGS,
     HOST_GAME,
-    JOIN_GAME
+    JOIN_GAME,
+    SCREENSHOT
 };
 
 class Scene {

@@ -106,4 +106,6 @@ target_sources(${PROJECT_NAME}
         tools/json_utils.cpp
         gameplay/item_manager.cpp
         gameplay/block_manager.cpp
+        ui/screenshot_ui.cpp
+        scene/screenshot_scene.cpp
 )
