@@ -42,6 +42,8 @@ public:
 
     bool is_recording() const;
 
+    RunMode runmode() const;
+
 private:
     enum class PauseUI { PAUSE_MENU, INVENTORY };
     SceneManager& m_scene_manager;
@@ -61,6 +63,7 @@ private:
     ErrorUI m_error_ui;
     const Argument& m_argument;
     VoiceInputType m_input_type;
+    RunMode m_runmode = RunMode::HYBRID;
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
     bool handle_window_resize_event(const WindowResizeEvent& e) override;

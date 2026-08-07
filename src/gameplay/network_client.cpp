@@ -93,7 +93,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
             } break;
             case std::to_underlying(PacketEnum::BLOCK_CHANGE_RSP): {
                 auto* rsp = Arena::Create<BlockChangeRsp>(&arena);
-                Logger::info("Client: Receive Block Change rsp");
+
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_block_change(*rsp);
                 }
@@ -107,7 +107,7 @@ asio::awaitable<void> NetworkClient::read_loop() {
             case std::to_underlying(PacketEnum::PLAYER_INFO_RSP): {
                 auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
-                    m_world.receive_remote_player(*rsp);
+                    m_world.player_manager().receive_remote_player(*rsp);
                 }
             } break;
             case std::to_underlying(PacketEnum::LOGOUT_RSP): {
@@ -142,7 +142,32 @@ asio::awaitable<void> NetworkClient::read_loop() {
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.receive_voice_message(*msg);
                 }
-            }
+            } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_CREATE): {
+                auto* msg = Arena::Create<S2CEntityCreate>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().receive_entity_create(*msg);
+                }
+
+            } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY): {
+                auto* msg = Arena::Create<S2CEntityDestory>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().receive_entity_destory(msg->id());
+                }
+            } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE): {
+                auto* msg = Arena::Create<S2CEntityUpdate>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().receive_entity_update(*msg);
+                }
+            } break;
+            case std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE_BATCH): {
+                auto* msg = Arena::Create<S2CEntityUpdateBatch>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.entity_manager().receive_entity_update(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

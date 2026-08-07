@@ -49,7 +49,6 @@ private:
     Window m_window;
 
     TextureManager m_texture_manager;
-
     AudioEngine m_audio;
 
     Renderer m_renderer;

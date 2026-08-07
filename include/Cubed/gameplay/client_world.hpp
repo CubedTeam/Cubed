@@ -5,9 +5,12 @@
 #include "Cubed/gameplay/chat_message.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/client_chunk.hpp"
-#include "Cubed/gameplay/client_player.hpp"
+#include "Cubed/gameplay/client_entity_manager.hpp"
+#include "Cubed/gameplay/client_player_manager.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/gameplay/world.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
@@ -19,46 +22,26 @@
 #include <tbb/concurrent_unordered_map.h>
 namespace Cubed {
 
-struct PlayerInfo {
-    std::string name;
-    std::string uuid;
-    glm::vec3 render_pos;
-    glm::vec3 target_pos;
-    float render_yaw;
-    float yaw;
-    float render_pitch;
-    float pitch;
-    Gait gait;
-    float angle = 0.0f;
-    float walk_time = 0.0f;
-    float moving_time = 0.0f;
-};
-
-struct PlayerRenderData {
-    std::string name;
-    std::string uuid;
-    glm::vec3 render_pos;
-    float yaw;
-    float pitch;
-    Gait gait;
-    float angle;
-};
 class WorldScene;
-class ClientWorld {
+class ClientWorld : public World {
 public:
+    ClientWorld(const ClientWorld&) = delete;
+    ClientWorld(ClientWorld&&) = delete;
+    ClientWorld& operator=(const ClientWorld&) = delete;
+    ClientWorld& operator=(ClientWorld&&) = delete;
     ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene);
     ~ClientWorld();
     void init(std::string_view player_name,
-              std::shared_ptr<NetworkClient> client);
-    void update(float delta_time);
+              std::shared_ptr<NetworkClient> client, RunMode mode);
+    void update(float dt);
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
-    ClientPlayer& get_player();
-    const ClientPlayer& get_player() const;
-    int get_block(const glm::ivec3& block_pos) const;
-    bool is_solid(const glm::ivec3& block_pos) const;
-    bool can_pass_block(const glm::ivec3& block_pos) const;
-    BlockType get_block_tpye(const glm::ivec3& block_pos) const;
+    LocalPlayer& get_player();
+    const LocalPlayer& get_player() const;
+    int get_block(const glm::ivec3& block_pos) const override;
+    bool is_solid(const glm::ivec3& block_pos) const override;
+    bool can_pass_block(const glm::ivec3& block_pos) const override;
+    BlockType get_block_tpye(const glm::ivec3& block_pos) const override;
 
     void rebuild_world();
 
@@ -71,7 +54,6 @@ public:
     void receive_block_change(const BlockChangeRsp& rsp);
     void receive_time(const UpdateTime& rsp);
 
-    void receive_remote_player(const PlayerInfoRsp& rsp);
     void receive_player_logout(const LogoutRsp& rsp);
     void receive_player_water_sound(const PlayerWaterSound& rsp);
     void send_player_water_sound(bool underwater, const glm::vec3& pos);
@@ -90,8 +72,6 @@ public:
     void reset_key_status();
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
-    const std::vector<PlayerRenderData>& render_player_data() const;
-    std::vector<PlayerRenderData>& render_player_data();
 
     glm::vec3 sunlight_dir() const;
     bool sphere_collide_world(glm::vec3 center, float radius) const;
@@ -99,23 +79,29 @@ public:
     void request_exit();
     bool is_receive_exit();
     int chunk_size() const;
-    static AABB get_block_aabb(const glm::ivec3& pos);
+
     AudioEngine& get_audio();
     const AudioEngine& get_audio() const;
     Config& get_config();
     WorldScene& world_scene();
+    ClientPlayerManager& player_manager();
+    ClientEntityManager& entity_manager();
+    std::shared_ptr<NetworkClient> get_client() const;
     void set_direct_exit();
 
     void receive_chat_message(ChatMsg& msg);
     void send_chat_message(ChatMessage& message);
     void receive_voice_message(VoiceMsg& msg);
     bool enable_voice_chat() const;
+    int get_per_tick_time() const override;
+
+    bool is_render(const glm::vec3& pos) const;
 
     template <typename Fn>
-    void register_ticktimer(std::string_view id, TickType threshold, Fn&& f) {
-        m_ticktimers.emplace(
-            std::piecewise_construct, std::forward_as_tuple(std::string(id)),
-            std::forward_as_tuple(threshold, std::forward<Fn>(f)));
+    void register_timer(std::string_view id, float threshold, Fn&& f) {
+        m_timers.emplace(std::piecewise_construct,
+                         std::forward_as_tuple(std::string(id)),
+                         std::forward_as_tuple(threshold, std::forward<Fn>(f)));
     }
 
 private:
@@ -136,7 +122,6 @@ private:
                                  ChunkPos::TBBHash>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     using ChunkPosVector = std::vector<ChunkPos>;
-    using OtherPlayerHashMap = std::unordered_map<std::string, PlayerInfo>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
 
@@ -147,16 +132,14 @@ private:
 
     static constexpr int WORLD_EXIT_TIMEOUT = 200;
     static constexpr int MAX_UPLOAD_CHUNK_SUM = 16;
-    ClientPlayer m_player;
-    OtherPlayerHashMap m_player_info;
+    std::atomic<RunMode> m_runmode = RunMode::HYBRID;
+    ClientEntityManager m_entity_manager;
+    ClientPlayerManager m_player_manager;
     ChunkHashMap m_chunks;
     AudioEngine& m_audio;
     Config& m_config;
     WorldScene& m_world_scene;
     std::vector<glm::vec4> m_planes;
-    std::jthread m_client_thread;
-
-    mutable std::shared_mutex m_player_info_mutex;
 
     tbb::concurrent_queue<std::unique_ptr<ClientChunk>> m_pending_upload_queue;
     tbb::concurrent_queue<ChunkPos> m_dirty_chunk_queue;
@@ -166,9 +149,7 @@ private:
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
-    std::vector<PlayerRenderData> m_render_player_data;
 
-    tbb::concurrent_unordered_map<std::string, TickTimer> m_ticktimers;
     std::unordered_map<std::string, Timer> m_timers;
     std::atomic<bool> m_exit_direct{false};
     std::atomic<bool> m_game_running{false};
@@ -176,6 +157,7 @@ private:
     std::atomic<int> m_rendering_distance{24};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
+    std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME;
     std::atomic<bool> m_requesting_chunk{false};
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_chunk_task_id{0};
@@ -186,10 +168,6 @@ private:
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_thread_pool;
 
     Random m_random;
-
-    void client_run(std::stop_token token);
-
-    void report_player_info();
 
     void set_block(const glm::ivec3& pos, unsigned id);
 

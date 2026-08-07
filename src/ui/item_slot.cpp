@@ -19,9 +19,9 @@ ItemSlot& ItemSlot::set_scale(float scale) {
     update_border();
     return *this;
 }
-ItemSlot& ItemSlot::set_item(BlockType id, const Texture* texture) {
+ItemSlot& ItemSlot::set_item(ItemID id, const Texture* texture) {
     m_foreground->set_texture(texture, false);
-    m_block_type = id;
+    m_id = id;
     return *this;
 }
 float ItemSlot::width() const {
@@ -77,6 +77,6 @@ bool ItemSlot::handle_mouse_move_event(const MouseMoveEvent& e) {
     return Widget::handle_mouse_move_event(e);
 }
 
-BlockType ItemSlot::block() const { return m_block_type; }
+ItemID ItemSlot::id() const { return m_id; }
 bool ItemSlot::hovered() const { return m_hovered; }
 } // namespace Cubed

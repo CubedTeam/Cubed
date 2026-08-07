@@ -17,7 +17,7 @@ namespace Cubed {
 
 Renderer::Renderer(TextureManager& texture_manager, Config& config)
     : m_texture_manager(texture_manager), m_world_renderer(*this),
-      m_config(config) {}
+      m_model_renderer(*this), m_config(config) {}
 
 Renderer::~Renderer() {
     if (m_init) {
@@ -340,4 +340,5 @@ float Renderer::frame_height() const { return m_frame_height; }
 float Renderer::frame_width() const { return m_frame_width; }
 const glm::mat4& Renderer::p_mat() const { return m_world_proj_matrix; }
 const std::vector<VertexArray>& Renderer::vao() const { return m_vao; }
+ModelRender& Renderer::model_renderer() { return m_model_renderer; }
 } // namespace Cubed

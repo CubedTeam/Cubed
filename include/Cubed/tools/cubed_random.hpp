@@ -1,4 +1,6 @@
 #pragma once
+#include "glm/ext/vector_float3.hpp"
+
 #include <random>
 namespace Cubed {
 
@@ -13,6 +15,8 @@ public:
     void init(unsigned seed);
     int random_int(int min, int max);
     float random_float(float min, float max);
+
+    glm::vec3 random_direction_horizontal();
 
 private:
     unsigned int m_seed = 0;

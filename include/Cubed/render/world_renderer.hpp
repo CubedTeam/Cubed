@@ -1,10 +1,14 @@
 #pragma once
+#include "Cubed/gameplay/model.hpp"
 #include "Cubed/render/frame_buffer.hpp"
+#include "Cubed/render/model_renderer.hpp"
 #include "Cubed/render/player_renderer.hpp"
 #include "Cubed/render/texture.hpp"
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 namespace Cubed {
 class Renderer;
 class ClientWorld;
@@ -12,6 +16,8 @@ class TextureManager;
 class Camera;
 class WorldRenderer {
 public:
+    using InstanceDataMap =
+        std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>;
     struct ParallelLight {
         glm::vec3 sundir; // direction from sun to vertex
         glm::vec3 lightdir;
@@ -128,11 +134,13 @@ private:
 
     void render_world(ClientWorld& world);
 
-    void shadow_map_generate(ClientWorld& world);
+    void shadow_map_generate(ClientWorld& world, const InstanceDataMap& map);
 
     void render_underwater(ClientWorld& world);
     void render_outline(ClientWorld& world);
-    void render_player(ClientWorld& world);
+    void shadow_entity(ClientWorld& world, const glm::mat4& light_matrix,
+                       const InstanceDataMap& map);
+    void render_entity(ClientWorld& world, const InstanceDataMap& map);
 
     void render_normal_block(const glm::mat4& model_mat,
                              const glm::mat4& mv_mat, const glm::mat4& norm_mat,
@@ -146,5 +154,6 @@ private:
                                      float angle_step_deg) const;
     glm::vec3 get_smoothed_shadow_lightdir(const glm::vec3& raw_shadow_sundir,
                                            float dt);
+    InstanceDataMap entity_build(ClientWorld& world);
 };
 } // namespace Cubed

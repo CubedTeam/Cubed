@@ -1,12 +1,14 @@
 #include "Cubed/localization.hpp"
 
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <fstream>
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
 namespace fs = std::filesystem;
+using namespace rapidjson;
 namespace Cubed {
 Localization::Localization() {}
 Localization& Localization::instance() {
@@ -25,10 +27,19 @@ void Localization::load_language(std::string_view language) {
         return;
     }
     try {
-        json j = json::parse(file);
+        IStreamWrapper isw(file);
+        Document doc;
+        doc.ParseStream(isw);
+        if (doc.HasParseError()) {
+            auto code = doc.GetParseError();
+
+            throw std::runtime_error(
+                std::format("Parse {} failed, error code {}", path,
+                            static_cast<int>(code)));
+        }
         m_translations.clear();
-        j.get_to(m_translations);
-    } catch (const json::parse_error& e) {
+        m_translations = Tools::doc_to_map(doc);
+    } catch (const std::exception& e) {
         Logger::error("JSON syntax error: {}", e.what());
     }
 }

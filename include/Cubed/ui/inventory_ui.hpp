@@ -20,7 +20,7 @@ private:
     Label* m_item_info = nullptr;
 
     Image* m_selected_image = nullptr;
-    BlockType m_selected_block = 0;
+    BlockType m_selected_id = 0;
     void update_item_info();
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;
 

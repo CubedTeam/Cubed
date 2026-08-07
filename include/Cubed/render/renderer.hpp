@@ -4,6 +4,7 @@
 #include "Cubed/constants.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/primitive_data.hpp"
+#include "Cubed/render/model_renderer.hpp"
 #include "Cubed/render/player_renderer.hpp"
 #include "Cubed/render/shader_manager.hpp"
 #include "Cubed/render/vertex_array.hpp"
@@ -19,6 +20,7 @@
 namespace Cubed {
 class TextureManager;
 class ClientWorld;
+class ModelManager;
 class DevPanel;
 class Renderer {
 public:
@@ -79,9 +81,10 @@ public:
 
     bool handle_event(const Event& e);
 
+    ModelRender& model_renderer();
+
 private:
     TextureManager& m_texture_manager;
-
     bool m_init = false;
 
     float m_aspect = 0.0f;
@@ -118,6 +121,7 @@ private:
     std::vector<Vertex2D> m_ui;
 
     WorldRenderer m_world_renderer;
+    ModelRender m_model_renderer;
     Config& m_config;
 
     bool handle_window_resize_event(const WindowResizeEvent& e);

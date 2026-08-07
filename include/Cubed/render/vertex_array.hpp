@@ -19,6 +19,7 @@ public:
 
     void attribute(GLuint index, GLint size, GLenum type, GLsizei stride,
                    const void* ptr, bool normalized = false) const;
+    void divisor(GLuint index, GLuint divisor = 1);
 
 private:
     GLuint m_vao = 0;

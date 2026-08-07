@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cubed/gameplay/block.hpp"
+#include "Cubed/gameplay/item.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/widget.hpp"
 namespace Cubed {
@@ -13,11 +13,11 @@ public:
 
     ItemSlot& set_default_background(TextureManager& m_texture_manager);
     ItemSlot& set_scale(float m_scale);
-    ItemSlot& set_item(BlockType id, const Texture* texture);
+    ItemSlot& set_item(ItemID id, const Texture* texture);
     float width() const override;
     float height() const override;
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
-    BlockType block() const;
+    ItemID id() const;
     bool hovered() const;
 
 private:
@@ -26,7 +26,7 @@ private:
     void on_update(float dt) override;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Image> m_foreground;
-    BlockType m_block_type;
+    ItemID m_id;
     float m_scale = 1.0f;
     bool m_hovered = false;
 };

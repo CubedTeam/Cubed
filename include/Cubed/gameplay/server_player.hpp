@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/gameplay/chunk_pos.hpp"
+#include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/game_time.hpp"
-#include "Cubed/gameplay/player.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <atomic>

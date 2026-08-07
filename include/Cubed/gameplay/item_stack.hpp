@@ -1,8 +1,9 @@
 #pragma once
-#include "Cubed/gameplay/block.hpp"
+#include "Cubed/gameplay/item.hpp"
 namespace Cubed {
+
 struct ItemStack {
-    BlockType type = 0;
+    ItemID id = 0;
     size_t sum = 0;
 };
 } // namespace Cubed

@@ -1,11 +1,13 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <rapidjson/document.h>
+#include <unordered_map>
+#include <vector>
 namespace Cubed {
 class SensitiveFilter {
 public:
     SensitiveFilter();
-    void load(const nlohmann::json& j);
+    void load(const rapidjson::Document& doc);
     std::string filter(std::string_view text);
 
 private:

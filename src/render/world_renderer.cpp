@@ -3,6 +3,8 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/ecs/client_entity.hpp"
+#include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/render/renderer_constants.hpp"
 #include "Cubed/scene/world_scene.hpp"
@@ -10,7 +12,57 @@
 #include "Cubed/tools/math_tools.hpp"
 
 #include <SDL3/SDL_timer.h>
+#include <unordered_map>
 namespace Cubed {
+
+namespace {
+WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
+                                                      Renderer& renderer) {
+
+    glm::mat4 mvp_mat =
+        renderer.p_mat() * world.world_scene().camera().get_camera_lookat();
+
+    auto& m_planes = world.planes();
+
+    Math::extract_frustum_planes(mvp_mat, m_planes);
+    size_t cnt = 0;
+    std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
+        instances_data_map;
+    auto& registry = world.entity_manager().get_registry();
+    auto view =
+        registry.view<BaseClientCreature, RenderTransform, EntityInfo>();
+    for (auto entity : view) {
+        auto& creature = view.get<BaseClientCreature>(entity);
+        auto pos = creature.transform.position.value;
+        if (!world.is_render(pos)) {
+            continue;
+        }
+        auto& info = view.get<EntityInfo>(entity);
+        auto& t = view.get<RenderTransform>(entity);
+        auto aabb = HitboxManager::hitbox(info.name);
+        aabb.box.center += t.position.value;
+        if (!Math::is_aabb_in_frustum(aabb.box.center, aabb.box.half + 1.0f,
+                                      m_planes)) {
+            continue;
+        }
+
+        float yaw = std::atan2(t.direction.value.x, t.direction.value.z);
+        ModelRender::InstanceData data;
+        data.pos = t.position.value;
+        data.yaw = yaw;
+        data.pose = creature.pose;
+        instances_data_map[creature.model].emplace_back(std::move(data));
+        ++cnt;
+        // m_renderer.model_renderer().shadow_pass(
+        //     creature.model, t.position.value, yaw,
+        //     world.world_scene().camera(), creature.pose);
+    }
+    d_rep("rendered_entities", "Rendered Entities: {}", cnt);
+    return instances_data_map;
+};
+
+} // namespace
+
 WorldRenderer::WorldRenderer(Renderer& renderer)
     : m_renderer(renderer), m_player_renderer(renderer),
       m_texture_manager(renderer.texture_mamger()) {}
@@ -43,10 +95,15 @@ void WorldRenderer::render(ClientWorld& world) {
 
     day_night_calculation(world);
 
+    auto map = entity_build(world);
+
     render_sky(world);
+    if (m_shader_on) {
+        shadow_map_generate(world, map);
+    }
     render_world(world);
     render_outline(world);
-    render_player(world);
+    render_entity(world, map);
 
     FrameBuffer::unbind();
 
@@ -92,6 +149,14 @@ void WorldRenderer::day_night_calculation(ClientWorld& world) {
         glm::mix(NIGHT_AMBIENT_COLOR, ambient_color, day_factor);
 
     m_ambient_strength = glm::mix(0.45f, 0.25f, day_factor);
+}
+
+WorldRenderer::InstanceDataMap WorldRenderer::entity_build(ClientWorld& world) {
+    auto instances_data_map = get_instances_data_map(world, m_renderer);
+    for (auto& [id, data] : instances_data_map) {
+        m_renderer.model_renderer().build_vertices(id, data);
+    }
+    return instances_data_map;
 }
 
 void WorldRenderer::render_sky(ClientWorld& world) {
@@ -227,10 +292,6 @@ void WorldRenderer::render_world(ClientWorld& world) {
 
     glm::mat4 norm_mat = glm::transpose(glm::inverse(mv_mat));
 
-    if (m_shader_on) {
-        shadow_map_generate(world);
-    }
-
     m_world_fbo->bind();
 
     glCullFace(GL_BACK);
@@ -290,7 +351,30 @@ void WorldRenderer::render_outline(ClientWorld& world) {
     }
 }
 
-void WorldRenderer::shadow_map_generate(ClientWorld& world) {
+void WorldRenderer::shadow_entity(ClientWorld& world,
+                                  const glm::mat4& light_matrix,
+                                  const InstanceDataMap& map) {
+    glEnable(GL_DEPTH_TEST);
+    {
+        auto& shader = m_renderer.get_shader("depth_model_instance");
+        shader.use();
+        shader.set_loc("lightSpaceMatrix", light_matrix);
+        for (auto& [id, data] : map) {
+            m_renderer.model_renderer().render_instance(
+                id, data.size(), world.world_scene().camera(), true);
+        }
+    }
+
+    {
+        auto& shader = m_renderer.get_shader("depth_model");
+        shader.use();
+        shader.set_loc("lightSpaceMatrix", light_matrix);
+        m_player_renderer.render(shader, world, true);
+    }
+}
+
+void WorldRenderer::shadow_map_generate(ClientWorld& world,
+                                        const InstanceDataMap& map) {
     float texels_per_unit = 0.0f;
     const auto& lightdir = m_parallel_light.lightdir;
 
@@ -392,9 +476,8 @@ void WorldRenderer::shadow_map_generate(ClientWorld& world) {
                          snapshot->normal_discard_vertices_count);
         }
     }
-    // player
-    auto& player_shadow = m_renderer.get_shader("player_depth");
-    m_player_renderer.shadow_render(player_shadow, light_space_matrix, world);
+
+    shadow_entity(world, light_space_matrix, map);
 }
 
 void WorldRenderer::render_underwater(ClientWorld& world) {
@@ -676,29 +759,58 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
     glBindVertexArray(0);
 }
 
-void WorldRenderer::render_player(ClientWorld& world) {
-    auto& shader = m_renderer.get_shader("player");
-    shader.use();
-    glm::vec3 light_dir_view =
-        glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
-
-    shader.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
-    shader.set_loc("ambientStrength", m_ambient_strength);
-    shader.set_loc("sunlightColor", m_parallel_light.directional_light_color);
-    shader.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
-    shader.set_loc("sunlightDir", light_dir_view);
-    shader.set_loc("shadowMode", m_shadow_mode);
-    shader.set_loc("shader_on", m_shader_on);
-    shader.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
-    shader.set_loc("minRadius", m_min_radius);
-    shader.set_loc("maxRadius", m_max_radius);
-    shader.set_loc("samples", m_samples);
+void WorldRenderer::render_entity(ClientWorld& world,
+                                  const InstanceDataMap& map) {
 
     // shader.set_loc("renderDistance", m_world.rendering_distance());
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);
+    glEnable(GL_DEPTH_TEST);
+    {
+        auto& model = m_renderer.get_shader("model_instance");
+        model.use();
+        glm::vec3 light_dir_view =
+            glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
 
-    m_depth_map_texture->bind(0);
-    m_player_renderer.render(shader, world);
+        model.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
+        model.set_loc("ambientStrength", m_ambient_strength);
+        model.set_loc("sunlightColor",
+                      m_parallel_light.directional_light_color);
+        model.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
+        model.set_loc("sunlightDir", light_dir_view);
+        model.set_loc("shadowMode", m_shadow_mode);
+        model.set_loc("shader_on", m_shader_on);
+        model.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
+        model.set_loc("minRadius", m_min_radius);
+        model.set_loc("maxRadius", m_max_radius);
+        model.set_loc("samples", m_samples);
+        m_depth_map_texture->bind(0);
+
+        for (auto& [id, data] : map) {
+            m_renderer.model_renderer().render_instance(
+                id, data.size(), world.world_scene().camera(), false);
+        }
+    }
+
+    {
+        auto& model = m_renderer.get_shader("model_shader");
+        model.use();
+        glm::vec3 light_dir_view =
+            glm::normalize(glm::mat3(view_matrix) * m_parallel_light.lightdir);
+
+        model.set_loc("lightSpaceMatrix", m_parallel_light.light_space_matrix);
+        model.set_loc("ambientStrength", m_ambient_strength);
+        model.set_loc("sunlightColor",
+                      m_parallel_light.directional_light_color);
+        model.set_loc("ambientColor", m_parallel_light.finnal_ambient_color);
+        model.set_loc("sunlightDir", light_dir_view);
+        model.set_loc("shadowMode", m_shadow_mode);
+        model.set_loc("shader_on", m_shader_on);
+        model.set_loc("lightSizeUV", static_cast<float>(m_light_size_uv));
+        model.set_loc("minRadius", m_min_radius);
+        model.set_loc("maxRadius", m_max_radius);
+        model.set_loc("samples", m_samples);
+        m_player_renderer.render(model, world, false);
+    }
 }
 
 glm::vec3 WorldRenderer::quantize_sun_direction(const glm::vec3& lightdir,

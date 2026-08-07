@@ -51,18 +51,28 @@ enum class PacketEnum : uint16_t {
     LOGIN_RSP = 1002,
     LOGOUT_REQ = 1003,
     LOGOUT_RSP = 1004,
+
     PLAYER_INFO = 2001,
     C2S_PLAYER_INFO = 2002,
     PLAYER_INFO_RSP = 2003,
     PLAYER_WATER_SOUND = 2004,
+
     CHUNK_DATA_REQ = 3001,
     CHUNK_DATA_RSP = 3002,
     BLOCK_CHANGE_REQ = 3003,
     BLOCK_CHANGE_RSP = 3004,
     S2C_CLEAR_ALL_CHUNKS = 3005,
     UPDATE_TIME = 3006,
+    S2C_ENTITY_CREATE = 3007,
+    S2C_ENTITY_DESTORY = 3008,
+    C2S_ENTITY_CREATE_REQUEST = 3009,
+    C2S_ENTITY_DESTORY_REQUEST = 3010,
+    S2C_ENTITY_UPDATE = 3011,
+    S2C_ENTITY_UPDATE_BATCH = 3012,
+
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
+
     PING = 9001,
     PONG = 9002
 
@@ -111,6 +121,18 @@ template <> constexpr uint16_t get_packet_id<BlockChangeRsp>() {
 template <> constexpr uint16_t get_packet_id<S2C_ClearAllChunks>() {
     return std::to_underlying(PacketEnum::S2C_CLEAR_ALL_CHUNKS);
 }
+template <> constexpr uint16_t get_packet_id<S2CEntityCreate>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_CREATE);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityDestory>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY);
+}
+template <> constexpr uint16_t get_packet_id<C2SEntityCreateRequest>() {
+    return std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQUEST);
+}
+template <> constexpr uint16_t get_packet_id<C2SEntityDestoryRequest>() {
+    return std::to_underlying(PacketEnum::C2S_ENTITY_DESTORY_REQUEST);
+}
 template <> constexpr uint16_t get_packet_id<UpdateTime>() {
     return std::to_underlying(PacketEnum::UPDATE_TIME);
 }
@@ -128,6 +150,12 @@ template <> constexpr uint16_t get_packet_id<ChatMsg>() {
 }
 template <> constexpr uint16_t get_packet_id<VoiceMsg>() {
     return std::to_underlying(PacketEnum::VOICE_MSG);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityUpdate>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE);
+}
+template <> constexpr uint16_t get_packet_id<S2CEntityUpdateBatch>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE_BATCH);
 }
 
 template <typename T>
@@ -178,6 +206,12 @@ Packet make_packet(const T& msg) {
     std::memcpy(packet->data() + HEADER_LEN, payload.data(), payload.size());
 
     return packet;
+}
+
+template <typename T>
+    requires std::derived_from<T, google::protobuf::Message>
+Packet make_packet(const T* msg) {
+    return make_packet(*msg);
 }
 
 inline PacketHeader decode_packet_header(std::span<const uint8_t> header) {

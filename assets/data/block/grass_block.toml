@@ -8,5 +8,4 @@ is_passable = false
 is_transitional = true
 is_transparent = false
 name = 'grass_block'
-name_key = 'block.grass_block'
 roughness = 0.90000000000000002

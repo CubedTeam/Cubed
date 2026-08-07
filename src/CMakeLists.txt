@@ -37,7 +37,7 @@ target_sources(${PROJECT_NAME}
         gameplay/server_chunk.cpp
         gameplay/client_chunk.cpp
         gameplay/server_player.cpp
-        gameplay/client_player.cpp
+        gameplay/local_player.cpp
         gameplay/session.cpp
         gameplay/network_client.cpp
         render/player_renderer.cpp
@@ -92,4 +92,18 @@ target_sources(${PROJECT_NAME}
         ui/row_layout.cpp
         ui/item_slot.cpp
         ui/inventory_ui.cpp
+        tools/model_loader.cpp
+        render/model_manager.cpp
+        render/model_renderer.cpp
+        gameplay/chunk.cpp
+        gameplay/hitbox_manager.cpp
+        gameplay/systems/physical_system.cpp
+        gameplay/systems/speed_system.cpp
+        gameplay/client_player_manager.cpp
+        gameplay/server_entity_manager.cpp
+        gameplay/client_entity_manager.cpp
+        gameplay/systems/wander_ai_system.cpp
+        tools/json_utils.cpp
+        gameplay/item_manager.cpp
+        gameplay/block_manager.cpp
 )

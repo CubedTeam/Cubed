@@ -2,15 +2,15 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/constants.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
+#include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
-
 namespace {
 constexpr int BLOCK_SIZE = 16;
 constexpr int BLOCK_NORMAL_SIZE = 128;
 constexpr int CROSS_PLANE_SIZE = 16;
-constexpr int BLOCK_ITEM_SIZE = 512;
 constexpr int BLOCK_STATUS_SIZE = 16;
 constexpr int SKIN_SIZE = 64;
 
@@ -69,7 +69,7 @@ const Texture* TextureManager::get_pbr_texture() const {
     return m_normal_texture_array.get();
 }
 
-const std::vector<std::unique_ptr<Texture>>&
+const TextureManager::ItemTextureMap&
 TextureManager::get_item_textures() const {
     return m_item_textures;
 }
@@ -121,23 +121,24 @@ void TextureManager::load_block_texture(unsigned id) {
     }
 }
 
-void TextureManager::load_block_item_texture(unsigned id) {
+void TextureManager::init_item_texture() {
+    for (ItemID i = 0; i < ItemManager::size(); ++i) {
+        auto& item = ItemManager::get(i);
+        if (item.path.empty()) {
+            m_item_textures.try_emplace(item.id, nullptr);
+            continue;
+        }
+        auto data = Tools::load_image_data(item.path);
+        std::unique_ptr<Texture> texture =
+            std::make_unique<Texture>(TextureType::TEXTURE_2D);
+        texture->tex_image_2d(TextureFormat::RGBA8, TextureFormat::RGBA,
+                              GL_UNSIGNED_BYTE, data.data, data.width,
+                              data.height);
 
-    ASSERT_MSG(id < BlockManager::sums(), "Exceed the max block sum limit");
-    std::string name{BlockManager::name_form_id(id)};
+        texture->set_nearest();
 
-    std::string path = "texture/item/block/" + name + ".png";
-
-    auto data = Tools::load_image_data(path);
-    std::unique_ptr<Texture> texture =
-        std::make_unique<Texture>(TextureType::TEXTURE_2D);
-    texture->tex_image_2d(TextureFormat::RGBA8, TextureFormat::RGBA,
-                          GL_UNSIGNED_BYTE, data.data, BLOCK_ITEM_SIZE,
-                          BLOCK_ITEM_SIZE);
-
-    texture->set_nearest();
-
-    m_item_textures.push_back(std::move(texture));
+        m_item_textures.try_emplace(item.id, std::move(texture));
+    }
 }
 
 void TextureManager::load_cross_plane_texture(unsigned id) {
@@ -224,7 +225,7 @@ void TextureManager::init_block() {
         BLOCK_NORMAL_SIZE, BLOCK_NORMAL_SIZE, BlockManager::sums() * 6);
     for (unsigned i = 0; i < BlockManager::sums(); i++) {
         load_block_texture(i);
-        load_block_item_texture(i);
+
         load_pbr_texture(i);
     }
 
@@ -281,6 +282,7 @@ void TextureManager::init_texture() {
     Logger::info("Map Init Success");
 
     init_block();
+    init_item_texture();
     init_block_status();
     init_ui();
     init_skin();

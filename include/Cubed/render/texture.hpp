@@ -38,9 +38,11 @@ enum TextureFormat : GLenum {
     R8 = GL_R8,
     RGB = GL_RGB,
     RGBA8 = GL_RGBA8,
+    BGRA = GL_BGRA
 
 };
-
+// You need to set the texture scaling method, otherwise it will render as
+// black.
 class Texture {
 public:
     explicit Texture(TextureType type);

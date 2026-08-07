@@ -1,11 +1,12 @@
 #include "Cubed/gameplay/client_world.hpp"
 
 #include "Cubed/config.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
-#include "Cubed/tools/math_tools.hpp"
+#include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
@@ -24,7 +25,8 @@ struct ChunkRenderData {
 } // namespace
 
 ClientWorld::ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene)
-    : m_player(*this), m_audio(auido), m_config(config), m_world_scene(scene) {}
+    : m_entity_manager(*this), m_player_manager(*this), m_audio(auido),
+      m_config(config), m_world_scene(scene) {}
 
 ClientWorld::~ClientWorld() {
     m_client->close();
@@ -51,16 +53,18 @@ ClientWorld::~ClientWorld() {
         std::lock_guard lk(m_delete_vao_mutex);
         m_pending_delete_vao.clear();
     }
-    m_ticktimers.clear();
+    m_timers.clear();
 }
 
 const std::optional<LookBlock>& ClientWorld::get_look_block_pos() const {
 
-    return m_player.get_look_block_pos();
+    return m_player_manager.get_local().get_look_block_pos();
 }
 
-ClientPlayer& ClientWorld::get_player() { return m_player; }
-const ClientPlayer& ClientWorld::get_player() const { return m_player; }
+LocalPlayer& ClientWorld::get_player() { return m_player_manager.get_local(); }
+const LocalPlayer& ClientWorld::get_player() const {
+    return m_player_manager.get_local();
+}
 int ClientWorld::get_block(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;
@@ -127,7 +131,7 @@ void ClientWorld::rebuild_world() {
     m_pending_upload_queue.clear();
 
     start_thread_pool();
-    start_client_thread(m_player.get_uuid());
+    start_client_thread(m_player_manager.get_local().get_uuid());
     request_chunk();
     m_is_rebuilding = false;
 }
@@ -135,7 +139,6 @@ void ClientWorld::rebuild_world() {
 BlockType ClientWorld::get_block_tpye(const glm::ivec3& block_pos) const {
     auto [chunk_x, chunk_z] = get_chunk_pos(block_pos.x, block_pos.z);
     chunk_cacc cacc;
-    ;
 
     if (!m_chunks.find(cacc, ChunkPos{chunk_x, chunk_z})) {
         // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
@@ -294,20 +297,15 @@ void ClientWorld::push_delete_vao(std::unique_ptr<VertexArray>& vao) {
 void ClientWorld::report_block_change(const glm::ivec3& pos,
                                       unsigned id) const {
     if (id != 0) {
-        AABB block_box = get_block_aabb(pos);
-        std::shared_lock lock(m_player_info_mutex);
-
-        for (auto& [uuid, player] : m_player_info) {
-            AABB box = ClientPlayer::get_aabb(player.target_pos);
-            if (box.intersects(block_box)) {
-                return;
-            }
+        Hitbox block_box = get_block_aabb(pos);
+        if (m_player_manager.has_player(block_box)) {
+            return;
         }
     }
 
     Arena arena;
     auto* req = Arena::Create<BlockChangeReq>(&arena);
-    req->set_uuid(m_player.get_uuid());
+    req->set_uuid(m_player_manager.get_local().get_uuid());
     req->set_block(id);
     auto* p = req->mutable_pos();
     p->set_x(pos.x);
@@ -326,51 +324,20 @@ void ClientWorld::receive_time(const UpdateTime& rsp) {
     m_day_tick = rsp.day_tick();
 }
 
-void ClientWorld::receive_remote_player(const PlayerInfoRsp& rsp) {
-    auto pitch = rsp.pitch();
-    auto yaw = rsp.yaw();
-    {
-        std::lock_guard lock(m_player_info_mutex);
-        glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
-        auto it = m_player_info.find(rsp.uuid());
-        if (it == m_player_info.end()) {
-            m_player_info.emplace(
-                std::piecewise_construct, std::forward_as_tuple(rsp.uuid()),
-                std::forward_as_tuple(rsp.name(), rsp.uuid(), pos, pos, yaw,
-                                      yaw, pitch, pitch,
-                                      get_gait_from_id(rsp.gait())));
-        } else {
-            it->second.target_pos = pos;
-            it->second.yaw = yaw;
-            it->second.pitch = pitch;
-            it->second.gait = get_gait_from_id(rsp.gait());
-        }
-        // Logger::info("Player {} pos Update", rsp.name());
-    }
-}
-
 void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
     if (rsp.server_stop()) {
         m_receive_exit = true;
         return;
     }
-    if (rsp.uuid() == m_player.get_uuid()) {
+    if (rsp.uuid() == m_player_manager.get_local().get_uuid()) {
         m_receive_exit = true;
         return;
     }
-    {
-        std::lock_guard lock(m_player_info_mutex);
-        int sum = m_player_info.erase(rsp.uuid());
-        if (sum == 0) {
-            Logger::warn("Player {} not find", rsp.uuid());
-        } else {
-            Logger::info("Player {} erase", rsp.uuid());
-        }
-    }
+    m_player_manager.receive_player_logout(rsp);
 }
 
 void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
-    if (rsp.uuid() == m_player.get_uuid()) {
+    if (rsp.uuid() == m_player_manager.get_local().get_uuid()) {
         return;
     }
     glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
@@ -390,15 +357,17 @@ void ClientWorld::send_player_water_sound(bool underwater,
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
-    r->set_uuid(m_player.get_uuid());
+    r->set_uuid(m_player_manager.get_local().get_uuid());
 
     m_client->send(make_packet(*r));
     Logger::info("Client: Send Player Water Sound");
 }
 
 void ClientWorld::init(std::string_view player_name,
-                       std::shared_ptr<NetworkClient> client) {
-    m_player.init(player_name);
+                       std::shared_ptr<NetworkClient> client, RunMode mode) {
+    m_runmode = mode;
+    m_entity_manager.init();
+    m_player_manager.init(player_name);
     m_client = client;
 
     reload_config(false);
@@ -406,9 +375,11 @@ void ClientWorld::init(std::string_view player_name,
     m_random.init(ChunkGenerator::seed());
 
     // timer
-    register_ticktimer("player_pos", 1, [this]() { report_player_info(); });
-    m_timers.try_emplace("Birds Sound", 60.0f, [this]() {
-        auto player_pos = m_player.get_player_pos();
+    register_timer("player_pos", 0.05f, [this]() {
+        m_player_manager.report_player_info(m_client.get());
+    });
+    register_timer("Birds Sound", 60.0f, [this]() {
+        auto player_pos = m_player_manager.get_local().get_player_pos();
         if (player_pos.y < SEA_LEVEL) {
             return;
         }
@@ -423,8 +394,8 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
-    m_timers.try_emplace("Ocean Wave", 3.0f, [this]() {
-        auto player_pos = m_player.get_player_pos();
+    register_timer("Ocean Wave", 3.0f, [this]() {
+        auto player_pos = m_player_manager.get_local().get_player_pos();
         if (player_pos.y < SEA_LEVEL - 10 || player_pos.y > SEA_LEVEL + 10) {
             return;
         }
@@ -443,16 +414,17 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
-    m_timers.try_emplace("under water bubble", 1.5f, [this]() {
-        if (m_player.is_underwater()) {
+    register_timer("under water bubble", 1.5f, [this]() {
+        if (m_player_manager.get_local().is_underwater()) {
             auto ans = m_random.random_int(1, 2);
             std::string sound =
                 "ambient/water/bubble00" + std::to_string(ans) + ".ogg";
-            m_audio.play_3d(sound, m_player.get_player_pos(), true);
+            m_audio.play_3d(
+                sound, m_player_manager.get_local().get_player_pos(), true);
         }
     });
 
-    m_timers.try_emplace("bgm change", 350.0f, [this]() {
+    register_timer("bgm change", 350.0f, [this]() {
         if (m_day_tick >= 17000 || m_day_tick < 5000) {
             m_audio.change_bgm("bgm/bgm002.ogg");
         } else {
@@ -461,7 +433,7 @@ void ClientWorld::init(std::string_view player_name,
     });
 
     LoginReq req;
-    req.set_name(m_player.get_name());
+    req.set_name(m_player_manager.get_local().get_name());
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
             throw std::runtime_error(client->get_error_string());
@@ -486,31 +458,32 @@ void ClientWorld::start_client_thread(std::string_view uuid) {
         return;
     }
     // response
-    m_player.set_uuid(uuid);
-
+    m_player_manager.get_local().set_uuid(uuid);
+    /*
     m_client_thread = std::jthread([this](std::stop_token token) {
         m_game_running = true;
         client_run(token);
-    });
+    });*/
 
     // Wait for 20 ticks, after the server's central chunk is generated, then
     // request chunks
 
-    std::this_thread::sleep_for(milliseconds(20 * DEFAULT_PER_TICK_TIME));
+    std::this_thread::sleep_for(milliseconds(20 * m_per_tick_time));
 
     request_chunk();
 }
 
 void ClientWorld::stop_client_thread() {
+    /*
     m_client_thread.request_stop();
     if (m_client_thread.joinable()) {
         m_client_thread.join();
-    }
+    }*/
     m_game_running = false;
 }
 void ClientWorld::start_thread_pool() {
-    int max_threads = std::thread::hardware_concurrency();
-    int threads = std::min<size_t>(max_threads, 4);
+    auto threads = Tools::get_client_threads(m_runmode);
+    Logger::info("Client pool threads {}", threads);
     change_pool_threads(threads);
 }
 void ClientWorld::stop_thread_pool() {
@@ -529,7 +502,6 @@ void ClientWorld::change_pool_threads(int threads) {
         m_max_threads = 1;
     }
     int used_thread = std::clamp(threads, 1, m_max_threads);
-    Logger::info("Create New Thread Pool Use {} Threads", used_thread);
     m_thread_pool.store(std::make_shared<PriorityThreadPool>(used_thread));
 }
 
@@ -541,14 +513,15 @@ void ClientWorld::reload_config(bool chunk_build) {
         request_chunk();
     }
 
-    m_player.reload_config();
+    m_player_manager.reload_config();
 }
 
+/*
 void ClientWorld::client_run(std::stop_token stoken) {
     Logger::info("Client Thread Started");
     using Clock = std::chrono::steady_clock;
 
-    constexpr auto TICK = std::chrono::milliseconds(DEFAULT_PER_TICK_TIME);
+    const auto TICK = std::chrono::milliseconds(m_per_tick_time);
 
     auto next = Clock::now();
     while (!stoken.stop_requested()) {
@@ -559,25 +532,7 @@ void ClientWorld::client_run(std::stop_token stoken) {
         std::this_thread::sleep_until(next);
     }
 }
-
-void ClientWorld::report_player_info() {
-    if (!m_client) {
-        return;
-    }
-    Arena arena;
-    auto* info = Arena::Create<C2S_PlayerInfo>(&arena);
-    info->set_uuid(m_player.get_uuid());
-    glm::vec3 player_pos = m_player.get_player_pos();
-    auto* v3 = info->mutable_pos();
-    v3->set_x(player_pos.x);
-    v3->set_y(player_pos.y);
-    v3->set_z(player_pos.z);
-    info->set_yaw(m_player.yaw());
-    info->set_pitch(m_player.pitch());
-    info->set_gait(get_gait_id(m_player.get_gait()));
-
-    m_client->send(make_packet(*info), 0);
-}
+*/
 
 void ClientWorld::update_chunk(const ChunkPosSet& old, const ChunkPosSet& now) {
 
@@ -606,7 +561,7 @@ void ClientWorld::request_chunk() {
     }
     ChunkPosSet required_chunks;
 
-    glm::vec3 player_pos = m_player.get_player_pos();
+    glm::vec3 player_pos = m_player_manager.get_local().get_player_pos();
 
     int x = std::floor(player_pos.x);
     int z = std::floor(player_pos.z);
@@ -624,8 +579,8 @@ void ClientWorld::request_chunk() {
         }
     }
 
-    ChunkPosSet old = m_player.get_chunk_pos_set();
-    m_player.update_chunk_set(required_chunks);
+    ChunkPosSet old = m_player_manager.get_local().get_chunk_pos_set();
+    m_player_manager.get_local().update_chunk_set(required_chunks);
 
     ChunkPosVector need_send_pos;
 
@@ -649,7 +604,7 @@ void ClientWorld::request_chunk() {
         break;
     case CENTER: {
 
-        glm::vec3 player_pos = m_player.get_player_pos();
+        glm::vec3 player_pos = m_player_manager.get_local().get_player_pos();
         ChunkPos player_chunk_pos = get_chunk_pos(player_pos.x, player_pos.z);
         auto dist2 = [player_chunk_pos](ChunkPos chunk_pos) {
             float dx = player_chunk_pos.x - chunk_pos.x;
@@ -663,7 +618,7 @@ void ClientWorld::request_chunk() {
                   });
     }
     }
-    auto uuid = m_player.get_uuid();
+    auto uuid = m_player_manager.get_local().get_uuid();
     Arena arena;
     ++m_chunk_task_id;
     auto* req = Arena::Create<ChunkDataReq>(&arena);
@@ -678,7 +633,9 @@ void ClientWorld::request_chunk() {
     Logger::info("Send Chunk Request Success");
     m_requesting_chunk = false;
 }
-void ClientWorld::reset_key_status() { m_player.reset_key_status(); }
+void ClientWorld::reset_key_status() {
+    m_player_manager.get_local().reset_input_status();
+}
 void ClientWorld::receive_chunk(std::vector<uint8_t> raw_data,
                                 PacketHeader header) {
 
@@ -721,20 +678,15 @@ bool ClientWorld::is_receive_exit() { return m_receive_exit; }
 
 int ClientWorld::chunk_size() const { return m_chunks.size(); }
 
-AABB ClientWorld::get_block_aabb(const glm::ivec3& pos) {
-    auto x = pos.x;
-    auto y = pos.y;
-    auto z = pos.z;
-    return {glm::vec3{static_cast<float>(x), static_cast<float>(y),
-                      static_cast<float>(z)},
-            glm::vec3{static_cast<float>(x + 1), static_cast<float>(y + 1),
-                      static_cast<float>(z + 1)}};
-}
-
 AudioEngine& ClientWorld::get_audio() { return m_audio; }
 const AudioEngine& ClientWorld::get_audio() const { return m_audio; }
 Config& ClientWorld::get_config() { return m_config; }
 WorldScene& ClientWorld::world_scene() { return m_world_scene; }
+ClientPlayerManager& ClientWorld::player_manager() { return m_player_manager; }
+ClientEntityManager& ClientWorld::entity_manager() { return m_entity_manager; }
+std::shared_ptr<NetworkClient> ClientWorld::get_client() const {
+    return m_client;
+}
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
@@ -742,14 +694,14 @@ void ClientWorld::request_exit() {
     }
     Arena arena;
     auto* req = Arena::Create<LogoutReq>(&arena);
-    req->set_uuid(m_player.get_uuid());
+    req->set_uuid(m_player_manager.get_local().get_uuid());
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
         if (m_client->is_connect_error() || m_exit_direct) {
             break;
         }
-        std::this_thread::sleep_for(milliseconds(DEFAULT_PER_TICK_TIME));
+        std::this_thread::sleep_for(milliseconds(m_per_tick_time));
         ++cnt;
         if (cnt >= WORLD_EXIT_TIMEOUT) {
             Logger::warn("Can't Receive Server Exit Sign");
@@ -773,6 +725,14 @@ void ClientWorld::receive_voice_message(VoiceMsg& msg) {
     m_voice_queue.emplace(msg.opus_data(), pos);
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
+int ClientWorld::get_per_tick_time() const { return m_per_tick_time; }
+
+bool ClientWorld::is_render(const glm::vec3& pos) const {
+    ChunkPos p = get_chunk_pos(pos.x, pos.z);
+    chunk_cacc cacc;
+    return m_chunks.find(cacc, p);
+}
+
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
     auto msg = Arena::Create<ChatMsg>(&arena);
@@ -782,8 +742,8 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
 }
 
 void ClientWorld::update(float delta_time) {
-
-    m_player.update(delta_time);
+    m_player_manager.update(delta_time);
+    m_entity_manager.update(delta_time);
     {
         std::lock_guard lk(m_delete_vbo_mutex);
         m_pending_delete_vbo.clear();
@@ -834,7 +794,7 @@ void ClientWorld::update(float delta_time) {
         chunk->upload_to_gpu();
     }
 
-    auto chunk_pos_set = m_player.get_chunk_pos_set();
+    auto chunk_pos_set = m_player_manager.get_local().get_chunk_pos_set();
 
     for (auto& pos : chunk_pos_set) {
         std::shared_ptr<ClientChunk> chunk;
@@ -849,93 +809,6 @@ void ClientWorld::update(float delta_time) {
         }
 
         m_render_snapshots.push_back(chunk->get_render_snapshot());
-    }
-
-    m_render_player_data.clear();
-    {
-        std::lock_guard lock(m_player_info_mutex);
-        for (auto& [uuid, player] : m_player_info) {
-            player.render_pos =
-                glm::mix(player.render_pos, player.target_pos, 0.15f);
-            if (Math::distance2(player.render_pos, m_player.get_player_pos()) >
-                m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
-                    CHUNK_SIZE) {
-                continue;
-            }
-            player.render_yaw = glm::mix(player.render_yaw, player.yaw, 0.15);
-            player.render_pitch =
-                glm::mix(player.render_pitch, player.pitch, 0.15);
-
-            if (player.gait == Gait::WALK || player.gait == Gait::RUN) {
-
-                player.walk_time += delta_time;
-
-                float speed = player.gait == Gait::RUN ? 14.0f : 8.0f;
-                float amp = player.gait == Gait::RUN ? 50.0f : 35.0f;
-                // float amp = 90.0f;
-                player.angle =
-                    glm::sin(player.walk_time * speed) * glm::radians(amp);
-            } else if (player.gait == Gait::STOP) {
-                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
-                player.angle = glm::mix(player.angle, 0.0f, t);
-            }
-
-            // walking sound
-            if (player.gait == Gait::STOP) {
-                player.moving_time = 0.0f;
-            } else {
-                player.moving_time += delta_time;
-            }
-            auto play_walk_sound = [&]() {
-                glm::ivec3 block = glm::floor(player.render_pos);
-                block.y -= 1;
-                BlockType id = get_block_tpye(block);
-                if (id == 0) {
-                    return;
-                }
-                std::string name = BlockManager::name_form_id(id);
-                std::string sound = "block/" + name + "/walk.ogg";
-                m_audio.play_3d(sound, player.render_pos);
-            };
-            if (player.gait == Gait::WALK) {
-                if (player.moving_time >= ClientPlayer::WALK_SOUND_INTERVAL) {
-                    player.moving_time = 0.0f;
-                    play_walk_sound();
-                }
-            }
-            if (player.gait == Gait::RUN) {
-                if (player.moving_time >= ClientPlayer::RUN_SOUND_INTERVAL) {
-                    player.moving_time = 0.0f;
-                    play_walk_sound();
-                }
-            }
-
-            m_render_player_data.emplace_back(
-                player.name, player.uuid, player.render_pos, player.render_yaw,
-                player.render_pitch, player.gait, player.angle);
-        }
-        {
-            auto gait = m_player.get_gait();
-            auto& walk_time = m_player.walk_time();
-            auto& angle = m_player.angle();
-            if (gait == Gait::WALK || gait == Gait::RUN) {
-
-                walk_time += delta_time;
-
-                float speed = gait == Gait::RUN ? 14.0f : 8.0f;
-                float amp = gait == Gait::RUN ? 50.0f : 35.0f;
-                // float amp = 90.0f;
-                angle = glm::sin(walk_time * speed) * glm::radians(amp);
-            } else if (gait == Gait::STOP) {
-                float t = glm::clamp(delta_time * 10.0f, 0.0f, 1.0f);
-                angle = glm::mix(angle, 0.0f, t);
-            }
-
-            m_render_player_data.emplace_back(
-                m_player.get_name(), m_player.get_uuid(),
-                m_player.get_player_pos(), m_player.yaw(), m_player.pitch(),
-                m_player.get_gait(), m_player.angle());
-        }
     }
 
     // sound
@@ -960,29 +833,30 @@ void ClientWorld::update(float delta_time) {
 
 bool ClientWorld::handle_event(const Event& e) {
     return std::visit(
-        Overloaded{[this](const MouseButtonEvent& e) {
-                       if (m_player.handle_mouse_button_event(e)) {
-                           return true;
-                       }
-                       return false;
-                   },
-                   [](const MouseMoveEvent&) { return false; },
-                   [this](const MouseWheelEvent& e) {
-                       if (m_player.handle_mouse_wheel_event(e)) {
-                           return true;
-                       }
-                       return false;
-                   },
-                   [this](const KeyEvent& e) {
-                       if (m_player.handle_key_event(e)) {
-                           return true;
-                       }
+        Overloaded{
+            [this](const MouseButtonEvent& e) {
+                if (m_player_manager.get_local().handle_mouse_button_event(e)) {
+                    return true;
+                }
+                return false;
+            },
+            [](const MouseMoveEvent&) { return false; },
+            [this](const MouseWheelEvent& e) {
+                if (m_player_manager.get_local().handle_mouse_wheel_event(e)) {
+                    return true;
+                }
+                return false;
+            },
+            [this](const KeyEvent& e) {
+                if (m_player_manager.get_local().handle_key_event(e)) {
+                    return true;
+                }
 
-                       return false;
-                   },
-                   [](const TextInputEvent&) { return false; },
-                   [](const WindowResizeEvent&) { return false; },
-                   [](const FrameBufferResizeEvent&) { return false; }
+                return false;
+            },
+            [](const TextInputEvent&) { return false; },
+            [](const WindowResizeEvent&) { return false; },
+            [](const FrameBufferResizeEvent&) { return false; }
 
         },
         e);
@@ -1049,11 +923,6 @@ const std::vector<const ChunkRenderSnapshot*>&
 ClientWorld::render_snapshots() const {
     return m_render_snapshots;
 };
-const std::vector<PlayerRenderData>& ClientWorld::render_player_data() const {
-    return m_render_player_data;
-}
-std::vector<PlayerRenderData>& ClientWorld::render_player_data() {
-    return m_render_player_data;
-}
+
 std::vector<glm::vec4>& ClientWorld::planes() { return m_planes; }
 } // namespace Cubed

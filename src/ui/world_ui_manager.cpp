@@ -30,7 +30,7 @@ void WorldUIManager::init() {
         auto& hotbar = m_root_widget->add_child<RowLayout>();
         hotbar.set_anchor(Anchor::BOTTOM_CENTER);
         m_hotbar = &hotbar;
-        for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
+        for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
             auto& slot = hotbar.add_child<ItemSlot>();
             slot.set_default_background(texture_manager);
             slot.set_scale(5.0f);
@@ -130,8 +130,8 @@ void WorldUIManager::update_hotbar() {
     auto& player = m_scene.client_world().get_player();
     auto hotbar = player.get_hotbar();
     size_t selected = player.selected_hotbar();
-    for (size_t i = 0; i < ClientPlayer::HOTBAR_SUM; ++i) {
-        auto type = hotbar[i].type;
+    for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
+        auto type = hotbar[i].id;
         if (selected == i) {
             m_hotbar_slot[i]->set_border_visale(true);
         } else {
@@ -140,7 +140,9 @@ void WorldUIManager::update_hotbar() {
         if (type == 0) {
             m_hotbar_slot[i]->set_item(0, nullptr);
         } else {
-            m_hotbar_slot[i]->set_item(type, item_texture[type].get());
+            auto it = item_texture.find(type);
+            ASSERT(it != item_texture.end());
+            m_hotbar_slot[i]->set_item(type, it->second.get());
         }
     }
 }

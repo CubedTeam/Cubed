@@ -1,0 +1,13 @@
+#version 460
+
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec2 texCoord;
+layout (location = 3) in mat4 modelMatrix;
+uniform mat4 lightSpaceMatrix;
+
+out vec2 tc;
+
+void main() {
+    tc = texCoord;
+    gl_Position = lightSpaceMatrix * modelMatrix * vec4(pos, 1.0);
+}

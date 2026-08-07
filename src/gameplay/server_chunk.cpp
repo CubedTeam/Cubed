@@ -141,6 +141,7 @@ void ServerChunk::gen_phase_five() {
     m_generator->generate_cave();
 
     m_generator->generate_vegetation();
+    m_generator->spawn_creature();
     m_generator = nullptr;
 }
 

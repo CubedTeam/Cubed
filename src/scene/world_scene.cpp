@@ -126,26 +126,49 @@ bool WorldScene::handle_event(const Event& e) {
         e);
 }
 void WorldScene::on_enter() {
-    auto& param = m_scene_manager.world_scene_param();
     load_config();
     m_error_ui.init();
-
-    if (param.host_game) {
-        if (param.seed) {
-            ChunkGenerator::init(*param.seed);
-            param.seed = std::nullopt;
-        } else {
-            ChunkGenerator::init();
-        }
-        m_server.start_server(param.port);
-    }
     m_client = std::make_shared<NetworkClient>(m_client_world);
+    if (m_argument.direct_enter) {
+        if (m_argument.ip) {
+            m_runmode = RunMode::CLIENT_ONLY;
+        }
+    } else {
+        if (!m_scene_manager.world_scene_param().host_game) {
+            m_runmode = RunMode::CLIENT_ONLY;
+        }
+    }
 
-    m_client->start(param.ip, param.port);
+    if (m_argument.direct_enter) {
+        if (!m_argument.ip) {
+            ChunkGenerator::init();
+            m_server.start_server(*m_argument.port, m_runmode);
+            m_client->start("127.0.0.1", *m_argument.port);
+        } else {
+            m_client->start(*m_argument.ip, *m_argument.port);
+        }
+
+    } else {
+        auto& param = m_scene_manager.world_scene_param();
+
+        if (param.host_game) {
+            if (param.seed) {
+                ChunkGenerator::init(*param.seed);
+                param.seed = std::nullopt;
+            } else {
+                ChunkGenerator::init();
+            }
+            m_server.start_server(param.port, m_runmode);
+        }
+
+        m_client->start(param.ip, param.port);
+    }
+
     // init will send packet
     try {
 
-        m_client_world.init(m_argument.player.value_or("Unknown"), m_client);
+        m_client_world.init(m_argument.player.value_or("Unknown"), m_client,
+                            m_runmode);
 
         Logger::info("World Init Success");
         m_camera.camera_init(&m_client_world.get_player());
@@ -437,6 +460,9 @@ void WorldScene::handle_chat_message(ChatMessage& message) {
 bool WorldScene::is_recording() const {
     return m_client_world.get_audio().audio_recording().is_recording();
 }
+
+RunMode WorldScene::runmode() const { return m_runmode; }
+
 void WorldScene::set_error(std::string_view error) {
     Logger::error("WorldScene Error Set {}", error);
     m_error_ui.set_error(error);

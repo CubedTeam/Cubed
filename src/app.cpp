@@ -2,6 +2,8 @@
 
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
+#include "Cubed/gameplay/block_manager.hpp"
+#include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -73,21 +75,29 @@ void App::init(int argc, char** argv) {
         Localization::instance().load_language(
             m_game_config.get("language", default_value));
     }
-
+    BlockManager::init();
+    ItemManager::instance().init();
     m_window.init(m_argument);
     m_window.imgui_init();
     m_opengl_init = true;
     Logger::info("Window Init Success");
 
     m_audio.init();
-    BlockManager::init();
+
     m_renderer.init();
     Logger::info("Renderer Init Success");
     // MapTable::init_map();
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");
 
-    m_scene_manager.request_push(SceneType::MAIN_MENU);
+    m_scene_manager.push(SceneType::MAIN_MENU);
+    if (m_argument.direct_enter) {
+        if (m_argument.port) {
+            m_scene_manager.request_push(SceneType::WORLD);
+        } else {
+            throw std::runtime_error("You need use -p to specify a port");
+        }
+    }
     last_tick = SDL_GetTicks();
     current_tick = SDL_GetTicks();
     {
@@ -178,7 +188,9 @@ void App::handle_argument(int argc, char** argv) {
             {"--enable-filelog",
              [&](ArgParser&) { m_argument.enable_filelog = true; }},
             {"--enale-consolelog",
-             [&](ArgParser&) { m_argument.enable_consolelog = true; }}
+             [&](ArgParser&) { m_argument.enable_consolelog = true; }},
+            {"--direct-enter",
+             [&](ArgParser&) { m_argument.direct_enter = true; }}
 
         };
     ArgParser parser(argc, argv);

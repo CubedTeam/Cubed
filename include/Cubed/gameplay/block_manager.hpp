@@ -1,0 +1,45 @@
+#pragma once
+
+#include "Cubed/gameplay/block.hpp"
+
+#include <tbb/concurrent_hash_map.h>
+namespace Cubed {
+class BlockManager {
+
+public:
+    static void init();
+    static unsigned sums();
+    static unsigned cross_plane_sum();
+    static const std::string& name_form_id(BlockType id);
+    static bool is_gas(BlockType id);
+    static bool is_liquid(BlockType id);
+
+    static bool is_cross_plane(BlockType id);
+    static bool is_transparent(BlockType id);
+    static bool is_passable(BlockType id);
+
+    static bool is_discard(BlockType id);
+    static bool is_blend(BlockType id);
+    static bool is_transitional(BlockType id);
+    static float roughness(BlockType id);
+    static BlockType cross_plane_index(BlockType id);
+
+    static BlockType id_from_name(const std::string& name);
+
+private:
+    using BlockMap = tbb::concurrent_hash_map<BlockType, BlockData>;
+    using acc = BlockMap::accessor;
+    using cacc = BlockMap::const_accessor;
+    using IDMap = tbb::concurrent_hash_map<std::string, BlockType>;
+    using CrossPlaneMap = tbb::concurrent_hash_map<BlockType, BlockType>;
+
+    static inline const BlockData EMPTY;
+
+    static inline BlockMap m_datas;
+    static inline IDMap m_id_map;
+    static inline bool is_init = false;
+    static inline CrossPlaneMap m_cross_plane_map;
+    static void set_up_cross_plane_map(
+        const std::vector<std::pair<bool, BlockType>>& types);
+};
+} // namespace Cubed

@@ -189,7 +189,8 @@ void PlayerRenderer::init() {
     m_inited = true;
 }
 
-void PlayerRenderer::render(const Shader& shader, ClientWorld& world) {
+void PlayerRenderer::render(const Shader& shader, ClientWorld& world,
+                            bool shadow_render) {
     if (!m_inited) {
         Logger::error("Player Renderer isn't init");
         return;
@@ -200,12 +201,14 @@ void PlayerRenderer::render(const Shader& shader, ClientWorld& world) {
     glm::mat4 m_v_mat = camera.get_camera_lookat();
     glm::mat4 m_p_mat = m_renderer.world_proj_matrix();
 
-    auto& players = world.render_player_data();
-    shader.set_loc("proj_matrix", m_p_mat);
+    auto players = world.player_manager().render_player_data();
+    if (!shadow_render) {
+        shader.set_loc("proj_matrix", m_p_mat);
+    }
 
     for (auto& player : players) {
 
-        if (player.uuid == m_player.get_uuid()) {
+        if (player.info.uuid == m_player.get_uuid()) {
             if (camera.is_first_person()) {
                 continue;
             }
@@ -213,14 +216,14 @@ void PlayerRenderer::render(const Shader& shader, ClientWorld& world) {
 
         glm::mat4 model(1.0f);
 
-        model = glm::translate(model, player.render_pos);
+        model = glm::translate(model, player.render_pos.value);
 
         // model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
         // glm::rotate(..., +yaw, Y) follows the OpenGL right‑handed coordinate
         // system, where a positive angle means counter‑clockwise rotation.
         // Therefore the model must use -yaw to align with the direction of
         // m_front.
-        model = glm::rotate(model, glm::radians(-player.yaw + 180.0f),
+        model = glm::rotate(model, glm::radians(-player.angle.yaw + 180.0f),
                             glm::vec3(0, 1, 0));
         model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
 
@@ -234,102 +237,16 @@ void PlayerRenderer::render(const Shader& shader, ClientWorld& world) {
             return mat;
         };
 
-        for (int i = 0; i < BODY_PART_NUM; i++) {
-            switch (i) {
-            case 0: {
-                glm::mat4 head_model = model;
-                head_model = glm::translate(head_model, HEAD_PIVOT);
-                head_model =
-                    glm::rotate(head_model, glm::radians(-player.pitch),
-                                glm::vec3(1, 0, 0));
-                head_model = glm::translate(head_model, -HEAD_PIVOT);
-                glm::mat4 head_mv = m_v_mat * head_model;
-                shader.set_loc("norm_matrix",
-                               glm::transpose(glm::inverse(head_mv)));
-                shader.set_loc("modelMatrix", head_model);
-                shader.set_loc("mv_matrix", head_mv);
-            } break;
-            case 1: {
-                glm::mat4 mv_mat = m_v_mat * model;
-                shader.set_loc("norm_matrix",
-                               glm::transpose(glm::inverse(mv_mat)));
-                shader.set_loc("modelMatrix", model);
-                shader.set_loc("mv_matrix", mv_mat);
-            } break;
-            case 2: { // left arm
-                glm::mat4 model_mat =
-                    make_rotated(LEFT_ARM_PIVOT, player.angle);
-                glm::mat4 mv_mat = m_v_mat * model_mat;
-                shader.set_loc("norm_matrix",
-                               glm::transpose(glm::inverse(mv_mat)));
-                shader.set_loc("modelMatrix", model_mat);
-                shader.set_loc("mv_matrix", mv_mat);
-            } break;
-            case 3: { // right arm
-                glm::mat4 model_mat =
-                    make_rotated(RIGHT_ARM_PIVOT, -player.angle);
-                glm::mat4 mv_mat = m_v_mat * model_mat;
-                shader.set_loc("norm_matrix",
-                               glm::transpose(glm::inverse(mv_mat)));
-                shader.set_loc("modelMatrix", model_mat);
-                shader.set_loc("mv_matrix", mv_mat);
-            } break;
-            case 4: { // left leg
-                glm::mat4 model_mat =
-                    make_rotated(LEFT_LEG_PIVOT, -player.angle);
-                glm::mat4 mv_mat = m_v_mat * model_mat;
-                shader.set_loc("norm_matrix",
-                               glm::transpose(glm::inverse(mv_mat)));
-                shader.set_loc("modelMatrix", model_mat);
-                shader.set_loc("mv_matrix", mv_mat);
-            } break;
-            case 5: { // right leg
-                glm::mat4 model_mat =
-                    make_rotated(RIGHT_LEG_PIVOT, player.angle);
+        auto set_loc = [&](glm::mat4& model_matrix) {
+            if (!shadow_render) {
+                glm::mat4 model_view = m_v_mat * model_matrix;
 
-                glm::mat4 mv_mat = m_v_mat * model_mat;
                 shader.set_loc("norm_matrix",
-                               glm::transpose(glm::inverse(mv_mat)));
-                shader.set_loc("modelMatrix", model_mat);
-                shader.set_loc("mv_matrix", mv_mat);
-            } break;
+                               glm::transpose(glm::inverse(model_view)));
+                shader.set_loc("mv_matrix", model_view);
             }
 
-            glBindVertexArray(m_vao[i]);
-            glEnable(GL_DEPTH_TEST);
-            glDrawArrays(GL_TRIANGLES, 0, m_vertices[i].size());
-        }
-    }
-}
-
-void PlayerRenderer::shadow_render(const Shader& shader,
-                                   glm::mat4& light_matrix,
-                                   ClientWorld& world) {
-    if (!m_inited) {
-        Logger::error("Player Renderer isn't init");
-        return;
-    }
-    shader.use();
-    shader.set_loc("lightSpaceMatrix", light_matrix);
-    auto& players = world.render_player_data();
-
-    for (auto& player : players) {
-        glm::mat4 model(1.0f);
-
-        model = glm::translate(model, player.render_pos);
-
-        // model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.5f));
-
-        model = glm::rotate(model, glm::radians(-player.yaw + 180.0f),
-                            glm::vec3(0, 1, 0));
-        model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
-
-        auto make_rotated = [&](glm::vec3 pivot, float angle) {
-            glm::mat4 mat = model;
-            mat = glm::translate(mat, pivot);
-            mat = glm::rotate(mat, angle, glm::vec3(1, 0, 0));
-            mat = glm::translate(mat, -pivot);
-            return mat;
+            shader.set_loc("modelMatrix", model_matrix);
         };
 
         for (int i = 0; i < BODY_PART_NUM; i++) {
@@ -338,33 +255,37 @@ void PlayerRenderer::shadow_render(const Shader& shader,
                 glm::mat4 head_model = model;
                 head_model = glm::translate(head_model, HEAD_PIVOT);
                 head_model =
-                    glm::rotate(head_model, glm::radians(-player.pitch),
+                    glm::rotate(head_model, glm::radians(-player.angle.pitch),
                                 glm::vec3(1, 0, 0));
                 head_model = glm::translate(head_model, -HEAD_PIVOT);
-                shader.set_loc("modelMatrix", head_model);
+                set_loc(head_model);
             } break;
             case 1: {
-                shader.set_loc("modelMatrix", model);
+                set_loc(model);
             } break;
             case 2: { // left arm
-                shader.set_loc("modelMatrix",
-                               make_rotated(LEFT_ARM_PIVOT, player.angle));
+                glm::mat4 matrix =
+                    make_rotated(LEFT_ARM_PIVOT, player.angle.roll);
+                set_loc(matrix);
             } break;
             case 3: { // right arm
-                shader.set_loc("modelMatrix",
-                               make_rotated(RIGHT_ARM_PIVOT, -player.angle));
+                glm::mat4 matrix =
+                    make_rotated(RIGHT_ARM_PIVOT, -player.angle.roll);
+                set_loc(matrix);
             } break;
             case 4: { // left leg
-                shader.set_loc("modelMatrix",
-
-                               make_rotated(LEFT_LEG_PIVOT, -player.angle));
+                glm::mat4 matrix =
+                    make_rotated(LEFT_LEG_PIVOT, -player.angle.roll);
+                set_loc(matrix);
             } break;
             case 5: { // right leg
-                shader.set_loc("modelMatrix",
+                glm::mat4 matrix =
+                    make_rotated(RIGHT_LEG_PIVOT, player.angle.roll);
 
-                               make_rotated(RIGHT_LEG_PIVOT, player.angle));
+                set_loc(matrix);
             } break;
             }
+
             glBindVertexArray(m_vao[i]);
             glEnable(GL_DEPTH_TEST);
             glDrawArrays(GL_TRIANGLES, 0, m_vertices[i].size());

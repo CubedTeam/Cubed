@@ -50,6 +50,8 @@ public:
     void generate_cave();
     void generate_river();
 
+    void spawn_creature();
+
 private:
     static inline std::atomic<bool> is_init{false};
     static inline unsigned m_generator_seed{0};

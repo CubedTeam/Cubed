@@ -6,6 +6,7 @@
     "harfbuzz",
     "freetype",
     "opus",
+    "assimp",
     {
       "name": "sdl3",
       "default-features": false

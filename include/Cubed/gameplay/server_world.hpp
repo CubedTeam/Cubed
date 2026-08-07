@@ -7,7 +7,9 @@
 #include "Cubed/gameplay/packet.hpp" // IWYU pragma: keep
 #include "Cubed/gameplay/river_worm.hpp"
 #include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server_entity_manager.hpp"
 #include "Cubed/gameplay/server_player.hpp"
+#include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
 #include "Cubed/tools/sensitive_filter.hpp"
@@ -20,19 +22,20 @@
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 namespace Cubed {
 class Session;
-class ServerWorld {
+class ServerWorld : public World {
 public:
     enum class ThreadPoolKind { NET, GEN };
     ServerWorld(Config& config);
     ~ServerWorld();
     void stop();
     void handle_player_exit(const std::string& uuid);
-    void init_world();
+    void init_world(RunMode mode);
     void need_gen(std::string uuid);
     void update();
     void hot_reload();
@@ -84,7 +87,24 @@ public:
 
     void handle_chat_message(ChatMsg& msg);
     void handle_voice_message(VoiceMsg& msg);
+
+    void handle_entity_create(C2SEntityCreateRequest& req);
+    void handle_entity_destory(C2SEntityDestoryRequest& req);
+
     int chunk_size() const;
+
+    tbb::concurrent_vector<std::shared_ptr<Session>> get_all_session() const;
+
+    uint32_t get_chunk_ref_count(const glm::vec3& pos) const;
+    ServerEntityManager& entity_manager();
+    std::shared_ptr<ThreadPool> get_compute_pool();
+    size_t player_sum() const;
+
+    int get_block(const glm::ivec3& block_pos) const override;
+    bool is_solid(const glm::ivec3& block_pos) const override;
+    bool can_pass_block(const glm::ivec3& block_pos) const override;
+    BlockType get_block_tpye(const glm::ivec3& block_pos) const override;
+    int get_per_tick_time() const override;
     template <typename Fn>
     void register_timer(std::string_view id, TickType threshold, Fn&& f) {
         m_timers.emplace(std::piecewise_construct,
@@ -97,7 +117,27 @@ private:
     struct ChunkEntity {
         ChunkState state;
         std::shared_ptr<ServerChunk> chunk;
-        uint32_t ref_count = 0;
+        std::atomic<uint32_t> ref_count = 0;
+        ChunkEntity() = default;
+        ChunkEntity(ChunkState s, std::shared_ptr<ServerChunk> c = {})
+            : state(s), chunk(std::move(c)) {}
+
+        ChunkEntity& operator=(ChunkEntity&& o) noexcept {
+            if (this == &o) {
+                return *this;
+            }
+
+            state = std::exchange(o.state, ServerWorld::ChunkState::NONE);
+            chunk = std::move(o.chunk);
+            ref_count = o.ref_count.exchange(0);
+            return *this;
+        }
+
+        ChunkEntity(ChunkEntity&& o) noexcept
+            : state(std::exchange(o.state, ServerWorld::ChunkState::NONE)),
+              chunk(std::move(o.chunk)), ref_count(o.ref_count.exchange(0)) {}
+        ChunkEntity(const ChunkEntity&) = delete;
+        ChunkEntity& operator=(const ChunkEntity&) = delete;
     };
 
     enum class ChunkLoadStyle { RANDOM, CENTER };
@@ -119,13 +159,14 @@ private:
     using PlayerUUIDMap = tbb::concurrent_hash_map<std::string, std::string>;
 
     using chunk_acc = ChunkHashMap::accessor;
-    using chunk_caac = ChunkHashMap::const_accessor;
+    using chunk_cacc = ChunkHashMap::const_accessor;
 
     using uuid_acc = PlayerUUIDMap::accessor;
     using uuid_cacc = PlayerUUIDMap::const_accessor;
 
     Config& m_config;
-
+    std::atomic<RunMode> m_runmode{RunMode::HYBRID};
+    ServerEntityManager m_entity_manager;
     // key = uuid
     PlayerHashMap m_players;
     ChunkHashMap m_chunks;
@@ -146,8 +187,9 @@ private:
     std::atomic<bool> m_init{false};
     std::atomic<bool> m_stopped{false};
     std::atomic<int> m_rendering_distance{24};
-    std::atomic<int> m_gen_pool_threads{0};
-    std::atomic<int> m_net_pool_threads{0};
+    std::atomic<int> m_gen_threads{0};
+    std::atomic<int> m_net_threads{0};
+    std::atomic<int> m_compute_threads{0};
     std::atomic<int> m_max_threads{1};
     std::atomic<size_t> m_player_sum{0};
     std::atomic<TickType> m_game_ticks{0};
@@ -155,7 +197,7 @@ private:
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
 
-    mutable std::shared_mutex m_player_mutex;
+    mutable std::shared_mutex m_players_mutex;
     std::mutex m_need_gen_queue_mutex;
     std::condition_variable_any m_gen_cv;
 
@@ -163,6 +205,7 @@ private:
 
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_gen_thread_pool;
     std::atomic<std::shared_ptr<ThreadPool>> m_net_thread_pool;
+    std::atomic<std::shared_ptr<ThreadPool>> m_compute_thread_pool;
 
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::CENTER};
 

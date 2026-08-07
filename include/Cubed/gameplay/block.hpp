@@ -42,7 +42,6 @@ struct LookBlock {
 
 struct BlockData {
     std::string name;
-    std::string name_key;
     BlockType id = 0;
 
     bool is_liquid = false;
@@ -56,42 +55,14 @@ struct BlockData {
     bool is_blend = false;
     bool is_transitional = false;
     float roughness = 1.0f;
-    BlockData(std::string_view b_name, std::string_view name_k, BlockType b_id,
-              bool liquid, bool passable, bool cross_plane, bool transparent,
-              bool gas, bool discard, bool blend, bool transitional, float r)
-        : name(b_name), name_key(name_k), id(b_id), is_liquid(liquid),
-          is_gas(gas), is_passable(passable), is_cross_plane(cross_plane),
+    BlockData(std::string_view b_name, BlockType b_id, bool liquid,
+              bool passable, bool cross_plane, bool transparent, bool gas,
+              bool discard, bool blend, bool transitional, float r)
+        : name(b_name), id(b_id), is_liquid(liquid), is_gas(gas),
+          is_passable(passable), is_cross_plane(cross_plane),
           is_transparent(transparent), is_discard(discard), is_blend(blend),
           is_transitional(transitional), roughness(r) {}
-};
-
-class BlockManager {
-
-public:
-    static const std::vector<BlockData>& datas();
-    static void init();
-    static unsigned sums();
-    static unsigned cross_plane_sum();
-    static const std::string& name_form_id(BlockType id);
-    static std::string local_name(BlockType id);
-    static bool is_gas(BlockType id);
-    static bool is_liquid(BlockType id);
-
-    static bool is_cross_plane(BlockType id);
-    static bool is_transparent(BlockType id);
-    static bool is_passable(BlockType id);
-
-    static bool is_discard(BlockType id);
-    static bool is_blend(BlockType id);
-    static bool is_transitional(BlockType id);
-    static float roughness(BlockType id);
-    static BlockType cross_plane_index(BlockType id);
-
-private:
-    static void set_up_cross_plane_map();
-    static inline std::vector<BlockData> m_datas;
-    static inline bool is_init = false;
-    static inline std::unordered_map<BlockType, BlockType> m_cross_plane_map;
+    BlockData() { name = ""; }
 };
 
 } // namespace Cubed

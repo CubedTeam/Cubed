@@ -68,6 +68,9 @@ void DebugCollector::init(int, int) {
     // rendered_chunk
     add_label("Rendered Chunk: 0", "rendered_chunk");
 
+    // rendered_entities
+    add_label("Rendered Entities: 0", "rendered_entities");
+
     // rss
     add_label("RSS: 0mb", "rss");
 
