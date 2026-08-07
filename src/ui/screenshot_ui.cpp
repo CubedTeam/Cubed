@@ -56,6 +56,7 @@ void ScreenshotUI::update_layout(int width, int height) {
             ImageInfo info;
             info.texture =
                 texture_manager.get_image_texture(entry.path().string(), true);
+            info.texture->set_linear();
             info.height = info.texture->height() * IMAGE_SCALE;
             info.width = info.texture->width() * IMAGE_SCALE;
             m_image_infos.emplace_back(std::move(info));
