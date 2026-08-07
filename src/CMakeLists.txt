@@ -108,4 +108,5 @@ target_sources(${PROJECT_NAME}
         gameplay/block_manager.cpp
         ui/screenshot_ui.cpp
         scene/screenshot_scene.cpp
+        ui/scroll_view.cpp
 )

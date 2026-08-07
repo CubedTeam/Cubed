@@ -7,6 +7,7 @@
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/row_layout.hpp"
+#include "Cubed/ui/scroll_view.hpp"
 
 #include <algorithm>
 #include <array>
@@ -42,10 +43,19 @@ void ScreenshotUI::update_layout(int width, int height) {
         int height = 0;
     };
 
+    auto& return_button = bg->add_child<Button>();
+    return_button.set_default_image(texture_manager);
+    return_button.set_anchor(Anchor::BOTTOM_CENTER);
+    return_button.set_offset({0, -30});
+    return_button.set_text(tr("button.return"));
+    return_button.set_clicked(
+        [this]() { m_scene.scene_manager().request_pop(); });
+
     fs::path path = Renderer::SCREENSHOT_PATH;
 
     std::vector<ImageInfo> image_infos;
     constexpr float IMAGE_SCALE = 0.25;
+
     if (fs::exists(path)) {
         for (auto& entry : fs::recursive_directory_iterator(path)) {
             if (!fs::is_regular_file(entry)) {
@@ -66,18 +76,26 @@ void ScreenshotUI::update_layout(int width, int height) {
         constexpr int SPACING = 10;
 
         const int WIDGET_WIDTH = std::min(width, width - 2 * PADDING);
-        // const int WIDGET_HEIGHT = std::max(height, height - 2 * PADDING);
 
         float cur_width = 0.0f;
-        // float cur_height = 0.0f;
-        auto& root_column = bg->add_child<ColumnLayout>();
-        root_column.set_child_anchor(ColumnLayoutAnchor::LEFT)
-            .set_spacing(10)
-            .set_anchor(Anchor::TOP_CENTER)
+
+        auto& scroll = bg->add_child<ScrollView>();
+
+        scroll.set_anchor(Anchor::TOP_CENTER)
             .set_offset({0, 10 + title.height()});
+
+        float scroll_height = height - scroll.get_offset().y +
+                              return_button.get_offset().y -
+                              return_button.height();
+
+        scroll.set_height(std::max(0.0f, scroll_height));
+        auto root_column = std::make_unique<ColumnLayout>(&scroll);
+        root_column->set_child_anchor(ColumnLayoutAnchor::LEFT)
+            .set_spacing(10)
+            .set_anchor(Anchor::TOP_CENTER);
         RowLayout* row = nullptr;
         auto create_row = [&row, &root_column]() {
-            row = &root_column.add_child<RowLayout>();
+            row = &root_column->add_child<RowLayout>();
             row->set_anchor(Anchor::TOP_LEFT);
             row->set_spacing(SPACING);
         };
@@ -95,21 +113,13 @@ void ScreenshotUI::update_layout(int width, int height) {
             auto& im = row->add_child<Image>();
             im.set_texture(image.texture, true).set_scale(IMAGE_SCALE);
         }
+        scroll.set_child(std::move(root_column));
     }
     if (!fs::exists(path) || image_infos.empty()) {
         auto& label = bg->add_child<Label>();
         label.set_text(tr("screenshot.no_screenshot"))
             .set_color(Color::WHITE)
             .set_anchor(Anchor::CENTER);
-    }
-
-    {
-        auto& button = bg->add_child<Button>();
-        button.set_default_image(texture_manager);
-        button.set_anchor(Anchor::BOTTOM_CENTER);
-        button.set_offset({0, -50});
-        button.set_text(tr("button.return"));
-        button.set_clicked([this]() { m_scene.scene_manager().request_pop(); });
     }
 
     m_root_widget = std::move(bg);

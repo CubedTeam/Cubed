@@ -158,10 +158,16 @@ Widget& Widget::set_anchor(Anchor anchor) {
     m_anchor = anchor;
     return *this;
 }
-Widget& Widget::set_offset(glm::ivec2 offset) {
+Widget& Widget::set_offset(glm::vec2 offset) {
     m_offset = offset;
     return *this;
 }
+Widget& Widget::add_offset(glm::vec2 offset) {
+    m_offset += offset;
+    return *this;
+}
+glm::vec2 Widget::get_offset() const { return m_offset; }
+
 void Widget::set_window_size(int width, int height) {
     m_window_height = height;
     m_window_width = width;

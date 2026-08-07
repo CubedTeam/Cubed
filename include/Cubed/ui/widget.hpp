@@ -32,7 +32,9 @@ public:
     virtual void update(float dt);
     virtual void render(Renderer& renderer);
     virtual Widget& set_anchor(Anchor anchor);
-    virtual Widget& set_offset(glm::ivec2 offset);
+    virtual Widget& set_offset(glm::vec2 offset);
+    virtual Widget& add_offset(glm::vec2 offset);
+    virtual glm::vec2 get_offset() const;
     static void set_window_size(int width, int height);
     virtual Widget& set_visible(bool visible);
     // Returns the final display size
@@ -78,7 +80,7 @@ protected:
     bool m_fill_width = false;
     bool m_show_border = false;
     int m_border_size = 5;
-    glm::ivec2 m_offset{0, 0};
+    glm::vec2 m_offset{0, 0};
 
     std::vector<std::unique_ptr<Widget>>& children();
 
