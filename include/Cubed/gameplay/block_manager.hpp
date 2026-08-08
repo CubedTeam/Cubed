@@ -10,7 +10,7 @@ public:
     static void init();
     static unsigned sums();
     static unsigned cross_plane_sum();
-    static const std::string& name_form_id(BlockType id);
+    static const ResourceLocation& name_form_id(BlockType id);
     static bool is_gas(BlockType id);
     static bool is_liquid(BlockType id);
 
@@ -24,13 +24,15 @@ public:
     static float roughness(BlockType id);
     static BlockType cross_plane_index(BlockType id);
 
-    static BlockType id_from_name(const std::string& name);
+    static BlockType id_from_name(std::string_view name);
+    static BlockType id_from_name(const ResourceLocation& name);
 
 private:
     using BlockMap = tbb::concurrent_hash_map<BlockType, BlockData>;
     using acc = BlockMap::accessor;
     using cacc = BlockMap::const_accessor;
-    using IDMap = tbb::concurrent_hash_map<std::string, BlockType>;
+    using IDMap = tbb::concurrent_hash_map<ResourceLocation, BlockType,
+                                           ResourceLocation::Hash>;
     using CrossPlaneMap = tbb::concurrent_hash_map<BlockType, BlockType>;
 
     static inline const BlockData EMPTY;

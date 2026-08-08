@@ -28,9 +28,30 @@ struct ResourceLocation {
                                 std::string(str.substr(it + 1))};
     }
 
+    static std::string get_assets_path(std::string_view ns) {
+        if (ns == "cubed") {
+            return ASSETS_PATH "cubed";
+        }
+        return std::string(ns);
+    }
+
     bool operator==(const ResourceLocation& o) const {
         return (ns == o.ns) && (path == o.path);
     }
-    std::size_t hash() const { return std::hash<std::string>()(to_string()); }
+    struct Hash {
+        std::size_t hash(const ResourceLocation& p) const {
+            return ResourceLocation::hash(p);
+        }
+        bool equal(const ResourceLocation& a, const ResourceLocation& b) const {
+            return a == b;
+        }
+    };
+
+    static std::size_t hash(const ResourceLocation& p) {
+        return std::hash<std::string>()(p.to_string());
+    }
+
+    std::string assets_path() const { return get_assets_path(ns); }
 };
+
 } // namespace Cubed
