@@ -26,7 +26,7 @@ private:
     void on_update(float dt) override;
     std::unique_ptr<Image> m_background;
     std::unique_ptr<Image> m_foreground;
-    ItemID m_id;
+    ItemID m_id = 0;
     float m_scale = 1.0f;
     bool m_hovered = false;
 };

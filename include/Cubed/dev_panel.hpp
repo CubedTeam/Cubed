@@ -42,7 +42,7 @@ private:
     WorldScene& m_world_scene;
     Config& m_config;
     ConfigView m_config_view;
-    LocalPlayer* m_player;
+    LocalPlayer* m_player = nullptr;
     PlayerProfile m_player_profile;
     bool m_need_save_config = false;
     bool m_gen_thread_running = true;

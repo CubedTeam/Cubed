@@ -158,15 +158,24 @@ Widget& Widget::set_anchor(Anchor anchor) {
     m_anchor = anchor;
     return *this;
 }
-Widget& Widget::set_offset(glm::ivec2 offset) {
+Widget& Widget::set_offset(glm::vec2 offset) {
     m_offset = offset;
     return *this;
 }
+Widget& Widget::add_offset(glm::vec2 offset) {
+    m_offset += offset;
+    return *this;
+}
+glm::vec2 Widget::get_offset() const { return m_offset; }
+
 void Widget::set_window_size(int width, int height) {
     m_window_height = height;
     m_window_width = width;
     return;
 }
+
+int Widget::get_window_height() { return m_window_height; }
+int Widget::get_window_width() { return m_window_width; }
 
 Widget& Widget::set_visible(bool visible) {
     m_visible = visible;
@@ -329,4 +338,5 @@ bool Widget::handle_text_input_event(const TextInputEvent& e) {
     return false;
 }
 void Widget::set_order(TraversalOrder order) { m_order = order; }
+bool Widget::is_visible() const { return m_visible; }
 } // namespace Cubed

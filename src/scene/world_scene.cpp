@@ -3,6 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
+#include "Cubed/tools/time_tools.hpp"
 namespace Cubed {
 WorldScene::WorldScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_dev_panel(*this),
@@ -380,7 +381,16 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
             }
         }
     }
-
+    if (e.key == Key::F2 && e.action == KeyAction::PRESS) {
+        m_scene_manager.app().renderer().save_screenshot();
+        ChatMessage msg;
+        msg.system_msg = true;
+        msg.color = Color::WHITE;
+        msg.text = "Saved Screenshot!";
+        msg.time = Tools::get_time_ticks();
+        m_hud_ui.add_chat_message(msg);
+        return true;
+    }
     if (m_paused) {
         switch (m_paused_ui) {
         case PauseUI::INVENTORY:

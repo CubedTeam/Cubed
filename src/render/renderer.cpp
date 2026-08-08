@@ -9,10 +9,13 @@
 #include "Cubed/tools/font.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
+#include "Cubed/tools/time_tools.hpp"
 
+#include <array>
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
-
+#include <stb_image_write.h>
+namespace fs = std::filesystem;
 namespace Cubed {
 
 Renderer::Renderer(TextureManager& texture_manager, Config& config)
@@ -139,7 +142,7 @@ void Renderer::begin_frame() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-void Renderer::end_frame() {}
+void Renderer::end_frame() { handle_screenshot(); }
 
 void Renderer::begin_render_ui() {
     glEnable(GL_BLEND);
@@ -288,6 +291,34 @@ bool Renderer::handle_frame_buffer_resize_event(
     return false;
 }
 
+void Renderer::handle_screenshot() {
+    if (!m_save_screenshot) {
+        return;
+    }
+    m_save_screenshot = false;
+    std::array<int, 4> screen_stats;
+    glGetIntegerv(GL_VIEWPORT, screen_stats.data());
+    int width = screen_stats[2];
+    int height = screen_stats[3];
+    std::vector<unsigned char> pixels(width * height * 4);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    std::vector<unsigned char> flipped_pixels(width * height * 4);
+    for (int y = 0; y < height; ++y) {
+        std::memcpy(&flipped_pixels[y * width * 4],
+                    &pixels[(height - 1 - y) * width * 4], width * 4);
+    }
+    fs::path path = SCREENSHOT_PATH;
+    fs::create_directories(path);
+    fs::path image =
+        path / std::format("screenshot {}.png", Tools::get_time_date_str());
+    if (!stbi_write_png(image.string().c_str(), width, height, 4,
+                        flipped_pixels.data(), width * 4)) {
+        Logger::error("Failed to write {} image", image.string());
+    } else {
+        Logger::info("save {} success!", image.string());
+    }
+}
+
 float& Renderer::ambient_strength() {
     return m_world_renderer.ambient_strength();
 }
@@ -341,4 +372,5 @@ float Renderer::frame_width() const { return m_frame_width; }
 const glm::mat4& Renderer::p_mat() const { return m_world_proj_matrix; }
 const std::vector<VertexArray>& Renderer::vao() const { return m_vao; }
 ModelRender& Renderer::model_renderer() { return m_model_renderer; }
+void Renderer::save_screenshot() { m_save_screenshot = true; }
 } // namespace Cubed

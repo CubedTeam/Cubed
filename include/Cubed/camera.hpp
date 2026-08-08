@@ -18,12 +18,12 @@ private:
         THIRD_PERSON_FRONT,
     };
 
-    LocalPlayer* m_player;
-    float m_last_mouse_x, m_last_mouse_y;
-    glm::vec3 m_camera_pos;
+    LocalPlayer* m_player = nullptr;
+    float m_last_mouse_x = 0.0f, m_last_mouse_y = 0.0f;
+    glm::vec3 m_camera_pos{0.0f};
     bool m_under_water = false;
     Perspective m_perspective = Perspective::FIRST_PERSON;
-    glm::vec3 m_front;
+    glm::vec3 m_front{0.0f};
     glm::vec3 camera_collision(glm::vec3 start, glm::vec3 end,
                                float radius = 0.2f);
 

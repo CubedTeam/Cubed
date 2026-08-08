@@ -109,6 +109,7 @@ ChunkGenerator::ChunkGenerator(ServerChunk& chunk) : m_chunk(chunk) {
     unsigned seed = HASH::chunk_seed_hash(pos.x, pos.z, m_generator_seed);
     m_random.init(seed);
     m_chunk_seed = seed;
+    m_neighbor_biome.fill(NONE);
 }
 
 void ChunkGenerator::init() {

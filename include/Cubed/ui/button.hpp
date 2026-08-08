@@ -28,6 +28,7 @@ public:
     Button& set_background_image(const std::string& path,
                                  TextureManager& texture_manager);
     Button& set_default_image(TextureManager& texture_manager);
+    Button& set_texture(const Texture* texture, bool change_button_size);
     virtual Button& set_text(const std::string& text);
 
     Button& set_auto_scale(bool auto_scale);

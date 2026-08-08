@@ -4,6 +4,7 @@
     "menu.main.join_game": "加入游戏",
     "menu.main.credits": "制作人员",
     "menu.main.quit": "退出",
+    "menu.screenshot": "屏幕截图",
     "menu.main.player_name": "玩家：{name}",
     "menu.main.cubed_version": "Cubed：{version}",
     "menu.pause.pause_menu": "暂停菜单",
@@ -46,5 +47,10 @@
     "item.snowy_grass_block.name": "覆雪草方块",
     "item.stone.name": "石头",
     "item.water.name": "水",
-    "item.pig_spawn_egg.name": "猪猪刷怪蛋"
+    "item.pig_spawn_egg.name": "猪猪刷怪蛋",
+    "screenshot.no_screenshot": "没有截图",
+    "button.show_in_file_manager": "在文件管理器中显示",
+    "file.sort_type": "文件排序方式：{type}",
+    "file.newest_first": "最新在前",
+    "file.oldest_first": "最旧在前"
 }

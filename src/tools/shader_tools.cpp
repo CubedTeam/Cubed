@@ -184,7 +184,7 @@ ImageData load_image_data(const std::string& tex_image_path, bool check_exist,
         path = ASSETS_PATH + tex_image_path;
     }
     if (check_exist) {
-        ASSERT_MSG(fs::is_regular_file(path), path.c_str());
+        ASSERT_MSG(fs::is_regular_file(path), path.string().c_str());
     }
     unsigned char* data = nullptr;
     int width, height, channels;

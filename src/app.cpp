@@ -187,7 +187,7 @@ void App::handle_argument(int argc, char** argv) {
              }},
             {"--enable-filelog",
              [&](ArgParser&) { m_argument.enable_filelog = true; }},
-            {"--enale-consolelog",
+            {"--enable-consolelog",
              [&](ArgParser&) { m_argument.enable_consolelog = true; }},
             {"--direct-enter",
              [&](ArgParser&) { m_argument.direct_enter = true; }}

@@ -4,6 +4,7 @@
 #include "Cubed/scene/host_game_scene.hpp"
 #include "Cubed/scene/join_game_scene.hpp"
 #include "Cubed/scene/main_menu_scene.hpp"
+#include "Cubed/scene/screenshot_scene.hpp"
 #include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
 
@@ -33,15 +34,24 @@ bool SceneManager::handle_event(const Event& e) {
 }
 
 void SceneManager::request_change(SceneType type) {
-    ASSERT(!m_operation.has_value());
+    if (m_operation.has_value()) {
+        Logger::error("Scene operation has_value");
+        return;
+    }
     m_operation = {OperationType::CHANGE, type};
 }
 void SceneManager::request_push(SceneType type) {
-    ASSERT(!m_operation.has_value());
+    if (m_operation.has_value()) {
+        Logger::error("Scene operation has_value");
+        return;
+    }
     m_operation = {OperationType::PUSH, type};
 }
 void SceneManager::request_pop() {
-    ASSERT(!m_operation.has_value());
+    if (m_operation.has_value()) {
+        Logger::error("Scene operation has_value");
+        return;
+    }
     m_operation = {OperationType::POP, std::nullopt};
 }
 
@@ -103,6 +113,8 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<HostGameScene>(*this);
     case SceneType::JOIN_GAME:
         return std::make_unique<JoinGameScene>(*this);
+    case SceneType::SCREENSHOT:
+        return std::make_unique<ScreenshotScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");

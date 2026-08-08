@@ -59,7 +59,7 @@ private:
     std::atomic<int> m_chunk_task_id{0};
     std::atomic<float> m_yaw{0.0f};
     std::atomic<float> m_pitch{0.0f};
-    std::atomic<Gait> m_gait;
+    std::atomic<Gait> m_gait{Gait::STOP};
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
 };

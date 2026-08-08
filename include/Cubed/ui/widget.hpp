@@ -28,12 +28,19 @@ public:
     Widget& operator=(Widget&&) = delete;
 
     Widget(Widget* parent);
+
+    static void set_window_size(int width, int height);
+    static int get_window_height();
+    static int get_window_width();
+
     virtual ~Widget() = default;
     virtual void update(float dt);
     virtual void render(Renderer& renderer);
     virtual Widget& set_anchor(Anchor anchor);
-    virtual Widget& set_offset(glm::ivec2 offset);
-    static void set_window_size(int width, int height);
+    virtual Widget& set_offset(glm::vec2 offset);
+    virtual Widget& add_offset(glm::vec2 offset);
+    virtual glm::vec2 get_offset() const;
+
     virtual Widget& set_visible(bool visible);
     // Returns the final display size
 
@@ -56,6 +63,8 @@ public:
     virtual bool handle_window_resize_event(const WindowResizeEvent& e);
     virtual bool handle_mouse_move_event(const MouseMoveEvent& e);
     virtual bool handle_text_input_event(const TextInputEvent& e);
+
+    virtual bool is_visible() const;
     void set_order(TraversalOrder order);
 
     template <typename T, typename... Args> T& add_child(Args&&... args) {
@@ -78,7 +87,7 @@ protected:
     bool m_fill_width = false;
     bool m_show_border = false;
     int m_border_size = 5;
-    glm::ivec2 m_offset{0, 0};
+    glm::vec2 m_offset{0, 0};
 
     std::vector<std::unique_ptr<Widget>>& children();
 
@@ -101,7 +110,7 @@ private:
     */
     std::array<std::unique_ptr<Widget>, 4> m_border;
     TraversalOrder m_order = TraversalOrder::BACK_TO_FRONT;
-    glm::vec2 m_mouse_pos;
+    glm::vec2 m_mouse_pos{0.0f};
     float m_width = 0.0f;
     float m_height = 0.0f;
 };

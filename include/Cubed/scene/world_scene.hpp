@@ -62,7 +62,7 @@ private:
     WorldUIManager m_hud_ui;
     ErrorUI m_error_ui;
     const Argument& m_argument;
-    VoiceInputType m_input_type;
+    VoiceInputType m_input_type = VoiceInputType::OFF;
     RunMode m_runmode = RunMode::HYBRID;
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_button_event(const MouseButtonEvent& e) override;

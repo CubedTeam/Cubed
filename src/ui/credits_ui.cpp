@@ -8,12 +8,19 @@
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/rect.hpp"
+#include "Cubed/ui/scroll_view.hpp"
 
+#include <algorithm>
 namespace Cubed {
 CreditsUI::CreditsUI(CreditsScene& scene) : m_scene(scene) {}
 
 void CreditsUI::init() {
+    auto& renderer = m_scene.scene_manager().app().renderer();
+    update_layout(renderer.window_width(), renderer.window_height());
+}
 
+void CreditsUI::update_layout(int, int height) {
+    m_root_widget.reset();
     auto image = std::make_unique<Image>(nullptr);
     image
         ->set_image("texture/ui/background.png",
@@ -23,25 +30,38 @@ void CreditsUI::init() {
 
     auto& rect = image->add_child<Rect>();
     rect.set_color(Color::BLACK).set_alpha(0.7f).set_fill_parent(true);
+    auto& title = rect.add_child<Label>();
+    title.set_color(Color::WHITE)
+        .set_text(tr("menu.main.credits"))
+        .set_anchor(Anchor::TOP_CENTER)
+        .set_offset({0, 10});
+
+    auto& return_button = rect.add_child<Button>();
+    return_button.set_background_image(
+        "texture/ui/button001.png",
+        m_scene.scene_manager().app().texture_manager());
+
+    return_button.set_text(tr("button.return"));
+    return_button.set_anchor(Anchor::BOTTOM_CENTER).set_offset({0, -20});
+    return_button.set_clicked(
+        [this]() { m_scene.scene_manager().request_pop(); });
 
     {
-        auto& button = rect.add_child<Button>();
-        button.set_background_image(
-            "texture/ui/button001.png",
-            m_scene.scene_manager().app().texture_manager());
+        auto& scroll = rect.add_child<ScrollView>();
+        scroll.set_anchor(Anchor::TOP_CENTER)
+            .set_offset({0, 20 + title.height()});
 
-        button.set_text(tr("button.return"));
-        button.set_anchor(Anchor::BOTTOM_CENTER).set_offset({0, -20});
-        button.set_clicked([this]() { m_scene.scene_manager().request_pop(); });
-    }
-    {
-        auto& layout = rect.add_child<ColumnLayout>();
-        layout.set_spacing(20)
-            .set_anchor(Anchor::TOP_CENTER)
-            .set_offset({0, 20});
-        layout.add_child<Label>().set_text("Cubed");
-        auto add_text = [&](std::string_view view, float scale = 0.5f) {
-            layout.add_child<Label>().set_text(view).set_scale(scale);
+        float scroll_height = height - scroll.get_offset().y -
+                              return_button.height() +
+                              return_button.get_offset().y;
+
+        scroll.set_height(std::max(0.0f, scroll_height));
+
+        auto layout = std::make_unique<ColumnLayout>(&scroll);
+        layout->set_spacing(20).set_anchor(Anchor::TOP_CENTER);
+        layout->add_child<Label>().set_text("Cubed");
+        auto add_text = [&](std::string_view view, float scale = 0.8f) {
+            layout->add_child<Label>().set_text(view).set_scale(scale);
         };
         add_text("A cube game like Minecraft, using C++ and OpenGL.");
         add_text("Author: zhenyan121");
@@ -73,6 +93,8 @@ void CreditsUI::init() {
         add_text("SkyOnPole");
         add_text("free_w_cloud");
         add_text("Last but not least, thanks to you");
+
+        scroll.set_child(std::move(layout));
     }
 
     m_root_widget = std::move(image);
@@ -84,6 +106,11 @@ bool CreditsUI::handle_key_event(const KeyEvent& e) {
         return true;
     }
     return UIManager::handle_key_event(e);
+}
+
+bool CreditsUI::handle_window_resize_event(const WindowResizeEvent& e) {
+    update_layout(e.width, e.height);
+    return UIManager::handle_window_resize_event(e);
 }
 
 } // namespace Cubed

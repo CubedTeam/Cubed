@@ -49,6 +49,6 @@ private:
     ALuint m_source = 0;
     float m_target_volume = 1.0f;
     float m_duration = 0.0f;
-    bool m_using;
+    bool m_using = false;
 };
 } // namespace Cubed

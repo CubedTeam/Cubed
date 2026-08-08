@@ -107,7 +107,7 @@ public:
 private:
     struct VoiceMessage {
         std::string data;
-        glm::vec3 pos;
+        glm::vec3 pos{0.0f};
     };
 
     std::atomic<bool> m_is_pending_delete_queue_free{false};
@@ -127,7 +127,7 @@ private:
 
     struct PendingSound {
         std::string sound;
-        glm::vec3 sound_pos;
+        glm::vec3 sound_pos{0.0f};
     };
 
     static constexpr int WORLD_EXIT_TIMEOUT = 200;

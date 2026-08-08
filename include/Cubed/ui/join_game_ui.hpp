@@ -18,7 +18,7 @@ public:
 
 private:
     JoinGameScene& m_scene;
-    Label* m_error_label;
+    Label* m_error_label = nullptr;
     void set_error(std::string_view error);
     void clear_error();
 };

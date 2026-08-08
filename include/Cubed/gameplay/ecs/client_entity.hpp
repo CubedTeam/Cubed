@@ -7,15 +7,15 @@
 namespace Cubed {
 struct BaseClientCreature {
 
-    Transform transform;
+    Transform transform{};
 
-    WalkPose pose;
+    WalkPose pose{};
 
-    ModelID model;
+    ModelID model = 0;
 };
 
 struct SoundTime {
-    float next_call_time;
+    float next_call_time = 0.0f;
 };
 
 struct ClientEntitySnapshot {

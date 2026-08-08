@@ -41,7 +41,16 @@ void PauseMenuUIManager::init() {
         });
         m_pending_enable.emplace_back(&button);
     }
-
+    {
+        auto& button = layout.add_child<Button>();
+        button.set_default_image(texture_manager);
+        button.set_text(tr("menu.screenshot"));
+        button.set_clicked([this, &button]() {
+            button.set_enable(false);
+            m_scene.scene_manager().request_push(SceneType::SCREENSHOT);
+        });
+        m_pending_enable.emplace_back(&button);
+    }
     {
         auto& back_main = layout.add_child<Button>();
 

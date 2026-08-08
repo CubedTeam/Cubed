@@ -4,6 +4,7 @@
     "menu.main.join_game": "Join Game",
     "menu.main.credits": "Credits",
     "menu.main.quit": "Quit",
+    "menu.screenshot": "Screenshots",
     "menu.main.player_name": "Player: {name}",
     "menu.main.cubed_version": "Cubed: {version}",
     "menu.pause.pause_menu": "Pause Menu",
@@ -46,5 +47,10 @@
     "item.snowy_grass_block.name": "snowy grass block",
     "item.stone.name": "stone",
     "item.water.name": "water",
-    "item.pig_spawn_egg.name": "pig spawn egg"
+    "item.pig_spawn_egg.name": "pig spawn egg",
+    "screenshot.no_screenshot": "No Screenshot",
+    "button.show_in_file_manager": "Show In File Manager",
+    "file.sort_type": "File Sort Type: {type}",
+    "file.newest_first": "Newest First",
+    "file.oldest_first": "Oldest First"
 }
