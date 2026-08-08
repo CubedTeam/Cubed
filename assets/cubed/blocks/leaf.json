@@ -1,0 +1,23 @@
+{
+    "name": "leaf",
+    "properties": {
+        "is_liquid": false,
+        "is_cross_plane": false,
+        "is_transparent": true,
+        "is_passable": false,
+        "is_discard": true,
+        "is_blend": false,
+        "is_transitional": false,
+        "is_gas": false,
+        "roughness": 0.7
+    },
+    "texture": {
+        "type": "cuboid",
+        "path": "cubed:textures/blocks/leaf"
+    },
+    "sounds": {
+        "break": "cubed:sounds/blocks/leaf/break.ogg",
+        "place": "cubed:sounds/blocks/leaf/place.ogg",
+        "walk": "cubed:sounds/blocks/leaf/walk.ogg"
+    }
+}

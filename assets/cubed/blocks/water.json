@@ -1,0 +1,18 @@
+{
+    "name": "water",
+    "properties": {
+        "is_liquid": true,
+        "is_cross_plane": false,
+        "is_transparent": true,
+        "is_passable": true,
+        "is_discard": false,
+        "is_blend": true,
+        "is_transitional": false,
+        "is_gas": false,
+        "roughness": 0.02
+    },
+    "texture": {
+        "type": "cuboid",
+        "path": "cubed:textures/blocks/water"
+    }
+}
