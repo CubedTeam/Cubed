@@ -171,6 +171,7 @@ void BlockManager::init() {
                           data.name.to_string());
             continue;
         }
+
         auto& properties = doc["properties"];
 
         Tools::get_json_value(properties, "is_liquid", data.is_liquid);
@@ -185,6 +186,49 @@ void BlockManager::init() {
         Tools::get_json_value(properties, "is_transitional",
                               data.is_transitional);
         Tools::get_json_value(properties, "roughness", data.roughness);
+
+        if (doc.HasMember("texture") && doc["texture"].IsObject()) {
+            auto& texture = doc["texture"];
+            std::string s;
+            if (Tools::get_json_value(texture, "type", s)) {
+                if (s == "cuboid") {
+                    data.texture_type = BlockTextureType::CUBOID;
+                } else if (s == "cross") {
+                    data.texture_type = BlockTextureType::CROSS;
+                } else {
+                    Logger::error("Block {} texture type {} unknown",
+                                  data.name.to_string(), s);
+                    ASSERT(false);
+                }
+            } else {
+                Logger::error("Block {} need texture type",
+                              data.name.to_string());
+                ASSERT(false);
+                continue;
+            }
+
+            if (Tools::get_json_value(texture, "path", s)) {
+                data.texture_path = ResourceLocation::parse(s);
+            }
+
+            if (Tools::get_json_value(texture, "normal", s)) {
+                data.normal = ResourceLocation::parse(s);
+            }
+        }
+
+        if (doc.HasMember("sounds") && doc["sounds"].IsObject()) {
+            auto& sound = doc["sounds"];
+            std::string s;
+            if (Tools::get_json_value(sound, "break", s)) {
+                data.sound.break_s = ResourceLocation::parse(s);
+            }
+            if (Tools::get_json_value(sound, "walk", s)) {
+                data.sound.walk = ResourceLocation::parse(s);
+            }
+            if (Tools::get_json_value(sound, "place", s)) {
+                data.sound.place = ResourceLocation::parse(s);
+            }
+        }
 
         const auto LOCATION = data.name;
         const auto IS_CROSS_PLANE = data.is_cross_plane;
@@ -229,6 +273,37 @@ BlockType BlockManager::id_from_name(const ResourceLocation& name) {
     Logger::error("BlockManager: Can't fin Block {}", name.to_string());
     ASSERT(false);
     return 0;
+}
+
+const BlockData& BlockManager::data(std::string_view name) {
+    auto s = ResourceLocation::parse(name);
+    if (!s) {
+        return EMPTY;
+    }
+
+    return data(*s);
+}
+
+const BlockData& BlockManager::data(const ResourceLocation& location) {
+
+    IDMap::const_accessor cacc;
+    if (!m_id_map.find(cacc, location)) {
+        Logger::error("Can't find block {} id", location.to_string());
+        ASSERT(false);
+        return EMPTY;
+    }
+    return data(cacc->second);
+}
+
+const BlockData& BlockManager::data(BlockType type) {
+    cacc c;
+    if (!m_datas.find(c, type)) {
+        Logger::error("Can't find block {} data", type);
+        ASSERT(false);
+        return EMPTY;
+    }
+
+    return c->second;
 }
 
 void BlockManager::set_up_cross_plane_map(

@@ -27,6 +27,10 @@ public:
     static BlockType id_from_name(std::string_view name);
     static BlockType id_from_name(const ResourceLocation& name);
 
+    static const BlockData& data(std::string_view name);
+    static const BlockData& data(const ResourceLocation& location);
+    static const BlockData& data(BlockType type);
+
 private:
     using BlockMap = tbb::concurrent_hash_map<BlockType, BlockData>;
     using acc = BlockMap::accessor;

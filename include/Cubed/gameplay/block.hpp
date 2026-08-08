@@ -42,6 +42,18 @@ struct LookBlock {
     glm::ivec3 normal;
 };
 
+enum class BlockTextureType {
+    CUBOID,
+    CROSS
+
+};
+
+struct BlockSound {
+    std::optional<ResourceLocation> break_s;
+    std::optional<ResourceLocation> place;
+    std::optional<ResourceLocation> walk;
+};
+
 struct BlockData {
     ResourceLocation name{};
     BlockType id = 0;
@@ -57,6 +69,14 @@ struct BlockData {
     bool is_blend = false;
     bool is_transitional = false;
     float roughness = 1.0f;
+
+    BlockTextureType texture_type = BlockTextureType::CUBOID;
+
+    std::optional<ResourceLocation> texture_path;
+    std::optional<ResourceLocation> normal;
+
+    BlockSound sound;
+
     BlockData() = default;
 };
 
