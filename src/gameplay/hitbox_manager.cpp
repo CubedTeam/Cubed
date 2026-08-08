@@ -2,7 +2,7 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/name_space.hpp"
+#include "Cubed/tools/resource_location.hpp"
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
@@ -57,15 +57,18 @@ HitboxManager::Handle HitboxManager::get_hitbox(const std::string& name) {
 }
 HitboxManager::Handle HitboxManager::load(std::string_view name) {
 
-    auto space = parse_namespace(name);
-    ASSERT(space.size() >= 2);
+    auto space = ResourceLocation::parse(name);
+    if (!space) {
+        Logger::error("Can't load hitbox {}", name);
+        ASSERT(false);
+    }
     fs::path p;
-    if (space[0] == "cubed") {
+    if (space->ns == "cubed") {
         p = std::format("{}model/creature/{}/collision.json", ASSETS_PATH,
-                        space[1]);
+                        space->path);
     } else {
-        p = std::format("{}/model/creature/{}/collision.json", space[0],
-                        space[1]);
+        p = std::format("{}/model/creature/{}/collision.json", space->ns,
+                        space->path);
     }
 
     try {

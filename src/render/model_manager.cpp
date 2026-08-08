@@ -2,7 +2,7 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/name_space.hpp"
+#include "Cubed/tools/resource_location.hpp"
 
 #include <filesystem>
 #include <rapidjson/document.h>
@@ -67,23 +67,19 @@ const std::string& ModelManager::get_model_name(ModelID id) {
 }
 
 ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
-    auto p = model_name.find(':');
-    if (p == std::string::npos) {
-        Logger::error("Can't Parse Model name {}", model_name);
-        ASSERT(false);
-    }
-    auto space = parse_namespace(model_name);
-    if (space.size() < 2) {
+
+    auto space = ResourceLocation::parse(model_name);
+    if (!space) {
         Logger::error("Can't Parse Model name {}", model_name);
         ASSERT(false);
     }
     std::string path;
-    if (space[0] == "cubed") {
-        path = std::format("{}model/creature/{}/{}.glb", ASSETS_PATH, space[1],
-                           space[1]);
+    if (space->ns == "cubed") {
+        path = std::format("{}model/creature/{}/{}.glb", ASSETS_PATH,
+                           space->path, space->path);
     } else {
-        path = std::format("./{}/model/creature/{}/{}.glb", space[0], space[1],
-                           space[1]);
+        path = std::format("./{}/model/creature/{}/{}.glb", space->ns,
+                           space->path, space->path);
     }
     auto model = m_loader.load(path);
     fs::path anim_path = path;
