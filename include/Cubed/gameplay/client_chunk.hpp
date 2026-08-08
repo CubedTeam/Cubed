@@ -14,18 +14,18 @@
 namespace Cubed {
 class ClientWorld;
 struct ChunkRenderSnapshot {
-    GLuint normal_vao;
-    size_t normal_vertices_count;
-    GLuint cross_vao;
-    size_t cross_vertices_count;
-    GLuint normal_discard_vao;
-    size_t normal_discard_vertices_count;
-    GLuint normal_blend_vao;
-    size_t normal_blend_vertices_count;
-    GLuint water_vao;
-    size_t water_vertices_count;
-    glm::vec3 center;
-    glm::vec3 half_extents;
+    GLuint normal_vao = 0;
+    size_t normal_vertices_count = 0;
+    GLuint cross_vao = 0;
+    size_t cross_vertices_count = 0;
+    GLuint normal_discard_vao = 0;
+    size_t normal_discard_vertices_count = 0;
+    GLuint normal_blend_vao = 0;
+    size_t normal_blend_vertices_count = 0;
+    GLuint water_vao = 0;
+    size_t water_vertices_count = 0;
+    glm::vec3 center{0.0f};
+    glm::vec3 half_extents{0.0f};
 };
 class ClientChunk : public Chunk {
 public:
@@ -98,7 +98,7 @@ private:
     std::atomic<bool> m_is_on_gen_vertex_data{false};
     std::atomic<BiomeType> m_biome = BiomeType::PLAIN;
     std::mutex m_vertexs_data_mutex;
-    ChunkPos m_chunk_pos;
+    ChunkPos m_chunk_pos{0, 0};
     ClientWorld& m_world;
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
@@ -111,7 +111,7 @@ private:
     */
     std::vector<VertexData> m_vertex_data;
 
-    ChunkRenderSnapshot m_render_snapshot;
+    ChunkRenderSnapshot m_render_snapshot{};
 
     unsigned m_seed = 0;
     void clear_dirty();

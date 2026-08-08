@@ -67,7 +67,7 @@ private:
 
     ChunkPos m_chunk_pos;
     ServerWorld& m_world;
-    HeightMapArray m_heightmap;
+    HeightMapArray m_heightmap{};
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
     OptionalBlockVectorArray m_neightbor_blocks;

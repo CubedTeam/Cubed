@@ -50,8 +50,8 @@ private:
     bool m_imgui_init = false;
     bool m_game_running = false;
     bool m_enable_exclusive = false;
-    SDL_Window* m_window;
-    SDL_GLContext m_context;
+    SDL_Window* m_window = nullptr;
+    SDL_GLContext m_context = nullptr;
     int m_window_width = 0;
     int m_window_height = 0;
     SDL_DisplayID m_windowed_display = 0;

@@ -62,7 +62,7 @@ private:
     OpusDecoder* m_decoder{nullptr};
     AudioRecording m_recording;
     std::weak_ptr<NetworkClient> m_client;
-    glm::vec3 listener_pos;
+    glm::vec3 listener_pos{0.0f};
     std::unique_ptr<AudioSource> m_bgm;
     FadeMap m_fade_map;
     SoundManager m_sounds;

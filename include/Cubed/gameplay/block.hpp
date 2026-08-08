@@ -22,7 +22,7 @@ struct Block : public BlockTexture {};
 
 struct BlockRenderData {
     std::vector<bool> draw_face;
-    unsigned block_id;
+    unsigned block_id = 0;
     BlockRenderData() = default;
     BlockRenderData(const BlockRenderData&) = default;
     BlockRenderData& operator=(const BlockRenderData&) = default;

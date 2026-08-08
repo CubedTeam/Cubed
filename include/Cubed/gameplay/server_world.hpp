@@ -115,7 +115,7 @@ public:
 private:
     enum class ChunkState { NONE, GENERATING, READY, PENDING_DELETE };
     struct ChunkEntity {
-        ChunkState state;
+        ChunkState state = ChunkState::NONE;
         std::shared_ptr<ServerChunk> chunk;
         std::atomic<uint32_t> ref_count = 0;
         ChunkEntity() = default;

@@ -102,7 +102,7 @@ private:
 
     bool m_save_screenshot = false;
 
-    glm::mat4 m_world_proj_matrix;
+    glm::mat4 m_world_proj_matrix{0.0f};
 
     std::unique_ptr<VertexBuffer> m_sky_vbo;
     std::unique_ptr<VertexBuffer> m_outline_indices_vbo;
@@ -111,7 +111,7 @@ private:
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
 
-    glm::mat4 m_ui_proj_matrix;
+    glm::mat4 m_ui_proj_matrix{0.0f};
     ShaderManager m_shaders;
 
     /*

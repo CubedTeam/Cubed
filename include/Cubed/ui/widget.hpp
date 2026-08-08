@@ -110,7 +110,7 @@ private:
     */
     std::array<std::unique_ptr<Widget>, 4> m_border;
     TraversalOrder m_order = TraversalOrder::BACK_TO_FRONT;
-    glm::vec2 m_mouse_pos;
+    glm::vec2 m_mouse_pos{0.0f};
     float m_width = 0.0f;
     float m_height = 0.0f;
 };

@@ -89,8 +89,8 @@ private:
     std::unique_ptr<FrameBuffer> m_depth_map_fbo;
     std::unique_ptr<Texture> m_depth_map_texture;
 
-    glm::vec3 m_blend_from_lightdir;
-    glm::vec3 m_blend_to_lightdir;
+    glm::vec3 m_blend_from_lightdir{0.0f};
+    glm::vec3 m_blend_to_lightdir{0.0f};
     float m_blend_t = 1.0f;
     bool m_blend_initialized = false;
     static constexpr float BLEND_DURATION = 0.15f;
@@ -125,7 +125,7 @@ private:
     ParallelLight m_parallel_light;
     SkyUniform m_sky_uniform;
 
-    glm::mat4 view_matrix;
+    glm::mat4 view_matrix{0.0f};
 
     const TextureManager& m_texture_manager;
     void day_night_calculation(ClientWorld& world);
