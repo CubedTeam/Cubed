@@ -1,0 +1,6 @@
+{
+    "name": "pig",
+    "model": "cubed:models/creatures/pig/pig.glb",
+    "animation": "cubed:models/creatures/pig/animation.json",
+    "collision": "cubed:models/creatures/pig/collision.json"
+}

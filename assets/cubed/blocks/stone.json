@@ -13,7 +13,8 @@
     },
     "texture": {
         "type": "cuboid",
-        "path": "cubed:textures/blocks/stone"
+        "path": "cubed:textures/blocks/stone",
+        "normal": "cubed:normals/blocks/stone"
     },
     "sounds": {
         "break": "cubed:sounds/blocks/stone/break.ogg",

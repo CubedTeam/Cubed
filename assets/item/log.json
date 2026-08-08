@@ -1,7 +1,0 @@
-{
-    "id": 5,
-    "name": "log",
-    "description": "",
-    "texture": "texture/item/block/log.png",
-    "type": "block"
-}

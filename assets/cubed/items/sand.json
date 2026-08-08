@@ -1,0 +1,7 @@
+{
+    "name": "sand",
+    "type": "block",
+    "block": "cubed:sand",
+    "texture": "cubed:textures/items/block/sand.png",
+    "description": ""
+}
