@@ -58,12 +58,13 @@ const Texture* TextureManager::get_cross_plane_array() const {
     return m_cross_plane_array.get();
 }
 const Texture* TextureManager::get_image_texture(const std::string& path,
-                                                 bool full_path) {
+                                                 bool full_path,
+                                                 bool check_exist) {
     auto it = m_ui_map.find(path);
     if (it != m_ui_map.end()) {
         return it->second.get();
     }
-    return load_image_texture(path, full_path);
+    return load_image_texture(path, full_path, check_exist);
 }
 
 const Texture* TextureManager::get_pbr_texture() const {
@@ -153,9 +154,14 @@ void TextureManager::load_cross_plane_texture(unsigned id) {
 }
 
 const Texture* TextureManager::load_image_texture(const std::string& path,
-                                                  bool full_path) {
+                                                  bool full_path,
+                                                  bool check_exist) {
 
-    auto image_data = (Tools::load_image_data(path, true, full_path));
+    auto image_data = (Tools::load_image_data(path, check_exist, full_path));
+    if (!image_data.data) {
+        Logger::error("Failed to load image texture: {}", path);
+        return nullptr;
+    }
     std::unique_ptr<Texture> image =
         std::make_unique<Texture>(TextureType::TEXTURE_2D);
     image->tex_image_2d(RGBA, RGBA, GL_UNSIGNED_BYTE, image_data.data,

@@ -17,8 +17,8 @@
 
 namespace fs = std::filesystem;
 namespace {
-constexpr std::array<std::string_view, 4> IMAGE_EXT{".jpg", ".jpeg", ".png",
-                                                    ".bmp"};
+constexpr std::array<std::string_view, 8> IMAGE_EXT{
+    ".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"};
 }
 namespace Cubed {
 ScreenshotUI::ScreenshotUI(ScreenshotScene& scene) : m_scene(scene) {}
@@ -59,8 +59,11 @@ void ScreenshotUI::update_layout(int width, int height) {
                 continue;
             }
             ImageInfo info;
-            info.texture =
-                texture_manager.get_image_texture(entry.path().string(), true);
+            info.texture = texture_manager.get_image_texture(
+                entry.path().string(), true, false);
+            if (!info.texture) {
+                continue;
+            }
             info.texture->set_linear();
             info.height = info.texture->height() * IMAGE_SCALE;
             info.width = info.texture->width() * IMAGE_SCALE;
