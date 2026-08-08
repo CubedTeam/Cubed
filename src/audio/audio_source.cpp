@@ -80,11 +80,9 @@ void AudioSource::set_pitch(float pitch) {
 }
 
 void AudioSource::play() {
-
-    if (state() != AudioState::INITIAL) {
-        stop();
-    }
     alSourcePlay(m_source);
+
+    check_al_error();
 }
 
 void AudioSource::play_2d(const AudioBuffer& buffer) {

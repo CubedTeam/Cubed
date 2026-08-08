@@ -119,6 +119,10 @@ void AudioEngine::init() {
 
     Logger::info("Audio Engine Init Success");
 
+    Logger::info("OpenAL vendor: {}", alGetString(AL_VENDOR));
+    Logger::info("OpenAL version: {}", alGetString(AL_VERSION));
+    Logger::info("OpenAL renderer: {}", alGetString(AL_RENDERER));
+
     m_init = true;
 }
 
@@ -148,11 +152,12 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
         return;
     }
     auto* source = m_pool->acquire();
-    source->set_volume(m_sfx_volume);
+
     if (!source) {
         Logger::error("Source is Full");
+        return;
     }
-
+    source->set_volume(m_sfx_volume);
     try {
         auto& buffer = m_sounds.get_buffer(sound);
         if (m_efx_supported && m_underwater) {
@@ -176,6 +181,7 @@ void AudioEngine::play_2d(const std::string& sound, bool check) {
     auto* source = m_pool->acquire();
     if (!source) {
         Logger::error("Source is Full");
+        return;
     }
     source->set_volume(m_sfx_volume);
 
@@ -301,8 +307,9 @@ void AudioEngine::receive_voice(std::span<const char> opus,
         return;
     }
     m_voice_source->set_pos(pos);
-    m_voice_source->push_pcm(std::span(pcm.data(), len),
-                             AudioRecording::SAMPLE_RATE);
+    m_voice_source->push_pcm(
+        std::span<const int16_t>(pcm.data(), static_cast<size_t>(len)),
+        AudioRecording::SAMPLE_RATE);
 }
 
 AudioRecording& AudioEngine::audio_recording() { return m_recording; }
