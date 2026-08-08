@@ -1,6 +1,8 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 
+#include "Cubed/gameplay/creatures/creature_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/resource_location.hpp"
 
@@ -9,6 +11,11 @@
 namespace fs = std::filesystem;
 using namespace rapidjson;
 namespace Cubed {
+
+namespace {
+const HitboxManager::Handle EMPTY{};
+}
+
 HitboxManager::HitboxManager() { HitboxMap::accessor a; }
 
 HitboxManager::~HitboxManager() {}
@@ -57,33 +64,24 @@ HitboxManager::Handle HitboxManager::get_hitbox(const std::string& name) {
 }
 HitboxManager::Handle HitboxManager::load(std::string_view name) {
 
-    auto space = ResourceLocation::parse(name);
-    if (!space) {
-        Logger::error("Can't load hitbox {}", name);
+    auto& location = CreatureManager::data(name);
+    if (!location.collision) {
+        Logger::error("Can't find {} collision.json", name);
         ASSERT(false);
+        return EMPTY;
     }
-    fs::path p;
-    if (space->ns == "cubed") {
-        p = std::format("{}model/creature/{}/collision.json", ASSETS_PATH,
-                        space->path);
-    } else {
-        p = std::format("{}/model/creature/{}/collision.json", space->ns,
-                        space->path);
-    }
+    fs::path p =
+        location.collision->assets_path_prefix() / location.collision->path;
 
     try {
         glm::vec3 center;
         glm::vec3 half;
-        std::ifstream s{p};
-        IStreamWrapper isw(s);
-        Document doc;
-        doc.ParseStream(isw);
-        if (doc.HasParseError()) {
-            auto code = doc.GetParseError();
 
-            throw std::runtime_error(
-                std::format("Parse {} failed, error code {}", p.string(),
-                            static_cast<int>(code)));
+        Document doc;
+        if (!Tools::parse_json(doc, p)) {
+            Logger::error("Can't parse hitbox {}", name);
+            ASSERT(false);
+            return EMPTY;
         }
         if (doc.HasMember("boxes")) {
             const Value& box = doc["boxes"];

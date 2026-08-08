@@ -109,8 +109,8 @@ float BlockManager::roughness(BlockType id) {
 }
 
 void BlockManager::init() {
-    fs::path root_path{
-        ResourceLocation::get_assets_path(ResourceLocation::DEFAULT_NAMESPACE)};
+    fs::path root_path{ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE)};
     fs::path block_path = root_path / "blocks";
 
     fs::create_directories(block_path);

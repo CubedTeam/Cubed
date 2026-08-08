@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <regex>
@@ -28,7 +29,7 @@ struct ResourceLocation {
                                 std::string(str.substr(it + 1))};
     }
 
-    static std::string get_assets_path(std::string_view ns) {
+    static std::filesystem::path get_assets_path_prefix(std::string_view ns) {
         if (ns == "cubed") {
             return ASSETS_PATH "cubed";
         }
@@ -51,7 +52,9 @@ struct ResourceLocation {
         return std::hash<std::string>()(p.to_string());
     }
 
-    std::string assets_path() const { return get_assets_path(ns); }
+    std::filesystem::path assets_path_prefix() const {
+        return get_assets_path_prefix(ns);
+    }
 };
 
 } // namespace Cubed

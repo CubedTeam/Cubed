@@ -109,4 +109,5 @@ target_sources(${PROJECT_NAME}
         ui/screenshot_ui.cpp
         scene/screenshot_scene.cpp
         ui/scroll_view.cpp
+        gameplay/creatures/creature_manager.cpp
 )

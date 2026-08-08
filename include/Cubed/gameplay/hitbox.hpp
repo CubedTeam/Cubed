@@ -12,6 +12,8 @@ struct Hitbox {
     Hitbox(glm::vec3 center_point, glm::vec3 half_size)
         : center(center_point), half(half_size) {}
 
+    Hitbox() {};
+
     glm::vec3 min() const { return center - half; }
 
     glm::vec3 max() const { return center + half; }

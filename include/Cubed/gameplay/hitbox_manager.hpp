@@ -6,7 +6,7 @@ namespace Cubed {
 class HitboxManager {
 public:
     struct Handle {
-        Hitbox box;
+        Hitbox box{};
         HitboxID id = 0;
     };
     HitboxManager();
@@ -28,6 +28,7 @@ private:
     using HitboxMap = tbb::concurrent_hash_map<HitboxID, Hitbox>;
     using IDMap = tbb::concurrent_hash_map<std::string, HitboxID>;
     using NameMap = tbb::concurrent_hash_map<HitboxID, std::string>;
+
     HitboxID m_next = 0;
     IDMap m_id_map;
     NameMap m_name_map;

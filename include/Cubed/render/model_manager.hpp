@@ -5,6 +5,7 @@
 
 #include <tbb/concurrent_hash_map.h>
 namespace Cubed {
+class CreatureData;
 class ModelManager {
 public:
     struct Handle {
@@ -41,6 +42,6 @@ private:
     IDMap m_id_map;
     NameMap m_name_map;
     Handle load_model(std::string_view model_name);
-    void load_anim_config(ModelNode& node, const std::string& path);
+    void load_anim_config(ModelNode& node, const CreatureData& data);
 };
 } // namespace Cubed
