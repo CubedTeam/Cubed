@@ -15,7 +15,7 @@ inline std::string get_time_date_str() {
     auto now = std::chrono::system_clock::now();
     auto local =
         std::chrono::time_point_cast<std::chrono::seconds>(zone->to_local(now));
-    return std::format("{:%F %T}", local);
+    return std::format("{:%Y-%m-%d_%H-%M-%S}", local);
 }
 
 } // namespace Tools
