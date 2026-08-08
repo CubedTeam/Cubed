@@ -110,7 +110,8 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     ASSERT(m_factories.contains(name));
     m_factories[name](id);
     acc a;
-    ASSERT(m_entities.find(a, id));
+    bool found = m_entities.find(a, id);
+    ASSERT(found);
     auto* c = m_registry.try_get<BaseClientCreature>(a->second);
     ASSERT(c);
     c->transform.position.value = pos;
