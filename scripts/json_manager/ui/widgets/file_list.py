@@ -1,7 +1,7 @@
 """Sidebar file list widget with search.
 
 Reusable across blocks/items/creatures views; emits the selected file
-name via callback.
+name via callback. Kept compact and consistent with the MD3 theme.
 """
 
 from __future__ import annotations
@@ -11,6 +11,8 @@ from typing import Callable
 import flet as ft
 
 from ..safe import safe_update
+
+ITEM_HEIGHT = 40
 
 
 class FileList(ft.Column):
@@ -26,6 +28,8 @@ class FileList(ft.Column):
         self.on_select = on_select
         self.on_new = on_new
         self.title = title
+        self.spacing = 8
+
         self.search = ft.TextField(
             hint_text="搜索",
             prefix_icon=ft.Icons.SEARCH,
@@ -35,14 +39,16 @@ class FileList(ft.Column):
         self.list_view = ft.ListView(
             controls=self._build_items(),
             expand=True,
-            spacing=2,
+            spacing=4,
         )
         self.controls = [
             ft.Row(
                 [
-                    ft.Text(self.title, weight=ft.FontWeight.BOLD),
+                    ft.Text(self.title or "Files", weight=ft.FontWeight.BOLD, size=16),
                     ft.IconButton(
-                        ft.Icons.ADD, on_click=lambda _: on_new() if on_new else None
+                        ft.Icons.ADD_OUTLINED,
+                        on_click=lambda _: on_new() if on_new else None,
+                        tooltip="新建",
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -50,7 +56,6 @@ class FileList(ft.Column):
             self.search,
             self.list_view,
         ]
-        self.spacing = 6
 
     def _build_items(self, filter_text: str = "") -> list[ft.Control]:
         items: list[ft.Control] = []
@@ -59,17 +64,27 @@ class FileList(ft.Column):
             if f and f not in name.lower():
                 continue
             items.append(
-                ft.ListTile(
-                    leading=ft.Icon(ft.Icons.INSERT_DRIVE_FILE_OUTLINED),
-                    title=ft.Text(name),
+                ft.Container(
+                    ft.Row(
+                        [
+                            ft.Icon(ft.Icons.INSERT_DRIVE_FILE_OUTLINED, size=18),
+                            ft.Text(name, expand=True, size=13),
+                        ],
+                        spacing=8,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                    padding=ft.Padding(left=8, right=8, top=8, bottom=8),
+                    border_radius=8,
                     on_click=lambda e, n=name: self.on_select(n),
+                    ink=True,
                 )
             )
         if not items:
             items.append(
                 ft.Container(
-                    content=ft.Text("(空)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT),
+                    ft.Text("(空)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12),
                     padding=10,
+                    alignment=ft.Alignment.CENTER,
                 )
             )
         return items
@@ -82,12 +97,4 @@ class FileList(ft.Column):
     def refresh(self, names: list[str]) -> None:
         self.names = list(names)
         self.list_view.controls = self._build_items(self.search.value or "")
-        safe_update(self.list_view)
-
-    def select(self, name: str | None) -> None:
-        for item in self.list_view.controls:
-            if isinstance(item, ft.ListTile) and item.title.value == name:
-                item.selected = True
-            else:
-                continue
         safe_update(self.list_view)

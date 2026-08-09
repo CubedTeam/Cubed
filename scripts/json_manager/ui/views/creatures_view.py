@@ -8,6 +8,7 @@ import flet as ft
 
 from ...core import loader, paths, validation
 from ...core.models import Creature
+from .. import form
 from .base_view import BaseResourceView
 
 
@@ -16,10 +17,10 @@ class CreaturesView(BaseResourceView):
     directory = paths.CREATURES_DIR
 
     def __init__(self, page: ft.Page) -> None:
-        self._field_name = ft.TextField(label="name")
-        self._field_model = ft.TextField(label="model")
-        self._field_anim = ft.TextField(label="animation (可选)")
-        self._field_collision = ft.TextField(label="collision (可选)")
+        self._field_name = form.field("name")
+        self._field_model = form.field("model")
+        self._field_anim = form.field("animation (可选)")
+        self._field_collision = form.field("collision (可选)")
         super().__init__(page)
 
     def load_all(self) -> list[dict[str, Any]]:
@@ -37,9 +38,14 @@ class CreaturesView(BaseResourceView):
         self._field_anim.value = c.animation or ""
         self._field_collision.value = c.collision or ""
         return ft.Column(
-            [self._field_name, self._field_model, self._field_anim, self._field_collision],
+            [
+                form.section("基本", self._field_name),
+                form.section("Model", self._field_model),
+                form.section("Optional references", self._field_anim, self._field_collision),
+            ],
             scroll=ft.ScrollMode.AUTO,
             expand=True,
+            spacing=form.SPACE,
         )
 
     def form_to_data(self) -> dict[str, Any] | None:

@@ -8,48 +8,47 @@ import flet as ft
 
 from ...core import loader, paths, validation
 from ...core.models import Block, BlockProperties, Sounds, Texture
+from .. import form
 from .base_view import BaseResourceView
+
+BOOL_FIELDS = (
+    "is_liquid",
+    "is_cross_plane",
+    "is_transparent",
+    "is_passable",
+    "is_discard",
+    "is_blend",
+    "is_transitional",
+    "is_gas",
+)
 
 
 class BlocksView(BaseResourceView):
     title = "Blocks"
     directory = paths.BLOCKS_DIR
-    name_field_label = "name"
 
     def __init__(self, page: ft.Page) -> None:
-        self._field_name = ft.TextField(label="name")
-        self._field_roughness_value = ft.Text("0.75")
+        self._field_name = form.field("name")
+        self._field_rough_value = ft.Text("0.75", size=14, text_align=ft.TextAlign.RIGHT)
         self._field_roughness = ft.Slider(
-            min=0.0, max=1.0, divisions=20, value=0.75, label="{value}",
-            on_change=self._on_rough_change,
+            min=0.0, max=1.0, divisions=20, value=0.75,
+            label="{value}", expand=True, on_change=self._on_rough_change,
         )
-        self._bool_switches: dict[str, ft.Switch] = {
-            k: ft.Switch(label=k)
-            for k in (
-                "is_liquid",
-                "is_cross_plane",
-                "is_transparent",
-                "is_passable",
-                "is_discard",
-                "is_blend",
-                "is_transitional",
-                "is_gas",
-            )
-        }
+        self._switches: dict[str, ft.Switch] = {k: form.switch(k) for k in BOOL_FIELDS}
         self._seg_type = ft.SegmentedButton(
             selected=["cuboid"],
             segments=[
-ft.Segment(value="cuboid", label=ft.Text("cuboid"), icon=ft.Icon(ft.Icons.BLOCK)),
-            ft.Segment(value="cross", label=ft.Text("cross"), icon=ft.Icon(ft.Icons.GRID_VIEW)),
+                ft.Segment(value="cuboid", label=ft.Text("cuboid"), icon=ft.Icon(ft.Icons.BLOCK)),
+                ft.Segment(value="cross", label=ft.Text("cross"), icon=ft.Icon(ft.Icons.GRID_VIEW)),
             ],
-            allow_multiple_selection=False,
-            allow_empty_selection=False,
+            allow_multiple_selection=False, allow_empty_selection=False,
+            expand=True,
         )
-        self._field_tex_path = ft.TextField(label="texture.path")
-        self._field_normal = ft.TextField(label="texture.normal (可选)", disabled=False)
-        self._field_break = ft.TextField(label="sounds.break")
-        self._field_place = ft.TextField(label="sounds.place")
-        self._field_walk = ft.TextField(label="sounds.walk (可选)")
+        self._field_tex_path = form.field("texture.path")
+        self._field_normal = form.field("texture.normal (可选)")
+        self._field_break = form.field("sounds.break")
+        self._field_place = form.field("sounds.place")
+        self._field_walk = form.field("sounds.walk (可选)")
         super().__init__(page)
 
     # --- subclass hooks ---------------------------------------------------
@@ -70,8 +69,8 @@ ft.Segment(value="cuboid", label=ft.Text("cuboid"), icon=ft.Icon(ft.Icons.BLOCK)
         self._field_name.value = block.name
         p = block.properties
         self._field_roughness.value = p.roughness
-        self._field_roughness_value.value = f"{p.roughness:.2f}"
-        for k, sw in self._bool_switches.items():
+        self._field_rough_value.value = f"{p.roughness:.2f}"
+        for k, sw in self._switches.items():
             sw.value = bool(getattr(p, k))
         self._seg_type.selected = [block.texture.type]
         self._field_tex_path.value = block.texture.path
@@ -81,59 +80,42 @@ ft.Segment(value="cuboid", label=ft.Text("cuboid"), icon=ft.Icon(ft.Icons.BLOCK)
         self._field_place.value = block.sounds.place
         self._field_walk.value = block.sounds.walk or ""
 
+        switch_grid = form.switch_grid(list(self._switches.values()), per_row=2)
         return ft.Column(
             [
-                self._field_name,
-                ft.Container(
-                    ft.Column(
-                        [
-                            ft.Text("Properties", weight=ft.FontWeight.BOLD),
-                            ft.Container(
-                                ft.Row([sw for sw in self._bool_switches.values()], wrap=True),
-                            ),
-                            ft.Text("roughness"),
-                            ft.Row([self._field_roughness, self._field_roughness_value]),
-                        ]
-                    ),
-                    padding=10,
-                    border_radius=12,
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                # Name is in its own section (always full-width).
+                form.section("基本", self._field_name),
+                # Properties section: bool switches grid + roughness slider.
+                form.section(
+                    "Properties",
+                    switch_grid,
+                    ft.Text("roughness", size=form.LABEL_SIZE, color=ft.Colors.ON_SURFACE_VARIANT),
+                    form.slider_with_value(self._field_roughness, self._field_rough_value),
                 ),
-                ft.Container(
-                    ft.Column(
-                        [
-                            ft.Text("Texture", weight=ft.FontWeight.BOLD),
-                            self._seg_type,
-                            self._field_tex_path,
-                            self._field_normal,
-                        ]
-                    ),
-                    padding=10,
-                    border_radius=12,
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                # Texture: segmented type + path/normal fields.
+                form.section(
+                    "Texture",
+                    self._seg_type,
+                    self._field_tex_path,
+                    self._field_normal,
                 ),
-                ft.Container(
-                    ft.Column(
-                        [
-                            ft.Text("Sounds", weight=ft.FontWeight.BOLD),
-                            ft.Row([self._field_break, self._field_place]),
-                            self._field_walk,
-                        ]
-                    ),
-                    padding=10,
-                    border_radius=12,
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+                # Sounds section: break/place share a row, walk below.
+                form.section(
+                    "Sounds",
+                    form.row(self._field_break, self._field_place),
+                    self._field_walk,
                 ),
             ],
             scroll=ft.ScrollMode.AUTO,
             expand=True,
+            spacing=form.SPACE,
         )
 
     def form_to_data(self) -> dict[str, Any] | None:
         block = Block(
             name=self._field_name.value or "",
             properties=BlockProperties(
-                **{k: bool(sw.value) for k, sw in self._bool_switches.items()},
+                **{k: bool(sw.value) for k, sw in self._switches.items()},
                 roughness=float(self._field_roughness.value or 0.0),
             ),
             texture=Texture(
@@ -154,7 +136,6 @@ ft.Segment(value="cuboid", label=ft.Text("cuboid"), icon=ft.Icon(ft.Icons.BLOCK)
 
     def save_data(self, data: dict[str, Any]) -> str:
         block = Block.from_dict(data)
-        # Sync registry before saving so id allocation is stable.
         registry = loader.load_registry()
         loader.sync_registry_for_block(block, registry)
         loader.save_block(block)
@@ -167,9 +148,10 @@ ft.Segment(value="cuboid", label=ft.Text("cuboid"), icon=ft.Icon(ft.Icons.BLOCK)
         loader.remove_block_from_registry(name, registry)
         loader.save_registry(registry)
 
-    # --- events -----------------------------------------------------------
-
     def _on_rough_change(self, e: ft.ControlEvent) -> None:
         val = float(e.control.value or 0)
-        self._field_roughness_value.value = f"{val:.2f}"
-        self._field_roughness_value.update()
+        self._field_rough_value.value = f"{val:.2f}"
+        try:
+            self._field_rough_value.update()
+        except Exception:
+            pass

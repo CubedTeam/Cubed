@@ -3,30 +3,53 @@
 from __future__ import annotations
 
 import flet as ft
-from ..safe import safe_update
 
 from ...core import loader
+from .. import form
 from ..dialogs import confirm, snack
+from ..safe import safe_update
 
 
 class LexiconView(ft.Column):
     def __init__(self, page: ft.Page) -> None:
-        super().__init__(expand=True)
+        super().__init__(expand=True, spacing=form.SPACE)
         self.page_ctx = page
         self.data: dict = {}
-        self.date_field = ft.TextField(label="lastUpdateDate (YYYY/MM/DD)")
-        self.search = ft.TextField(prefix_icon=ft.Icons.SEARCH, hint_text="搜索词", on_change=self._on_search)
-        self.add_input = ft.TextField(label="逐个添加", on_submit=self._on_add_input)
-        self.bulk_input = ft.TextField(
-            label="批量粘贴 (每行一个)", multiline=True, min_lines=4, max_lines=8
+
+        self.date_field = form.field("lastUpdateDate (YYYY/MM/DD)")
+        self.search = ft.TextField(
+            prefix_icon=ft.Icons.SEARCH, hint_text="搜索词", dense=True,
+            expand=True, on_change=self._on_search,
         )
-        self._chips = ft.Row([], wrap=True)
-        self.chip_container = ft.Container(self._chips, padding=8, border_radius=12, bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH)
+        self.add_input = form.field("逐个添加", expand=True)
+        self.add_btn = ft.FilledTonalButton("添加", icon=ft.Icons.ADD, on_click=self._on_add)
+        self.bulk_input = form.field("批量粘贴 (每行一个)", multiline=True)
+        self.bulk_btn = ft.OutlinedButton("导入多行", icon=ft.Icons.UPLOAD, on_click=self._on_bulk)
+        self.save_btn = ft.FilledButton("保存", icon=ft.Icons.SAVE, on_click=self._on_save)
+
+        self._chips = ft.Row([], wrap=True, spacing=6, run_spacing=6, alignment=ft.MainAxisAlignment.START)
+        self.chip_container = ft.Container(
+            self._chips,
+            padding=form.SECTION_PAD,
+            border_radius=form.SECTION_RADIUS,
+            bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
+            expand=True,
+        )
+
         self.controls = [
-            ft.Row([self.date_field, ft.FilledButton("保存", on_click=self._on_save)]),
-            ft.Row([self.search, self.add_input, ft.FilledTonalButton("添加", on_click=self._on_add)]),
-            ft.Column([ft.Text("批量导入"), self.bulk_input, ft.OutlinedButton("导入多行", on_click=self._on_bulk)]),
-            ft.Text("Words", weight=ft.FontWeight.BOLD),
+            form.section(
+                "元数据",
+                ft.Row([self.date_field, self.save_btn], spacing=form.SPACE),
+            ),
+            form.section(
+                "快速添加",
+                ft.Row([self.add_input, self.add_btn], spacing=form.SPACE),
+            ),
+            form.section(
+                "批量导入",
+                self.bulk_input,
+                self.bulk_btn,
+            ),
             self.chip_container,
         ]
         self.refresh()
@@ -39,7 +62,7 @@ class LexiconView(ft.Column):
 
     def render_chips(self, filter_text: str) -> None:
         f = filter_text.lower()
-        words = self.data.get("words", [])
+        words = self.data.setdefault("words", [])
         chips: list[ft.Control] = []
         shown = 0
         for w in words:
@@ -47,17 +70,19 @@ class LexiconView(ft.Column):
                 continue
             chips.append(
                 ft.Chip(
-                    label=ft.Text(w),
-                    on_delete=lambda e, word=w: self._remove(word),
+                    label=ft.Text(w, size=12, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                    on_delete=lambda _e, word=w: self._remove(word),
                     delete_icon=ft.Icon(ft.Icons.CLOSE),
                 )
             )
             shown += 1
             if shown > 500:
-                chips.append(ft.Text(f"… 还有 {len(words) - 500} 项 (请缩小搜索)", italic=True))
+                chips.append(
+                    ft.Text(f"… 还有 {len(words) - 500} 项 (请缩小搜索)", italic=True, size=12)
+                )
                 break
         if not chips:
-            chips = [ft.Text("(empty)", italic=True)]
+            chips = [ft.Text("(空)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12)]
         self._chips.controls = chips
         safe_update(self._chips)
 
@@ -79,9 +104,6 @@ class LexiconView(ft.Column):
         self.add_input.value = ""
         safe_update(self.add_input)
         self.render_chips(self.search.value or "")
-
-    def _on_add_input(self, e: ft.ControlEvent) -> None:
-        self._on_add(e)
 
     def _on_bulk(self, _e: ft.ControlEvent) -> None:
         raw = self.bulk_input.value or ""
@@ -111,4 +133,5 @@ class LexiconView(ft.Column):
             loader.save_lexicon(self.data)
             snack(self.page_ctx, "已保存敏感词表", "ok")
             self.refresh()
+
         confirm(self.page_ctx, "保存", "保存 SensitiveLexicon.json?", _do)
