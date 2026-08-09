@@ -57,8 +57,14 @@ void ItemManager::add(const std::filesystem::path& path,
         return;
     }
     auto& items = registry["items"];
-    if (Tools::get_json_value(doc, "name", data.name)) {
-        if (!Tools::get_json_value(items, data.name.c_str(), data.id)) {
+    std::string s;
+    if (Tools::get_json_value(doc, "name", s)) {
+        auto location = ResourceLocation::parse(s);
+        if (!location) {
+            return;
+        }
+        data.name = *location;
+        if (!Tools::get_json_value(items, data.name.path.c_str(), data.id)) {
             return;
         }
     } else {
@@ -68,7 +74,6 @@ void ItemManager::add(const std::filesystem::path& path,
 
     Tools::get_json_value(doc, "description", data.description);
 
-    std::string s;
     if (Tools::get_json_value(doc, "texture", s)) {
         data.path = ResourceLocation::parse(s);
     }
@@ -91,13 +96,14 @@ void ItemManager::add(const std::filesystem::path& path,
         }
     }
 
-    data.local_name = tr(std::format("item.{}.name", data.name));
+    data.local_name =
+        tr(std::format("item.{}.{}.name", data.name.ns, data.name.path));
 
     acc a;
     if (m_map.emplace(a, data.id, std::move(data))) {
-        if (!m_id_map.emplace(a->second.name, a->first)) {
+        if (!m_id_map.emplace(a->second.name.to_string(), a->first)) {
             Logger::error("ItemManager: Can't Insterd {} {} to id map",
-                          a->second.name, a->first);
+                          a->second.name.to_string(), a->first);
         }
         if (a->second.kind == ItemKind::BLOCK) {
             BlockType b = BlockManager::id_from_name(a->second.name);

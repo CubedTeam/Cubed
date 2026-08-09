@@ -21,7 +21,6 @@ template <typename T>
 bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
     using ValueType = std::decay_t<T>;
     if (!value.HasMember(key)) {
-        Logger::error("json don't has key {}", key);
         return false;
     }
     const auto& v = value[key];
