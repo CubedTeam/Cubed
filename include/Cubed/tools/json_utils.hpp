@@ -12,7 +12,7 @@ namespace detail {
 template <typename T> inline constexpr bool always_false_v = false; // NOLINT
 } // namespace detail
 
-inline std::unordered_map<std::string, std::string>
+std::unordered_map<std::string, std::string>
 doc_to_map(const rapidjson::Document& doc);
 
 bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path);

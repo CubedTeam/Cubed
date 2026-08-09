@@ -132,7 +132,8 @@ void BlockManager::init() {
 
     std::vector<std::pair<bool, BlockType>> types;
 
-    for (auto entry : fs::recursive_directory_iterator(block_path)) {
+    for (auto entry : fs::recursive_directory_iterator(
+             block_path, fs::directory_options::skip_permission_denied)) {
         if (!entry.is_regular_file()) {
             continue;
         }
@@ -235,6 +236,7 @@ void BlockManager::init() {
         const auto ID = data.id;
         if (!m_datas.emplace(data.id, std::move(data))) {
             Logger::error("Block {} already exist!", LOCATION.to_string());
+            return;
         }
         m_id_map.emplace(LOCATION, ID);
         types.emplace_back(IS_CROSS_PLANE, ID);
@@ -275,7 +277,7 @@ BlockType BlockManager::id_from_name(const ResourceLocation& name) {
     return 0;
 }
 
-const BlockData& BlockManager::data(std::string_view name) {
+BlockData BlockManager::data(std::string_view name) {
     auto s = ResourceLocation::parse(name);
     if (!s) {
         return EMPTY;
@@ -284,7 +286,7 @@ const BlockData& BlockManager::data(std::string_view name) {
     return data(*s);
 }
 
-const BlockData& BlockManager::data(const ResourceLocation& location) {
+BlockData BlockManager::data(const ResourceLocation& location) {
 
     IDMap::const_accessor cacc;
     if (!m_id_map.find(cacc, location)) {
@@ -295,7 +297,7 @@ const BlockData& BlockManager::data(const ResourceLocation& location) {
     return data(cacc->second);
 }
 
-const BlockData& BlockManager::data(BlockType type) {
+BlockData BlockManager::data(BlockType type) {
     cacc c;
     if (!m_datas.find(c, type)) {
         Logger::error("Can't find block {} data", type);

@@ -39,7 +39,7 @@ HitboxID HitboxManager::get_hitbox_id(const std::string& name) {
     }
     return load(name).id;
 }
-const std::string& HitboxManager::get_hitbox_name(HitboxID id) {
+std::string HitboxManager::get_hitbox_name(HitboxID id) {
     NameMap::const_accessor cacc;
     if (m_name_map.find(cacc, id)) {
         return cacc->second;
@@ -64,7 +64,7 @@ HitboxManager::Handle HitboxManager::get_hitbox(const std::string& name) {
 }
 HitboxManager::Handle HitboxManager::load(std::string_view name) {
 
-    auto& location = CreatureManager::data(name);
+    auto location = CreatureManager::data(name);
     if (!location.collision) {
         Logger::error("Can't find {} collision.json", name);
         ASSERT(false);
@@ -74,8 +74,8 @@ HitboxManager::Handle HitboxManager::load(std::string_view name) {
         location.collision->assets_path_prefix() / location.collision->path;
 
     try {
-        glm::vec3 center;
-        glm::vec3 half;
+        glm::vec3 center{0.0f};
+        glm::vec3 half{0.0f};
 
         Document doc;
         if (!Tools::parse_json(doc, p)) {
@@ -85,7 +85,7 @@ HitboxManager::Handle HitboxManager::load(std::string_view name) {
         }
         if (doc.HasMember("boxes")) {
             const Value& box = doc["boxes"];
-            if (box.IsArray()) {
+            if (box.IsArray() && !box.Empty()) {
                 const Value& b = box[0];
                 if (b.HasMember("center")) {
                     center.x = b["center"][0].GetFloat();

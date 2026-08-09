@@ -23,7 +23,8 @@ void CreatureManager::init() {
 
     fs::create_directories(creature_path);
 
-    for (auto& entry : fs::recursive_directory_iterator(creature_path)) {
+    for (auto& entry : fs::recursive_directory_iterator(
+             creature_path, fs::directory_options::skip_permission_denied)) {
         if (!entry.is_regular_file()) {
             continue;
         }
@@ -59,11 +60,19 @@ void CreatureManager::init() {
         if (Tools::get_json_value(doc, "collision", s)) {
             data.collision = ResourceLocation::parse(s);
         }
+
+        if (doc.HasMember("sounds") && doc["sounds"].IsObject()) {
+            auto& sounds = doc["sounds"];
+            if (Tools::get_json_value(sounds, "call", s)) {
+                data.sound.call = ResourceLocation::parse(s);
+            }
+        }
+
+        m_creature_map.emplace(data.name, std::move(data));
     }
 }
 
-const CreatureData&
-CreatureManager::get_creature_data(std::string_view name) const {
+CreatureData CreatureManager::get_creature_data(std::string_view name) const {
     auto l = ResourceLocation::parse(name);
     if (l) {
         return get_creature_data(*l);
@@ -74,7 +83,7 @@ CreatureManager::get_creature_data(std::string_view name) const {
     }
 }
 
-const CreatureData&
+CreatureData
 CreatureManager::get_creature_data(const ResourceLocation& location) const {
     cacc c;
     if (m_creature_map.find(c, location)) {
@@ -84,10 +93,10 @@ CreatureManager::get_creature_data(const ResourceLocation& location) const {
     return EMPTY;
 }
 
-const CreatureData& CreatureManager::data(std::string_view name) {
+CreatureData CreatureManager::data(std::string_view name) {
     return instance().get_creature_data(name);
 }
-const CreatureData& CreatureManager::data(const ResourceLocation& location) {
+CreatureData CreatureManager::data(const ResourceLocation& location) {
     return instance().get_creature_data(location);
 }
 

@@ -21,7 +21,7 @@ struct ItemData {
     std::string name;
     std::string local_name;
     std::string description;
-    std::string path;
+    std::optional<ResourceLocation> path;
     ItemKind kind = ItemKind::NONE;
     ItemProperty property;
 };

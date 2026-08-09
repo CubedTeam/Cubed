@@ -5,6 +5,10 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/time_tools.hpp"
+
+#include <filesystem>
+namespace fs = std::filesystem;
+
 using namespace google::protobuf;
 
 namespace Cubed {
@@ -225,9 +229,12 @@ void ClientPlayerManager::update_players_data(float dt) {
             if (id == 0) {
                 return;
             }
-            std::string name = BlockManager::name_form_id(id);
-            std::string sound = "block/" + name + "/walk.ogg";
-            m_world.get_audio().play_3d(sound, player.render_pos.value);
+            auto data = BlockManager::data(id);
+            if (data.sound.walk) {
+                fs::path path = data.sound.walk->full_path();
+                m_world.get_audio().play_3d(path, player.render_pos.value,
+                                            true);
+            }
         };
 
         if (player.walk.gait == Gait::WALK) {

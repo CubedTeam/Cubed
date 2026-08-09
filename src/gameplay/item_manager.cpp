@@ -24,12 +24,12 @@ void ItemManager::init() {
     m_id_map.clear();
     m_map.clear();
 
-    fs::path dir = ASSETS_PATH "item";
-    if (!fs::is_directory(dir)) {
-        throw std::runtime_error("Item path not exist!");
-    }
+    fs::path root_path = ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE);
+    fs::path item_path = root_path / "items";
+    fs::create_directories(item_path);
     for (const auto& entry : fs::recursive_directory_iterator(
-             dir, fs::directory_options::skip_permission_denied)) {
+             item_path, fs::directory_options::skip_permission_denied)) {
         if (fs::is_regular_file(entry)) {
             if (entry.path().extension().string() == ".json") {
                 add(entry.path());
@@ -64,7 +64,7 @@ void ItemManager::add(const std::filesystem::path& path) {
         data.description = doc["description"].GetString();
     }
     if (doc.HasMember("texture")) {
-        data.path = doc["texture"].GetString();
+        data.path = ResourceLocation::parse(doc["texture"].GetString());
     }
     if (doc.HasMember("type")) {
         std::string type = doc["type"].GetString();
@@ -95,7 +95,7 @@ void ItemManager::add(const std::filesystem::path& path) {
     }
 }
 
-const ItemData& ItemManager::get_item_data(std::string_view key) const {
+ItemData ItemManager::get_item_data(std::string_view key) const {
     ItemID id = 0;
     {
         IDMap::const_accessor cacc;
@@ -111,7 +111,7 @@ const ItemData& ItemManager::get_item_data(std::string_view key) const {
 
     return get_item_data(id);
 }
-const ItemData& ItemManager::get_item_data(ItemID id) const {
+ItemData ItemManager::get_item_data(ItemID id) const {
     cacc c;
     if (!m_map.find(c, id)) {
         Logger::error("Can't find item {} in map", id);
@@ -121,11 +121,9 @@ const ItemData& ItemManager::get_item_data(ItemID id) const {
     return c->second;
 }
 
-const ItemData& ItemManager::get(std::string_view key) {
+ItemData ItemManager::get(std::string_view key) {
     return instance().get_item_data(key);
 }
-const ItemData& ItemManager::get(ItemID id) {
-    return instance().get_item_data(id);
-}
+ItemData ItemManager::get(ItemID id) { return instance().get_item_data(id); }
 ItemID ItemManager::size() { return instance().m_map.size(); }
 } // namespace Cubed

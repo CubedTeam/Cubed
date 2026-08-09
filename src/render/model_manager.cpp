@@ -70,10 +70,11 @@ const std::string& ModelManager::get_model_name(ModelID id) {
 
 ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
 
-    auto& location = CreatureManager::data(model_name);
+    auto location = CreatureManager::data(model_name);
     if (!location.model) {
         Logger::error("Can't find {} model key", model_name);
         ASSERT(false);
+        throw std::runtime_error("Can't find model key");
     }
 
     fs::path path = location.model->assets_path_prefix() / location.model->path;
@@ -88,6 +89,7 @@ ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
         acc->second = std::move(model);
     } else {
         Logger::error("Can't Insert Model {}", model_name);
+        --m_next;
         ModelMap::const_accessor cacc;
         if (m_models.find(cacc, get_model_id(std::string(model_name)))) {
             return {cacc->second, cacc->first};

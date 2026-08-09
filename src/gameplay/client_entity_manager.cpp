@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/client_entity_manager.hpp"
 
 #include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/creatures/creature_manager.hpp"
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
@@ -246,8 +247,12 @@ void ClientEntityManager::player_sound(float dt) {
         auto& sound_time = view.get<SoundTime>(e);
         sound_time.next_call_time -= dt;
         if (sound_time.next_call_time <= 0.0f) {
-            audio.play_3d("creature/pig/call.mp3",
-                          creature.transform.position.value);
+
+            auto data = CreatureManager::data(info.name);
+            if (data.sound.call) {
+                audio.play_3d(data.sound.call->full_path(),
+                              creature.transform.position.value, true, false);
+            }
             sound_time.next_call_time = m_random.random_float(8.0f, 25.0f);
         }
     }

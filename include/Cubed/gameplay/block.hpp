@@ -43,6 +43,7 @@ struct LookBlock {
 };
 
 enum class BlockTextureType {
+    NONE,
     CUBOID,
     CROSS
 
@@ -70,7 +71,7 @@ struct BlockData {
     bool is_transitional = false;
     float roughness = 1.0f;
 
-    BlockTextureType texture_type = BlockTextureType::CUBOID;
+    BlockTextureType texture_type = BlockTextureType::NONE;
 
     std::optional<ResourceLocation> texture_path;
     std::optional<ResourceLocation> normal;

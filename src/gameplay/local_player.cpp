@@ -7,6 +7,9 @@
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
+
+#include <filesystem>
+namespace fs = std::filesystem;
 namespace Cubed {
 
 namespace {
@@ -407,7 +410,7 @@ void LocalPlayer::place_block(float dt) {
         }
     }
     if (m_mouse_state.right) {
-        auto& data = ItemManager::get(m_hotbar[m_selected_hotbar].id);
+        auto data = ItemManager::get(m_hotbar[m_selected_hotbar].id);
         if (data.kind == ItemKind::BLOCK) {
             auto* t = std::get_if<BlockType>(&data.property);
             ASSERT(t);
@@ -689,11 +692,13 @@ void LocalPlayer::init(std::string_view name) {
         if (id == 0) {
             return;
         }
-        std::string name = BlockManager::name_form_id(id);
-        std::string sound = "block/" + name + "/walk.ogg";
-        auto& audio = m_world.get_audio();
-        audio.play_3d(sound, pos);
-        Logger::debug("Player block {} walk sound", name);
+        auto data = BlockManager::data(id);
+        if (data.sound.walk) {
+            fs::path path = data.sound.walk->full_path();
+            auto& audio = m_world.get_audio();
+            audio.play_3d(path, pos, true);
+            Logger::debug("Player block {} walk sound", path.string());
+        }
     });
 
     for (int i = 0; i < 10; i++) {

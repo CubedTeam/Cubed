@@ -99,7 +99,7 @@ void AudioEngine::init() {
 
     m_bgm = std::make_unique<AudioSource>(m_music_volume);
 
-    m_bgm->set_buffer_2d(m_sounds.get_buffer("bgm/bgm001.mp3"));
+    m_bgm->set_buffer_2d(m_sounds.get_buffer("bgm/bgm001.mp3", false));
 
     m_fade_map.try_emplace("bgm", m_bgm.get(), 5.0f, 2.0f);
     m_voice_source = std::make_unique<AudioStreamSource>();
@@ -128,11 +128,11 @@ void AudioEngine::init() {
 
 void AudioEngine::play_bgm() { m_bgm->play(); }
 void AudioEngine::stop_bgm() { m_bgm->stop(); }
-void AudioEngine::change_bgm(const std::string& sound) {
+void AudioEngine::change_bgm(const std::string& sound, bool full_path) {
     Logger::info("change bgm {}", sound);
     m_bgm->stop();
     m_bgm->reset();
-    m_bgm->set_buffer_2d(m_sounds.get_buffer(sound));
+    m_bgm->set_buffer_2d(m_sounds.get_buffer(sound, full_path));
     m_bgm->set_target_volume(m_music_volume);
     m_bgm->set_volume(m_music_volume);
     if (m_efx_supported && m_underwater) {
@@ -146,7 +146,7 @@ void AudioEngine::change_bgm(const std::string& sound) {
 };
 
 void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
-                          bool check) {
+                          bool full_path, bool check) {
     if (!m_pool) {
         Logger::error("Source Pool is nullptr");
         return;
@@ -159,7 +159,7 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
     }
     source->set_volume(m_sfx_volume);
     try {
-        auto& buffer = m_sounds.get_buffer(sound);
+        auto& buffer = m_sounds.get_buffer(sound, full_path);
         if (m_efx_supported && m_underwater) {
             source->set_filter(*m_low_pass_filter);
             source->set_effect_slot(*m_underwater_slot);
@@ -173,7 +173,8 @@ void AudioEngine::play_3d(const std::string& sound, const glm::vec3& pos,
     }
 }
 
-void AudioEngine::play_2d(const std::string& sound, bool check) {
+void AudioEngine::play_2d(const std::string& sound, bool full_path,
+                          bool check) {
     if (!m_pool) {
         Logger::error("Source Pool is nullptr");
         return;
@@ -186,7 +187,7 @@ void AudioEngine::play_2d(const std::string& sound, bool check) {
     source->set_volume(m_sfx_volume);
 
     try {
-        auto& buffer = m_sounds.get_buffer(sound);
+        auto& buffer = m_sounds.get_buffer(sound, full_path);
         if (m_efx_supported && m_underwater) {
             source->set_filter(*m_low_pass_filter);
             source->set_effect_slot(*m_underwater_slot);

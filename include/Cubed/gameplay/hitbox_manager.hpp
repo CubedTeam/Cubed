@@ -22,7 +22,7 @@ public:
     [[nodiscard]]
     static Handle hitbox(HitboxID id);
     HitboxID get_hitbox_id(const std::string& name);
-    const std::string& get_hitbox_name(HitboxID id);
+    std::string get_hitbox_name(HitboxID id);
 
 private:
     using HitboxMap = tbb::concurrent_hash_map<HitboxID, Hitbox>;
