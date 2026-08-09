@@ -21,7 +21,7 @@ class LexiconView(ft.Column):
             prefix_icon=ft.Icons.SEARCH, hint_text="搜索词", dense=True,
             expand=True, on_change=self._on_search,
         )
-        self.add_input = form.field("逐个添加", expand=True)
+        self.add_input = form.field("逐个添加")
         self.add_btn = ft.FilledTonalButton("添加", icon=ft.Icons.ADD, on_click=self._on_add)
         self.bulk_input = form.field("批量粘贴 (每行一个)", multiline=True)
         self.bulk_btn = ft.OutlinedButton("导入多行", icon=ft.Icons.UPLOAD, on_click=self._on_bulk)

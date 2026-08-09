@@ -33,13 +33,13 @@ def section(title: str, *controls: ft.Control) -> ft.Container:
     )
 
 
-def field(label: str, value="", multiline=False, disabled=False, **kw) -> ft.TextField:
+def field(label: str, value="", multiline=False, disabled=False, expand=True, **kw) -> ft.TextField:
     """A consistently styled MD3 TextField (dense + full width)."""
     return ft.TextField(
         label=label,
         value=value,
         dense=True,
-        expand=True,
+        expand=expand,
         multiline=multiline,
         min_lines=3 if multiline else None,
         max_lines=6 if multiline else 1,
