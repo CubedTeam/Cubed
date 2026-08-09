@@ -8,6 +8,7 @@ dependencies = [
     "loguru>=0.7.3",
     "pillow>=12.2.0",
     "pytomlpp>=1.1.0",
+    "flet>=0.28",
 ]
 
 [dependency-groups]
