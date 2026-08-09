@@ -24,11 +24,11 @@ class ValidationResult:
     errors: list[str]
 
     @classmethod
-    def ok_result(cls) -> "ValidationResult":
+    def ok_result(cls) -> ValidationResult:
         return cls(True, [])
 
     @classmethod
-    def fail(cls, *errors: str) -> "ValidationResult":
+    def fail(cls, *errors: str) -> ValidationResult:
         return cls(False, list(errors))
 
 
@@ -40,9 +40,7 @@ def validate(schema: Schema, data: dict) -> ValidationResult:
             errors.append(f"{f.label_text} must not be empty")
         if f.range is not None and isinstance(v, (int, float)):
             if not (f.range[0] <= v <= f.range[1]):
-                errors.append(
-                    f"{f.label_text} must be in [{f.range[0]}, {f.range[1]}]"
-                )
+                errors.append(f"{f.label_text} must be in [{f.range[0]}, {f.range[1]}]")
         for val in f.validators:
             try:
                 msg = val(v, data)

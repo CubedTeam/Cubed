@@ -17,8 +17,9 @@ maps to ``block.properties.is_liquid`` on the model and to the nested
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from . import i18n
 
@@ -107,7 +108,7 @@ def _coerce(py_type: type, raw: Any) -> Any:
             return int(raw)
         if py_type is str:
             return str(raw)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return raw
     return raw
 

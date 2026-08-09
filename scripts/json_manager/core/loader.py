@@ -48,7 +48,9 @@ def delete_json(path: Path) -> None:
 
 
 def load_blocks() -> list[Block]:
-    return [Block.from_dict(load_json(p)) for p in paths.list_json_files(paths.BLOCKS_DIR)]
+    return [
+        Block.from_dict(load_json(p)) for p in paths.list_json_files(paths.BLOCKS_DIR)
+    ]
 
 
 def save_block(block: Block) -> Path:
@@ -65,7 +67,9 @@ def delete_block(name: str) -> None:
 
 
 def load_items() -> list[Item]:
-    return [Item.from_dict(load_json(p)) for p in paths.list_json_files(paths.ITEMS_DIR)]
+    return [
+        Item.from_dict(load_json(p)) for p in paths.list_json_files(paths.ITEMS_DIR)
+    ]
 
 
 def save_item(item: Item) -> Path:

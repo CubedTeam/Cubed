@@ -18,7 +18,6 @@ from .schema import (
     schema_to_dict,
 )
 
-
 # --- Block ----------------------------------------------------------------
 
 
@@ -57,7 +56,7 @@ class Block:
     sounds: Sounds = field(default_factory=Sounds)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Block":
+    def from_dict(cls, data: dict[str, Any]) -> Block:
         norm = schema_from_dict(BLOCK_SCHEMA, data)
         snd = norm["sounds"]
         obj = cls(
@@ -89,7 +88,7 @@ class Item:
     description: str = ""
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Item":
+    def from_dict(cls, data: dict[str, Any]) -> Item:
         return cls(**schema_from_dict(ITEM_SCHEMA, data))
 
     def to_dict(self) -> dict[str, Any]:
@@ -107,7 +106,7 @@ class Creature:
     collision: str | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Creature":
+    def from_dict(cls, data: dict[str, Any]) -> Creature:
         norm = schema_from_dict(CREATURE_SCHEMA, data)
         return cls(**norm)
 
@@ -124,7 +123,7 @@ class Registry:
     items: dict[str, int] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Registry":
+    def from_dict(cls, data: dict[str, Any]) -> Registry:
         return cls(
             blocks={str(k): int(v) for k, v in data.get("blocks", {}).items()},
             items={str(k): int(v) for k, v in data.get("items", {}).items()},
