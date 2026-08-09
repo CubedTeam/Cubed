@@ -15,6 +15,7 @@ from .base_view import BaseResourceView
 
 class ItemsView(BaseResourceView):
     title = "Items"
+    title_key = "view.items.title"
     directory = paths.ITEMS_DIR
     schema = ITEM_SCHEMA
 

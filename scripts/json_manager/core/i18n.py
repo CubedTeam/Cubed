@@ -1,74 +1,72 @@
-"""Small i18n stub for the tool UI itself.
+"""UI localization for the json manager tool.
 
-Falls back to English when a key is missing so the tool always renders
-even if a translator has not finished a locale yet.
+Strings live in JSON files under ``scripts/json_manager/locales/`` so
+translators can add a locale without touching Python. ``t()`` falls back
+to English and then to the caller's default / key so the tool keeps
+rendering when a translation is unfinished.
 """
 
 from __future__ import annotations
 
-_STRINGS: dict[str, dict[str, str]] = {
-    "zh_CN": {
-        "app.title": "Cubed Resource Manager",
-        "nav.blocks": "Blocks",
-        "nav.items": "Items",
-        "nav.creatures": "Creatures",
-        "nav.registry": "Registry",
-        "nav.lang": "Lang",
-        "nav.lexicon": "Lexicon",
-        "action.new": "New",
-        "action.save": "Save",
-        "action.delete": "Delete",
-        "action.duplicate": "Duplicate",
-        "action.refresh": "Refresh",
-        "action.commit": "Commit",
-        "action.view_diff": "View Diff",
-        "action.unlock": "Unlock editing",
-        "status.modified": "modified",
-        "status.untracked": "untracked",
-        "status.clean": "working tree clean",
-        "msg.saved": "Saved",
-        "msg.deleted": "Deleted",
-        "msg.invalid": "Validation failed",
-        "msg.confirm_delete": "Confirm delete?",
-        "view.form": "Form",
-        "view.raw": "Raw JSON",
-    },
-    "en_US": {
-        "app.title": "Cubed Resources",
-        "nav.blocks": "Blocks",
-        "nav.items": "Items",
-        "nav.creatures": "Creatures",
-        "nav.registry": "Registry",
-        "nav.lang": "Lang",
-        "nav.lexicon": "Lexicon",
-        "action.new": "New",
-        "action.save": "Save",
-        "action.delete": "Delete",
-        "action.duplicate": "Duplicate",
-        "action.refresh": "Refresh",
-        "action.commit": "Commit",
-        "action.view_diff": "View Diff",
-        "action.unlock": "Unlock",
-        "status.modified": "modified",
-        "status.untracked": "untracked",
-        "status.clean": "clean",
-        "msg.saved": "Saved",
-        "msg.deleted": "Deleted",
-        "msg.invalid": "Validation failed",
-        "msg.confirm_delete": "Confirm delete?",
-        "view.form": "Form",
-        "view.raw": "Raw JSON",
-    },
-}
+import json
+from pathlib import Path
 
-_current = "zh_CN"
+LOCALES_DIR: Path = Path(__file__).resolve().parents[1] / "locales"
+DEFAULT_LOCALE: str = "en_US"
+
+_current: str = DEFAULT_LOCALE
+_cache: dict[str, dict[str, str]] = {}
 
 
-def set_locale(locale: str) -> None:
+def _load(locale: str) -> dict[str, str]:
+    if locale in _cache:
+        return _cache[locale]
+    path = LOCALES_DIR / f"{locale}.json"
+    if path.is_file():
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                _cache[locale] = json.load(f)
+        except OSError, json.JSONDecodeError:
+            _cache[locale] = {}
+    else:
+        _cache[locale] = {}
+    return _cache[locale]
+
+
+def available() -> list[str]:
+    """List all locale codes that have a JSON file in locales/."""
+    if not LOCALES_DIR.is_dir():
+        return [DEFAULT_LOCALE]
+    return sorted(p.stem for p in LOCALES_DIR.glob("*.json") if p.is_file())
+
+
+def get_locale() -> str:
+    return _current
+
+
+def set_locale(locale: str) -> bool:
+    """Switch the active locale. Returns True if accepted."""
     global _current
-    if locale in _STRINGS:
+    if locale == _current:
+        return True
+    if locale in available():
         _current = locale
+        return True
+    return False
 
 
-def t(key: str, default: str | None = None) -> str:
-    return _STRINGS.get(_current, {}).get(key, default or key)
+def t(key: str, default: str | None = None, **kwargs: object) -> str:
+    """Look up a string in the current locale.
+
+    Resolution order: current locale -> English (en_US) -> ``default`` ->
+    the key itself. When ``kwargs`` are given the result is run through
+    ``str.format(**kwargs)`` so strings may carry ``{name}`` placeholders.
+    """
+    en = _load(DEFAULT_LOCALE)
+    val = _load(_current).get(key) or en.get(key) or default or key
+    if kwargs:
+        try:
+            val = val.format(**kwargs)
+        except KeyError, IndexError, ValueError:
+            pass
+    return val

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import flet as ft
 
-from ...core import loader
+from ...core import i18n, loader
 from .. import form
 from ..dialogs import confirm, snack
 from ..safe import safe_update
@@ -16,18 +16,42 @@ class LexiconView(ft.Column):
         self.page_ctx = page
         self.data: dict = {}
 
-        self.date_field = form.field("lastUpdateDate (YYYY/MM/DD)")
+        self.date_field = form.field(i18n.t("view.lexicon.last_update_date_label"))
         self.search = ft.TextField(
-            prefix_icon=ft.Icons.SEARCH, hint_text="Search words", dense=True,
-            expand=True, on_change=self._on_search,
+            prefix_icon=ft.Icons.SEARCH,
+            hint_text=i18n.t("view.lexicon.search_hint"),
+            dense=True,
+            expand=True,
+            on_change=self._on_search,
         )
-        self.add_input = form.field("Add one")
-        self.add_btn = ft.FilledTonalButton("Add", icon=ft.Icons.ADD, on_click=self._on_add)
-        self.bulk_input = form.field("Bulk paste (one per line)", multiline=True)
-        self.bulk_btn = ft.OutlinedButton("Import lines", icon=ft.Icons.UPLOAD, on_click=self._on_bulk)
-        self.save_btn = ft.FilledButton("Save", icon=ft.Icons.SAVE, on_click=self._on_save)
+        self.add_input = form.field(i18n.t("view.lexicon.add_one_label"))
+        self.add_btn = ft.FilledTonalButton(
+            i18n.t("view.lexicon.add_btn"),
+            icon=ft.Icons.ADD,
+            on_click=self._on_add,
+        )
+        self.bulk_input = form.field(
+            i18n.t("view.lexicon.bulk_paste_label"),
+            multiline=True,
+        )
+        self.bulk_btn = ft.OutlinedButton(
+            i18n.t("view.lexicon.bulk_btn"),
+            icon=ft.Icons.UPLOAD,
+            on_click=self._on_bulk,
+        )
+        self.save_btn = ft.FilledButton(
+            i18n.t("view.lexicon.save_btn"),
+            icon=ft.Icons.SAVE,
+            on_click=self._on_save,
+        )
 
-        self._chips = ft.Row([], wrap=True, spacing=6, run_spacing=6, alignment=ft.MainAxisAlignment.START)
+        self._chips = ft.Row(
+            [],
+            wrap=True,
+            spacing=6,
+            run_spacing=6,
+            alignment=ft.MainAxisAlignment.START,
+        )
         self.chip_container = ft.Container(
             self._chips,
             padding=form.SECTION_PAD,
@@ -37,15 +61,15 @@ class LexiconView(ft.Column):
 
         self.controls = [
             form.section(
-                "Metadata",
+                i18n.t("view.lexicon.section_metadata"),
                 ft.Row([self.date_field, self.save_btn], spacing=form.SPACE),
             ),
             form.section(
-                "Quick add",
+                i18n.t("view.lexicon.section_quick_add"),
                 ft.Row([self.add_input, self.add_btn], spacing=form.SPACE),
             ),
             form.section(
-                "Bulk import",
+                i18n.t("view.lexicon.section_bulk_import"),
                 self.bulk_input,
                 self.bulk_btn,
             ),
@@ -69,7 +93,9 @@ class LexiconView(ft.Column):
                 continue
             chips.append(
                 ft.Chip(
-                    label=ft.Text(w, size=12, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                    label=ft.Text(
+                        w, size=12, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS
+                    ),
                     on_delete=lambda _e, word=w: self._remove(word),
                     delete_icon=ft.Icon(ft.Icons.CLOSE),
                 )
@@ -77,11 +103,22 @@ class LexiconView(ft.Column):
             shown += 1
             if shown > 500:
                 chips.append(
-                    ft.Text(f"… {len(words) - 500} more (narrow your search)", italic=True, size=12)
+                    ft.Text(
+                        i18n.t("view.lexicon.more_text", n=len(words) - 500),
+                        italic=True,
+                        size=12,
+                    )
                 )
                 break
         if not chips:
-            chips = [ft.Text("(empty)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12)]
+            chips = [
+                ft.Text(
+                    i18n.t("view.lexicon.empty_text"),
+                    italic=True,
+                    color=ft.Colors.ON_SURFACE_VARIANT,
+                    size=12,
+                )
+            ]
         self._chips.controls = chips
         safe_update(self._chips)
 
@@ -97,7 +134,7 @@ class LexiconView(ft.Column):
             return
         words = self._current_words()
         if w in words:
-            snack(self.page_ctx, "Already exists", "error")
+            snack(self.page_ctx, i18n.t("view.lexicon.already_exists"), "error")
             return
         words.append(w)
         self.add_input.value = ""
@@ -117,7 +154,11 @@ class LexiconView(ft.Column):
                 added += 1
         self.bulk_input.value = ""
         safe_update(self.bulk_input)
-        snack(self.page_ctx, f"Bulk imported {added} words", "ok")
+        snack(
+            self.page_ctx,
+            i18n.t("view.lexicon.bulk_imported", n=added),
+            "ok",
+        )
         self.render_chips(self.search.value or "")
 
     def _remove(self, word: str) -> None:
@@ -130,7 +171,12 @@ class LexiconView(ft.Column):
         def _do():
             self.data["lastUpdateDate"] = self.date_field.value or ""
             loader.save_lexicon(self.data)
-            snack(self.page_ctx, "Saved sensitive lexicon", "ok")
+            snack(self.page_ctx, i18n.t("view.lexicon.saved_ok"), "ok")
             self.refresh()
 
-        confirm(self.page_ctx, "Save", "Save SensitiveLexicon.json?", _do)
+        confirm(
+            self.page_ctx,
+            i18n.t("view.lexicon.save_title"),
+            i18n.t("view.lexicon.save_body"),
+            _do,
+        )

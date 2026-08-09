@@ -10,6 +10,7 @@ from typing import Callable
 
 import flet as ft
 
+from ...core import i18n
 from ..safe import safe_update
 
 ITEM_HEIGHT = 40
@@ -31,7 +32,7 @@ class FileList(ft.Column):
         self.spacing = 8
 
         self.search = ft.TextField(
-            hint_text="Search",
+            hint_text=i18n.t("widget.file_list.search_hint"),
             prefix_icon=ft.Icons.SEARCH,
             dense=True,
             on_change=self._on_search,
@@ -44,11 +45,15 @@ class FileList(ft.Column):
         self.controls = [
             ft.Row(
                 [
-                    ft.Text(self.title or "Files", weight=ft.FontWeight.BOLD, size=16),
+                    ft.Text(
+                        self.title or i18n.t("widget.file_list.default_title"),
+                        weight=ft.FontWeight.BOLD,
+                        size=16,
+                    ),
                     ft.IconButton(
                         ft.Icons.ADD_OUTLINED,
                         on_click=lambda _: on_new() if on_new else None,
-                        tooltip="New",
+                        tooltip=i18n.t("action.new_tip"),
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -82,7 +87,12 @@ class FileList(ft.Column):
         if not items:
             items.append(
                 ft.Container(
-                    ft.Text("(empty)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12),
+                    ft.Text(
+                        i18n.t("widget.file_list.empty"),
+                        italic=True,
+                        color=ft.Colors.ON_SURFACE_VARIANT,
+                        size=12,
+                    ),
                     padding=10,
                     alignment=ft.Alignment.CENTER,
                 )

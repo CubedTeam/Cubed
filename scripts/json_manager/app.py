@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import flet as ft
 
-from .core import i18n, paths
+from .core import i18n, paths, settings
 from .ui import theme
 from .ui.shell import Shell
 
@@ -37,6 +37,10 @@ if _orig_update_async is not None:
 
 def main(page: ft.Page) -> None:
     paths.ensure_dirs()
+    saved = settings.load()
+    saved_locale = saved.get("locale")
+    if isinstance(saved_locale, str) and saved_locale in i18n.available():
+        i18n.set_locale(saved_locale)
     page.title = i18n.t("app.title")
     page.theme_mode = ft.ThemeMode.SYSTEM
     page.theme = theme.build_theme(ft.ThemeMode.SYSTEM)

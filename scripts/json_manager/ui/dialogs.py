@@ -10,6 +10,8 @@ from typing import Callable
 
 import flet as ft
 
+from ..core import i18n
+
 
 def confirm(
     page: ft.Page,
@@ -23,8 +25,12 @@ def confirm(
         title=ft.Text(title),
         content=ft.Text(body),
         actions=[
-            ft.TextButton("Cancel", on_click=lambda e: close(e, on_cancel)),
-            ft.FilledButton("Confirm", on_click=lambda e: close(e, on_confirm)),
+            ft.TextButton(
+                i18n.t("action.cancel"), on_click=lambda e: close(e, on_cancel)
+            ),
+            ft.FilledButton(
+                i18n.t("action.confirm"), on_click=lambda e: close(e, on_confirm)
+            ),
         ],
     )
     page.show_dialog(dialog)
@@ -52,8 +58,10 @@ def prompt(
         title=ft.Text(title),
         content=field,
         actions=[
-            ft.TextButton("Cancel", on_click=lambda e: close(e, on_cancel)),
-            ft.FilledButton("OK", on_click=submit),
+            ft.TextButton(
+                i18n.t("action.cancel"), on_click=lambda e: close(e, on_cancel)
+            ),
+            ft.FilledButton(i18n.t("action.ok"), on_click=submit),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )

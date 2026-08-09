@@ -15,6 +15,7 @@ from .base_view import BaseResourceView
 
 class BlocksView(BaseResourceView):
     title = "Blocks"
+    title_key = "view.blocks.title"
     directory = paths.BLOCKS_DIR
     schema = BLOCK_SCHEMA
 

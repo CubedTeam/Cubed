@@ -10,6 +10,7 @@ from typing import Any, Iterable
 
 import flet as ft
 
+from ..core import i18n
 from ..core.schema import FieldSpec, Schema, get_path, set_path
 from .safe import safe_update
 
@@ -36,7 +37,9 @@ def section(title: str, *controls: ft.Control) -> ft.Container:
     )
 
 
-def field(label: str, value="", multiline=False, disabled=False, expand=True, **kw) -> ft.TextField:
+def field(
+    label: str, value="", multiline=False, disabled=False, expand=True, **kw
+) -> ft.TextField:
     """A consistently styled MD3 TextField (dense + full width)."""
     return ft.TextField(
         label=label,
@@ -74,7 +77,12 @@ def switch_grid(switches: Iterable[ft.Switch], per_row: int = 2) -> ft.Column:
 def slider_with_value(slider: ft.Slider, label_text: ft.Text) -> ft.Row:
     """Slider fills remaining width; value label keeps a fixed width."""
     return ft.Row(
-        [slider, ft.Container(label_text, width=VALUE_WIDTH, alignment=ft.Alignment.CENTER_RIGHT)],
+        [
+            slider,
+            ft.Container(
+                label_text, width=VALUE_WIDTH, alignment=ft.Alignment.CENTER_RIGHT
+            ),
+        ],
         spacing=SPACE,
     )
 
@@ -87,6 +95,17 @@ def action_bar(*buttons: ft.Control) -> ft.Row:
 def labeled(text: str) -> ft.Text:
     """A consistent field label header."""
     return ft.Text(text, size=LABEL_SIZE, color=ft.Colors.ON_SURFACE_VARIANT)
+
+
+def _t_section(section: str) -> str:
+    return i18n.t(f"schema.section.{section}", default=section)
+
+
+def _t_label(f: FieldSpec) -> str:
+    last = f.key.rsplit(".", 1)[-1]
+    if f.label:
+        return f.label
+    return i18n.t(f"schema.label.{last}", default=last)
 
 
 # --- schema-driven form ----------------------------------------------------
@@ -133,14 +152,16 @@ class SchemaForm(ft.Column):
                     non_switch.append(container)
             section_children: list[ft.Control] = []
             if switch_containers:
-                section_children.append(switch_grid([c.content for c in switch_containers]))
+                section_children.append(
+                    switch_grid([c.content for c in switch_containers])
+                )
             section_children.extend(non_switch)
-            cols.append(section(sec, *section_children))
+            cols.append(section(_t_section(sec), *section_children))
         return cols
 
     def _make_control(self, f: FieldSpec) -> tuple[ft.Control, dict]:
         if f.widget == "switch":
-            return ft.Switch(label=f.label_text, value=bool(f.default)), {}
+            return ft.Switch(label=_t_label(f), value=bool(f.default)), {}
         if f.widget == "slider":
             slider = ft.Slider(
                 min=f.range[0] if f.range else 0.0,
@@ -151,13 +172,21 @@ class SchemaForm(ft.Column):
                 expand=True,
                 on_change=lambda e, k=f.key: self._on_slider_change(k, e),
             )
-            vlbl = ft.Text(f"{float(f.default):.2f}", size=14, text_align=ft.TextAlign.RIGHT)
-            return slider_with_value(slider, vlbl), {"slider": slider, "value_label": vlbl}
+            vlbl = ft.Text(
+                f"{float(f.default):.2f}", size=14, text_align=ft.TextAlign.RIGHT
+            )
+            return slider_with_value(slider, vlbl), {
+                "slider": slider,
+                "value_label": vlbl,
+            }
         if f.widget == "segmented":
             sel = [f.default] if f.default else []
             seg = ft.SegmentedButton(
                 selected=list(sel),
-                segments=[ft.Segment(value=opt, label=ft.Text(opt)) for opt in (f.options or [])],
+                segments=[
+                    ft.Segment(value=opt, label=ft.Text(opt))
+                    for opt in (f.options or [])
+                ],
                 allow_multiple_selection=False,
                 allow_empty_selection=False,
                 expand=True,
@@ -166,7 +195,7 @@ class SchemaForm(ft.Column):
             return seg, {}
         return (
             field(
-                f.label_text,
+                _t_label(f),
                 value="" if f.default is None else f.default,
                 multiline=f.multiline,
             ),
@@ -245,3 +274,11 @@ class SchemaForm(ft.Column):
         entry = self._entries[key]
         entry["value_label"].value = f"{v:.2f}"
         safe_update(entry["value_label"])
+
+    def rebuild(self) -> None:
+        """Re-create controls so section/label translations take effect
+        after a locale switch. Currently-loaded data is reapplied.
+        """
+        self._entries.clear()
+        self.controls = self._build_sections()
+        self.set_data(self._data)

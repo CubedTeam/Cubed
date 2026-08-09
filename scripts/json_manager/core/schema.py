@@ -20,6 +20,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from . import i18n
+
 # Sentinel used to distinguish "missing" from an explicit ``None`` value.
 _MISSING = object()
 
@@ -29,8 +31,8 @@ class FieldSpec:
     key: str
     py_type: type
     default: Any = None
-    widget: str = "text"            # text / switch / slider / segmented
-    label: str = ""                  # empty -> use last segment of key
+    widget: str = "text"  # text / switch / slider / segmented
+    label: str = ""  # empty -> use last segment of key
     section: str = "General"
     required: bool = False
     range: tuple[float, float] | None = None
@@ -179,12 +181,13 @@ def schema_to_dict(schema: Schema, obj: Any) -> dict[str, Any]:
 
 # Validation helpers (kept inline so schemas stay self-contained).
 
+
 def _name_pattern_error(v: Any, _d: dict) -> str | None:
     name = str(v or "")
     if not name:
         return None
     if not name.replace("_", "").isalnum():
-        return "name must only contain letters, digits and underscores"
+        return i18n.t("validation.name_pattern")
     return None
 
 
@@ -197,7 +200,7 @@ def _block_uniqueness(data: dict) -> str | None:
         return None
     existing = {b.name for b in load_blocks()}
     if name in existing and not (paths.BLOCKS_DIR / f"{name}.json").is_file():
-        return f"block '{name}' already exists"
+        return i18n.t("validation.duplicate_block", name=name)
     return None
 
 
@@ -210,7 +213,7 @@ def _item_uniqueness(data: dict) -> str | None:
         return None
     existing = {i.name for i in load_items()}
     if name in existing and not (paths.ITEMS_DIR / f"{name}.json").is_file():
-        return f"item '{name}' already exists"
+        return i18n.t("validation.duplicate_item", name=name)
     return None
 
 
@@ -223,48 +226,101 @@ def _creature_uniqueness(data: dict) -> str | None:
         return None
     existing = {c.name for c in load_creatures()}
     if name in existing and not (paths.CREATURES_DIR / f"{name}.json").is_file():
-        return f"creature '{name}' already exists"
+        return i18n.t("validation.duplicate_creature", name=name)
     return None
 
 
 def _item_type_ref(data: dict) -> str | None:
     kind = data.get("type", "")
     if kind == "block" and not data.get("block"):
-        return "item of type 'block' needs a block reference"
+        return i18n.t("validation.item_type_block")
     if kind == "spawn_egg" and not data.get("creature"):
-        return "item of type 'spawn_egg' needs a creature reference"
+        return i18n.t("validation.item_type_spawn_egg")
     return None
 
 
 BLOCK_SCHEMA = Schema(
     fields=[
-        FieldSpec("name", str, "", section="General", required=True,
-                  validators=[_name_pattern_error]),
-        FieldSpec("properties.is_liquid", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_cross_plane", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_transparent", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_passable", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_discard", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_blend", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_transitional", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.is_gas", bool, False, widget="switch", section="Properties"),
-        FieldSpec("properties.roughness", float, 0.75, widget="slider",
-                  section="Properties", range=(0.0, 1.0), divisions=20),
-        FieldSpec("texture.type", str, "cuboid", widget="segmented",
-                  section="Texture", options=["cuboid", "cross"]),
+        FieldSpec(
+            "name",
+            str,
+            "",
+            section="General",
+            required=True,
+            validators=[_name_pattern_error],
+        ),
+        FieldSpec(
+            "properties.is_liquid", bool, False, widget="switch", section="Properties"
+        ),
+        FieldSpec(
+            "properties.is_cross_plane",
+            bool,
+            False,
+            widget="switch",
+            section="Properties",
+        ),
+        FieldSpec(
+            "properties.is_transparent",
+            bool,
+            False,
+            widget="switch",
+            section="Properties",
+        ),
+        FieldSpec(
+            "properties.is_passable", bool, False, widget="switch", section="Properties"
+        ),
+        FieldSpec(
+            "properties.is_discard", bool, False, widget="switch", section="Properties"
+        ),
+        FieldSpec(
+            "properties.is_blend", bool, False, widget="switch", section="Properties"
+        ),
+        FieldSpec(
+            "properties.is_transitional",
+            bool,
+            False,
+            widget="switch",
+            section="Properties",
+        ),
+        FieldSpec(
+            "properties.is_gas", bool, False, widget="switch", section="Properties"
+        ),
+        FieldSpec(
+            "properties.roughness",
+            float,
+            0.75,
+            widget="slider",
+            section="Properties",
+            range=(0.0, 1.0),
+            divisions=20,
+        ),
+        FieldSpec(
+            "texture.type",
+            str,
+            "cuboid",
+            widget="segmented",
+            section="Texture",
+            options=["cuboid", "cross"],
+        ),
         FieldSpec("texture.path", str, "", section="Texture", required=True),
-        FieldSpec("texture.normal", str, None, section="Texture",
-                  visible_when=lambda d: get_path(d, "texture.type") != "cross",
-                  omit_when=lambda v, _s: not v),
+        FieldSpec(
+            "texture.normal",
+            str,
+            None,
+            section="Texture",
+            visible_when=lambda d: get_path(d, "texture.type") != "cross",
+            omit_when=lambda v, _s: not v,
+        ),
         FieldSpec("sounds.break", str, "", section="Sounds", attr="sounds.break_"),
         FieldSpec("sounds.place", str, "", section="Sounds"),
-        FieldSpec("sounds.walk", str, None, section="Sounds",
-                  omit_when=lambda v, _s: not v),
+        FieldSpec(
+            "sounds.walk", str, None, section="Sounds", omit_when=lambda v, _s: not v
+        ),
     ],
     cross_validators=[_block_uniqueness],
     group_omits={
-        "sounds": lambda s: not (
-            s.get("sounds.break") or s.get("sounds.place") or s.get("sounds.walk")
+        "sounds": lambda s: (
+            not (s.get("sounds.break") or s.get("sounds.place") or s.get("sounds.walk"))
         ),
     },
 )
@@ -272,20 +328,44 @@ BLOCK_SCHEMA = Schema(
 
 ITEM_SCHEMA = Schema(
     fields=[
-        FieldSpec("name", str, "", section="General", required=True,
-                  validators=[_name_pattern_error]),
-        FieldSpec("type", str, "block", widget="segmented",
-                  section="Type", options=["block", "spawn_egg"]),
-        FieldSpec("block", str, None, section="Block reference",
-                  label="block (cubed:<name>)",
-                  visible_when=lambda d: d.get("type") == "block",
-                  omit_when=lambda v, s: s.get("type") != "block" or not v),
-        FieldSpec("creature", str, None, section="Creature reference",
-                  label="creature (cubed:<name>)",
-                  visible_when=lambda d: d.get("type") == "spawn_egg",
-                  omit_when=lambda v, s: s.get("type") != "spawn_egg" or not v),
+        FieldSpec(
+            "name",
+            str,
+            "",
+            section="General",
+            required=True,
+            validators=[_name_pattern_error],
+        ),
+        FieldSpec(
+            "type",
+            str,
+            "block",
+            widget="segmented",
+            section="Type",
+            options=["block", "spawn_egg"],
+        ),
+        FieldSpec(
+            "block",
+            str,
+            None,
+            section="Block reference",
+            label="block (cubed:<name>)",
+            visible_when=lambda d: d.get("type") == "block",
+            omit_when=lambda v, s: s.get("type") != "block" or not v,
+        ),
+        FieldSpec(
+            "creature",
+            str,
+            None,
+            section="Creature reference",
+            label="creature (cubed:<name>)",
+            visible_when=lambda d: d.get("type") == "spawn_egg",
+            omit_when=lambda v, s: s.get("type") != "spawn_egg" or not v,
+        ),
         FieldSpec("texture", str, "", section="Texture & description", required=True),
-        FieldSpec("description", str, "", section="Texture & description", multiline=True),
+        FieldSpec(
+            "description", str, "", section="Texture & description", multiline=True
+        ),
     ],
     cross_validators=[_item_uniqueness, _item_type_ref],
 )
@@ -293,13 +373,29 @@ ITEM_SCHEMA = Schema(
 
 CREATURE_SCHEMA = Schema(
     fields=[
-        FieldSpec("name", str, "", section="General", required=True,
-                  validators=[_name_pattern_error]),
+        FieldSpec(
+            "name",
+            str,
+            "",
+            section="General",
+            required=True,
+            validators=[_name_pattern_error],
+        ),
         FieldSpec("model", str, "", section="Model", required=True),
-        FieldSpec("animation", str, None, section="Optional references",
-                  omit_when=lambda v, _s: not v),
-        FieldSpec("collision", str, None, section="Optional references",
-                  omit_when=lambda v, _s: not v),
+        FieldSpec(
+            "animation",
+            str,
+            None,
+            section="Optional references",
+            omit_when=lambda v, _s: not v,
+        ),
+        FieldSpec(
+            "collision",
+            str,
+            None,
+            section="Optional references",
+            omit_when=lambda v, _s: not v,
+        ),
     ],
     cross_validators=[_creature_uniqueness],
 )

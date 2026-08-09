@@ -49,3 +49,4 @@ vcpkg_installed/
 assets/.bak/
 __pycache__/
 *.pyc
+.json_manager_settings.json

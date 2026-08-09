@@ -12,32 +12,50 @@ from .views.items_view import ItemsView
 from .views.lang_view import LangView
 from .views.lexicon_view import LexiconView
 from .views.registry_view import RegistryView
+from .views.settings_view import SettingsView
 
 SPACE = 12
 
 NAV = [
-    ("blocks", ft.Icons.BLOCK_OUTLINED, "Blocks", BlocksView),
-    ("items", ft.Icons.INVENTORY_2_OUTLINED, "Items", ItemsView),
-    ("creatures", ft.Icons.PETS_OUTLINED, "Creatures", CreaturesView),
-    ("registry", ft.Icons.NUMBERS, "Registry", RegistryView),
-    ("lang", ft.Icons.LANGUAGE, "Lang", LangView),
-    ("lexicon", ft.Icons.WARNING_AMBER, "Lexicon", LexiconView),
+    ("blocks", ft.Icons.BLOCK_OUTLINED, "nav.blocks", BlocksView),
+    ("items", ft.Icons.INVENTORY_2_OUTLINED, "nav.items", ItemsView),
+    ("creatures", ft.Icons.PETS_OUTLINED, "nav.creatures", CreaturesView),
+    ("registry", ft.Icons.NUMBERS, "nav.registry", RegistryView),
+    ("lang", ft.Icons.LANGUAGE, "nav.lang", LangView),
+    ("lexicon", ft.Icons.WARNING_AMBER, "nav.lexicon", LexiconView),
+    ("settings", ft.Icons.SETTINGS, "nav.settings", SettingsView),
 ]
 
 
 class Shell(ft.Column):
+    SHELL_KEY = "shell"
+
     def __init__(self, page: ft.Page) -> None:
         super().__init__(expand=True, spacing=SPACE)
         self.page_ctx = page
-        self.title_text = ft.Text(i18n.t("app.title"), size=20, weight=ft.FontWeight.BOLD)
-        self.theme_button = ft.IconButton(ft.Icons.LIGHT_MODE, on_click=self._toggle_theme, tooltip="Toggle theme")
-        self.refresh_button = ft.IconButton(ft.Icons.REFRESH, on_click=self._refresh_active, tooltip="Refresh")
+        page.session.store.set(self.SHELL_KEY, self)
+
+        self.title_text = ft.Text(
+            i18n.t("app.title"), size=20, weight=ft.FontWeight.BOLD
+        )
+        self.theme_button = ft.IconButton(
+            ft.Icons.LIGHT_MODE,
+            on_click=self._toggle_theme,
+            tooltip=i18n.t("action.theme_tip"),
+        )
+        self.refresh_button = ft.IconButton(
+            ft.Icons.REFRESH,
+            on_click=self._refresh_active,
+            tooltip=i18n.t("action.refresh_tip"),
+        )
 
         self.rail = ft.NavigationRail(
             selected_index=0,
             destinations=[
-                ft.NavigationRailDestination(icon=icon, label=label, selected_icon=icon)
-                for _id, icon, label, _cls in NAV
+                ft.NavigationRailDestination(
+                    icon=icon, label=i18n.t(label_key), selected_icon=icon
+                )
+                for _id, icon, label_key, _cls in NAV
             ],
             on_change=self._on_nav_change,
             extended=False,
@@ -53,7 +71,12 @@ class Shell(ft.Column):
             # Top app bar.
             ft.Container(
                 ft.Row(
-                    [self.title_text, ft.Container(expand=True), self.refresh_button, self.theme_button],
+                    [
+                        self.title_text,
+                        ft.Container(expand=True),
+                        self.refresh_button,
+                        self.theme_button,
+                    ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
@@ -112,5 +135,47 @@ class Shell(ft.Column):
 
     def _refresh_active(self, _e: ft.ControlEvent) -> None:
         self._current_index = -1  # force re-render
+        self._render_view(self.rail.selected_index or 0)
+        self.status_bar.refresh()
+
+    def apply_locale(self) -> None:
+        """Rebuild all translatable chrome (title, rail, tooltips) and
+        drop cached views so the next nav tick re-creates them in the
+        new locale. Currently-edited data is not preserved; callers
+        should warn the user before triggering this.
+        """
+        # Chrome.
+        self.title_text.value = i18n.t("app.title")
+        self.theme_button.tooltip = i18n.t("action.theme_tip")
+        self.refresh_button.tooltip = i18n.t("action.refresh_tip")
+        self.page_ctx.title = i18n.t("app.title")
+        self.rail.destinations = [
+            ft.NavigationRailDestination(
+                icon=icon, label=i18n.t(label_key), selected_icon=icon
+            )
+            for _id, icon, label_key, _cls in NAV
+        ]
+
+        # Drop cached views so they get rebuilt with translated strings.
+        self.view_instances.clear()
+        self._current_index = -1
+
+        try:
+            self.title_text.update()
+        except Exception:
+            pass
+        try:
+            self.theme_button.update()
+        except Exception:
+            pass
+        try:
+            self.refresh_button.update()
+        except Exception:
+            pass
+        try:
+            self.rail.update()
+        except Exception:
+            pass
+
         self._render_view(self.rail.selected_index or 0)
         self.status_bar.refresh()

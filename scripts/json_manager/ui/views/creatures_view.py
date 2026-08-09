@@ -15,6 +15,7 @@ from .base_view import BaseResourceView
 
 class CreaturesView(BaseResourceView):
     title = "Creatures"
+    title_key = "view.creatures.title"
     directory = paths.CREATURES_DIR
     schema = CREATURE_SCHEMA
 
