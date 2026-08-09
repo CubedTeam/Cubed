@@ -46,3 +46,6 @@ assets/server-config.toml
 .venv/
 pyout/
 vcpkg_installed/
+assets/.bak/
+__pycache__/
+*.pyc
