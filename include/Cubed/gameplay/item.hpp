@@ -14,14 +14,14 @@ enum class ItemKind {
 
 };
 
-using ItemProperty = std::variant<BlockType, std::string>;
+using ItemProperty = std::variant<BlockType, ResourceLocation>;
 
 struct ItemData {
     ItemID id = 0;
-    std::string name;
+    ResourceLocation name;
     std::string local_name;
     std::string description;
-    std::string path;
+    std::optional<ResourceLocation> path;
     ItemKind kind = ItemKind::NONE;
     ItemProperty property;
 };

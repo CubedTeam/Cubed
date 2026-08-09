@@ -50,11 +50,12 @@ private:
     void load_block_status(unsigned status_id);
     void load_block_texture(unsigned block_id);
     void init_item_texture();
-    void load_cross_plane_texture(unsigned id);
+    void load_cross_plane_texture(const BlockData& data);
+    void load_cuboid_texture(const BlockData& data);
     const Texture* load_image_texture(const std::string& path,
                                       bool full_path = false,
                                       bool check_exist = true);
-    void load_pbr_texture(unsigned id);
+    void load_normal_texture(unsigned id);
     void init_item();
     void init_block();
     void init_ui();

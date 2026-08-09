@@ -1,0 +1,7 @@
+{
+    "name": "pig_spawn_egg",
+    "type": "spawn_egg",
+    "creature": "cubed:pig",
+    "texture": "cubed:textures/items/spawn_egg/pig_spawn_egg.png",
+    "description": ""
+}

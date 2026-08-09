@@ -10,8 +10,9 @@
 #include "Cubed/tools/time_tools.hpp"
 
 #include <absl/container/inlined_vector.h>
+#include <filesystem>
 #include <numbers>
-
+namespace fs = std::filesystem;
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace google::protobuf;
@@ -186,13 +187,18 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
     glm::vec3 sound_pos{world_x + 0.5f, world_y + 0.5f, world_z + 0.5f};
 
     if (id == 0) {
-        std::string name = BlockManager::name_form_id(origin_id);
-        std::string sound = "block/" + name + "/break.ogg";
-        m_pending_sound.emplace(sound, sound_pos);
+        auto data = BlockManager::data(origin_id);
+        if (data.sound.break_s) {
+            fs::path path = data.sound.break_s->full_path();
+            m_pending_sound.emplace(path, sound_pos);
+        }
+
     } else {
-        std::string name = BlockManager::name_form_id(id);
-        std::string sound = "block/" + name + "/place.ogg";
-        m_pending_sound.emplace(sound, sound_pos);
+        auto data = BlockManager::data(id);
+        if (data.sound.place) {
+            fs::path path = data.sound.place->full_path();
+            m_pending_sound.emplace(path, sound_pos);
+        }
     }
 
     auto pool = m_thread_pool.load();
@@ -343,8 +349,10 @@ void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
     glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
 
     Logger::info("Client: Receive Player Water Sound");
-
-    m_pending_sound.emplace("ambient/water/in_and_out_of_water.flac", pos);
+    fs::path root_path = ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE);
+    m_pending_sound.emplace(
+        root_path / "sounds/ambient/water/in_and_out_of_water.flac", pos);
 }
 
 void ClientWorld::send_player_water_sound(bool underwater,
@@ -388,7 +396,7 @@ void ClientWorld::init(std::string_view player_name,
             chunk_cacc cacc;
             if (m_chunks.find(cacc, pos)) {
                 if (cacc->second->get_biome() == BiomeType::FOREST) {
-                    m_audio.play_2d("ambient/birds.ogg", true);
+                    m_audio.play_2d("ambient/birds.ogg", false, true);
                 }
             }
         }
@@ -408,7 +416,7 @@ void ClientWorld::init(std::string_view player_name,
             chunk_cacc cacc;
             if (m_chunks.find(cacc, pos)) {
                 if (cacc->second->get_biome() == BiomeType::OCEAN) {
-                    m_audio.play_2d(sound, true);
+                    m_audio.play_2d(sound, false, true);
                 }
             }
         }
@@ -419,16 +427,17 @@ void ClientWorld::init(std::string_view player_name,
             auto ans = m_random.random_int(1, 2);
             std::string sound =
                 "ambient/water/bubble00" + std::to_string(ans) + ".ogg";
-            m_audio.play_3d(
-                sound, m_player_manager.get_local().get_player_pos(), true);
+            m_audio.play_3d(sound,
+                            m_player_manager.get_local().get_player_pos(),
+                            false, true);
         }
     });
 
     register_timer("bgm change", 350.0f, [this]() {
         if (m_day_tick >= 17000 || m_day_tick < 5000) {
-            m_audio.change_bgm("bgm/bgm002.ogg");
+            m_audio.change_bgm("bgm/bgm002.ogg", false);
         } else {
-            m_audio.change_bgm("bgm/bgm001.mp3");
+            m_audio.change_bgm("bgm/bgm001.mp3", false);
         }
     });
 
@@ -814,7 +823,7 @@ void ClientWorld::update(float delta_time) {
     // sound
     PendingSound pending_sound;
     while (m_pending_sound.try_pop(pending_sound)) {
-        m_audio.play_3d(pending_sound.sound, pending_sound.sound_pos);
+        m_audio.play_3d(pending_sound.sound, pending_sound.sound_pos, true);
     }
 
     for (auto& [pos, timer] : m_timers) {

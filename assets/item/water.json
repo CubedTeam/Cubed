@@ -1,7 +1,0 @@
-{
-    "id": 7,
-    "name": "water",
-    "description": "",
-    "texture": "texture/item/block/water.png",
-    "type": "block"
-}

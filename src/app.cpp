@@ -3,6 +3,7 @@
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/block_manager.hpp"
+#include "Cubed/gameplay/creatures/creature_manager.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/tools/arg_parser.hpp"
@@ -75,6 +76,9 @@ void App::init(int argc, char** argv) {
         Localization::instance().load_language(
             m_game_config.get("language", default_value));
     }
+
+    CreatureManager::instance().init();
+
     BlockManager::init();
     ItemManager::instance().init();
     m_window.init(m_argument);

@@ -1,0 +1,24 @@
+{
+    "name": "dirt",
+    "properties": {
+        "is_liquid": false,
+        "is_cross_plane": false,
+        "is_transparent": false,
+        "is_passable": false,
+        "is_discard": false,
+        "is_blend": false,
+        "is_transitional": true,
+        "is_gas": false,
+        "roughness": 1.0
+    },
+    "texture": {
+        "type": "cuboid",
+        "path": "cubed:textures/blocks/dirt",
+        "normal": "cubed:normals/blocks/dirt"
+    },
+    "sounds": {
+        "break": "cubed:sounds/blocks/dirt/break.ogg",
+        "place": "cubed:sounds/blocks/dirt/place.ogg",
+        "walk": "cubed:sounds/blocks/dirt/walk.ogg"
+    }
+}

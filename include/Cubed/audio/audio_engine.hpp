@@ -32,10 +32,10 @@ public:
     void init();
     void play_bgm();
     void stop_bgm();
-    void change_bgm(const std::string& sound);
-    void play_3d(const std::string& sound, const glm::vec3& pos,
+    void change_bgm(const std::string& sound, bool full_path);
+    void play_3d(const std::string& sound, const glm::vec3& pos, bool full_path,
                  bool check = false);
-    void play_2d(const std::string& sound, bool check = false);
+    void play_2d(const std::string& sound, bool full_path, bool check = false);
     void update_listener(const glm::vec3& pos, const glm::vec3& forward,
                          const glm::vec3& up);
     void update();

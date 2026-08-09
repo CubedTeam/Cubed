@@ -54,7 +54,7 @@ void PauseMenuUIManager::init() {
     {
         auto& back_main = layout.add_child<Button>();
 
-        back_main.set_background_image("texture/ui/button001.png",
+        back_main.set_background_image("cubed/textures/ui/button001.png",
                                        texture_manager);
         back_main.set_text(tr("menu.pause.return_to_main_menu"));
         back_main.set_clicked([this, &back_main]() {

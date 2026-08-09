@@ -1,0 +1,24 @@
+{
+    "name": "stone",
+    "properties": {
+        "is_liquid": false,
+        "is_cross_plane": false,
+        "is_transparent": false,
+        "is_passable": false,
+        "is_discard": false,
+        "is_blend": false,
+        "is_transitional": true,
+        "is_gas": false,
+        "roughness": 0.75
+    },
+    "texture": {
+        "type": "cuboid",
+        "path": "cubed:textures/blocks/stone",
+        "normal": "cubed:normals/blocks/stone"
+    },
+    "sounds": {
+        "break": "cubed:sounds/blocks/stone/break.ogg",
+        "place": "cubed:sounds/blocks/stone/place.ogg",
+        "walk": "cubed:sounds/blocks/stone/walk.ogg"
+    }
+}

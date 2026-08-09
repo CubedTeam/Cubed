@@ -1,0 +1,27 @@
+{
+    "blocks": {
+        "air": 0,
+        "grass_block": 1,
+        "dirt": 2,
+        "stone": 3,
+        "sand": 4,
+        "log": 5,
+        "leaf": 6,
+        "water": 7,
+        "snowy_grass_block": 8,
+        "grass": 9
+    },
+    "items": {
+        "air": 0,
+        "grass_block": 1,
+        "dirt": 2,
+        "stone": 3,
+        "sand": 4,
+        "log": 5,
+        "leaf": 6,
+        "water": 7,
+        "snowy_grass_block": 8,
+        "grass": 9,
+        "pig_spawn_egg": 10
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "name": "grass_block",
+    "type": "block",
+    "block": "cubed:grass_block",
+    "texture": "cubed:textures/items/block/grass_block.png",
+    "description": ""
+}

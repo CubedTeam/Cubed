@@ -1,0 +1,7 @@
+{
+    "name": "air",
+    "type": "block",
+    "block": "cubed:air",
+    "texture": "cubed:textures/items/block/air.png",
+    "description": ""
+}

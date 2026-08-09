@@ -1,0 +1,22 @@
+{
+    "name": "grass",
+    "properties": {
+        "is_liquid": false,
+        "is_cross_plane": true,
+        "is_transparent": true,
+        "is_passable": true,
+        "is_discard": true,
+        "is_blend": false,
+        "is_transitional": false,
+        "is_gas": false,
+        "roughness": 0.9
+    },
+    "texture": {
+        "type": "cross",
+        "path": "cubed:textures/blocks/grass"
+    },
+    "sounds": {
+        "break": "cubed:sounds/blocks/grass/break.ogg",
+        "place": "cubed:sounds/blocks/grass/place.ogg"
+    }
+}

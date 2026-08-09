@@ -1,8 +1,10 @@
 #include "Cubed/render/model_manager.hpp"
 
+#include "Cubed/gameplay/creatures/creature_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/name_space.hpp"
+#include "Cubed/tools/resource_location.hpp"
 
 #include <filesystem>
 #include <rapidjson/document.h>
@@ -67,58 +69,52 @@ const std::string& ModelManager::get_model_name(ModelID id) {
 }
 
 ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
-    auto p = model_name.find(':');
-    if (p == std::string::npos) {
-        Logger::error("Can't Parse Model name {}", model_name);
+
+    auto location = CreatureManager::data(model_name);
+    if (!location.model) {
+        Logger::error("Can't find {} model key", model_name);
         ASSERT(false);
+        throw std::runtime_error("Can't find model key");
     }
-    auto space = parse_namespace(model_name);
-    if (space.size() < 2) {
-        Logger::error("Can't Parse Model name {}", model_name);
-        ASSERT(false);
-    }
-    std::string path;
-    if (space[0] == "cubed") {
-        path = std::format("{}model/creature/{}/{}.glb", ASSETS_PATH, space[1],
-                           space[1]);
-    } else {
-        path = std::format("./{}/model/creature/{}/{}.glb", space[0], space[1],
-                           space[1]);
-    }
+
+    fs::path path = location.model->assets_path_prefix() / location.model->path;
+
     auto model = m_loader.load(path);
-    fs::path anim_path = path;
-    anim_path = anim_path.parent_path() / "animation.json";
-    load_anim_config(model, anim_path.string());
+
+    load_anim_config(model, location);
+
     ModelMap::accessor acc;
+
     if (m_models.insert(acc, m_next++)) {
         acc->second = std::move(model);
     } else {
         Logger::error("Can't Insert Model {}", model_name);
+        --m_next;
         ModelMap::const_accessor cacc;
         if (m_models.find(cacc, get_model_id(std::string(model_name)))) {
             return {cacc->second, cacc->first};
         }
     }
+
     m_id_map.emplace(model_name, acc->first);
     m_name_map.emplace(acc->first, model_name);
+
     return {acc->second, acc->first};
 }
 
-void ModelManager::load_anim_config(ModelNode& node, const std::string& path) {
-    if (!fs::is_regular_file(path)) {
+void ModelManager::load_anim_config(ModelNode& node, const CreatureData& data) {
+    if (!data.animation) {
         return;
     }
-    std::ifstream s(path);
-    if (!s.is_open()) {
-        return;
-    }
-    rapidjson::IStreamWrapper isw(s);
+
+    fs::path path = data.animation->assets_path_prefix() / data.animation->path;
+
     rapidjson::Document doc;
-    doc.ParseStream(isw);
-    if (doc.HasParseError()) {
-        Logger::warn("Can't parse anim config {}", path);
+
+    if (!Tools::parse_json(doc, path)) {
         return;
     }
+
     ModelAnimConfig cfg;
     if (doc.HasMember("walk")) {
         cfg.walk_speed = doc["walk"]["speed"].GetFloat();

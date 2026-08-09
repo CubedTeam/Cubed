@@ -1,0 +1,5 @@
+{
+    "name": "player",
+    "model": "cubed:models/creatures/player/player.glb",
+    "collision": "cubed:models/creatures/player/collision.json"
+}

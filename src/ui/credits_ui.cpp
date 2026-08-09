@@ -23,7 +23,7 @@ void CreditsUI::update_layout(int, int height) {
     m_root_widget.reset();
     auto image = std::make_unique<Image>(nullptr);
     image
-        ->set_image("texture/ui/background.png",
+        ->set_image("cubed/textures/ui/background.png",
                     m_scene.scene_manager().app().texture_manager(), false)
         .set_anchor(Anchor::TOP_LEFT)
         .set_fill_parent(true);
@@ -38,7 +38,7 @@ void CreditsUI::update_layout(int, int height) {
 
     auto& return_button = rect.add_child<Button>();
     return_button.set_background_image(
-        "texture/ui/button001.png",
+        "cubed/textures/ui/button001.png",
         m_scene.scene_manager().app().texture_manager());
 
     return_button.set_text(tr("button.return"));

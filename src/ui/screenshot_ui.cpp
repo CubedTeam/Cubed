@@ -50,7 +50,8 @@ void ScreenshotUI::update_layout(int width, int height) {
     ScrollView* sv = nullptr;
     fs::create_directories(path);
     if (fs::exists(path)) {
-        for (auto& entry : fs::recursive_directory_iterator(path)) {
+        for (auto& entry : fs::recursive_directory_iterator(
+                 path, fs::directory_options::skip_permission_denied)) {
             if (!fs::is_regular_file(entry)) {
                 continue;
             }

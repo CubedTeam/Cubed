@@ -1,7 +1,0 @@
-{
-    "id": 1,
-    "name": "grass_block",
-    "description": "",
-    "texture": "texture/item/block/grass_block.png",
-    "type": "block"
-}

@@ -21,7 +21,8 @@ public:
     bool hovered() const;
 
 private:
-    static constexpr const char* DEFAULT_SLOT_PATH = "texture/ui/slot.png";
+    static constexpr const char* DEFAULT_SLOT_PATH =
+        "cubed/textures/ui/slot.png";
     void on_render(Renderer& renderer) override;
     void on_update(float dt) override;
     std::unique_ptr<Image> m_background;

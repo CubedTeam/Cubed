@@ -1,15 +1,20 @@
 #include "Cubed/tools/json_utils.hpp"
 
+#include "Cubed/tools/log.hpp"
+
+#include <fstream>
 #include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <string>
 #include <unordered_map>
-namespace Tools {
+namespace Cubed::Tools {
 
 using rapidjson::Document;
+using rapidjson::IStreamWrapper;
 using rapidjson::Value;
-
+namespace fs = std::filesystem;
 namespace {
 std::string serialize_value(const Value& v, rapidjson::StringBuffer& buf) {
     rapidjson::Writer<rapidjson::StringBuffer> w(buf);
@@ -51,4 +56,23 @@ std::unordered_map<std::string, std::string> doc_to_map(const Document& doc) {
     }
     return m;
 }
-} // namespace Tools
+
+bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path) {
+
+    std::ifstream file{path};
+    if (!file.is_open()) {
+        Logger::error("Can't parse json {}", path.string());
+        return false;
+    }
+    IStreamWrapper isw{file};
+    doc.ParseStream(isw);
+    if (doc.HasParseError()) {
+        auto code = doc.GetParseError();
+        Logger::error("Parse {} failed, error code {}", path.string(),
+                      static_cast<int>(code));
+        return false;
+    }
+    return true;
+}
+
+} // namespace Cubed::Tools

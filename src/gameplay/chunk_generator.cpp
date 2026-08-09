@@ -749,17 +749,25 @@ void ChunkGenerator::generate_cave() {
             // compute points, no storage).
             CavePath path{origin.seed, carver.world_seed(), origin.pos};
 
-            carve_worm(path.points(), chunk_pos,
-                       [&](int x, int y, int z) -> void {
-                           int idx = ServerChunk::index(x, y, z);
-                           m_chunk.has_cave() = true;
-                           if (blocks[idx] == 7)
-                               return;
-                           if (y < WORLD_SIZE_Y - 1 &&
-                               blocks[ServerChunk::index(x, y + 1, z)] == 7)
-                               return;
-                           blocks[idx] = 0;
-                       });
+            carve_worm(
+                path.points(), chunk_pos, [&](int x, int y, int z) -> void {
+                    int idx = ServerChunk::index(x, y, z);
+                    m_chunk.has_cave() = true;
+                    auto type = blocks[idx];
+
+                    if (BlockManager::is_water(type)) {
+                        return;
+                    }
+
+                    if (y < WORLD_SIZE_Y - 1) {
+
+                        if (BlockManager::is_water(
+                                blocks[ServerChunk::index(x, y + 1, z)])) {
+                            return;
+                        }
+                    }
+                    blocks[idx] = 0;
+                });
         }
     }
 }

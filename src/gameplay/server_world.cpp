@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/gameplay/session.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/net_utils.hpp"
@@ -12,7 +13,6 @@
 
 #include <ranges>
 #include <rapidjson/document.h>
-#include <rapidjson/istreamwrapper.h>
 #include <utility>
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -210,15 +210,13 @@ void ServerWorld::init_world(RunMode mode) {
     Logger::info("sensitive filter {}", m_enable_filter.load());
     m_voice_chat = m_config.get("voice_chat", true);
     Logger::info("voice chat {}", m_voice_chat.load());
+
     try {
         fs::path path = std::format("{}SensitiveLexicon.json", ASSETS_PATH);
-        std::ifstream s{path};
-        if (!s.is_open()) {
-            throw std::runtime_error("can't open SensitiveLexicon.json");
-        }
-        IStreamWrapper isw(s);
         Document doc;
-        doc.ParseStream(isw);
+        if (!Tools::parse_json(doc, path)) {
+            throw std::runtime_error("Can't parse SensitiveLexicon.json");
+        }
         m_filter.load(doc);
     } catch (const std::exception& e) {
         Logger::error("Load SensitiveLexicon.json Fail");

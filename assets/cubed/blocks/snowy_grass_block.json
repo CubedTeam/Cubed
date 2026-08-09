@@ -1,0 +1,24 @@
+{
+    "name": "snowy_grass_block",
+    "properties": {
+        "is_liquid": false,
+        "is_cross_plane": false,
+        "is_transparent": false,
+        "is_passable": false,
+        "is_discard": false,
+        "is_blend": false,
+        "is_transitional": true,
+        "is_gas": false,
+        "roughness": 0.9
+    },
+    "texture": {
+        "type": "cuboid",
+        "path": "cubed:textures/blocks/snowy_grass_block",
+        "normal": "cubed:normals/blocks/snowy_grass_block"
+    },
+    "sounds": {
+        "break": "cubed:sounds/blocks/snowy_grass_block/break.ogg",
+        "place": "cubed:sounds/blocks/snowy_grass_block/place.ogg",
+        "walk": "cubed:sounds/blocks/snowy_grass_block/walk.ogg"
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "name": "sand",
+    "properties": {
+        "is_liquid": false,
+        "is_cross_plane": false,
+        "is_transparent": false,
+        "is_passable": false,
+        "is_discard": false,
+        "is_blend": false,
+        "is_transitional": true,
+        "is_gas": false,
+        "roughness": 0.8
+    },
+    "texture": {
+        "type": "cuboid",
+        "path": "cubed:textures/blocks/sand",
+        "normal": "cubed:normals/blocks/sand"
+    },
+    "sounds": {
+        "break": "cubed:sounds/blocks/sand/break.ogg",
+        "place": "cubed:sounds/blocks/sand/place.ogg",
+        "walk": "cubed:sounds/blocks/sand/walk.ogg"
+    }
+}

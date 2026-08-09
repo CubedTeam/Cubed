@@ -3,6 +3,7 @@
 #include "Cubed/gameplay/item.hpp"
 
 #include <filesystem>
+#include <rapidjson/document.h>
 #include <string_view>
 #include <tbb/concurrent_hash_map.h>
 namespace Cubed {
@@ -12,13 +13,13 @@ public:
     void init();
     static ItemManager& instance();
 
-    static const ItemData& get(std::string_view key);
-    static const ItemData& get(ItemID id);
+    static ItemData get(std::string_view key);
+    static ItemData get(ItemID id);
 
     static ItemID size();
 
-    const ItemData& get_item_data(std::string_view key) const;
-    const ItemData& get_item_data(ItemID id) const;
+    ItemData get_item_data(std::string_view key) const;
+    ItemData get_item_data(ItemID id) const;
 
 private:
     using ItemMap = tbb::concurrent_hash_map<ItemID, ItemData>;
@@ -27,10 +28,11 @@ private:
 
     using IDMap = tbb::concurrent_hash_map<std::string, ItemID>;
     using BlockToIDMap = tbb::concurrent_hash_map<BlockType, ItemID>;
-    void add(const std::filesystem::path& path);
+    void add(const std::filesystem::path& path,
+             const rapidjson::Value& registry);
 
     ItemMap m_map;
-
+    // key = ns:path
     IDMap m_id_map;
     BlockToIDMap m_block_to_id_map;
 

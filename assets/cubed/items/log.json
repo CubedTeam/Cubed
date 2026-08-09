@@ -1,0 +1,7 @@
+{
+    "name": "log",
+    "type": "block",
+    "block": "cubed:log",
+    "texture": "cubed:textures/items/block/log.png",
+    "description": ""
+}

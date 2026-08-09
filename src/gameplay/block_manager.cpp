@@ -1,20 +1,16 @@
 #include "Cubed/gameplay/block_manager.hpp"
 
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/toml.utils.hpp"
+#include "Cubed/tools/resource_location.hpp"
 
 #include <algorithm>
 #include <filesystem>
-
+#include <rapidjson/document.h>
 namespace fs = std::filesystem;
-
+using namespace rapidjson;
 using namespace std::string_literals;
-using namespace Cubed::TOML;
-namespace {
-std::string block_data_dir = ASSETS_PATH + "data/block"s;
-
-} // namespace
 
 namespace Cubed {
 
@@ -27,7 +23,7 @@ unsigned BlockManager::cross_plane_sum() {
     return m_cross_plane_map.size();
 }
 
-const std::string& BlockManager::name_form_id(BlockType id) {
+const ResourceLocation& BlockManager::name_form_id(BlockType id) {
     cacc c;
     if (!m_datas.find(c, id)) {
         ASSERT(false);
@@ -51,6 +47,8 @@ bool BlockManager::is_liquid(BlockType id) {
     }
     return c->second.is_liquid;
 }
+
+bool BlockManager::is_water(BlockType id) { return id == m_water; }
 
 bool BlockManager::is_cross_plane(BlockType id) {
     cacc c;
@@ -113,62 +111,141 @@ float BlockManager::roughness(BlockType id) {
 }
 
 void BlockManager::init() {
-    fs::path data_path{block_data_dir};
+    fs::path root_path{ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE)};
+    fs::path block_path = root_path / "blocks";
+
+    fs::create_directories(block_path);
+
+    fs::path register_path = root_path / "registry.json";
+
+    Document registry;
+    if (!Tools::parse_json(registry, register_path)) {
+        Logger::error("Can't parse registry.json");
+        ASSERT(false);
+        return;
+    }
+
+    if (!registry.HasMember("blocks")) {
+        throw std::runtime_error("registry.json don't has blocks key");
+    }
+
+    auto& blocks_registry = registry["blocks"];
+
     std::vector<std::pair<bool, BlockType>> types;
-    for (auto entry : fs::recursive_directory_iterator(data_path)) {
+
+    for (auto entry : fs::recursive_directory_iterator(
+             block_path, fs::directory_options::skip_permission_denied)) {
         if (!entry.is_regular_file()) {
             continue;
         }
-        if (entry.path().filename() == "template.toml") {
+        if (entry.path().extension() != ".json") {
             continue;
         }
-        toml::table block;
-        try {
-            block = toml::parse_file(entry.path().string());
-        } catch (const toml::parse_error& err) {
-            Logger::error("Load Block Data {} Fail, Parser Error {}",
-                          entry.path().string(), err.what());
-            ASSERT(false);
+
+        Document doc;
+        if (!Tools::parse_json(doc, entry.path())) {
+            continue;
         }
-        auto id = block["id"].value<int>();
-        if (id == std::nullopt) {
-            Logger::error("Very Serious Error, Block Id Not Find !!!, Please "
-                          "Check The Block Data Integrity");
-            std::abort();
-        }
-        auto name = block["name"].value<std::string>();
-        if (name == std::nullopt) {
+
+        BlockData data;
+
+        std::string path;
+        if (!Tools::get_json_value(doc, "name", path)) {
             Logger::error("Very Serious Error, Block Name Not Find !!!, Please "
                           "Check The Block Data Integrity");
-            std::abort();
+            continue;
         }
-        auto is_liquid = safe_get_value(block, "is_liquid", false);
-        auto is_passable = safe_get_value(block, "is_passable", false);
-        auto is_cross_plane = safe_get_value(block, "is_cross_plane", false);
-        auto is_transparent = safe_get_value(block, "is_transparent", false);
-        auto is_gas = safe_get_value(block, "is_gas", false);
-        auto is_discard = safe_get_value(block, "is_discard", false);
-        auto is_blend = safe_get_value(block, "is_blend", false);
-        auto is_transitional = safe_get_value(block, "is_transitional", false);
-        auto roughness = safe_get_value(block, "roughness", 1.0);
-
-        BlockData data{*name,
-                       static_cast<BlockType>(*id),
-                       *is_liquid,
-                       *is_passable,
-                       *is_cross_plane,
-                       *is_transparent,
-                       *is_gas,
-                       *is_discard,
-                       *is_blend,
-                       *is_transitional,
-                       static_cast<float>(*roughness)};
-
-        if (!m_datas.emplace(static_cast<BlockType>(*id), std::move(data))) {
-            Logger::error("Block Type {} already exist!", *id);
+        data.name.path = path;
+        data.name.ns = ResourceLocation::DEFAULT_NAMESPACE;
+        if (!Tools::get_json_value(blocks_registry, path.c_str(), data.id)) {
+            Logger::error("Very Serious Error, Block Id Not Find !!!, Please "
+                          "Check The Block Data Integrity");
+            continue;
         }
-        m_id_map.emplace(*name, static_cast<BlockType>(*id));
-        types.emplace_back(*is_cross_plane, static_cast<BlockType>(*id));
+
+        if (!doc.HasMember("properties")) {
+            Logger::error("Block {} doesn't have properties",
+                          data.name.to_string());
+            continue;
+        }
+        if (!doc["properties"].IsObject()) {
+            Logger::error("Block {} properties are not json object",
+                          data.name.to_string());
+            continue;
+        }
+
+        if (data.name.to_string() == "cubed:water") {
+            m_water = data.id;
+        }
+
+        auto& properties = doc["properties"];
+
+        Tools::get_json_value(properties, "is_liquid", data.is_liquid);
+        Tools::get_json_value(properties, "is_passable", data.is_passable);
+        Tools::get_json_value(properties, "is_cross_plane",
+                              data.is_cross_plane);
+        Tools::get_json_value(properties, "is_transparent",
+                              data.is_transparent);
+        Tools::get_json_value(properties, "is_gas", data.is_gas);
+        Tools::get_json_value(properties, "is_discard", data.is_discard);
+        Tools::get_json_value(properties, "is_blend", data.is_blend);
+        Tools::get_json_value(properties, "is_transitional",
+                              data.is_transitional);
+        Tools::get_json_value(properties, "roughness", data.roughness);
+
+        if (doc.HasMember("texture") && doc["texture"].IsObject()) {
+            auto& texture = doc["texture"];
+            std::string s;
+            if (Tools::get_json_value(texture, "type", s)) {
+                if (s == "cuboid") {
+                    data.texture_type = BlockTextureType::CUBOID;
+                } else if (s == "cross") {
+                    data.texture_type = BlockTextureType::CROSS;
+                } else {
+                    Logger::error("Block {} texture type {} unknown",
+                                  data.name.to_string(), s);
+                    ASSERT(false);
+                }
+            } else {
+                Logger::error("Block {} need texture type",
+                              data.name.to_string());
+                ASSERT(false);
+                continue;
+            }
+
+            if (Tools::get_json_value(texture, "path", s)) {
+                data.texture_path = ResourceLocation::parse(s);
+            }
+
+            if (Tools::get_json_value(texture, "normal", s)) {
+                data.normal = ResourceLocation::parse(s);
+            }
+        }
+
+        if (doc.HasMember("sounds") && doc["sounds"].IsObject()) {
+            auto& sound = doc["sounds"];
+            std::string s;
+            if (Tools::get_json_value(sound, "break", s)) {
+                data.sound.break_s = ResourceLocation::parse(s);
+            }
+            if (Tools::get_json_value(sound, "walk", s)) {
+                data.sound.walk = ResourceLocation::parse(s);
+            }
+            if (Tools::get_json_value(sound, "place", s)) {
+                data.sound.place = ResourceLocation::parse(s);
+            }
+        }
+
+        const auto LOCATION = data.name;
+        const auto IS_CROSS_PLANE = data.is_cross_plane;
+        const auto ID = data.id;
+        if (!m_datas.emplace(data.id, std::move(data))) {
+            Logger::error("Block {} already exist!", LOCATION.to_string());
+            continue;
+        }
+        m_id_map.emplace(LOCATION, ID);
+        types.emplace_back(IS_CROSS_PLANE, ID);
     }
     std::sort(types.begin(), types.end(),
               [](const auto& a, const auto& b) { return a.second < b.second; });
@@ -188,14 +265,53 @@ BlockType BlockManager::cross_plane_index(BlockType id) {
     return c->second;
 }
 
-BlockType BlockManager::id_from_name(const std::string& name) {
+BlockType BlockManager::id_from_name(std::string_view name) {
+    auto s = ResourceLocation::parse(name);
+    if (s) {
+        return id_from_name(*s);
+    }
+    return 0;
+}
+
+BlockType BlockManager::id_from_name(const ResourceLocation& name) {
     IDMap::const_accessor c;
     if (m_id_map.find(c, name)) {
         return c->second;
     }
-    Logger::error("BlockManager: Can't fin Block {}", name);
+    Logger::error("BlockManager: Can't fin Block {}", name.to_string());
     ASSERT(false);
     return 0;
+}
+
+BlockData BlockManager::data(std::string_view name) {
+    auto s = ResourceLocation::parse(name);
+    if (!s) {
+        return EMPTY;
+    }
+
+    return data(*s);
+}
+
+BlockData BlockManager::data(const ResourceLocation& location) {
+
+    IDMap::const_accessor cacc;
+    if (!m_id_map.find(cacc, location)) {
+        Logger::error("Can't find block {} id", location.to_string());
+        ASSERT(false);
+        return EMPTY;
+    }
+    return data(cacc->second);
+}
+
+BlockData BlockManager::data(BlockType type) {
+    cacc c;
+    if (!m_datas.find(c, type)) {
+        Logger::error("Can't find block {} data", type);
+        ASSERT(false);
+        return EMPTY;
+    }
+
+    return c->second;
 }
 
 void BlockManager::set_up_cross_plane_map(

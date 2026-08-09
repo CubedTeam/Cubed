@@ -1,14 +1,21 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 
+#include "Cubed/gameplay/creatures/creature_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
-#include "Cubed/tools/name_space.hpp"
+#include "Cubed/tools/resource_location.hpp"
 
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 namespace fs = std::filesystem;
 using namespace rapidjson;
 namespace Cubed {
+
+namespace {
+const HitboxManager::Handle EMPTY{};
+}
+
 HitboxManager::HitboxManager() { HitboxMap::accessor a; }
 
 HitboxManager::~HitboxManager() {}
@@ -32,7 +39,7 @@ HitboxID HitboxManager::get_hitbox_id(const std::string& name) {
     }
     return load(name).id;
 }
-const std::string& HitboxManager::get_hitbox_name(HitboxID id) {
+std::string HitboxManager::get_hitbox_name(HitboxID id) {
     NameMap::const_accessor cacc;
     if (m_name_map.find(cacc, id)) {
         return cacc->second;
@@ -57,34 +64,28 @@ HitboxManager::Handle HitboxManager::get_hitbox(const std::string& name) {
 }
 HitboxManager::Handle HitboxManager::load(std::string_view name) {
 
-    auto space = parse_namespace(name);
-    ASSERT(space.size() >= 2);
-    fs::path p;
-    if (space[0] == "cubed") {
-        p = std::format("{}model/creature/{}/collision.json", ASSETS_PATH,
-                        space[1]);
-    } else {
-        p = std::format("{}/model/creature/{}/collision.json", space[0],
-                        space[1]);
+    auto location = CreatureManager::data(name);
+    if (!location.collision) {
+        Logger::error("Can't find {} collision.json", name);
+        ASSERT(false);
+        return EMPTY;
     }
+    fs::path p =
+        location.collision->assets_path_prefix() / location.collision->path;
 
     try {
-        glm::vec3 center;
-        glm::vec3 half;
-        std::ifstream s{p};
-        IStreamWrapper isw(s);
-        Document doc;
-        doc.ParseStream(isw);
-        if (doc.HasParseError()) {
-            auto code = doc.GetParseError();
+        glm::vec3 center{0.0f};
+        glm::vec3 half{0.0f};
 
-            throw std::runtime_error(
-                std::format("Parse {} failed, error code {}", p.string(),
-                            static_cast<int>(code)));
+        Document doc;
+        if (!Tools::parse_json(doc, p)) {
+            Logger::error("Can't parse hitbox {}", name);
+            ASSERT(false);
+            return EMPTY;
         }
         if (doc.HasMember("boxes")) {
             const Value& box = doc["boxes"];
-            if (box.IsArray()) {
+            if (box.IsArray() && !box.Empty()) {
                 const Value& b = box[0];
                 if (b.HasMember("center")) {
                     center.x = b["center"][0].GetFloat();

@@ -52,7 +52,7 @@ private:
     static constexpr float TEXT_SCALE = 0.6f;
 
     static constexpr const char* DEFAULT_BUTTON_IMAGE =
-        "texture/ui/button001.png";
+        "cubed/textures/ui/button001.png";
     std::function<void()> m_clicked;
 
     float m_scale = DEFAULT_SCALE;

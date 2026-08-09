@@ -7,6 +7,9 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
+
+#include <filesystem>
+namespace fs = std::filesystem;
 namespace {
 constexpr int BLOCK_SIZE = 16;
 constexpr int BLOCK_NORMAL_SIZE = 128;
@@ -81,8 +84,10 @@ const Texture* TextureManager::get_skin() const { return m_skin.get(); }
 void TextureManager::load_block_status(unsigned id) {
 
     ASSERT_MSG(id < MAX_BLOCK_STATUS, "Exceed the max status sum limit");
-
-    std::string path = "texture/status/" + std::to_string(id) + ".png";
+    fs::path root_path = ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE);
+    fs::path path =
+        root_path / "textures" / "status" / (std::to_string(id) + ".png");
 
     auto image_data = (Tools::load_image_data(path));
 
@@ -93,44 +98,39 @@ void TextureManager::load_block_status(unsigned id) {
 
 void TextureManager::load_block_texture(unsigned id) {
     ASSERT_MSG(id < BlockManager::sums(), "Exceed the max block sum limit");
-    std::string name{BlockManager::name_form_id(id)};
+
     // air don`t need texture
     if (id == 0) {
         return;
     }
 
-    if (BlockManager::is_cross_plane(id)) {
-        load_cross_plane_texture(id);
+    auto data = BlockManager::data(id);
+    if (!data.texture_path) {
         return;
     }
-
-    std::array<ImageData, 6> image_data;
-
-    std::string block_texture_path = "texture/block/" + name;
-    image_data[0] = (Tools::load_image_data(block_texture_path + "/front.png"));
-    image_data[1] = (Tools::load_image_data(block_texture_path + "/right.png"));
-    image_data[2] = (Tools::load_image_data(block_texture_path + "/back.png"));
-    image_data[3] = (Tools::load_image_data(block_texture_path + "/left.png"));
-    image_data[4] = (Tools::load_image_data(block_texture_path + "/top.png"));
-    image_data[5] = (Tools::load_image_data(block_texture_path + "/base.png"));
-
-    Tools::check_opengl_error();
-    for (int i = 0; i < 6; i++) {
-        m_texture_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
-                                          image_data[i].data, 0, 0, id * 6 + i,
-                                          BLOCK_SIZE, BLOCK_SIZE);
-        Tools::check_opengl_error();
+    switch (data.texture_type) {
+    case BlockTextureType::CROSS:
+        return load_cross_plane_texture(data);
+    case BlockTextureType::CUBOID:
+        return load_cuboid_texture(data);
+    case BlockTextureType::NONE:
+        return;
+    default:
+        Logger::error("Unknown Block Texture Type");
+        ASSERT(false);
+        return load_cuboid_texture(data);
     }
 }
 
 void TextureManager::init_item_texture() {
     for (ItemID i = 0; i < ItemManager::size(); ++i) {
-        auto& item = ItemManager::get(i);
-        if (item.path.empty()) {
+        auto item = ItemManager::get(i);
+        if (!item.path) {
             m_item_textures.try_emplace(item.id, nullptr);
             continue;
         }
-        auto data = Tools::load_image_data(item.path);
+        fs::path path = item.path->full_path();
+        auto data = Tools::load_image_data(path);
         std::unique_ptr<Texture> texture =
             std::make_unique<Texture>(TextureType::TEXTURE_2D);
         texture->tex_image_2d(TextureFormat::RGBA8, TextureFormat::RGBA,
@@ -143,14 +143,36 @@ void TextureManager::init_item_texture() {
     }
 }
 
-void TextureManager::load_cross_plane_texture(unsigned id) {
-    std::string path =
-        "texture/block/" + BlockManager::name_form_id(id) + "/cross.png";
+void TextureManager::load_cuboid_texture(const BlockData& data) {
+
+    fs::path block_texture_path =
+        data.texture_path->assets_path_prefix() / data.texture_path->path;
+
+    std::array<ImageData, 6> image_data;
+    image_data[0] = (Tools::load_image_data(block_texture_path / "front.png"));
+    image_data[1] = (Tools::load_image_data(block_texture_path / "right.png"));
+    image_data[2] = (Tools::load_image_data(block_texture_path / "back.png"));
+    image_data[3] = (Tools::load_image_data(block_texture_path / "left.png"));
+    image_data[4] = (Tools::load_image_data(block_texture_path / "top.png"));
+    image_data[5] = (Tools::load_image_data(block_texture_path / "base.png"));
+
+    Tools::check_opengl_error();
+    for (int i = 0; i < 6; i++) {
+        m_texture_array->tex_sub_image_3d(
+            TextureFormat::RGBA, GL_UNSIGNED_BYTE, image_data[i].data, 0, 0,
+            static_cast<unsigned>(data.id) * 6 + i, BLOCK_SIZE, BLOCK_SIZE);
+        Tools::check_opengl_error();
+    }
+}
+
+void TextureManager::load_cross_plane_texture(const BlockData& data) {
+    fs::path path = data.texture_path->assets_path_prefix() /
+                    data.texture_path->path / "cross.png";
     auto image_data = Tools::load_image_data(path);
-    m_cross_plane_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
-                                          image_data.data, 0, 0,
-                                          BlockManager::cross_plane_index(id),
-                                          CROSS_PLANE_SIZE, CROSS_PLANE_SIZE);
+    m_cross_plane_array->tex_sub_image_3d(
+        TextureFormat::RGBA, GL_UNSIGNED_BYTE, image_data.data, 0, 0,
+        BlockManager::cross_plane_index(data.id), CROSS_PLANE_SIZE,
+        CROSS_PLANE_SIZE);
 }
 
 const Texture* TextureManager::load_image_texture(const std::string& path,
@@ -174,27 +196,24 @@ const Texture* TextureManager::load_image_texture(const std::string& path,
     return it->second.get();
 }
 
-void TextureManager::load_pbr_texture(unsigned id) {
+void TextureManager::load_normal_texture(unsigned id) {
 
     if (id == 0) {
         return;
     }
 
-    if (BlockManager::is_cross_plane(id)) {
-
-        return;
-    }
-
-    std::string path = "normal/block/" + BlockManager::name_form_id(id);
-
+    auto data = BlockManager::data(id);
     std::array<ImageData, 6> image_data;
+    if (data.normal) {
+        fs::path path = data.normal->full_path();
 
-    image_data[0] = (Tools::load_image_data(path + "/front_n.png", false));
-    image_data[1] = (Tools::load_image_data(path + "/right_n.png", false));
-    image_data[2] = (Tools::load_image_data(path + "/back_n.png", false));
-    image_data[3] = (Tools::load_image_data(path + "/left_n.png", false));
-    image_data[4] = (Tools::load_image_data(path + "/top_n.png", false));
-    image_data[5] = (Tools::load_image_data(path + "/base_n.png", false));
+        image_data[0] = (Tools::load_image_data(path / "front_n.png", false));
+        image_data[1] = (Tools::load_image_data(path / "right_n.png", false));
+        image_data[2] = (Tools::load_image_data(path / "back_n.png", false));
+        image_data[3] = (Tools::load_image_data(path / "left_n.png", false));
+        image_data[4] = (Tools::load_image_data(path / "top_n.png", false));
+        image_data[5] = (Tools::load_image_data(path / "base_n.png", false));
+    }
 
     for (int i = 0; i < 6; i++) {
         unsigned char* data = image_data[i].data;
@@ -234,7 +253,7 @@ void TextureManager::init_block() {
     for (unsigned i = 0; i < BlockManager::sums(); i++) {
         load_block_texture(i);
 
-        load_pbr_texture(i);
+        load_normal_texture(i);
     }
 
     m_texture_array->set_nearest_and_minpmap();
@@ -255,7 +274,10 @@ void TextureManager::init_ui() {}
 
 void TextureManager::init_skin() {
     m_skin = std::make_unique<Texture>(TextureType::TEXTURE_2D);
-    std::string path = "texture/skin/player001.png";
+    fs::path root_path = ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE);
+
+    fs::path path = root_path / "textures/skins/player001.png";
 
     auto image_data = (Tools::load_image_data(path));
     m_skin->tex_image_2d(TextureFormat::RGBA, TextureFormat::RGBA,

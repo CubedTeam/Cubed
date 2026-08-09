@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Cubed/tools/resource_location.hpp"
+
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <optional>
@@ -40,8 +42,21 @@ struct LookBlock {
     glm::ivec3 normal;
 };
 
+enum class BlockTextureType {
+    NONE,
+    CUBOID,
+    CROSS
+
+};
+
+struct BlockSound {
+    std::optional<ResourceLocation> break_s;
+    std::optional<ResourceLocation> place;
+    std::optional<ResourceLocation> walk;
+};
+
 struct BlockData {
-    std::string name;
+    ResourceLocation name{};
     BlockType id = 0;
 
     bool is_liquid = false;
@@ -55,14 +70,15 @@ struct BlockData {
     bool is_blend = false;
     bool is_transitional = false;
     float roughness = 1.0f;
-    BlockData(std::string_view b_name, BlockType b_id, bool liquid,
-              bool passable, bool cross_plane, bool transparent, bool gas,
-              bool discard, bool blend, bool transitional, float r)
-        : name(b_name), id(b_id), is_liquid(liquid), is_gas(gas),
-          is_passable(passable), is_cross_plane(cross_plane),
-          is_transparent(transparent), is_discard(discard), is_blend(blend),
-          is_transitional(transitional), roughness(r) {}
-    BlockData() { name = ""; }
+
+    BlockTextureType texture_type = BlockTextureType::NONE;
+
+    std::optional<ResourceLocation> texture_path;
+    std::optional<ResourceLocation> normal;
+
+    BlockSound sound;
+
+    BlockData() = default;
 };
 
 } // namespace Cubed
