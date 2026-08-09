@@ -40,6 +40,7 @@ class BaseResourceView(ft.Column):
             title=self.title,
         )
 
+        # Mode toggle: keep natural MD3 pill size, do NOT expand.
         self.mode_toggle = ft.SegmentedButton(
             selected=["form"],
             segments=[
@@ -49,37 +50,38 @@ class BaseResourceView(ft.Column):
             allow_multiple_selection=False,
             allow_empty_selection=False,
             on_change=self._on_mode_change,
-            expand=True,
         )
 
         # AI-generated: single content slot to avoid visible-toggle blank bugs.
         self.content_slot = ft.Container(expand=True)
         self.raw_editor = RawEditor()
 
-        # Action rail on the right; buttons defined per view via _action_buttons().
-        self.action_rail = ft.Column(
-            [],
-            width=140,
-            alignment=ft.MainAxisAlignment.START,
-            spacing=8,
-            expand=False,
+        # Action buttons sit in the top toolbar on the right (natural size).
+        self.action_row = ft.Row(
+            [], alignment=ft.MainAxisAlignment.END, spacing=8, expand=False,
         )
 
         self.controls = [
-            self.mode_toggle,
+            # Top toolbar: mode toggle (left) + actions (right).
+            ft.Row(
+                [self.mode_toggle, ft.Container(expand=True), self.action_row],
+                alignment=ft.MainAxisAlignment.START,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
+            ),
             ft.Row(
                 [
                     ft.Container(self.file_list, width=240, expand=False),
                     ft.VerticalDivider(width=1),
-                    self.content_slot,  # expands to fill remaining width
-                    ft.VerticalDivider(width=1),
-                    self.action_rail,
+                    self.content_slot,
                 ],
                 expand=True,
                 spacing=0,
             ),
         ]
         self.refresh_list()
+        # Initial empty-state render so toolbar buttons show up.
+        self._render()
 
     # --- subclass hooks ---------------------------------------------------
 
@@ -157,20 +159,20 @@ class BaseResourceView(ft.Column):
             self.content_slot.content = self.raw_editor
         else:
             self.content_slot.content = self.build_form(self.current_data)
-        self.action_rail.controls = self._action_buttons()
+        self.action_row.controls = self._action_buttons()
         safe_update(self.content_slot)
-        safe_update(self.action_rail)
+        safe_update(self.action_row)
 
     def _action_buttons(self) -> list[ft.Control]:
         return [
-            ft.FilledButton("保存", icon=ft.Icons.SAVE, on_click=self._on_save, expand=True),
+            ft.FilledTonalButton("保存", icon=ft.Icons.SAVE_OUTLINED, on_click=self._on_save),
             ft.OutlinedButton(
                 "删除", icon=ft.Icons.DELETE_OUTLINE, on_click=self._onDelete,
-                disabled=self.selected_name is None, expand=True,
+                disabled=self.selected_name is None,
             ),
             ft.OutlinedButton(
                 "复制", icon=ft.Icons.CONTENT_COPY, on_click=self._onDuplicate,
-                disabled=not self.current_data, expand=True,
+                disabled=not self.current_data,
             ),
         ]
 

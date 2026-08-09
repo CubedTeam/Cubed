@@ -41,9 +41,21 @@ class DiffViewer(ft.Column):
 def diff_dialog(diff_text: str, path_label: str) -> ft.AlertDialog:
     viewer = DiffViewer()
     viewer.set_diff(diff_text)
-    return ft.AlertDialog(
+
+    dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text(f"Diff: {path_label}"),
         content=ft.Container(viewer, width=900, height=600),
-        actions=[ft.FilledButton("关闭", on_click=lambda e: e.page.close_all())],
+        actions=[ft.FilledButton("关闭", on_click=lambda e: _close(e, dialog))],
     )
+    return dialog
+
+
+def _close(e: ft.ControlEvent, dialog: ft.AlertDialog) -> None:
+    try:
+        e.page.close(dialog)
+    except Exception:
+        try:
+            e.page.close()
+        except Exception:
+            pass
