@@ -53,9 +53,6 @@ def diff_dialog(diff_text: str, path_label: str) -> ft.AlertDialog:
 
 def _close(e: ft.ControlEvent, dialog: ft.AlertDialog) -> None:
     try:
-        e.page.close(dialog)
+        e.page.pop_dialog()
     except Exception:
-        try:
-            e.page.close()
-        except Exception:
-            pass
+        pass

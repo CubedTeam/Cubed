@@ -85,7 +85,7 @@ class StatusBar(ft.Container):
             content=ft.Container(viewer, width=900, height=600),
             actions=[ft.FilledButton("关闭", on_click=lambda e: _close(e, dialog))],
         )
-        self.page_ctx.open(dialog)
+        self.page_ctx.show_dialog(dialog)
 
     def _on_commit(self, _e: ft.ControlEvent) -> None:
         files = git_ops.status()
@@ -110,6 +110,6 @@ class StatusBar(ft.Container):
 
 def _close(e: ft.ControlEvent, dialog: ft.AlertDialog) -> None:
     try:
-        e.page.close(dialog)
+        e.page.pop_dialog()
     except Exception:
         pass

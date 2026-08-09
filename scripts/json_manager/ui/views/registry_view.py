@@ -16,7 +16,7 @@ from ..safe import safe_update
 
 class RegistryView(ft.Column):
     def __init__(self, page: ft.Page) -> None:
-        super().__init__(expand=True, spacing=form.SPACE)
+        super().__init__(expand=True, spacing=form.SPACE, scroll=ft.ScrollMode.AUTO)
         self.page_ctx = page
         self.registry = Registry()
         self.unlocked = False

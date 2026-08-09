@@ -12,7 +12,7 @@ from ..safe import safe_update
 
 class LexiconView(ft.Column):
     def __init__(self, page: ft.Page) -> None:
-        super().__init__(expand=True, spacing=form.SPACE)
+        super().__init__(expand=True, spacing=form.SPACE, scroll=ft.ScrollMode.AUTO)
         self.page_ctx = page
         self.data: dict = {}
 
@@ -33,7 +33,6 @@ class LexiconView(ft.Column):
             padding=form.SECTION_PAD,
             border_radius=form.SECTION_RADIUS,
             bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-            expand=True,
         )
 
         self.controls = [

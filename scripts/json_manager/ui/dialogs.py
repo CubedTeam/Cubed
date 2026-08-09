@@ -1,6 +1,6 @@
 """Reusable MD3 dialogs/toasts.
 
-Uses Flet 0.86's ``page.open()`` / ``page.close()`` overlay API so the
+Uses Flet 0.86's ``page.show_dialog()`` / ``page.pop_dialog()`` API so the
 caller does not juggle overlay bookkeeping.
 """
 
@@ -27,7 +27,7 @@ def confirm(
             ft.FilledButton("确认", on_click=lambda e: close(e, on_confirm)),
         ],
     )
-    page.open(dialog)
+    page.show_dialog(dialog)
 
 
 def prompt(
@@ -59,20 +59,13 @@ def prompt(
     )
     # Enter key submits.
     field.on_submit = submit
-    page.open(dialog)
+    page.show_dialog(dialog)
 
 
 def close(e, callback: Callable[[], None] | None) -> None:
-    """Close the nearest open dialog belonging to e and run callback."""
+    """Close the topmost open dialog and run callback."""
     try:
-        # Find the AlertDialog ancestor in the overlay tree.
-        node = e.control
-        while node is not None and not isinstance(node, ft.AlertDialog):
-            node = getattr(node, "parent", None)
-        if isinstance(node, ft.AlertDialog):
-            e.page.close(node)
-        else:
-            e.page.close()
+        e.page.pop_dialog()
     except Exception:
         pass
     if callback:
@@ -85,7 +78,7 @@ def snack(page: ft.Page, message: str, kind: str = "info") -> None:
         "ok": ft.Colors.GREEN_700,
         "error": ft.Colors.RED_700,
     }.get(kind, ft.Colors.ON_SURFACE_VARIANT)
-    page.open(
+    page.show_dialog(
         ft.SnackBar(
             content=ft.Text(message, color=ft.Colors.WHITE),
             bgcolor=color,

@@ -37,7 +37,7 @@ class LangView(ft.Column):
             ],
             spacing=form.SPACE,
         )
-        self.table = ft.Column(spacing=4)
+        self.table = ft.Column(spacing=4, scroll=ft.ScrollMode.AUTO, expand=True)
 
         self.controls = [
             form.section(
