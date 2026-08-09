@@ -89,7 +89,7 @@ inline int choose_buf(BlockType id) {
     if (BlockManager::is_discard(id))
         return 2;
     if (BlockManager::is_blend(id)) {
-        return (id == 7) ? 4 : 3; // water=4, other blend=3
+        return (BlockManager::is_water(id)) ? 4 : 3; // water=4, other blend=3
     }
     return 3; // fallback
 }

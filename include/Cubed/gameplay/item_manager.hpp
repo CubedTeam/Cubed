@@ -32,7 +32,7 @@ private:
              const rapidjson::Value& registry);
 
     ItemMap m_map;
-
+    // key = ns:path
     IDMap m_id_map;
     BlockToIDMap m_block_to_id_map;
 

@@ -14,6 +14,8 @@ public:
     static bool is_gas(BlockType id);
     static bool is_liquid(BlockType id);
 
+    static bool is_water(BlockType id);
+
     static bool is_cross_plane(BlockType id);
     static bool is_transparent(BlockType id);
     static bool is_passable(BlockType id);
@@ -40,7 +42,7 @@ private:
     using CrossPlaneMap = tbb::concurrent_hash_map<BlockType, BlockType>;
 
     static inline const BlockData EMPTY;
-
+    static inline BlockType m_water = 7;
     static inline BlockMap m_datas;
     static inline IDMap m_id_map;
     static inline bool is_init = false;

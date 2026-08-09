@@ -1,9 +1,9 @@
 #include "Cubed/camera.hpp"
 
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/client_world.hpp"
 #include "Cubed/gameplay/local_player.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
-
 namespace {
 constexpr float DISTANCE = 4.0f;
 
@@ -41,7 +41,8 @@ void Camera::update_move_camera() {
     glm::ivec3 block_pos = glm::floor(m_camera_pos);
     auto& world = m_player->get_world();
     bool change;
-    if (world.get_block_tpye(block_pos) == 7) {
+    auto type = world.get_block_tpye(block_pos);
+    if (BlockManager::is_water(type)) {
         change = true;
     } else {
         change = false;

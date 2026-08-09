@@ -48,6 +48,8 @@ bool BlockManager::is_liquid(BlockType id) {
     return c->second.is_liquid;
 }
 
+bool BlockManager::is_water(BlockType id) { return id == m_water; }
+
 bool BlockManager::is_cross_plane(BlockType id) {
     cacc c;
     if (!m_datas.find(c, id)) {
@@ -173,6 +175,10 @@ void BlockManager::init() {
             continue;
         }
 
+        if (data.name.to_string() == "cubed:water") {
+            m_water = data.id;
+        }
+
         auto& properties = doc["properties"];
 
         Tools::get_json_value(properties, "is_liquid", data.is_liquid);
@@ -236,7 +242,7 @@ void BlockManager::init() {
         const auto ID = data.id;
         if (!m_datas.emplace(data.id, std::move(data))) {
             Logger::error("Block {} already exist!", LOCATION.to_string());
-            return;
+            continue;
         }
         m_id_map.emplace(LOCATION, ID);
         types.emplace_back(IS_CROSS_PLANE, ID);

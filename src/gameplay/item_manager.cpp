@@ -106,6 +106,15 @@ void ItemManager::add(const std::filesystem::path& path,
                           a->second.name.to_string(), a->first);
         }
         if (a->second.kind == ItemKind::BLOCK) {
+            std::string s;
+            if (!Tools::get_json_value(doc, "block", s)) {
+                return;
+            }
+            if (s != a->second.name.to_string()) {
+                Logger::error("block json name {} != registry.json name {}", s,
+                              a->second.name.to_string());
+                return;
+            }
             BlockType b = BlockManager::id_from_name(a->second.name);
             m_block_to_id_map.emplace(b, a->first);
             a->second.property = b;
@@ -117,14 +126,20 @@ void ItemManager::add(const std::filesystem::path& path,
 }
 
 ItemData ItemManager::get_item_data(std::string_view key) const {
+    auto location = ResourceLocation::parse(key);
+    if (!location) {
+        Logger::error("Can't parse key {}", key);
+        ASSERT(false);
+        return EMPTY;
+    }
     ItemID id = 0;
     {
         IDMap::const_accessor cacc;
 
-        if (m_id_map.find(cacc, std::string(key))) {
+        if (m_id_map.find(cacc, location->to_string())) {
             id = cacc->second;
         } else {
-            Logger::error("Can't Find key {} in id map", key);
+            Logger::error("Can't Find key {} in id map", location->to_string());
             ASSERT(false);
             return EMPTY;
         }
