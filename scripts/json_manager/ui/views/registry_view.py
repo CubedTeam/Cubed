@@ -22,19 +22,19 @@ class RegistryView(ft.Column):
         self.unlocked = False
         self._field_date = form.field("lastUpdateDate (ignored here)", disabled=True)
         self._switch_unlock = ft.Switch(
-            label="解锁编辑 (谨慎)",
+            label="Unlock editing (caution)",
             value=False,
             on_change=self._on_unlock,
         )
-        self._save_btn = ft.FilledButton("保存", icon=ft.Icons.SAVE, on_click=self._on_save, disabled=True)
-        self._refresh_btn = ft.OutlinedButton("刷新", icon=ft.Icons.REFRESH, on_click=lambda _: self.refresh())
+        self._save_btn = ft.FilledButton("Save", icon=ft.Icons.SAVE, on_click=self._on_save, disabled=True)
+        self._refresh_btn = ft.OutlinedButton("Refresh", icon=ft.Icons.REFRESH, on_click=lambda _: self.refresh())
         self._blocks_col: ft.Column = ft.Column(spacing=4)
         self._items_col: ft.Column = ft.Column(spacing=4)
         self._block_rows: list[ft.Row] = []
         self._item_rows: list[ft.Row] = []
         self.controls = [
             form.section(
-                "控制",
+                "Controls",
                 ft.Row([self._switch_unlock, self._save_btn, self._refresh_btn], spacing=form.BUTTON_GAP),
             ),
             form.section("Blocks", self._blocks_col),
@@ -97,7 +97,7 @@ class RegistryView(ft.Column):
             self.registry.blocks = new_blocks
             self.registry.items = new_items
             loader.save_registry(self.registry)
-            snack(self.page_ctx, "已保存 registry.json", "ok")
+            snack(self.page_ctx, "Saved registry.json", "ok")
             self.refresh()
 
-        confirm(self.page_ctx, "保存 registry", "确认覆盖 registry.json (id 顺序按当前显示保存)?", _do_save)
+        confirm(self.page_ctx, "Save registry", "Confirm overwrite of registry.json (ids saved in the displayed order)?", _do_save)

@@ -31,7 +31,7 @@ class FileList(ft.Column):
         self.spacing = 8
 
         self.search = ft.TextField(
-            hint_text="搜索",
+            hint_text="Search",
             prefix_icon=ft.Icons.SEARCH,
             dense=True,
             on_change=self._on_search,
@@ -48,7 +48,7 @@ class FileList(ft.Column):
                     ft.IconButton(
                         ft.Icons.ADD_OUTLINED,
                         on_click=lambda _: on_new() if on_new else None,
-                        tooltip="新建",
+                        tooltip="New",
                     ),
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -82,7 +82,7 @@ class FileList(ft.Column):
         if not items:
             items.append(
                 ft.Container(
-                    ft.Text("(空)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12),
+                    ft.Text("(empty)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12),
                     padding=10,
                     alignment=ft.Alignment.CENTER,
                 )

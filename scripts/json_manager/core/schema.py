@@ -31,7 +31,7 @@ class FieldSpec:
     default: Any = None
     widget: str = "text"            # text / switch / slider / segmented
     label: str = ""                  # empty -> use last segment of key
-    section: str = "基本"
+    section: str = "General"
     required: bool = False
     range: tuple[float, float] | None = None
     divisions: int | None = None
@@ -238,7 +238,7 @@ def _item_type_ref(data: dict) -> str | None:
 
 BLOCK_SCHEMA = Schema(
     fields=[
-        FieldSpec("name", str, "", section="基本", required=True,
+        FieldSpec("name", str, "", section="General", required=True,
                   validators=[_name_pattern_error]),
         FieldSpec("properties.is_liquid", bool, False, widget="switch", section="Properties"),
         FieldSpec("properties.is_cross_plane", bool, False, widget="switch", section="Properties"),
@@ -272,7 +272,7 @@ BLOCK_SCHEMA = Schema(
 
 ITEM_SCHEMA = Schema(
     fields=[
-        FieldSpec("name", str, "", section="基本", required=True,
+        FieldSpec("name", str, "", section="General", required=True,
                   validators=[_name_pattern_error]),
         FieldSpec("type", str, "block", widget="segmented",
                   section="Type", options=["block", "spawn_egg"]),
@@ -293,7 +293,7 @@ ITEM_SCHEMA = Schema(
 
 CREATURE_SCHEMA = Schema(
     fields=[
-        FieldSpec("name", str, "", section="基本", required=True,
+        FieldSpec("name", str, "", section="General", required=True,
                   validators=[_name_pattern_error]),
         FieldSpec("model", str, "", section="Model", required=True),
         FieldSpec("animation", str, None, section="Optional references",

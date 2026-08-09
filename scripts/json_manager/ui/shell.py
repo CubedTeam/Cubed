@@ -30,8 +30,8 @@ class Shell(ft.Column):
         super().__init__(expand=True, spacing=SPACE)
         self.page_ctx = page
         self.title_text = ft.Text(i18n.t("app.title"), size=20, weight=ft.FontWeight.BOLD)
-        self.theme_button = ft.IconButton(ft.Icons.LIGHT_MODE, on_click=self._toggle_theme, tooltip="切换主题")
-        self.refresh_button = ft.IconButton(ft.Icons.REFRESH, on_click=self._refresh_active, tooltip="刷新")
+        self.theme_button = ft.IconButton(ft.Icons.LIGHT_MODE, on_click=self._toggle_theme, tooltip="Toggle theme")
+        self.refresh_button = ft.IconButton(ft.Icons.REFRESH, on_click=self._refresh_active, tooltip="Refresh")
 
         self.rail = ft.NavigationRail(
             selected_index=0,

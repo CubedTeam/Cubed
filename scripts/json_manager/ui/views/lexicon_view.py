@@ -18,14 +18,14 @@ class LexiconView(ft.Column):
 
         self.date_field = form.field("lastUpdateDate (YYYY/MM/DD)")
         self.search = ft.TextField(
-            prefix_icon=ft.Icons.SEARCH, hint_text="搜索词", dense=True,
+            prefix_icon=ft.Icons.SEARCH, hint_text="Search words", dense=True,
             expand=True, on_change=self._on_search,
         )
-        self.add_input = form.field("逐个添加")
-        self.add_btn = ft.FilledTonalButton("添加", icon=ft.Icons.ADD, on_click=self._on_add)
-        self.bulk_input = form.field("批量粘贴 (每行一个)", multiline=True)
-        self.bulk_btn = ft.OutlinedButton("导入多行", icon=ft.Icons.UPLOAD, on_click=self._on_bulk)
-        self.save_btn = ft.FilledButton("保存", icon=ft.Icons.SAVE, on_click=self._on_save)
+        self.add_input = form.field("Add one")
+        self.add_btn = ft.FilledTonalButton("Add", icon=ft.Icons.ADD, on_click=self._on_add)
+        self.bulk_input = form.field("Bulk paste (one per line)", multiline=True)
+        self.bulk_btn = ft.OutlinedButton("Import lines", icon=ft.Icons.UPLOAD, on_click=self._on_bulk)
+        self.save_btn = ft.FilledButton("Save", icon=ft.Icons.SAVE, on_click=self._on_save)
 
         self._chips = ft.Row([], wrap=True, spacing=6, run_spacing=6, alignment=ft.MainAxisAlignment.START)
         self.chip_container = ft.Container(
@@ -37,15 +37,15 @@ class LexiconView(ft.Column):
 
         self.controls = [
             form.section(
-                "元数据",
+                "Metadata",
                 ft.Row([self.date_field, self.save_btn], spacing=form.SPACE),
             ),
             form.section(
-                "快速添加",
+                "Quick add",
                 ft.Row([self.add_input, self.add_btn], spacing=form.SPACE),
             ),
             form.section(
-                "批量导入",
+                "Bulk import",
                 self.bulk_input,
                 self.bulk_btn,
             ),
@@ -77,11 +77,11 @@ class LexiconView(ft.Column):
             shown += 1
             if shown > 500:
                 chips.append(
-                    ft.Text(f"… 还有 {len(words) - 500} 项 (请缩小搜索)", italic=True, size=12)
+                    ft.Text(f"… {len(words) - 500} more (narrow your search)", italic=True, size=12)
                 )
                 break
         if not chips:
-            chips = [ft.Text("(空)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12)]
+            chips = [ft.Text("(empty)", italic=True, color=ft.Colors.ON_SURFACE_VARIANT, size=12)]
         self._chips.controls = chips
         safe_update(self._chips)
 
@@ -97,7 +97,7 @@ class LexiconView(ft.Column):
             return
         words = self._current_words()
         if w in words:
-            snack(self.page_ctx, "已存在", "error")
+            snack(self.page_ctx, "Already exists", "error")
             return
         words.append(w)
         self.add_input.value = ""
@@ -117,7 +117,7 @@ class LexiconView(ft.Column):
                 added += 1
         self.bulk_input.value = ""
         safe_update(self.bulk_input)
-        snack(self.page_ctx, f"批量导入 {added} 词", "ok")
+        snack(self.page_ctx, f"Bulk imported {added} words", "ok")
         self.render_chips(self.search.value or "")
 
     def _remove(self, word: str) -> None:
@@ -130,7 +130,7 @@ class LexiconView(ft.Column):
         def _do():
             self.data["lastUpdateDate"] = self.date_field.value or ""
             loader.save_lexicon(self.data)
-            snack(self.page_ctx, "已保存敏感词表", "ok")
+            snack(self.page_ctx, "Saved sensitive lexicon", "ok")
             self.refresh()
 
-        confirm(self.page_ctx, "保存", "保存 SensitiveLexicon.json?", _do)
+        confirm(self.page_ctx, "Save", "Save SensitiveLexicon.json?", _do)

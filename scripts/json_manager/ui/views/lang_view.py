@@ -21,12 +21,12 @@ class LangView(ft.Column):
         self.all_keys: list[str] = []
 
         self.search = ft.TextField(
-            prefix_icon=ft.Icons.SEARCH, hint_text="搜索 key", dense=True, expand=True,
+            prefix_icon=ft.Icons.SEARCH, hint_text="Search key", dense=True, expand=True,
             on_change=self._on_search,
         )
-        self._add_btn = ft.FilledTonalButton("新增 key", icon=ft.Icons.ADD, on_click=self._on_add)
-        self._sync_btn = ft.OutlinedButton("从 zh_CN 同步到 en_US", icon=ft.Icons.SYNC, on_click=self._on_sync)
-        self._save_btn = ft.FilledButton("保存全部", icon=ft.Icons.SAVE, on_click=self._on_save)
+        self._add_btn = ft.FilledTonalButton("New key", icon=ft.Icons.ADD, on_click=self._on_add)
+        self._sync_btn = ft.OutlinedButton("Sync zh_CN to en_US", icon=ft.Icons.SYNC, on_click=self._on_sync)
+        self._save_btn = ft.FilledButton("Save all", icon=ft.Icons.SAVE, on_click=self._on_save)
 
         self._header_row = ft.Row(
             [
@@ -41,7 +41,7 @@ class LangView(ft.Column):
 
         self.controls = [
             form.section(
-                "操作栏",
+                "Actions",
                 ft.Row([self.search, self._add_btn, self._sync_btn, self._save_btn], spacing=form.BUTTON_GAP),
             ),
             ft.Container(self._header_row, padding=ft.Padding(left=0, right=4, top=0, bottom=0)),
@@ -92,12 +92,12 @@ class LangView(ft.Column):
                 ft.TextField(
                     value=zh_val, dense=True, expand=True,
                     border_color=ft.Colors.RED_400 if zh_missing else None,
-                    hint_text="(缺失)" if zh_missing else None,
+                    hint_text="(missing)" if zh_missing else None,
                 ),
                 ft.TextField(
                     value=en_val, dense=True, expand=True,
                     border_color=ft.Colors.RED_400 if en_missing else None,
-                    hint_text="(缺失)" if en_missing else None,
+                    hint_text="(missing)" if en_missing else None,
                 ),
                 ft.IconButton(
                     ft.Icons.DELETE_OUTLINE,
@@ -127,14 +127,14 @@ class LangView(ft.Column):
             if not key:
                 return
             if key in self.all_keys:
-                snack(self.page_ctx, "key 已存在", "error")
+                snack(self.page_ctx, "key already exists", "error")
                 return
             self.all_keys.append(key)
             self.all_keys.sort()
             self._render(self.search.value or "")
-            snack(self.page_ctx, f"新增 key: {key}", "ok")
+            snack(self.page_ctx, f"Added key: {key}", "ok")
 
-        prompt(self.page_ctx, "新增 key", _add, label="key name")
+        prompt(self.page_ctx, "New key", _add, label="key name")
 
     def _on_delete(self, key: str) -> None:
         def _do():
@@ -142,8 +142,8 @@ class LangView(ft.Column):
             for locale in self.data:
                 self.data[locale].pop(key, None)
             self._render(self.search.value or "")
-            snack(self.page_ctx, "已删除 " + key, "ok")
-        confirm(self.page_ctx, "删除 key", f"删除 {key}? 将从所有 locale 文件移除", _do)
+            snack(self.page_ctx, "Deleted " + key, "ok")
+        confirm(self.page_ctx, "Delete key", f"Delete {key}? It will be removed from all locale files", _do)
 
     def _on_sync(self, _e: ft.ControlEvent) -> None:
         zh = self.data.get("zh_CN", {})
@@ -153,7 +153,7 @@ class LangView(ft.Column):
             if k not in en:
                 en[k] = v
                 added += 1
-        snack(self.page_ctx, f"同步完成，新增 {added} 个 key 到 en_US", "ok")
+        snack(self.page_ctx, f"Sync done, added {added} keys to en_US", "ok")
         self._render(self.search.value or "")
 
     def _on_save(self, _e: ft.ControlEvent) -> None:
@@ -161,6 +161,6 @@ class LangView(ft.Column):
             self._collect()
             for locale, d in self.data.items():
                 loader.save_lang_file(locale, d)
-            snack(self.page_ctx, "已保存全部 lang 文件", "ok")
+            snack(self.page_ctx, "Saved all lang files", "ok")
             self.refresh()
-        confirm(self.page_ctx, "保存", "保存所有 lang/*.json?", _do)
+        confirm(self.page_ctx, "Save", "Save all lang/*.json?", _do)

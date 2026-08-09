@@ -18,7 +18,7 @@ class RawEditor(ft.Column):
         self.expand = True
         self.spacing = 8
         self._hint = ft.Text(
-            "Raw JSON (Tab 在表单视图与原始视图间同步)",
+            "Raw JSON (Tab syncs between form and raw view)",
             size=12,
             color=ft.Colors.ON_SURFACE_VARIANT,
         )

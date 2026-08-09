@@ -46,7 +46,7 @@ def diff_dialog(diff_text: str, path_label: str) -> ft.AlertDialog:
         modal=True,
         title=ft.Text(f"Diff: {path_label}"),
         content=ft.Container(viewer, width=900, height=600),
-        actions=[ft.FilledButton("关闭", on_click=lambda e: _close(e, dialog))],
+        actions=[ft.FilledButton("Close", on_click=lambda e: _close(e, dialog))],
     )
     return dialog
 

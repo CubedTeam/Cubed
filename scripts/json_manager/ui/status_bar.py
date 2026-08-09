@@ -16,7 +16,7 @@ class StatusBar(ft.Container):
     def __init__(self, page: ft.Page) -> None:
         super().__init__()
         self.page_ctx = page
-        self.text = ft.Text("git: 加载中…", size=13)
+        self.text = ft.Text("git: loading…", size=13)
         self.branch_chip = ft.Container(
             ft.Text("", size=12),
             padding=ft.Padding(left=8, right=8, top=4, bottom=4),
@@ -24,9 +24,9 @@ class StatusBar(ft.Container):
             bgcolor=ft.Colors.SECONDARY_CONTAINER,
             visible=False,
         )
-        self.btn_diff = ft.TextButton("查看 Diff", icon=ft.Icons.DIFFERENCE, on_click=self._on_diff, disabled=True)
+        self.btn_diff = ft.TextButton("View Diff", icon=ft.Icons.DIFFERENCE, on_click=self._on_diff, disabled=True)
         self.btn_commit = ft.FilledTonalButton("Commit", icon=ft.Icons.COMMIT, on_click=self._on_commit, disabled=True)
-        self.btn_refresh = ft.IconButton(ft.Icons.REFRESH, on_click=lambda _: self.refresh(), tooltip="刷新")
+        self.btn_refresh = ft.IconButton(ft.Icons.REFRESH, on_click=lambda _: self.refresh(), tooltip="Refresh")
         self.content = ft.Row(
             [
                 ft.Icon(ft.Icons.GRAPHIC_EQ, size=18),
@@ -46,7 +46,7 @@ class StatusBar(ft.Container):
 
     def refresh(self) -> None:
         if not git_ops.is_repo():
-            self.text.value = "git: 未启用"
+            self.text.value = "git: unavailable"
             self.btn_commit.disabled = True
             self.btn_diff.disabled = True
             self.branch_chip.visible = False
@@ -59,7 +59,7 @@ class StatusBar(ft.Container):
         self.branch_chip.content.value = branch  # type: ignore[union-attr]
         self.branch_chip.visible = True
         if not files:
-            self.text.value = "工作区干净"
+            self.text.value = "working tree clean"
             self.text.color = ft.Colors.ON_SURFACE_VARIANT
         else:
             self.text.value = f"{modified} modified · {untracked} untracked"
@@ -83,7 +83,7 @@ class StatusBar(ft.Container):
             modal=True,
             title=ft.Text("Git Diff"),
             content=ft.Container(viewer, width=900, height=600),
-            actions=[ft.FilledButton("关闭", on_click=lambda e: _close(e, dialog))],
+            actions=[ft.FilledButton("Close", on_click=lambda e: _close(e, dialog))],
         )
         self.page_ctx.show_dialog(dialog)
 
@@ -94,9 +94,9 @@ class StatusBar(ft.Container):
             paths = [f.path for f in files]
             ok = git_ops.commit(message, paths)
             if ok:
-                snack(self.page_ctx, "已提交", "ok")
+                snack(self.page_ctx, "Committed", "ok")
             else:
-                snack(self.page_ctx, "提交失败 (检查 git 输出)", "error")
+                snack(self.page_ctx, "Commit failed (check git output)", "error")
             self.refresh()
 
         prompt(

@@ -23,8 +23,8 @@ def confirm(
         title=ft.Text(title),
         content=ft.Text(body),
         actions=[
-            ft.TextButton("取消", on_click=lambda e: close(e, on_cancel)),
-            ft.FilledButton("确认", on_click=lambda e: close(e, on_confirm)),
+            ft.TextButton("Cancel", on_click=lambda e: close(e, on_cancel)),
+            ft.FilledButton("Confirm", on_click=lambda e: close(e, on_confirm)),
         ],
     )
     page.show_dialog(dialog)
@@ -52,8 +52,8 @@ def prompt(
         title=ft.Text(title),
         content=field,
         actions=[
-            ft.TextButton("取消", on_click=lambda e: close(e, on_cancel)),
-            ft.FilledButton("确定", on_click=submit),
+            ft.TextButton("Cancel", on_click=lambda e: close(e, on_cancel)),
+            ft.FilledButton("OK", on_click=submit),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
