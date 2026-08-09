@@ -18,7 +18,7 @@ void SettingsUI::init() {
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
 
     bi->set_anchor(Anchor::TOP_LEFT);
-    bi->set_image("texture/ui/background.png", texture_manager, false);
+    bi->set_image("cubed/textures/ui/background.png", texture_manager, false);
     bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();
@@ -32,9 +32,9 @@ void SettingsUI::init() {
     layout.set_spacing(20.0f);
     auto& v = m_scene.slider_variable();
     auto set_default_slider_image = [&](Slider& slider) {
-        slider.set_thumb_image("texture/ui/slider_thumb001.png",
+        slider.set_thumb_image("cubed/textures/ui/slider_thumb001.png",
                                texture_manager);
-        slider.set_track_image("texture/ui/slider_track001.png",
+        slider.set_track_image("cubed/textures/ui/slider_track001.png",
                                texture_manager);
     };
     {
@@ -211,7 +211,7 @@ void SettingsUI::init() {
     }
 
     auto& return_button = layout.add_child<Button>();
-    return_button.set_background_image("texture/ui/button001.png",
+    return_button.set_background_image("cubed/textures/ui/button001.png",
                                        texture_manager);
 
     return_button.set_text(tr("button.done"));

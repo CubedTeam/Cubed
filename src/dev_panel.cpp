@@ -563,7 +563,7 @@ void DevPanel::show_items_tab_item() {
             }
             if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
-                ImGui::Text("%s", BlockManager::name_form_id(i).c_str());
+
                 ImGui::EndTooltip();
             }
             if (i % 10 != 0) {

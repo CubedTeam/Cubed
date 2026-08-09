@@ -19,7 +19,8 @@ void MainMenuUIManager::init() {
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     image->set_fill_parent(true);
     image->set_anchor(Anchor::TOP_LEFT);
-    image->set_image("texture/ui/background.png", texture_manager, false);
+    image->set_image("cubed/textures/ui/background.png", texture_manager,
+                     false);
 
     auto& layout = image->add_child<ColumnLayout>();
     layout.set_spacing(20);
@@ -27,8 +28,8 @@ void MainMenuUIManager::init() {
     {
         auto& start_game_button = layout.add_child<Button>();
 
-        start_game_button.set_background_image("texture/ui/button001.png",
-                                               texture_manager);
+        start_game_button.set_background_image(
+            "cubed/textures/ui/button001.png", texture_manager);
         start_game_button.set_text(tr("menu.main.host_game"));
         start_game_button.set_clicked([this, &start_game_button]() {
             start_game_button.set_enable(false);
@@ -39,8 +40,8 @@ void MainMenuUIManager::init() {
     {
         auto& start_game_button = layout.add_child<Button>();
 
-        start_game_button.set_background_image("texture/ui/button001.png",
-                                               texture_manager);
+        start_game_button.set_background_image(
+            "cubed/textures/ui/button001.png", texture_manager);
         start_game_button.set_text(tr("menu.main.join_game"));
         start_game_button.set_clicked([this, &start_game_button]() {
             start_game_button.set_enable(false);
@@ -71,7 +72,7 @@ void MainMenuUIManager::init() {
     {
         auto& button = layout.add_child<Button>();
 
-        button.set_background_image("texture/ui/button001.png",
+        button.set_background_image("cubed/textures/ui/button001.png",
                                     texture_manager);
         button.set_text(tr("menu.main.credits"));
         button.set_clicked([this, &button]() {
@@ -82,7 +83,7 @@ void MainMenuUIManager::init() {
     }
     {
         auto& exit_game = layout.add_child<Button>();
-        exit_game.set_background_image("texture/ui/button001.png",
+        exit_game.set_background_image("cubed/textures/ui/button001.png",
                                        texture_manager);
         exit_game.set_text(tr("menu.main.quit"));
 

@@ -3,6 +3,7 @@
 #include "Cubed/gameplay/item.hpp"
 
 #include <filesystem>
+#include <rapidjson/document.h>
 #include <string_view>
 #include <tbb/concurrent_hash_map.h>
 namespace Cubed {
@@ -27,7 +28,8 @@ private:
 
     using IDMap = tbb::concurrent_hash_map<std::string, ItemID>;
     using BlockToIDMap = tbb::concurrent_hash_map<BlockType, ItemID>;
-    void add(const std::filesystem::path& path);
+    void add(const std::filesystem::path& path,
+             const rapidjson::Value& registry);
 
     ItemMap m_map;
 

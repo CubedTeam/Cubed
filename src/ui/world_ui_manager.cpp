@@ -21,7 +21,7 @@ void WorldUIManager::init() {
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
     auto& crosshair = m_root_widget->add_child<Image>();
 
-    crosshair.set_image("texture/ui/0.png", texture_manager, true);
+    crosshair.set_image("cubed/textures/ui/0.png", texture_manager, true);
 
     crosshair.set_anchor(Anchor::CENTER);
     crosshair.set_scale(3.0f);
@@ -65,7 +65,8 @@ void WorldUIManager::init() {
     });
     m_chat_box = &chat_box;
     auto& microphone = m_root_widget->add_child<Image>();
-    microphone.set_image("texture/ui/microphone.png", texture_manager, true)
+    microphone
+        .set_image("cubed/textures/ui/microphone.png", texture_manager, true)
         .set_scale(5.0f)
         .set_anchor(Anchor::BOTTOM_RIGHT)
         .set_visible(false);

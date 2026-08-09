@@ -3,12 +3,10 @@
 #include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <filesystem>
-#include <fstream>
-#include <rapidjson/document.h>
-#include <rapidjson/istreamwrapper.h>
 namespace fs = std::filesystem;
 using namespace rapidjson;
 namespace Cubed {
@@ -26,58 +24,75 @@ void ItemManager::init() {
 
     fs::path root_path = ResourceLocation::get_assets_path_prefix(
         ResourceLocation::DEFAULT_NAMESPACE);
+    fs::path registry_path = root_path / "registry.json";
+    Document registry;
+
+    if (!Tools::parse_json(registry, registry_path)) {
+        throw std::runtime_error("registry.json parse error");
+    }
+
     fs::path item_path = root_path / "items";
     fs::create_directories(item_path);
     for (const auto& entry : fs::recursive_directory_iterator(
              item_path, fs::directory_options::skip_permission_denied)) {
         if (fs::is_regular_file(entry)) {
             if (entry.path().extension().string() == ".json") {
-                add(entry.path());
+                add(entry.path(), registry);
             }
         }
     }
 }
 
-void ItemManager::add(const std::filesystem::path& path) {
-
-    std::ifstream s(path);
-    if (!s.is_open()) {
-        return;
-    }
-    IStreamWrapper isw(s);
+void ItemManager::add(const std::filesystem::path& path,
+                      const rapidjson::Value& registry) {
 
     Document doc;
-    doc.ParseStream(isw);
-    if (doc.HasParseError()) {
-        Logger::error("Can't Parse File {}, error code {}", path.string(),
-                      static_cast<int>(doc.GetParseError()));
+    if (!Tools::parse_json(doc, path)) {
         return;
     }
+
     ItemData data;
-    if (doc.HasMember("id")) {
-        data.id = static_cast<ItemID>(doc["id"].GetInt());
+    if (!registry.HasMember("items") || !registry["items"].IsObject()) {
+        Logger::error("registry.json doesn't have items");
+        return;
     }
-    if (doc.HasMember("name")) {
-        data.name = doc["name"].GetString();
+    auto& items = registry["items"];
+    if (Tools::get_json_value(doc, "name", data.name)) {
+        if (!Tools::get_json_value(items, data.name.c_str(), data.id)) {
+            return;
+        }
+    } else {
+        Logger::error("Item {} doesn't have name", path.string());
+        return;
     }
-    if (doc.HasMember("description")) {
-        data.description = doc["description"].GetString();
+
+    Tools::get_json_value(doc, "description", data.description);
+
+    std::string s;
+    if (Tools::get_json_value(doc, "texture", s)) {
+        data.path = ResourceLocation::parse(s);
     }
-    if (doc.HasMember("texture")) {
-        data.path = ResourceLocation::parse(doc["texture"].GetString());
-    }
-    if (doc.HasMember("type")) {
-        std::string type = doc["type"].GetString();
-        data.kind = get_item_kind(type);
-    }
-    if (data.kind == ItemKind::SPAWN_EGG) {
-        if (doc.HasMember("creature")) {
-            data.property = doc["creature"].GetString();
-        } else {
-            data.property = "cubed:pig";
+
+    if (Tools::get_json_value(doc, "type", s)) {
+        data.kind = get_item_kind(s);
+        if (data.kind == ItemKind::SPAWN_EGG) {
+            std::string s;
+            if (Tools::get_json_value(doc, "creature", s)) {
+                auto location = ResourceLocation::parse(s);
+                if (location) {
+                    data.property = *location;
+                } else {
+                    data.property = *ResourceLocation::parse("cubed:pig");
+                }
+
+            } else {
+                data.property = *ResourceLocation::parse("cubed:pig");
+            }
         }
     }
+
     data.local_name = tr(std::format("item.{}.name", data.name));
+
     acc a;
     if (m_map.emplace(a, data.id, std::move(data))) {
         if (!m_id_map.emplace(a->second.name, a->first)) {

@@ -349,8 +349,10 @@ void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
     glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
 
     Logger::info("Client: Receive Player Water Sound");
-
-    m_pending_sound.emplace("ambient/water/in_and_out_of_water.flac", pos);
+    fs::path root_path = ResourceLocation::get_assets_path_prefix(
+        ResourceLocation::DEFAULT_NAMESPACE);
+    m_pending_sound.emplace(
+        root_path / "sounds/ambient/water/in_and_out_of_water.flac", pos);
 }
 
 void ClientWorld::send_player_water_sound(bool underwater,

@@ -108,7 +108,7 @@ void InventoryUI::update_item_info() {
             auto type = slot->id();
 
             if (type != 0) {
-                auto& data = ItemManager::get(type);
+                auto data = ItemManager::get(type);
                 m_item_info->set_text(data.local_name).set_visible(true);
                 return true;
             }

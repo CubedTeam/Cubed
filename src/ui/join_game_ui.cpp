@@ -14,7 +14,7 @@ void JoinGameUI::init() {
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
 
     bi->set_anchor(Anchor::TOP_LEFT);
-    bi->set_image("texture/ui/background.png", texture_manager, false);
+    bi->set_image("cubed/textures/ui/background.png", texture_manager, false);
     bi->set_fill_parent(true);
 
     auto& rect = bi->add_child<Rect>();

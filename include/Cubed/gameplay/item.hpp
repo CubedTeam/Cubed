@@ -14,7 +14,7 @@ enum class ItemKind {
 
 };
 
-using ItemProperty = std::variant<BlockType, std::string>;
+using ItemProperty = std::variant<BlockType, ResourceLocation>;
 
 struct ItemData {
     ItemID id = 0;
