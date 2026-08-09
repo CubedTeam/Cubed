@@ -1,16 +1,21 @@
-"""Lightweight validation for managed resources.
+"""Schema-driven validation for managed resources.
 
-Validation errors are surfaced to the UI; the tool deliberately rejects
-clearly malformed data rather than silently writing it.
+``validate(schema, data)`` checks required / range / per-field validators
+then cross-validators. Per-resource wrappers keep the public API the
+views used before the refactor.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .loader import load_blocks, load_creatures, load_items
-from .models import Block, Creature, Item
-from . import paths
+from .schema import (
+    BLOCK_SCHEMA,
+    CREATURE_SCHEMA,
+    ITEM_SCHEMA,
+    Schema,
+    get_path,
+)
 
 
 @dataclass
@@ -27,49 +32,41 @@ class ValidationResult:
         return cls(False, list(errors))
 
 
-def validate_block(block: Block) -> ValidationResult:
-    if not block.name:
-        return ValidationResult.fail("name must not be empty")
-    if not block.name.replace("_", "").isalnum():
-        return ValidationResult.fail(
-            "name must only contain letters, digits and underscores"
-        )
-    existing = {b.name for b in load_blocks()}
-    # Allow self-match when editing an existing block.
-    if block.name in existing and not (paths.BLOCKS_DIR / f"{block.name}.json").exists():
-        return ValidationResult.fail(f"block '{block.name}' already exists")
-    if not block.texture.path:
-        return ValidationResult.fail("texture.path must not be empty")
-    if not 0.0 <= block.properties.roughness <= 1.0:
-        return ValidationResult.fail("roughness must be in [0.0, 1.0]")
-    return ValidationResult.ok_result()
+def validate(schema: Schema, data: dict) -> ValidationResult:
+    errors: list[str] = []
+    for f in schema.fields:
+        v = get_path(data, f.key, f.default)
+        if f.required and (v is None or (isinstance(v, str) and not v.strip())):
+            errors.append(f"{f.label_text} must not be empty")
+        if f.range is not None and isinstance(v, (int, float)):
+            if not (f.range[0] <= v <= f.range[1]):
+                errors.append(
+                    f"{f.label_text} must be in [{f.range[0]}, {f.range[1]}]"
+                )
+        for val in f.validators:
+            try:
+                msg = val(v, data)
+            except Exception as ex:  # noqa: BLE001
+                msg = str(ex)
+            if msg:
+                errors.append(msg)
+    for cv in schema.cross_validators:
+        try:
+            msg = cv(data)
+        except Exception as ex:  # noqa: BLE001
+            msg = str(ex)
+        if msg:
+            errors.append(msg)
+    return ValidationResult(not errors, errors)
 
 
-def validate_item(item: Item) -> ValidationResult:
-    if not item.name:
-        return ValidationResult.fail("name must not be empty")
-    existing = {i.name for i in load_items()}
-    if item.name in existing and not (paths.ITEMS_DIR / f"{item.name}.json").exists():
-        return ValidationResult.fail(f"item '{item.name}' already exists")
-    if item.type == "block" and not item.block:
-        return ValidationResult.fail("item of type 'block' needs a block reference")
-    if item.type == "spawn_egg" and not item.creature:
-        return ValidationResult.fail(
-            "item of type 'spawn_egg' needs a creature reference"
-        )
-    if not item.texture:
-        return ValidationResult.fail("texture must not be empty")
-    return ValidationResult.ok_result()
+def validate_block(data: dict) -> ValidationResult:
+    return validate(BLOCK_SCHEMA, data)
 
 
-def validate_creature(creature: Creature) -> ValidationResult:
-    if not creature.name:
-        return ValidationResult.fail("name must not be empty")
-    existing = {c.name for c in load_creatures()}
-    if creature.name in existing and not (
-        paths.CREATURES_DIR / f"{creature.name}.json"
-    ).exists():
-        return ValidationResult.fail(f"creature '{creature.name}' already exists")
-    if not creature.model:
-        return ValidationResult.fail("model must not be empty")
-    return ValidationResult.ok_result()
+def validate_item(data: dict) -> ValidationResult:
+    return validate(ITEM_SCHEMA, data)
+
+
+def validate_creature(data: dict) -> ValidationResult:
+    return validate(CREATURE_SCHEMA, data)
