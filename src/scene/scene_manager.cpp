@@ -8,11 +8,14 @@
 #include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
 
+#include <tracy/Tracy.hpp>
+
 namespace Cubed {
 SceneManager::SceneManager(App& app) : m_app(app) {}
 SceneManager::~SceneManager() {}
 
 void SceneManager::update(float dt) {
+    ZoneScopedN("SceneManager::update");
     m_pending_delete_scene.clear();
     process_operation();
     if (!m_scenes.empty()) {
@@ -20,6 +23,7 @@ void SceneManager::update(float dt) {
     }
 }
 void SceneManager::render(Renderer& renderer) {
+    ZoneScopedN("SceneManager::render");
     if (m_scenes.empty()) {
         return;
     }

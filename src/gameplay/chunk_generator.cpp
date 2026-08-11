@@ -20,6 +20,7 @@
 #include "Cubed/tools/perlin_noise.hpp"
 
 #include <algorithm>
+#include <tracy/Tracy.hpp>
 namespace Cubed {
 
 namespace {
@@ -221,6 +222,7 @@ void ChunkGenerator::generate_heightmap() {
 */
 
 void ChunkGenerator::generate_heightmap() {
+    ZoneScopedN("ChunkGen::generate_heightmap");
     auto chunk_pos = m_chunk.chunk_pos();
     auto& heightmap = m_chunk.heightmap();
 
@@ -541,6 +543,7 @@ void ChunkGenerator::blend_heightmap_boundaries(
 }
 
 void ChunkGenerator::generate_terrain_blocks() {
+    ZoneScopedN("ChunkGen::generate_terrain_blocks");
     make_biome_builder();
     if (!m_biome_builder) {
         Logger::error("BiomeBuilder is nullptr");
@@ -553,6 +556,7 @@ void ChunkGenerator::generate_terrain_blocks() {
 void ChunkGenerator::blend_surface_blocks_borders(
     const std::array<std::optional<std::vector<BlockType>>, 4>&
         neighbor_block) {
+    ZoneScopedN("ChunkGen::blend_surface_blocks_borders");
     auto& m_blocks = m_chunk.blocks();
     auto& m_heightmap = m_chunk.heightmap();
 
@@ -733,6 +737,7 @@ void ChunkGenerator::make_biome_builder() {
 void ChunkGenerator::ocean_build() { m_biome_builder->ocean_water_build(); }
 
 void ChunkGenerator::generate_cave() {
+    ZoneScopedN("ChunkGen::generate_cave");
     const auto& chunk_pos = m_chunk.chunk_pos();
     auto& blocks = m_chunk.blocks();
     auto& carver = m_chunk.world().cave_carcer();
@@ -773,6 +778,7 @@ void ChunkGenerator::generate_cave() {
 }
 
 void ChunkGenerator::generate_river() {
+    ZoneScopedN("ChunkGen::generate_river");
     if ((m_chunk.biome() == BiomeType::DESERT) ||
         (m_chunk.biome() == BiomeType::OCEAN)) {
 

@@ -15,6 +15,7 @@
 #include <format>
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image_write.h>
+#include <tracy/Tracy.hpp>
 namespace fs = std::filesystem;
 namespace Cubed {
 
@@ -153,6 +154,7 @@ void Renderer::begin_render_ui() {
 void Renderer::end_render_ui() { glEnable(GL_DEPTH_TEST); }
 
 void Renderer::render_world(ClientWorld& world) {
+    ZoneScopedN("Renderer::render_world");
     m_world_renderer.render(world);
 }
 
@@ -295,6 +297,7 @@ void Renderer::handle_screenshot() {
     if (!m_save_screenshot) {
         return;
     }
+    ZoneScopedN("Renderer::handle_screenshot");
     m_save_screenshot = false;
     std::array<int, 4> screen_stats;
     glGetIntegerv(GL_VIEWPORT, screen_stats.data());

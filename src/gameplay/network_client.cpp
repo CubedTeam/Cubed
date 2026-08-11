@@ -58,6 +58,7 @@ asio::awaitable<void> NetworkClient::connect(std::string ip, int port) {
 }
 
 asio::awaitable<void> NetworkClient::read_loop() {
+    ZoneScopedN("NetworkClient::read_loop");
     try {
         while (true) {
             std::array<uint8_t, HEADER_LEN> header_buffer;

@@ -11,6 +11,8 @@
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/net_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
+
+#include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 
 namespace Cubed {
@@ -65,6 +67,7 @@ interpolate_snapshot(const std::deque<ClientEntitySnapshot>& history,
 
 ClientEntityManager::ClientEntityManager(ClientWorld& world) : m_world(world) {}
 void ClientEntityManager::update(float dt) {
+    ZoneScopedN("ClientEntityManager::update");
     handle_task(dt);
     {
         auto view = m_registry.view<ClientEntityState, RenderTransform>();

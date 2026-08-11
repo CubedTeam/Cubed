@@ -1,6 +1,8 @@
 #include "Cubed/gameplay/client_chunk.hpp"
 
 #include "Cubed/gameplay/block_manager.hpp"
+
+#include <tracy/Tracy.hpp>
 namespace Cubed {
 using OptionalBlockVectorArray =
     std::array<std::optional<std::vector<BlockType>>, 4>;
@@ -137,6 +139,7 @@ const std::vector<BlockType>& ClientChunk::get_chunk_blocks() const {
 
 void ClientChunk::gen_vertex_data(
     const OptionalBlockVectorArray& neighbor_block) {
+    ZoneScopedN("ClientChunk::gen_vertex_data");
     if (m_is_on_gen_vertex_data.exchange(true)) {
         return;
     }
@@ -210,6 +213,7 @@ size_t ClientChunk::get_water_vertices_sum() const {
 }
 
 void ClientChunk::upload_to_gpu() {
+    ZoneScopedN("ClientChunk::upload_to_gpu");
 
     if (!is_need_upload()) {
         return;
@@ -281,6 +285,7 @@ const ChunkRenderSnapshot* ClientChunk::get_render_snapshot() const {
 }
 
 void ClientChunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
+    ZoneScopedN("ClientChunk::gen_vertices");
 
     // SIZE_X=SIZE_Z=CHUNK_SIZE=16, SIZE_Y=WORLD_SIZE_Y=256
     // Axis order: axis 0=X, 1=Y, 2=Z
@@ -506,6 +511,7 @@ void ClientChunk::gen_cross_plane_vertices(int world_x, int world_y,
 }
 
 void ClientChunk::receive_chunk(const ChunkDataRsp& data) {
+    ZoneScopedN("ClientChunk::receive_chunk");
     OptionalBlockVectorArray neighbor;
 
     m_chunk_pos.x = data.pos().x();

@@ -99,6 +99,7 @@ void ServerWorld::send_time() {
 
 void ServerWorld::send_chunk(int task_id, const std::string& uuid,
                              ChunkPos pos) {
+    ZoneScopedN("ServerWorld::send_chunk");
 
     {
         auto id = m_players_manager.get_task_id(uuid);
@@ -236,6 +237,7 @@ void ServerWorld::init_world(RunMode mode) {
 void ServerWorld::init_chunks() { hot_reload(); }
 
 void ServerWorld::gen_chunks_internal(const std::string& uuid) {
+    ZoneScopedN("ServerWorld::gen_chunks_internal");
     // Logger::info("gen_chunks_internal");
     m_chunk_gen_finished = false;
 
@@ -580,6 +582,7 @@ void ServerWorld::update() {
 }
 
 void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
+    ZoneScopedN("ServerWorld::sync_player_pos");
     std::string name;
     auto x = prsp.pos().x();
     auto y = prsp.pos().y();
@@ -812,6 +815,7 @@ void ServerWorld::handle_chat_message(ChatMsg& msg) {
 }
 
 void ServerWorld::handle_voice_message(VoiceMsg& msg) {
+    ZoneScopedN("ServerWorld::handle_voice_message");
     if (!m_voice_chat) {
         return;
     }
@@ -855,6 +859,7 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
 }
 
 void ServerWorld::handle_block_change(const BlockChangeReq& req) {
+    ZoneScopedN("ServerWorld::handle_block_change");
     float x = std::floor(req.pos().x());
     float y = std::floor(req.pos().y());
     float z = std::floor(req.pos().z());

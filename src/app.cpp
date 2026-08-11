@@ -647,6 +647,7 @@ void App::handle_text_input(const char* text) {
 }
 
 void App::render() {
+    ZoneScopedN("App::render");
 
     if (SDL_GetWindowFlags(m_window.get_window()) & SDL_WINDOW_MINIMIZED) {
         SDL_Delay(10); // Sleep for 10 milliseconds
@@ -670,6 +671,7 @@ void App::run() {
 }
 // static Gait player_gait = Gait::WALK;
 void App::update() {
+    ZoneScopedN("App::update");
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
         handle_sdl_event(e);

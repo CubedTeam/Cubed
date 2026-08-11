@@ -12,6 +12,7 @@
 #include "Cubed/tools/math_tools.hpp"
 
 #include <SDL3/SDL_timer.h>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 namespace Cubed {
 
@@ -85,6 +86,7 @@ WorldRenderer::~WorldRenderer() {
 void WorldRenderer::init() { m_player_renderer.init(); }
 
 void WorldRenderer::render(ClientWorld& world) {
+    ZoneScopedN("WorldRenderer::render");
     // update view matrix;
     view_matrix = world.world_scene().camera().get_camera_lookat();
 
@@ -152,6 +154,7 @@ void WorldRenderer::day_night_calculation(ClientWorld& world) {
 }
 
 WorldRenderer::InstanceDataMap WorldRenderer::entity_build(ClientWorld& world) {
+    ZoneScopedN("WorldRenderer::entity_build");
     auto instances_data_map = get_instances_data_map(world, m_renderer);
     for (auto& [id, data] : instances_data_map) {
         m_renderer.model_renderer().build_vertices(id, data);
@@ -160,6 +163,7 @@ WorldRenderer::InstanceDataMap WorldRenderer::entity_build(ClientWorld& world) {
 }
 
 void WorldRenderer::render_sky(ClientWorld& world) {
+    ZoneScopedN("WorldRenderer::render_sky");
 
     auto& camera = world.world_scene().camera();
 
@@ -375,6 +379,7 @@ void WorldRenderer::shadow_entity(ClientWorld& world,
 
 void WorldRenderer::shadow_map_generate(ClientWorld& world,
                                         const InstanceDataMap& map) {
+    ZoneScopedN("WorldRenderer::shadow_map_generate");
     float texels_per_unit = 0.0f;
     const auto& lightdir = m_parallel_light.lightdir;
 
@@ -481,6 +486,7 @@ void WorldRenderer::shadow_map_generate(ClientWorld& world,
 }
 
 void WorldRenderer::render_underwater(ClientWorld& world) {
+    ZoneScopedN("WorldRenderer::render_underwater");
 
     const auto& shader = m_renderer.get_shader("under_water");
     auto& camera = world.world_scene().camera();
@@ -517,6 +523,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
                                         const glm::mat4& mv_mat,
                                         const glm::mat4& norm_mat,
                                         ClientWorld& world) {
+    ZoneScopedN("WorldRenderer::render_normal_block");
 
     // shader map
     glm::mat4& light_space_matrix = m_parallel_light.light_space_matrix;
@@ -635,6 +642,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
 void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
                                              const glm::mat4& norm_mat,
                                              ClientWorld& world) {
+    ZoneScopedN("WorldRenderer::render_transparent_block");
 
     auto& m_render_snapshots = world.render_snapshots();
     auto& camera = world.world_scene().camera();
@@ -761,6 +769,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
 
 void WorldRenderer::render_entity(ClientWorld& world,
                                   const InstanceDataMap& map) {
+    ZoneScopedN("WorldRenderer::render_entity");
 
     // shader.set_loc("renderDistance", m_world.rendering_distance());
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);

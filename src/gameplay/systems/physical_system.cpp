@@ -3,6 +3,8 @@
 #include "Cubed/gameplay/ecs/server_entity.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server_world.hpp"
+
+#include <tracy/Tracy.hpp>
 namespace Cubed {
 
 namespace {
@@ -104,6 +106,7 @@ bool update_z(const glm::vec3& pos, const glm::vec3& distance,
 
 void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
                             entt::entity e) {
+    ZoneScopedN("PhysicalSystem::update");
 
     if (!registry.all_of<BaseServerCreature>(e)) {
         return;

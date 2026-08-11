@@ -12,6 +12,7 @@
 #include <absl/container/inlined_vector.h>
 #include <filesystem>
 #include <numbers>
+#include <tracy/Tracy.hpp>
 namespace fs = std::filesystem;
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -157,6 +158,7 @@ BlockType ClientWorld::get_block_tpye(const glm::ivec3& block_pos) const {
     return chunk_blocks[ClientChunk::index(x, y, z)];
 }
 void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
+    ZoneScopedN("ClientWorld::set_block");
     int world_x, world_y, world_z;
     world_x = block_pos.x;
     world_y = block_pos.y;
@@ -564,6 +566,7 @@ void ClientWorld::update_chunk(const ChunkPosSet& old, const ChunkPosSet& now) {
 }
 
 void ClientWorld::request_chunk() {
+    ZoneScopedN("ClientWorld::request_chunk");
     if (m_requesting_chunk.exchange(true)) {
         Logger::warn("It is requesting new chunk!");
         return;
@@ -751,6 +754,7 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
 }
 
 void ClientWorld::update(float delta_time) {
+    ZoneScopedN("ClientWorld::update");
     m_player_manager.update(delta_time);
     m_entity_manager.update(delta_time);
     {

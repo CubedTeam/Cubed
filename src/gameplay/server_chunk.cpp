@@ -2,6 +2,8 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 
+#include <tracy/Tracy.hpp>
+
 namespace Cubed {
 ServerChunk::ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
                          bool temp_chunk)
@@ -146,6 +148,7 @@ void ServerChunk::gen_phase_five() {
 }
 
 void ServerChunk::gen_chunk() {
+    ZoneScopedN("ServerChunk::gen_chunk");
     if (m_gening.exchange(true))
         return;
     m_gening = true;

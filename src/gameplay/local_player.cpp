@@ -9,6 +9,7 @@
 #include "Cubed/gameplay/item_manager.hpp"
 
 #include <filesystem>
+#include <tracy/Tracy.hpp>
 namespace fs = std::filesystem;
 namespace Cubed {
 
@@ -227,6 +228,7 @@ void LocalPlayer::set_player_pos(const glm::vec3& pos) {
 }
 
 void LocalPlayer::update(float delta_time) {
+    ZoneScopedN("LocalPlayer::update");
     WalkPose pos = m_walk_pose;
     pos.gait = compute_gait();
     m_walk_pose = pos;
@@ -449,6 +451,7 @@ LocalPlayer::get_hotbar() const {
 }
 
 void LocalPlayer::update_move(float dt) {
+    ZoneScopedN("LocalPlayer::update_move");
     // if frame rate less than 1 frame per second, don't update
     if (dt > 1.0f) {
         return;
@@ -757,6 +760,7 @@ void LocalPlayer::update_speed(float dt) {
 
 std::tuple<bool, bool, bool> LocalPlayer::update_physical(float dt,
                                                           glm::vec3& pos) {
+    ZoneScopedN("LocalPlayer::update_physical");
 
     auto distance = get_move_distance(dt);
     auto box = HitboxManager::hitbox(m_hitbox);
