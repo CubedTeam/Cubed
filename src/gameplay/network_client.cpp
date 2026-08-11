@@ -4,8 +4,8 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/net_error.hpp"
 
+#include <tracy/Tracy.hpp>
 #include <utility>
-
 using namespace google::protobuf;
 namespace Cubed {
 NetworkClient::NetworkClient(ClientWorld& world)
@@ -18,6 +18,7 @@ void NetworkClient::start(std::string ip, int port) {
         return;
     }
     m_net_thread = std::thread([self = shared_from_this(), ip, port]() {
+        tracy::SetThreadName("Client NetIO");
         asio::co_spawn(self->m_strand, self->connect(ip, port), asio::detached);
         self->m_io.run();
     });

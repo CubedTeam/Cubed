@@ -31,6 +31,16 @@ list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
 )
 
+option(CUBED_TRACY_ENABLE "Enable Tracy profiler" OFF)
+
+set(TRACY_ENABLE ${CUBED_TRACY_ENABLE}
+    CACHE BOOL "Enable Tracy" FORCE)
+
+set(TRACY_ON_DEMAND ${CUBED_TRACY_ENABLE}
+    CACHE BOOL "Enable Tracy on-demand mode" FORCE)
+
+add_subdirectory(third_party/tracy)
+
 include(Dependencies)
 
 add_subdirectory(third_party/glad)
@@ -150,7 +160,7 @@ target_link_libraries(${PROJECT_NAME}
         Opus::Opus
         assimp::assimp
         $<$<PLATFORM_ID:Windows>:ws2_32>
-
+        Tracy::TracyClient
 )
 
 if(WIN32)

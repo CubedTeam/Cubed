@@ -13,6 +13,7 @@
 
 #include <ranges>
 #include <rapidjson/document.h>
+#include <tracy/Tracy.hpp>
 #include <utility>
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -225,13 +226,8 @@ void ServerWorld::init_world(RunMode mode) {
     // m_chunks.reserve(MAX_DISTANCE * MAX_DISTANCE * 4);
     start_thread_pool();
 
-    auto t1 = std::chrono::system_clock::now();
-
     start_gen_thread();
     init_chunks();
-    auto t2 = std::chrono::system_clock::now();
-    auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    Logger::info("Chunk Block Init Finish, Time Consuming: {}", d);
 
     start_server_thread();
     m_init = true;
@@ -374,7 +370,9 @@ void ServerWorld::submit_new_chunks(const std::string& uuid,
 void ServerWorld::start_gen_thread() {
     m_gen_running = true;
     Logger::info("Gen Thread Started");
+
     m_gen_thread = std::jthread([this](std::stop_token token) {
+        tracy::SetThreadName("Chunk Gen Dispatcher");
         while (!token.stop_requested()) {
             std::unique_lock<std::mutex> lk(m_need_gen_queue_mutex);
 
@@ -475,12 +473,13 @@ void ServerWorld::stop_thread_pool() {
 
 void ServerWorld::serever_run(std::stop_token stoken) {
     Logger::info("Server Thread Started!");
-
+    tracy::SetThreadName("Server Main");
     using Clock = std::chrono::steady_clock;
     const auto TICK = std::chrono::milliseconds(m_per_tick_time);
 
     auto next = Clock::now();
     while (!stoken.stop_requested()) {
+
         next += TICK;
         if (m_tick_running) {
             ++m_game_ticks;
@@ -546,6 +545,7 @@ void ServerWorld::hot_reload() {
 }
 
 void ServerWorld::update() {
+    ZoneScopedN("Server Tick Update");
     // poll_finished_chunks();
     send_time();
     m_entity_manager.update();

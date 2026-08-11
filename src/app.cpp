@@ -16,6 +16,7 @@
 
 #include <exception>
 #include <imgui_impl_sdl3.h>
+#include <tracy/Tracy.hpp>
 
 namespace Cubed {
 
@@ -658,11 +659,13 @@ void App::render() {
 }
 
 void App::run() {
-
+    tracy::SetThreadName("Main/Randering");
     last_tick = SDL_GetTicks();
     while (m_running) {
+
         update();
         render();
+        FrameMark;
     }
 }
 // static Gait player_gait = Gait::WALK;

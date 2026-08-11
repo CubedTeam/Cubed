@@ -13,6 +13,7 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/net_utils.hpp"
 
+#include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 
 namespace Cubed {
@@ -32,6 +33,7 @@ void ServerEntityManager::init() {
     });
 }
 void ServerEntityManager::update() {
+    ZoneScopedN("Server Entity update");
     handle_task();
 
     auto view = m_registry.view<BaseServerCreature>();

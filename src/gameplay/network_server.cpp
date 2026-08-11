@@ -2,6 +2,8 @@
 
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/net_error.hpp"
+
+#include <tracy/Tracy.hpp>
 using asio::ip::tcp;
 namespace Cubed {
 
@@ -86,6 +88,7 @@ void NetworkServer::net_run() {
         return;
     }
     m_net_thread = std::thread([this]() {
+        tracy::SetThreadName("Server NetIO");
         asio::co_spawn(m_io, listen(), asio::detached);
         m_io.run();
     });

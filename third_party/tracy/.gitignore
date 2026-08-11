@@ -30,3 +30,4 @@ compile_commands.json
 examples/ToyPathTracer/Windows/TestCpu
 examples/ToyPathTracer/Windows/x64
 *.user
+profiler/build-debug
