@@ -39,4 +39,37 @@ inline std::string generate_uuid() {
     }
     return ss.str();
 }
+
+struct TransparentStringHash {
+    using is_transparent = void;
+
+    std::size_t operator()(std::string_view value) const noexcept {
+        return std::hash<std::string_view>{}(value);
+    }
+
+    std::size_t operator()(const std::string& value) const noexcept {
+        return (*this)(std::string_view{value});
+    }
+
+    std::size_t operator()(const char* value) const noexcept {
+        return (*this)(std::string_view{value});
+    }
+};
+
+struct TransparentStringHashCompare {
+    using is_transparent = void;
+
+    static std::size_t hash(std::string_view value) noexcept {
+        return std::hash<std::string_view>{}(value);
+    }
+
+    static std::size_t hash(const std::string& value) noexcept {
+        return hash(std::string_view{value});
+    }
+
+    static bool equal(std::string_view lhs, std::string_view rhs) noexcept {
+        return lhs == rhs;
+    }
+};
+
 } // namespace Cubed

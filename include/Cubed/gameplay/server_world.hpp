@@ -9,6 +9,7 @@
 #include "Cubed/gameplay/server_chunk.hpp"
 #include "Cubed/gameplay/server_entity_manager.hpp"
 #include "Cubed/gameplay/server_player.hpp"
+#include "Cubed/gameplay/server_player_manager.hpp"
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
@@ -18,12 +19,10 @@
 #include "world/block_change.pb.h"
 
 #include <absl/container/flat_hash_set.h>
-#include <shared_mutex>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 namespace Cubed {
@@ -153,22 +152,17 @@ private:
 
     using ChunkHashMap =
         tbb::concurrent_hash_map<ChunkPos, ChunkEntity, ChunkPos::TBBHash>;
-    using PlayerHashMap = std::unordered_map<std::string, ServerPlayer>;
+
     using NewChunkVector = std::vector<PendingChunk>;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
-    using PlayerUUIDMap = tbb::concurrent_hash_map<std::string, std::string>;
 
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;
 
-    using uuid_acc = PlayerUUIDMap::accessor;
-    using uuid_cacc = PlayerUUIDMap::const_accessor;
-
     Config& m_config;
     std::atomic<RunMode> m_runmode{RunMode::HYBRID};
     ServerEntityManager m_entity_manager;
-    // key = uuid
-    PlayerHashMap m_players;
+    ServerPlayerManager m_players_manager;
     ChunkHashMap m_chunks;
 
     CaveCarver m_cave_carcer;
@@ -191,13 +185,12 @@ private:
     std::atomic<int> m_net_threads{0};
     std::atomic<int> m_compute_threads{0};
     std::atomic<int> m_max_threads{1};
-    std::atomic<size_t> m_player_sum{0};
+
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
 
-    mutable std::shared_mutex m_players_mutex;
     std::mutex m_need_gen_queue_mutex;
     std::condition_variable_any m_gen_cv;
 
@@ -208,8 +201,6 @@ private:
     std::atomic<std::shared_ptr<ThreadPool>> m_compute_thread_pool;
 
     std::atomic<ChunkLoadStyle> m_chunk_load_style{ChunkLoadStyle::CENTER};
-
-    PlayerUUIDMap m_uuid_to_name;
 
     tbb::concurrent_unordered_map<std::string, TickTimer> m_timers;
     tbb::concurrent_queue<PendingRequest> m_waiting_chunk_requests;
