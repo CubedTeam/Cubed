@@ -114,6 +114,7 @@ ChunkGenerator::ChunkGenerator(ServerChunk& chunk) : m_chunk(chunk) {
 }
 
 void ChunkGenerator::init() {
+
     std::random_device d;
     init(d());
 }
@@ -139,6 +140,7 @@ void ChunkGenerator::seed(unsigned s) {
     is_seed_change = true;
     m_generator_seed = s;
 }
+
 unsigned ChunkGenerator::chunk_seed() const {
     if (m_chunk_seed == 0) {
         Logger::warn("Chunk Seed Generator Fail");

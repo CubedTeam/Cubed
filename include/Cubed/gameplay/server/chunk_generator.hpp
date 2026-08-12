@@ -22,6 +22,7 @@ public:
     static void reload();
     static const unsigned& seed();
     static void seed(unsigned s);
+
     unsigned chunk_seed() const;
     // Generate Biome
     void assign_chunk_biome();
@@ -57,6 +58,7 @@ public:
 private:
     static inline std::atomic<bool> is_init{false};
     static inline unsigned m_generator_seed{0};
+
     static inline std::atomic<bool> is_seed_change{false};
     ServerChunk& m_chunk;
     HeightMapArray m_heightmap{};

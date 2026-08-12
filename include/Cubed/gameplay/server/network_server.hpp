@@ -14,7 +14,8 @@ public:
     void stop();
 
     // Run in another thread after initialization is complete
-    void start_server(int port, RunMode mode, std::string_view world_name);
+    void start_server(int port, RunMode mode, std::string_view world_name,
+                      std::optional<uint32_t> seed = std::nullopt);
     int port() const;
     ServerWorld& server_world();
 

@@ -39,13 +39,18 @@ void ServerWorld::stop() {
     stop_thread_pool();
 
     m_chunk_system.stop();
+    try {
+        save_metadata(m_metadata_path);
+    } catch (const std::exception& e) {
+        Logger::error("Save Metadata Error {}", e.what());
+    }
 }
 
 void ServerWorld::send_time() {
     Arena arena;
     auto* rsp = Arena::Create<UpdateTime>(&arena);
 
-    rsp->set_day_tick(m_day_tick);
+    rsp->set_day_tick(m_day_ticks);
     rsp->set_game_tick(m_game_ticks);
     auto sessions = get_all_session();
     auto packet = make_packet(*rsp);
@@ -54,7 +59,68 @@ void ServerWorld::send_time() {
     }
 }
 
-void ServerWorld::init_world(RunMode mode, std::string_view world_name) {
+void ServerWorld::load_metadata(std::string_view world_name,
+                                std::optional<uint32_t> seed) {
+    fs::path path = "./saves/" + std::string(world_name);
+    fs::create_directories(path);
+    m_metadata_path = path / "metadata.json";
+
+    Document doc;
+    if (Tools::parse_json(doc, m_metadata_path)) {
+
+        if (Tools::get_json_value(doc, "version", m_metadata.version)) {
+            if (m_metadata.version > METADATA_VERSION) {
+                throw std::runtime_error("Local MetaData Version is too low");
+            }
+        }
+
+        if (!Tools::get_json_value(doc, "seed", m_metadata.seed)) {
+
+            if (seed) {
+                ChunkGenerator::init(*seed);
+            } else {
+                ChunkGenerator::init();
+            }
+
+            m_metadata.seed = ChunkGenerator::seed();
+        } else {
+            ChunkGenerator::init(m_metadata.seed);
+        }
+
+        if (Tools::get_json_value(doc, "game_ticks", m_metadata.game_ticks)) {
+            m_game_ticks = m_metadata.game_ticks;
+        }
+
+        if (Tools::get_json_value(doc, "day_ticks", m_metadata.day_ticks)) {
+            m_day_ticks = m_metadata.day_ticks % DAY_TIME;
+        }
+
+    } else {
+        if (seed) {
+            ChunkGenerator::init(*seed);
+        } else {
+            ChunkGenerator::init();
+        }
+        m_metadata.seed = ChunkGenerator::seed();
+    }
+
+    save_metadata(m_metadata_path);
+}
+
+void ServerWorld::save_metadata(const std::filesystem::path& path) {
+    Document doc;
+    doc.SetObject();
+    auto& allocator = doc.GetAllocator();
+    doc.AddMember("version", m_metadata.version, allocator);
+    doc.AddMember("seed", m_metadata.seed, allocator);
+    doc.AddMember("game_ticks", m_game_ticks.load(), allocator);
+    doc.AddMember("day_ticks", m_day_ticks.load(), allocator);
+    Tools::save_json(doc, path);
+}
+
+void ServerWorld::init_world(RunMode mode, std::string_view world_name,
+                             std::optional<uint32_t> seed) {
+    load_metadata(world_name, seed);
     m_runmode = mode;
     m_entity_manager.init();
     m_chunk_system.initialize(world_name);
@@ -78,8 +144,15 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name) {
     register_timer("player chunk send", 1,
                    [this]() { m_chunk_system.pop_pending_request(); });
     // 5min(50ms)
-    register_timer("auto save chunk", 6000,
-                   [this]() { m_chunk_system.save_all_chunks(); });
+    register_timer("auto save world", 6000, [this]() {
+        try {
+            m_chunk_system.save_all_chunks();
+
+            save_metadata(m_metadata_path);
+        } catch (const std::exception& e) {
+            Logger::error("Save World Error {}", e.what());
+        }
+    });
 
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());
@@ -177,7 +250,7 @@ void ServerWorld::serever_run(std::stop_token stoken) {
         next += TICK;
         if (m_tick_running) {
             ++m_game_ticks;
-            m_day_tick = (m_day_tick + 1) % DAY_TIME;
+            m_day_ticks = (m_day_ticks + 1) % DAY_TIME;
         }
         update();
         std::this_thread::sleep_until(next);
@@ -518,10 +591,10 @@ RiverWorm& ServerWorld::river_worm() { return m_river_worm; }
 Config& ServerWorld::get_config() { return m_config; }
 
 TickType ServerWorld::game_tick() const { return m_game_ticks.load(); }
-TickType ServerWorld::day_tick() const { return m_day_tick.load(); }
+TickType ServerWorld::day_tick() const { return m_day_ticks.load(); }
 void ServerWorld::day_tick(TickType tick) {
     tick %= DAY_TIME;
-    m_day_tick = tick;
+    m_day_ticks = tick;
 }
 int ServerWorld::per_tick_time() const { return m_per_tick_time.load(); }
 void ServerWorld::per_tick_time(int ms) { m_per_tick_time = ms; }

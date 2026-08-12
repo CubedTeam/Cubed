@@ -116,7 +116,7 @@ std::optional<ChunkStorageData> ChunkStorage::load(ChunkPos pos) const {
 }
 
 std::string ChunkStorage::make_key(ChunkPos pos) {
-    return std::format("chunk/{}/{}", pos.x, pos.z);
+    return std::format("chunk:cubed:prime:{}:{}", pos.x, pos.z);
 }
 
 std::string ChunkStorage::serialize(const ChunkStorageData& chunk) {

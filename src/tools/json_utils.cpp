@@ -75,4 +75,35 @@ bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path) {
     return true;
 }
 
+void save_json(const rapidjson::Document& doc,
+               const std::filesystem::path& path) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+    if (!doc.Accept(writer)) {
+        throw std::runtime_error("Failed to serialize JSON");
+    }
+
+    std::ofstream file(path, std::ios::binary);
+
+    if (!file) {
+        throw std::runtime_error("Failed to open file: " + path.string());
+    }
+
+    file.write(buffer.GetString(),
+               static_cast<std::streamsize>(buffer.GetSize()));
+
+    if (!file) {
+        throw std::runtime_error("Failed to write file: " + path.string());
+    }
+}
+
+std::string to_json_string(const rapidjson::Value& value) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    value.Accept(writer);
+
+    return {buffer.GetString(), buffer.GetSize()};
+}
+
 } // namespace Cubed::Tools

@@ -26,12 +26,21 @@ namespace Cubed {
 class Session;
 class ServerWorld : public World {
 public:
+    static constexpr uint32_t METADATA_VERSION = 1;
+    struct Metadata {
+        uint32_t version = METADATA_VERSION;
+        uint32_t seed = 0;
+        TickType game_ticks = 0;
+        TickType day_ticks = 0;
+    };
+
     enum class ThreadPoolKind { NORMAL, PRIORITY };
     ServerWorld(Config& config);
     ~ServerWorld();
     void stop();
     void handle_player_exit(const std::string& uuid);
-    void init_world(RunMode mode, std::string_view world_name);
+    void init_world(RunMode mode, std::string_view world_name,
+                    std::optional<uint32_t> seed);
     void request_generation(std::string uuid);
     void update();
     void hot_reload();
@@ -115,6 +124,8 @@ public:
 
 private:
     Config& m_config;
+    Metadata m_metadata;
+    std::filesystem::path m_metadata_path;
     std::atomic<RunMode> m_runmode{RunMode::HYBRID};
     ServerEntityManager m_entity_manager;
     ServerPlayerManager m_players_manager;
@@ -137,7 +148,7 @@ private:
     std::atomic<int> m_max_threads{1};
 
     std::atomic<TickType> m_game_ticks{0};
-    std::atomic<TickType> m_day_tick{6000};
+    std::atomic<TickType> m_day_ticks{6000};
     std::atomic<bool> m_tick_running{true};
     std::atomic<int> m_per_tick_time = DEFAULT_PER_TICK_TIME; // ms
 
@@ -161,5 +172,9 @@ private:
     void boardcast_message(const std::string& name, const std::string& message,
                            Color color = Color::WHITE, bool system_msg = false);
     void player_exit(const std::string& uuid);
+
+    void load_metadata(std::string_view world_name,
+                       std::optional<uint32_t> seed);
+    void save_metadata(const std::filesystem::path& path);
 };
 } // namespace Cubed

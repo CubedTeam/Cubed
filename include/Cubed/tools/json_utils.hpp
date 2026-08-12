@@ -16,7 +16,9 @@ std::unordered_map<std::string, std::string>
 doc_to_map(const rapidjson::Document& doc);
 
 bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path);
-
+void save_json(const rapidjson::Document& doc,
+               const std::filesystem::path& path);
+std::string to_json_string(const rapidjson::Value& value);
 template <typename T>
 bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
     using ValueType = std::decay_t<T>;
