@@ -373,7 +373,7 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     name = player->get_name();
     Logger::info("Player {} Exit the Server", name);
     exit_session = player->get_session();
-    old_set = std::move(player->get_chunk_pos_set());
+    old_set = player->get_chunk_pos_set();
 
     m_players_manager.remove(uuid);
 

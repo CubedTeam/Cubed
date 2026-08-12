@@ -35,8 +35,7 @@ public:
     void task_id(int id);
     bool has_player(ChunkPos pos) const;
     void update_chunk_set(const ChunkPosSet& set);
-    const ChunkPosSet& get_chunk_pos_set() const;
-    ChunkPosSet& get_chunk_pos_set();
+    ChunkPosSet get_chunk_pos_set() const;
 
     void set_yaw(float yaw);
     void set_pitch(float pitch);

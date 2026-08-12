@@ -197,7 +197,7 @@ void ServerChunkSystem::gen_chunks_internal(const std::string& uuid) {
         return;
     }
 
-    old_set = std::move(player->get_chunk_pos_set());
+    old_set = player->get_chunk_pos_set();
     player->update_chunk_set(required_chunks_set);
 
     update_ref_count(old_set, required_chunks_set);
