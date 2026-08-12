@@ -68,6 +68,7 @@ void ServerChunkSystem::update() {
         acc->second.chunk = std::move(finished.chunk);
         acc->second.state = ChunkState::READY;
         consumed = true;
+        pop_pending_request();
     }
     if (consumed) {
         m_could_generate = true;
