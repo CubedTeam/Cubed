@@ -49,6 +49,7 @@ ChunkPosSet ServerPlayer::get_chunk_pos_set() const {
 }
 
 ChunkPosSet ServerPlayer::take_chunk_pos_set() {
+    std::lock_guard lock(m_chunk_pos_mutex);
     return std::exchange(m_player_chunk_pos_set, {});
 }
 
