@@ -38,9 +38,10 @@ public:
     bool save_batch(std::span<const ChunkStorageData> chunks,
                     bool sync = false);
 
-    bool contains(ChunkPos pos) const;
+    // bool contains(ChunkPos pos) const;
 
-    bool remove(ChunkPos pos);
+    // bool remove(ChunkPos pos);
+    std::size_t size() const;
 
 private:
     std::unique_ptr<rocksdb::DB> m_db;

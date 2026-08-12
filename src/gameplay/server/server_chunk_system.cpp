@@ -26,6 +26,9 @@ void ServerChunkSystem::initialize(std::string_view world_name) {
 }
 
 void ServerChunkSystem::stop() {
+    stop_gen_thread();
+    stop_generation_pool();
+
     save_all_chunks(true);
     m_finished_chunks.clear();
     m_chunks.clear();
@@ -40,16 +43,20 @@ void ServerChunkSystem::save_all_chunks(bool sync) {
     }
     if (sync) {
         m_storage->save_batch(chunks, true);
+        Logger::info("Save all chunks success!");
+
     } else {
         auto pool = m_world.get_compute_pool();
 
         if (!pool) {
             m_storage->save_batch(chunks);
             Logger::info("Save all chunks success!");
+
             return;
         }
 
         pool->enqueue([this, chunks = std::move(chunks)]() mutable {
+            ZoneScopedN("Save All Chunk Batch");
             m_storage->save_batch(chunks);
             Logger::info("Save all chunks success!");
         });
@@ -57,6 +64,7 @@ void ServerChunkSystem::save_all_chunks(bool sync) {
 }
 
 std::vector<ChunkStorageData> ServerChunkSystem::copy_all_chunks() const {
+    ZoneScopedN("ServerChunkSystem::copy_all_chunks");
     std::vector<ChunkPos> positions;
 
     {

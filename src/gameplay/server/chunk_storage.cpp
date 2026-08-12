@@ -169,4 +169,23 @@ ChunkStorage::deserialize(std::string_view data) {
     return d;
 }
 
+std::size_t ChunkStorage::size() const {
+    std::size_t count = 0;
+
+    std::unique_ptr<rocksdb::Iterator> it{
+        m_db->NewIterator(rocksdb::ReadOptions{})};
+
+    for (it->SeekToFirst(); it->Valid(); it->Next()) {
+        ++count;
+    }
+
+    if (!it->status().ok()) {
+        Logger::error("Failed to iterate chunk database: {}",
+                      it->status().ToString());
+        return 0;
+    }
+
+    return count;
+}
+
 } // namespace Cubed
