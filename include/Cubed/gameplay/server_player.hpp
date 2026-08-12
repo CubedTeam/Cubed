@@ -2,8 +2,8 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/server_chunk.hpp"
 
-#include <absl/container/flat_hash_set.h>
 #include <atomic>
 #include <glm/glm.hpp>
 #include <memory>
@@ -16,7 +16,6 @@ class Session;
 class ServerPlayer {
 
 public:
-    using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     ServerPlayer(const ServerPlayer&) = delete;
     ServerPlayer(ServerPlayer&&) = delete;
     ServerPlayer& operator=(const ServerPlayer&) = delete;

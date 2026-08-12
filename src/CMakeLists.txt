@@ -111,4 +111,5 @@ target_sources(${PROJECT_NAME}
         ui/scroll_view.cpp
         gameplay/creatures/creature_manager.cpp
         gameplay/server_player_manager.cpp
+        gameplay/server_chunk_system.cpp
 )

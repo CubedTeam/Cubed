@@ -10,7 +10,11 @@
 #include <atomic>
 #include <optional>
 #include <tuple>
+#include <unordered_set>
 namespace Cubed {
+
+enum class ChunkLoadStyle { RANDOM, CENTER };
+using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
 class ServerWorld;
 class ServerChunk : public Chunk {
 public:
