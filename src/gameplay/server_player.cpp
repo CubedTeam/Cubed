@@ -16,7 +16,7 @@ void ServerPlayer::update_pos(float x, float y, float z) {
     ChunkPos chunk_pos = get_chunk_pos(x, z);
     float dist = distance2(chunk_pos, m_last_chunk_pos);
     if (dist > 2) {
-        m_world.need_gen(M_UUID);
+        m_world.request_generation(M_UUID);
         m_last_chunk_pos = chunk_pos;
     }
 }

@@ -32,7 +32,7 @@ public:
     void stop();
     void handle_player_exit(const std::string& uuid);
     void init_world(RunMode mode);
-    void need_gen(std::string uuid);
+    void request_generation(std::string uuid);
     void update();
     void hot_reload();
 

@@ -182,7 +182,9 @@ void ServerWorld::serever_run(std::stop_token stoken) {
     Logger::info("Server Thread Stopped!");
 }
 
-void ServerWorld::need_gen(std::string uuid) { m_chunk_system.need_gen(uuid); }
+void ServerWorld::request_generation(std::string uuid) {
+    m_chunk_system.request_generation(uuid);
+}
 
 bool ServerWorld::set_block(const glm::ivec3& block_pos, BlockType id) {
     return m_chunk_system.set_block(block_pos, id);
@@ -346,7 +348,7 @@ void ServerWorld::handle_player_login(const std::string& name,
         }
     }
     */
-    need_gen(uuid);
+    request_generation(uuid);
 
     auto* rsp = Arena::Create<LoginRsp>(&arena);
     rsp->set_success(true);

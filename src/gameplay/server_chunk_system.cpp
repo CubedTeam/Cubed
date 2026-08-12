@@ -426,7 +426,7 @@ void ServerChunkSystem::stop_generation_pool() {
     Logger::info("Generation Pool Stopped");
 }
 
-void ServerChunkSystem::need_gen(const std::string& uuid) {
+void ServerChunkSystem::request_generation(const std::string& uuid) {
     if (!m_scheduler_alive) {
         return;
     }

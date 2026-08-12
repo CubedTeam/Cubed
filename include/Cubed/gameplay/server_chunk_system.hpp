@@ -31,13 +31,6 @@ public:
         ChunkPos pos;
     };
 
-    struct ReadyChunkRequest {
-        std::string uuid;
-        int task_id;
-        ChunkPos pos;
-        std::shared_ptr<const ServerChunk> chunk;
-    };
-
     enum class ChunkState { NONE, GENERATING, READY, GENERATING_UNUSED };
     struct ChunkEntity {
         ChunkState state = ChunkState::NONE;
@@ -101,9 +94,6 @@ public:
 
     void update();
 
-    void request_generation(std::string uuid);
-    void request_chunk(int task_id, std::string uuid, ChunkPos pos);
-
     [[nodiscard]] int get_block(const glm::ivec3& pos) const;
     [[nodiscard]] bool is_solid(const glm::ivec3& pos) const;
     [[nodiscard]] bool can_pass_block(const glm::ivec3& pos) const;
@@ -134,7 +124,7 @@ public:
 
     void stop_generation_pool();
 
-    void need_gen(const std::string& uuid);
+    void request_generation(const std::string& uuid);
 
     void hot_reload();
 

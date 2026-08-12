@@ -396,7 +396,7 @@ void DevPanel::show_server_world_table_bar() {
     }
 
     if (ImGui::Button("Request Chunk Build")) {
-        world.need_gen(m_player->get_uuid());
+        world.request_generation(m_player->get_uuid());
     }
     ImGui::SameLine();
     if (ImGui::Checkbox("Gen Thread", &m_gen_thread_running)) {
