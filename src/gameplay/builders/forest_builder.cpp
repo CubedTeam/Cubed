@@ -19,7 +19,7 @@ void ForestBuilder::build_biome() {
 void ForestBuilder::build_blocks() {
     auto& m_chunk = m_chunk_generator.chunk();
     auto& m_blocks = m_chunk.blocks();
-    auto& m_heightmap = m_chunk.heightmap();
+    auto& m_heightmap = m_chunk_generator.get_heightmap();
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             int height = static_cast<int>(m_heightmap[x][z]);
@@ -36,7 +36,7 @@ void ForestBuilder::build_blocks() {
 
 void ForestBuilder::build_vegetation() {
     auto& m_chunk = m_chunk_generator.chunk();
-    auto& m_heightmap = m_chunk.heightmap();
+    auto& m_heightmap = m_chunk_generator.get_heightmap();
     auto& m_random = m_chunk_generator.random();
     std::array<int, SIZE_X> x_arr;
     std::iota(x_arr.begin(), x_arr.end(), 0);

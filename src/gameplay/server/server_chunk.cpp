@@ -10,9 +10,8 @@ ServerChunk::ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
     : m_temp_chunk(temp_chunk), m_chunk_pos(chunk_pos), m_world(world) {}
 
 ServerChunk::ServerChunk(ServerChunk&& other) noexcept
-    : m_gening(other.m_gening.load()), m_has_cave(other.m_has_cave),
-      m_biome(other.m_biome.load()), m_chunk_pos(std::move(other.m_chunk_pos)),
-      m_world(other.m_world), m_heightmap(std::move(other.m_heightmap)),
+    : m_gening(other.m_gening.load()), m_biome(other.m_biome.load()),
+      m_chunk_pos(std::move(other.m_chunk_pos)), m_world(other.m_world),
       m_blocks(std::move(other.m_blocks)),
       m_neightbor_blocks(std::move(other.m_neightbor_blocks)),
       m_seed(other.m_seed), m_conditions(other.m_conditions) {
@@ -28,13 +27,13 @@ ServerChunk& ServerChunk::operator=(ServerChunk&& other) noexcept {
     }
     ASSERT_MSG(!other.m_gening, "Other is Gening Can't Move");
     m_chunk_pos = std::move(other.m_chunk_pos);
-    m_heightmap = std::move(other.m_heightmap);
+
     m_blocks = std::move(other.m_blocks);
     m_biome = other.m_biome.load();
     m_seed = other.m_seed;
     m_conditions = other.m_conditions;
     m_neightbor_blocks = std::move(other.m_neightbor_blocks);
-    m_has_cave = other.m_has_cave;
+
     m_gening = other.m_gening.load();
     return *this;
 }
@@ -74,12 +73,6 @@ ChunkPos ServerChunk::get_chunk_pos() const { return m_chunk_pos; }
 
 const std::vector<BlockType>& ServerChunk::get_chunk_blocks() const {
     return m_blocks;
-}
-
-HeightMapArray ServerChunk::get_heightmap() const {
-    // Logger::info("Chunk pos {} {} in get_heightmap this {}", m_chunk_pos.x,
-    // m_chunk_pos.z, static_cast<const void*>(this));
-    return m_heightmap;
 }
 
 int ServerChunk::index(int x, int y, int z) {
@@ -191,9 +184,19 @@ void ServerChunk::finished_generating() {
     m_gening = false;
 }
 
-bool ServerChunk::is_temp_chunk() const { return m_temp_chunk.load(); }
+ChunkStorageData ServerChunk::make_storage_data() const {
+    ChunkStorageData data;
+    data.biome = m_biome;
+    data.blocks = m_blocks;
+    data.pos = m_chunk_pos;
+    data.seed = m_seed;
 
-bool& ServerChunk::has_cave() { return m_has_cave; }
+    return data;
+}
+
+void ServerChunk::load_storage_data(ChunkStorageData data) {}
+
+bool ServerChunk::is_temp_chunk() const { return m_temp_chunk.load(); }
 
 const OptionalBlockVectorArray& ServerChunk::get_neightbor_blocks() const {
     return m_neightbor_blocks;
@@ -208,7 +211,6 @@ BiomeType ServerChunk::biome() const { return m_biome; }
 
 void ServerChunk::biome(BiomeType b) { m_biome = b; }
 
-HeightMapArray& ServerChunk::heightmap() { return m_heightmap; }
 std::vector<BlockType>& ServerChunk::blocks() { return m_blocks; }
 ServerWorld& ServerChunk::world() { return m_world; }
 unsigned ServerChunk::seed() const {

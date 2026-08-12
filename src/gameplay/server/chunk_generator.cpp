@@ -224,7 +224,7 @@ void ChunkGenerator::generate_heightmap() {
 void ChunkGenerator::generate_heightmap() {
     ZoneScopedN("ChunkGen::generate_heightmap");
     auto chunk_pos = m_chunk.chunk_pos();
-    auto& heightmap = m_chunk.heightmap();
+    auto& heightmap = m_heightmap;
 
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
@@ -306,7 +306,7 @@ void ChunkGenerator::generate_heightmap() {
 void ChunkGenerator::blend_heightmap_boundaries(
     const std::array<std::optional<HeightMapArray>, 8>& neighbor_heightmap,
     const std::array<BiomeType, 8>& neighbor_biome) {
-    auto& m_heightmap = m_chunk.heightmap();
+
     auto m_biome = m_chunk.biome();
     m_neighbor_biome = neighbor_biome;
     // --- Right neighbor neighbor[0]: (1, 0) ---
@@ -558,7 +558,6 @@ void ChunkGenerator::blend_surface_blocks_borders(
         neighbor_block) {
     ZoneScopedN("ChunkGen::blend_surface_blocks_borders");
     auto& m_blocks = m_chunk.blocks();
-    auto& m_heightmap = m_chunk.heightmap();
 
     constexpr int WORLD_HEIGHT = WORLD_SIZE_Y;
 
@@ -757,7 +756,7 @@ void ChunkGenerator::generate_cave() {
             carve_worm(
                 path.points(), chunk_pos, [&](int x, int y, int z) -> void {
                     int idx = ServerChunk::index(x, y, z);
-                    m_chunk.has_cave() = true;
+
                     auto type = blocks[idx];
 
                     if (BlockManager::is_water(type)) {
@@ -827,7 +826,7 @@ void ChunkGenerator::spawn_creature() {
     ZoneScopedN("ChunkGenerator::spawn_creature");
     auto biome = m_chunk.biome();
     const auto& blocks = m_chunk.blocks();
-    const auto& heightmap = m_chunk.heightmap();
+    const auto& heightmap = m_heightmap;
     const auto& chunk_pos = m_chunk.chunk_pos();
     if (std::ranges::contains(SpawnDefaults::PIG.biomes, biome)) {
 
@@ -859,4 +858,9 @@ Random& ChunkGenerator::random() { return m_random; }
 const std::array<BiomeType, 8>& ChunkGenerator::neighbor_biome() const {
     return m_neighbor_biome;
 }
+
+const HeightMapArray& ChunkGenerator::get_heightmap() const {
+    return m_heightmap;
+}
+
 } // namespace Cubed

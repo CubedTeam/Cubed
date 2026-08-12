@@ -19,7 +19,7 @@ void BiomeBuilder::place_grass() {
     ChunkGenerator& chunk_generator = get_chunk_generator();
     ServerChunk& chunk = chunk_generator.chunk();
     auto& blocks = chunk.blocks();
-    const auto& heightmap = chunk.get_heightmap();
+    const auto& heightmap = chunk_generator.get_heightmap();
     auto& random = chunk_generator.random();
     for (int x = 0; x < SIZE_X; ++x) {
         for (int z = 0; z < SIZE_Z; ++z) {
@@ -44,7 +44,7 @@ void BiomeBuilder::ocean_water_build() {
     ChunkGenerator& chunk_generator = get_chunk_generator();
     ServerChunk& chunk = chunk_generator.chunk();
     auto& blocks = chunk.blocks();
-    const auto& heightmap = chunk.get_heightmap();
+    const auto& heightmap = chunk_generator.get_heightmap();
 
     for (int x = 0; x < SIZE_X; ++x) {
         for (int z = 0; z < SIZE_Z; ++z) {

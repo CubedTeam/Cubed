@@ -46,6 +46,8 @@ public:
     ServerChunk& chunk();
     Random& random();
     const std::array<BiomeType, 8>& neighbor_biome() const;
+    const HeightMapArray& get_heightmap() const;
+
     void ocean_build();
     void generate_cave();
     void generate_river();
@@ -57,6 +59,7 @@ private:
     static inline unsigned m_generator_seed{0};
     static inline std::atomic<bool> is_seed_change{false};
     ServerChunk& m_chunk;
+    HeightMapArray m_heightmap{};
     Random m_random;
     std::unique_ptr<BiomeBuilder> m_biome_builder{nullptr};
     bool is_cur_chunk_ins = false;

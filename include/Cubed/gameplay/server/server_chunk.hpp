@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/chunk.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/server/chunk_generator.hpp"
+#include "Cubed/gameplay/server/chunk_storage.hpp"
 
 #include <array>
 #include <atomic>
@@ -43,18 +44,21 @@ public:
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;
     const std::vector<BlockType>& get_chunk_blocks() const;
-    HeightMapArray get_heightmap() const;
     bool is_temp_chunk() const;
     ChunkPos chunk_pos() const;
     BiomeType biome() const;
     void biome(BiomeType b);
-    HeightMapArray& heightmap();
     std::vector<BlockType>& blocks();
     ServerWorld& world();
     unsigned seed() const;
     BiomeConditions& conditions();
-    bool& has_cave();
+
     const OptionalBlockVectorArray& get_neightbor_blocks() const;
+
+    ChunkStorageData make_storage_data() const;
+
+    void load_storage_data(ChunkStorageData data);
+
     static int index(int x, int y, int z);
     static int index(const glm::vec3& pos);
 
@@ -66,13 +70,11 @@ private:
     std::atomic<bool> m_gening{false};
     std::atomic<bool> m_temp_chunk{false};
 
-    bool m_has_cave{false};
-
     std::atomic<BiomeType> m_biome = BiomeType::PLAIN;
 
     ChunkPos m_chunk_pos;
     ServerWorld& m_world;
-    HeightMapArray m_heightmap{};
+
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
     OptionalBlockVectorArray m_neightbor_blocks;
