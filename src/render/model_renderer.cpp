@@ -5,6 +5,7 @@
 #include "Cubed/render/renderer.hpp"
 
 #include <cmath>
+#include <tracy/Tracy.hpp>
 namespace Cubed {
 
 namespace {
@@ -19,6 +20,7 @@ float swing_angle(const WalkPose& pose, float speed, float amp_deg) {
 ModelRender::ModelRender(Renderer& renderer) : m_renderer(renderer) {}
 void ModelRender::build_vertices(ModelID id,
                                  std::span<const InstanceData> instances) {
+    ZoneScopedN("ModelRender::build_vertices");
     if (instances.empty()) {
         return;
     }
@@ -69,6 +71,7 @@ void ModelRender::build_vertices(ModelID id,
 }
 void ModelRender::render_instance(ModelID id, size_t sum, const Camera& camera,
                                   bool shadow) {
+    ZoneScopedN("ModelRender::render_instance");
 
     auto& root = ModelManager::model(id).node;
     auto& batch = get_batch(id, root);

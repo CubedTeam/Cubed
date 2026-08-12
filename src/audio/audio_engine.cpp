@@ -7,6 +7,7 @@
 #include "Cubed/tools/log.hpp"
 
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 namespace {
 constexpr std::size_t OPUS_MAX_PACKET_SIZE = 400;
@@ -213,6 +214,7 @@ void AudioEngine::update_listener(const glm::vec3& pos,
     alListenerfv(AL_ORIENTATION, orientation);
 }
 void AudioEngine::update() {
+    ZoneScopedN("AudioEngine::update");
 
     for (auto& [key, fade] : m_fade_map) {
         fade.update();
@@ -271,6 +273,7 @@ void AudioEngine::set_client(std::weak_ptr<NetworkClient> client) {
 
 void AudioEngine::send_voice(
     const std::array<int16_t, AudioRecording::FRAME_SAMPLES>& pcm) {
+    ZoneScopedN("AudioEngine::send_voice");
 
     if (auto c = m_client.lock()) {
         if (!c->world().enable_voice_chat()) {
@@ -299,6 +302,7 @@ void AudioEngine::send_voice(
 }
 void AudioEngine::receive_voice(std::span<const char> opus,
                                 const glm::vec3& pos) {
+    ZoneScopedN("AudioEngine::receive_voice");
     std::array<int16_t, AudioRecording::FRAME_SAMPLES> pcm;
     int len =
         opus_decode(m_decoder, reinterpret_cast<const uint8_t*>(opus.data()),

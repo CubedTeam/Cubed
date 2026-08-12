@@ -4,6 +4,8 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/net_error.hpp"
 #include "Cubed/tools/uuid.hpp"
+
+#include <tracy/Tracy.hpp>
 using asio::ip::tcp;
 using namespace google::protobuf;
 namespace Cubed {
@@ -37,6 +39,7 @@ void Session::send(std::shared_ptr<std::vector<uint8_t>> packet, int priority) {
 const std::string& Session::uuid() const { return m_uuid; }
 
 asio::awaitable<void> Session::read_loop() {
+    ZoneScopedN("Session::read_loop");
     try {
         while (true) {
             std::array<uint8_t, HEADER_LEN> header_buffer;

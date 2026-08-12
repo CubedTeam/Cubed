@@ -5,18 +5,18 @@ namespace Cubed {
 ServerPlayer::ServerPlayer(std::string_view name, std::string_view uuid,
                            ServerWorld& world, std::shared_ptr<Session> session,
                            TickType gametick)
-    : m_name(name), m_uuid(uuid), m_world(world), m_session(session),
+    : M_NAME(name), M_UUID(uuid), m_world(world), m_session(session),
       m_last_gametick(gametick) {}
-const glm::vec3& ServerPlayer::get_pos() const { return m_pos; }
-const std::string& ServerPlayer::get_name() const { return m_name; }
-const std::string& ServerPlayer::get_uuid() const { return m_uuid; }
+glm::vec3 ServerPlayer::get_pos() const { return m_pos.load(); }
+const std::string& ServerPlayer::get_name() const { return M_NAME; }
+const std::string& ServerPlayer::get_uuid() const { return M_UUID; }
 std::shared_ptr<Session> ServerPlayer::get_session() const { return m_session; }
 void ServerPlayer::update_pos(float x, float y, float z) {
     m_pos = glm::vec3{x, y, z};
     ChunkPos chunk_pos = get_chunk_pos(x, z);
     float dist = distance2(chunk_pos, m_last_chunk_pos);
     if (dist > 2) {
-        m_world.need_gen(m_uuid);
+        m_world.request_generation(M_UUID);
         m_last_chunk_pos = chunk_pos;
     }
 }
@@ -32,7 +32,6 @@ bool ServerPlayer::is_disconnect(TickType current_gametick) const {
 }
 
 int ServerPlayer::task_id() const { return m_chunk_task_id.load(); }
-void ServerPlayer::task_id(int id) { m_chunk_task_id = id; }
 
 bool ServerPlayer::has_player(ChunkPos pos) const {
     std::shared_lock lock(m_chunk_pos_mutex);
@@ -44,15 +43,24 @@ void ServerPlayer::update_chunk_set(const ChunkPosSet& set) {
     m_player_chunk_pos_set.insert(set.begin(), set.end());
 }
 
-const ServerPlayer::ChunkPosSet& ServerPlayer::get_chunk_pos_set() const {
+ChunkPosSet ServerPlayer::get_chunk_pos_set() const {
     std::shared_lock lock(m_chunk_pos_mutex);
     return m_player_chunk_pos_set;
 }
 
-ServerPlayer::ChunkPosSet& ServerPlayer::get_chunk_pos_set() {
+ChunkPosSet ServerPlayer::take_chunk_pos_set() {
     std::lock_guard lock(m_chunk_pos_mutex);
-    return m_player_chunk_pos_set;
+    return std::exchange(m_player_chunk_pos_set, {});
 }
+
+void ServerPlayer::update_task_id_max(int new_id) {
+    int current = m_chunk_task_id.load(std::memory_order_relaxed);
+    while (current < new_id && !m_chunk_task_id.compare_exchange_weak(
+                                   current, new_id, std::memory_order_relaxed,
+                                   std::memory_order_relaxed)) {
+    }
+}
+
 void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
 void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
 float ServerPlayer::yaw() const { return m_yaw.load(); }

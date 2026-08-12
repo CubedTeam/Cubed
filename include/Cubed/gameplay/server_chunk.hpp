@@ -10,7 +10,11 @@
 #include <atomic>
 #include <optional>
 #include <tuple>
+#include <unordered_set>
 namespace Cubed {
+
+enum class ChunkLoadStyle { RANDOM, CENTER };
+using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
 class ServerWorld;
 class ServerChunk : public Chunk {
 public:
@@ -34,6 +38,7 @@ public:
     void set_chunk_block(int index, unsigned id);
     // ensure thread safe!
     void gen_chunk();
+    void finished_generating();
 
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;

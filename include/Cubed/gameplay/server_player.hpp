@@ -2,8 +2,8 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/game_time.hpp"
+#include "Cubed/gameplay/server_chunk.hpp"
 
-#include <absl/container/flat_hash_set.h>
 #include <atomic>
 #include <glm/glm.hpp>
 #include <memory>
@@ -16,7 +16,6 @@ class Session;
 class ServerPlayer {
 
 public:
-    using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
     ServerPlayer(const ServerPlayer&) = delete;
     ServerPlayer(ServerPlayer&&) = delete;
     ServerPlayer& operator=(const ServerPlayer&) = delete;
@@ -25,7 +24,7 @@ public:
                  ServerWorld& m_world, std::shared_ptr<Session> session,
                  TickType gametick);
 
-    const glm::vec3& get_pos() const;
+    glm::vec3 get_pos() const;
     const std::string& get_name() const;
     const std::string& get_uuid() const;
     std::shared_ptr<Session> get_session() const;
@@ -33,12 +32,10 @@ public:
     void update_sync_gametick(TickType gametick);
     bool is_disconnect(TickType current_gametick) const;
     int task_id() const;
-    void task_id(int id);
     bool has_player(ChunkPos pos) const;
     void update_chunk_set(const ChunkPosSet& set);
-    const ChunkPosSet& get_chunk_pos_set() const;
-    ChunkPosSet& get_chunk_pos_set();
-
+    ChunkPosSet get_chunk_pos_set() const;
+    ChunkPosSet take_chunk_pos_set();
     void set_yaw(float yaw);
     void set_pitch(float pitch);
     float yaw() const;
@@ -47,11 +44,13 @@ public:
     Gait gait() const;
     void set_gait(Gait gait);
 
+    void update_task_id_max(int new_id);
+
 private:
     static constexpr TickType TIMEOUT = 200;
-    std::string m_name;
-    std::string m_uuid;
-    glm::vec3 m_pos{0.0f};
+    const std::string M_NAME;
+    const std::string M_UUID;
+    std::atomic<glm::vec3> m_pos{glm::vec3(0.0f)};
     ServerWorld& m_world;
     ChunkPos m_last_chunk_pos{0, 0};
     std::atomic<std::shared_ptr<Session>> m_session;

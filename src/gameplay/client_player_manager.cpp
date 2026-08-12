@@ -7,6 +7,7 @@
 #include "Cubed/tools/time_tools.hpp"
 
 #include <filesystem>
+#include <tracy/Tracy.hpp>
 namespace fs = std::filesystem;
 
 using namespace google::protobuf;
@@ -83,6 +84,7 @@ void ClientPlayerManager::init(std::string_view local_name) {
 }
 
 void ClientPlayerManager::update(float dt) {
+    ZoneScopedN("ClientPlayerManager::update");
     m_local.update(dt);
 
     update_players_data(dt);

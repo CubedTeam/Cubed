@@ -110,4 +110,6 @@ target_sources(${PROJECT_NAME}
         scene/screenshot_scene.cpp
         ui/scroll_view.cpp
         gameplay/creatures/creature_manager.cpp
+        gameplay/server_player_manager.cpp
+        gameplay/server_chunk_system.cpp
 )

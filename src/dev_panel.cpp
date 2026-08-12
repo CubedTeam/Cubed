@@ -375,18 +375,20 @@ void DevPanel::show_server_world_table_bar() {
     ImGui::Text("Pool Threads %d  Max Support Threads %d  Reserved Threads %d",
                 world.gen_pool_threads(), world.max_threads(),
                 RESERVED_THREADS);
+    /*
     ImGui::SliderInt("Set Pool Threads", &m_threads, 1, world.max_threads());
     ImGui::SameLine();
     if (ImGui::Button("Set")) {
-        world.change_pool_threads(ServerWorld::ThreadPoolKind::GEN, m_threads);
+    world.change_pool_threads(ServerWorld::ThreadPoolKind::PRIORITY,
+                          m_threads);
     }
     if (m_threads > world.max_threads() - RESERVED_THREADS) {
-        ImGui::TextColored(
-            ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
-            "Waring: When the threads in the thread pool exceed \n(maximum "
-            "threads minus reserved threads), \nit may cause stuttering.");
+    ImGui::TextColored(
+    ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
+    "Waring: When the threads in the thread pool exceed \n(maximum "
+    "threads minus reserved threads), \nit may cause stuttering.");
     }
-
+    */
     m_chunk_style = world.chunk_load_style();
     if (ImGui::Combo("ChunkLoadStyle", &m_chunk_style, CHUNK_LOAD_STYLE,
                      IM_ARRAYSIZE(CHUNK_LOAD_STYLE))) {
@@ -394,14 +396,14 @@ void DevPanel::show_server_world_table_bar() {
     }
 
     if (ImGui::Button("Request Chunk Build")) {
-        world.need_gen(m_player->get_uuid());
+        world.request_generation(m_player->get_uuid());
     }
     ImGui::SameLine();
     if (ImGui::Checkbox("Gen Thread", &m_gen_thread_running)) {
         if (m_gen_thread_running) {
-            world.start_gen_thread();
+            world.chunk_system().start_gen_thread();
         } else {
-            world.stop_gen_thread();
+            world.chunk_system().stop_gen_thread();
         }
     }
     ImGui::Text("Server Chunk Size %d", world.chunk_size());

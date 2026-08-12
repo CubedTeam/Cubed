@@ -4,6 +4,8 @@
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/tools/time_tools.hpp"
+
+#include <tracy/Tracy.hpp>
 namespace Cubed {
 WorldScene::WorldScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_dev_panel(*this),
@@ -19,6 +21,7 @@ WorldScene::~WorldScene() {
 }
 
 void WorldScene::update(float dt) {
+    ZoneScopedN("WorldScene::update");
     if (m_client->is_connect_error()) {
         set_error(m_client->get_error_string());
         m_client->clear_error();
@@ -61,6 +64,7 @@ void WorldScene::update(float dt) {
 }
 
 void WorldScene::render(Renderer& renderer) {
+    ZoneScopedN("WorldScene::render");
     if (m_error_ui.has_error()) {
         m_error_ui.render(renderer);
         return;

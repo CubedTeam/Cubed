@@ -2,6 +2,8 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 
+#include <tracy/Tracy.hpp>
+
 namespace Cubed {
 ServerChunk::ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
                          bool temp_chunk)
@@ -141,11 +143,10 @@ void ServerChunk::gen_phase_five() {
     m_generator->generate_cave();
 
     m_generator->generate_vegetation();
-    m_generator->spawn_creature();
-    m_generator = nullptr;
 }
 
 void ServerChunk::gen_chunk() {
+    ZoneScopedN("ServerChunk::gen_chunk");
     if (m_gening.exchange(true))
         return;
     m_gening = true;
@@ -176,9 +177,19 @@ void ServerChunk::gen_chunk() {
     }
     gen_phase_four(m_neightbor_blocks);
     gen_phase_five();
-    m_gening = false;
+
+    finished_generating();
 }
 // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
+
+void ServerChunk::finished_generating() {
+    if (!m_generator) {
+        return;
+    }
+    m_generator->spawn_creature();
+    m_generator = nullptr;
+    m_gening = false;
+}
 
 bool ServerChunk::is_temp_chunk() const { return m_temp_chunk.load(); }
 

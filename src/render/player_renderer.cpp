@@ -8,6 +8,7 @@
 #include "Cubed/texture_manager.hpp"
 
 #include <glm/glm.hpp>
+#include <tracy/Tracy.hpp>
 
 namespace {
 struct Cuboid {
@@ -191,6 +192,7 @@ void PlayerRenderer::init() {
 
 void PlayerRenderer::render(const Shader& shader, ClientWorld& world,
                             bool shadow_render) {
+    ZoneScopedN("PlayerRenderer::render");
     if (!m_inited) {
         Logger::error("Player Renderer isn't init");
         return;
