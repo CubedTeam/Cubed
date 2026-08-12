@@ -49,6 +49,10 @@ ChunkPosSet ServerPlayer::get_chunk_pos_set() const {
     return m_player_chunk_pos_set;
 }
 
+ChunkPosSet ServerPlayer::take_chunk_pos_set() {
+    return std::exchange(m_player_chunk_pos_set, {});
+}
+
 void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
 void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
 float ServerPlayer::yaw() const { return m_yaw.load(); }

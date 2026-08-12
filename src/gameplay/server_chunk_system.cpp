@@ -78,7 +78,9 @@ void ServerChunkSystem::release_chunk(
     const std::shared_ptr<ServerPlayer>& player) {
 
     std::lock_guard lock(m_reconcile_mutex);
-    ChunkPosSet old_set = player->get_chunk_pos_set();
+
+    ChunkPosSet old_set = player->take_chunk_pos_set();
+
     std::vector<GenerationTicket> unused;
     reconcile_chunks(old_set, ChunkPosSet{}, unused);
 }

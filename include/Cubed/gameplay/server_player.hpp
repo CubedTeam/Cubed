@@ -36,7 +36,7 @@ public:
     bool has_player(ChunkPos pos) const;
     void update_chunk_set(const ChunkPosSet& set);
     ChunkPosSet get_chunk_pos_set() const;
-
+    ChunkPosSet take_chunk_pos_set();
     void set_yaw(float yaw);
     void set_pitch(float pitch);
     float yaw() const;

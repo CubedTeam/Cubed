@@ -360,40 +360,13 @@ void ServerWorld::handle_player_login(const std::string& name,
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {
-    std::shared_ptr<Session> exit_session;
-    std::string name;
-
-    auto player = m_players_manager.find(uuid);
-    if (!player) {
-        Logger::error("Player {} isn't in Server", uuid);
+    auto pool = m_net_thread_pool.load();
+    if (!pool) {
+        Logger::error("Net Pool Can't find");
+        player_exit(uuid);
         return;
     }
-
-    name = player->get_name();
-    Logger::info("Player {} Exit the Server", name);
-    exit_session = player->get_session();
-
-    m_chunk_system.release_chunk(player);
-
-    m_players_manager.remove(uuid);
-
-    Arena arena;
-    auto* rsp = Arena::Create<LogoutRsp>(&arena);
-    rsp->set_uuid(uuid);
-    rsp->set_server_stop(false);
-    exit_session->send(make_packet(*rsp), 0);
-
-    auto sessions = get_all_session();
-
-    auto packet = make_packet(*rsp);
-    for (auto& s : sessions) {
-        if (s) {
-            s->send(packet, 0);
-        }
-    }
-
-    boardcast_message("Server", std::format("Player {} Exit Game", name),
-                      Color::YELLOW, true);
+    pool->enqueue([this, uuid]() { player_exit(uuid); });
 }
 
 glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
@@ -623,6 +596,39 @@ void ServerWorld::boardcast_message(const std::string& name,
     for (auto& s : session) {
         s->send(packet);
     }
+}
+
+void ServerWorld::player_exit(const std::string& uuid) {
+    auto player = m_players_manager.remove(uuid);
+
+    if (!player) {
+        return; // Already removed
+    }
+
+    const std::string NAME = player->get_name();
+    auto exit_session = player->get_session();
+
+    Logger::info("Player {} Exit the Server", NAME);
+
+    m_chunk_system.release_chunk(player);
+
+    Arena arena;
+    auto* rsp = Arena::Create<LogoutRsp>(&arena);
+    rsp->set_uuid(uuid);
+    rsp->set_server_stop(false);
+    exit_session->send(make_packet(*rsp), 0);
+
+    auto sessions = get_all_session();
+
+    auto packet = make_packet(*rsp);
+    for (auto& s : sessions) {
+        if (s) {
+            s->send(packet, 0);
+        }
+    }
+
+    boardcast_message("Server", std::format("Player {} Exit Game", NAME),
+                      Color::YELLOW, true);
 }
 
 int ServerWorld::chunk_load_style() const {

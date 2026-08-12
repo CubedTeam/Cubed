@@ -159,5 +159,6 @@ private:
 
     void boardcast_message(const std::string& name, const std::string& message,
                            Color color = Color::WHITE, bool system_msg = false);
+    void player_exit(const std::string& uuid);
 };
 } // namespace Cubed
