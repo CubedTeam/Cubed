@@ -361,7 +361,6 @@ void ServerWorld::handle_player_login(const std::string& name,
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {
     std::shared_ptr<Session> exit_session;
-    ChunkPosSet old_set;
     std::string name;
 
     auto player = m_players_manager.find(uuid);
@@ -373,11 +372,10 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     name = player->get_name();
     Logger::info("Player {} Exit the Server", name);
     exit_session = player->get_session();
-    old_set = player->get_chunk_pos_set();
+
+    m_chunk_system.release_chunk(player);
 
     m_players_manager.remove(uuid);
-
-    m_chunk_system.update_ref_count(old_set, {});
 
     Arena arena;
     auto* rsp = Arena::Create<LogoutRsp>(&arena);

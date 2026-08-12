@@ -22,7 +22,7 @@ class CaveCarver;
 class RiverWorm;
 class ServerPlayerManager;
 class ServerWorld;
-
+class ServerPlayer;
 class ServerChunkSystem {
 public:
     struct ChunkRequest {
@@ -38,11 +38,14 @@ public:
         std::shared_ptr<const ServerChunk> chunk;
     };
 
-    enum class ChunkState { NONE, GENERATING, READY, PENDING_DELETE };
+    enum class ChunkState { NONE, GENERATING, READY, GENERATING_UNUSED };
     struct ChunkEntity {
         ChunkState state = ChunkState::NONE;
         std::shared_ptr<ServerChunk> chunk;
         std::atomic<uint32_t> ref_count = 0;
+
+        uint64_t generation_id = 0;
+
         ChunkEntity() = default;
         ChunkEntity(ChunkState s, std::shared_ptr<ServerChunk> c = {})
             : state(s), chunk(std::move(c)) {}
@@ -55,18 +58,32 @@ public:
             state = std::exchange(o.state, ChunkState::NONE);
             chunk = std::move(o.chunk);
             ref_count = o.ref_count.exchange(0);
+            generation_id = o.generation_id;
             return *this;
         }
 
         ChunkEntity(ChunkEntity&& o) noexcept
             : state(std::exchange(o.state, ChunkState::NONE)),
-              chunk(std::move(o.chunk)), ref_count(o.ref_count.exchange(0)) {}
+              chunk(std::move(o.chunk)), ref_count(o.ref_count.exchange(0)),
+              generation_id(o.generation_id) {}
         ChunkEntity(const ChunkEntity&) = delete;
         ChunkEntity& operator=(const ChunkEntity&) = delete;
     };
 
+    struct GenerationTicket {
+        ChunkPos pos;
+        uint64_t generation_id;
+    };
+
     struct PendingChunk {
         ChunkPos pos;
+        uint64_t generation_id;
+        std::unique_ptr<ServerChunk> chunk;
+    };
+
+    struct FinishedChunk {
+        ChunkPos pos;
+        uint64_t generation_id;
         std::unique_ptr<ServerChunk> chunk;
     };
 
@@ -121,7 +138,7 @@ public:
 
     void hot_reload();
 
-    void update_ref_count(const ChunkPosSet& old, const ChunkPosSet& now);
+    void release_chunk(const std::shared_ptr<ServerPlayer>& player);
 
 private:
     using ChunkHashMap =
@@ -141,25 +158,33 @@ private:
     std::atomic<bool> m_chunk_gen_finished{false};
     std::atomic<bool> m_scheduler_alive{false};
     std::mutex m_generation_queue_mutex;
+
+    std::mutex m_reconcile_mutex;
     std::condition_variable_any m_generation_cv;
     RecentQueue<std::string> m_generation_queue;
 
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_generation_pool;
     std::atomic<int> m_generation_threads{0};
 
+    std::atomic<uint64_t> m_next_generation_id{1};
+
     std::atomic<int> m_render_distance{24};
     std::atomic<ChunkLoadStyle> m_load_style{ChunkLoadStyle::CENTER};
 
     tbb::concurrent_queue<ChunkRequest> m_waiting_requests;
-    tbb::concurrent_queue<std::unique_ptr<ServerChunk>> m_finished_chunks;
+    tbb::concurrent_queue<FinishedChunk> m_finished_chunks;
 
     void gen_chunks_internal(const std::string& uuid);
 
     void compute_required_chunks(ChunkPosSet& required_chunks,
                                  const std::optional<std::string>& uuid);
-    void sync_and_collect_missing_chunks(std::vector<ChunkPos>&,
-                                         const ChunkPosSet&);
+
     void submit_new_chunks(const std::string& uuid, NewChunkVector& new_chunks);
+
+    void reconcile_chunks(const ChunkPosSet& old_set,
+                          const ChunkPosSet& new_set,
+                          std::vector<GenerationTicket>& new_generations);
+
     // void wait_all_chunk_tasks();
 };
 } // namespace Cubed

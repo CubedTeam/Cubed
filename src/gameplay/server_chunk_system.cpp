@@ -27,20 +27,45 @@ void ServerChunkSystem::stop() {
 void ServerChunkSystem::update() {
     ZoneScopedN("ServerChunkSystem::update");
     bool consumed = false;
-    std::unique_ptr<ServerChunk> chunk;
-    while (m_finished_chunks.try_pop(chunk)) {
-        if (!chunk) {
+    FinishedChunk finished;
+    while (m_finished_chunks.try_pop(finished)) {
+        if (!finished.chunk) {
             Logger::error("Finished Queue has nullptr Chunk");
             continue;
         }
         chunk_acc acc;
-        auto pos = chunk->get_chunk_pos();
-        if (!m_chunks.find(acc, pos)) {
+
+        if (!m_chunks.find(acc, finished.pos)) {
             Logger::error("New Chunk {} {} not Find, don't move to m_chunks",
-                          pos.x, pos.z);
+                          finished.pos.x, finished.pos.z);
             continue;
         }
-        acc->second.chunk = std::move(chunk);
+
+        if (acc->second.generation_id != finished.generation_id) {
+            Logger::warn(
+                "Discard stale chunk result {} {}, generation {} != {}",
+                finished.pos.x, finished.pos.z, finished.generation_id,
+                acc->second.generation_id);
+
+            continue;
+        }
+        if (acc->second.state == ChunkState::GENERATING_UNUSED ||
+            acc->second.ref_count.load(std::memory_order_relaxed) == 0) {
+
+            m_chunks.erase(acc);
+            continue;
+        }
+
+        if (acc->second.state != ChunkState::GENERATING) {
+            // Prevent duplicate completion results from overwriting READY
+            // chunks
+            Logger::warn("Discard duplicate chunk result {} {}", finished.pos.x,
+                         finished.pos.z);
+
+            continue;
+        }
+
+        acc->second.chunk = std::move(finished.chunk);
         acc->second.state = ChunkState::READY;
         consumed = true;
     }
@@ -49,45 +74,13 @@ void ServerChunkSystem::update() {
     }
 }
 
-void ServerChunkSystem::update_ref_count(const ChunkPosSet& old,
-                                         const ChunkPosSet& now) {
+void ServerChunkSystem::release_chunk(
+    const std::shared_ptr<ServerPlayer>& player) {
 
-    // Elements in the old set that are not contained in now are not needed by
-    // the current player.
-
-    for (auto& pos : old) {
-        if (!now.contains(pos)) {
-
-            chunk_acc acc;
-            if (!m_chunks.find(acc, pos)) {
-                Logger::warn("Update Ref Count Error, can't Find old pos "
-                             "in m_chunks");
-                continue;
-            }
-            if (acc->second.ref_count == 0) {
-                Logger::error("Chunk {} {} error, ref count is 0", pos.x,
-                              pos.z);
-                m_chunks.erase(acc);
-                continue;
-            }
-            if (--acc->second.ref_count == 0) {
-                m_chunks.erase(acc);
-            }
-        }
-    }
-
-    for (auto& pos : now) {
-
-        chunk_acc acc;
-        if (!m_chunks.find(acc, pos)) {
-            Logger::warn(
-                "Update Ref Count Error, can't Find now pos in m_chunks");
-            continue;
-        }
-        if (!old.contains(pos)) {
-            ++acc->second.ref_count;
-        }
-    }
+    std::lock_guard lock(m_reconcile_mutex);
+    ChunkPosSet old_set = player->get_chunk_pos_set();
+    std::vector<GenerationTicket> unused;
+    reconcile_chunks(old_set, ChunkPosSet{}, unused);
 }
 
 void ServerChunkSystem::send_chunk(int task_id, const std::string& uuid,
@@ -185,38 +178,36 @@ void ServerChunkSystem::gen_chunks_internal(const std::string& uuid) {
     m_chunk_gen_finished = false;
 
     ChunkPosSet required_chunks_set;
+
     compute_required_chunks(required_chunks_set, uuid);
-    std::vector<ChunkPos> need_gen_chunks_pos;
+    std::vector<GenerationTicket> new_generations;
+    {
+        std::lock_guard lock(m_reconcile_mutex);
 
-    ChunkPosSet old_set;
-    sync_and_collect_missing_chunks(need_gen_chunks_pos, required_chunks_set);
-    auto& m_players_manager = m_world.player_manager();
-    auto player = m_players_manager.find(uuid);
+        auto& m_players_manager = m_world.player_manager();
 
-    if (!player) {
-        return;
+        auto player = m_players_manager.find(uuid);
+
+        if (!player) {
+            return;
+        }
+
+        ChunkPosSet old_set = player->get_chunk_pos_set();
+        player->update_chunk_set(required_chunks_set);
+
+        reconcile_chunks(old_set, required_chunks_set, new_generations);
     }
 
-    old_set = player->get_chunk_pos_set();
-    player->update_chunk_set(required_chunks_set);
-
-    update_ref_count(old_set, required_chunks_set);
-    ASSERT_MSG(!required_chunks_set.empty(), "required chunks is empty!!");
-
-    Logger::info("New Gen Chunks Sum: {}", need_gen_chunks_pos.size());
-
-    if (need_gen_chunks_pos.empty()) {
-        m_could_generate = true;
-
-        return;
-    }
     NewChunkVector new_chunks;
-
+    new_chunks.reserve(new_generations.size());
     // Create new chunk
 
-    for (auto& pos : need_gen_chunks_pos) {
-        new_chunks.emplace_back(
-            pos, std::make_unique<ServerChunk>(ServerChunk(m_world, pos)));
+    for (auto& ticket : new_generations) {
+        new_chunks.push_back({
+            .pos = ticket.pos,
+            .generation_id = ticket.generation_id,
+            .chunk = std::make_unique<ServerChunk>(m_world, ticket.pos),
+        });
     }
 
     submit_new_chunks(uuid, new_chunks);
@@ -247,15 +238,69 @@ void ServerChunkSystem::compute_required_chunks(
     }
 }
 
-void ServerChunkSystem::sync_and_collect_missing_chunks(
-    std::vector<ChunkPos>& need_gen_chunks_pos,
-    const ChunkPosSet& required_chunks) {
+void ServerChunkSystem::reconcile_chunks(
+    const ChunkPosSet& old_set, const ChunkPosSet& new_set,
+    std::vector<GenerationTicket>& new_generations) {
 
-    for (auto pos : required_chunks) {
+    for (const auto& pos : old_set) {
+        if (new_set.contains(pos)) {
+            continue;
+        }
+
         chunk_acc acc;
-        if (m_chunks.insert(acc, pos)) {
-            need_gen_chunks_pos.push_back(pos);
-            acc->second = ChunkEntity{ChunkState::GENERATING};
+        if (!m_chunks.find(acc, pos)) {
+            Logger::warn("Cannot find old chunk {} {}", pos.x, pos.z);
+            continue;
+        }
+
+        const uint32_t PREVIOUS =
+            acc->second.ref_count.fetch_sub(1, std::memory_order_relaxed);
+
+        if (PREVIOUS == 0) {
+            Logger::error("Chunk {} {} ref_count underflow", pos.x, pos.z);
+            acc->second.ref_count.store(0);
+            continue;
+        }
+
+        if (PREVIOUS != 1) {
+            continue;
+        }
+
+        if (acc->second.state == ChunkState::GENERATING) {
+            acc->second.state = ChunkState::GENERATING_UNUSED;
+        } else {
+            m_chunks.erase(acc);
+        }
+    }
+
+    for (const auto& pos : new_set) {
+        if (old_set.contains(pos)) {
+            continue;
+        }
+
+        chunk_acc acc;
+        const bool INSERTED = m_chunks.insert(acc, pos);
+
+        if (INSERTED) {
+            const uint64_t GENERATION_ID =
+                m_next_generation_id.fetch_add(1, std::memory_order_relaxed);
+
+            acc->second.state = ChunkState::GENERATING;
+            acc->second.chunk.reset();
+            acc->second.ref_count.store(1, std::memory_order_relaxed);
+            acc->second.generation_id = GENERATION_ID;
+
+            new_generations.push_back({
+                .pos = pos,
+                .generation_id = GENERATION_ID,
+            });
+        } else {
+            acc->second.ref_count.fetch_add(1, std::memory_order_relaxed);
+
+            if (acc->second.state == ChunkState::GENERATING_UNUSED) {
+
+                acc->second.state = ChunkState::GENERATING;
+            }
         }
     }
 }
@@ -271,10 +316,16 @@ void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
     case RANDOM:
         // Enqueue directly in random order
         for (auto& task : new_chunks) {
-
-            pool_ptr->enqueue([chunk = std::move(task.chunk), this]() mutable {
+            const ChunkPos POS = task.pos;
+            const uint64_t GENERATION_ID = task.generation_id;
+            pool_ptr->enqueue([chunk = std::move(task.chunk), POS,
+                               GENERATION_ID, this]() mutable {
                 chunk->gen_chunk();
-                m_finished_chunks.push(std::move(chunk));
+                m_finished_chunks.push(FinishedChunk{
+                    .pos = POS,
+                    .generation_id = GENERATION_ID,
+                    .chunk = std::move(chunk),
+                });
             });
         }
         break;
@@ -297,16 +348,23 @@ void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
                       return dist2(a.first) < dist2(b.first);
                   });
 
-        const int CHUNKS_PER_PRIORITY = m_generation_threads;
+        const int CHUNKS_PER_PRIORITY =
+            std::max(1, m_generation_threads.load());
 
         for (size_t i = 0; i < tasks.size(); ++i) {
             int priority = 10 + static_cast<int>(i / CHUNKS_PER_PRIORITY);
             auto* task = tasks[i].second;
-            pool_ptr->enqueue(priority,
-                              [this, chunk = std::move(task->chunk)]() mutable {
-                                  chunk->gen_chunk();
-                                  m_finished_chunks.push(std::move(chunk));
-                              });
+            const ChunkPos POS = task->pos;
+            const uint64_t GENERATION_ID = task->generation_id;
+            pool_ptr->enqueue(
+                priority, [this, POS, GENERATION_ID,
+                           chunk = std::move(task->chunk)]() mutable {
+                    chunk->gen_chunk();
+                    m_finished_chunks.push(
+                        FinishedChunk{.pos = POS,
+                                      .generation_id = GENERATION_ID,
+                                      .chunk = std::move(chunk)});
+                });
         }
     } break;
     }
@@ -391,7 +449,7 @@ void ServerChunkSystem::need_gen(const std::string& uuid) {
 
 void ServerChunkSystem::hot_reload() {
     int dist = m_world.get_config().get("server_distance", 24);
-    m_render_distance = dist <= MAX_DISTANCE ? dist : MAX_DISTANCE;
+    m_render_distance = std::clamp(dist, 0, MAX_DISTANCE);
 }
 
 uint32_t ServerChunkSystem::get_chunk_ref_count(ChunkPos pos) const {
