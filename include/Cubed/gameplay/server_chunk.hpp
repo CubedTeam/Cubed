@@ -38,6 +38,7 @@ public:
     void set_chunk_block(int index, unsigned id);
     // ensure thread safe!
     void gen_chunk();
+    void finished_generating();
 
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;

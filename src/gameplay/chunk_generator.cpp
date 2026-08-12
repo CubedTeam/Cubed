@@ -824,6 +824,7 @@ void ChunkGenerator::generate_river() {
 }
 
 void ChunkGenerator::spawn_creature() {
+    ZoneScopedN("ChunkGenerator::spawn_creature");
     auto biome = m_chunk.biome();
     const auto& blocks = m_chunk.blocks();
     const auto& heightmap = m_chunk.heightmap();
