@@ -1,7 +1,7 @@
-#include "Cubed/gameplay/server_world.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
 
 #include "Cubed/gameplay/packet.hpp"
-#include "Cubed/gameplay/session.hpp"
+#include "Cubed/gameplay/server/session.hpp"
 #include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"

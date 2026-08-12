@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/config.hpp"
-#include "Cubed/gameplay/server_world.hpp"
-#include "Cubed/gameplay/session.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
+#include "Cubed/gameplay/server/session.hpp"
 
 #include <asio.hpp>
 #include <thread>

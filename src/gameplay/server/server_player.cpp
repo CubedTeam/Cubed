@@ -1,6 +1,6 @@
-#include "Cubed/gameplay/server_player.hpp"
+#include "Cubed/gameplay/server/server_player.hpp"
 
-#include "Cubed/gameplay/server_world.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
 namespace Cubed {
 ServerPlayer::ServerPlayer(std::string_view name, std::string_view uuid,
                            ServerWorld& world, std::shared_ptr<Session> session,

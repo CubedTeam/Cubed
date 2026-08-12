@@ -1,4 +1,4 @@
-#include "Cubed/gameplay/client_chunk.hpp"
+#include "Cubed/gameplay/client/client_chunk.hpp"
 
 #include "Cubed/gameplay/block_manager.hpp"
 

@@ -1,8 +1,8 @@
-#include "Cubed/gameplay/server_chunk_system.hpp"
+#include "Cubed/gameplay/server/server_chunk_system.hpp"
 
 #include "Cubed/gameplay/block_manager.hpp"
-#include "Cubed/gameplay/server_world.hpp"
-#include "Cubed/gameplay/session.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
+#include "Cubed/gameplay/server/session.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 
 #include <tracy/Tracy.hpp>

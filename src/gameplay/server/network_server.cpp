@@ -1,4 +1,4 @@
-#include "Cubed/gameplay/network_server.hpp"
+#include "Cubed/gameplay/server/network_server.hpp"
 
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/net_error.hpp"

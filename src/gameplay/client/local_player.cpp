@@ -1,10 +1,10 @@
-#include "Cubed/gameplay/local_player.hpp"
+#include "Cubed/gameplay/client/local_player.hpp"
 
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/block_manager.hpp"
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
 

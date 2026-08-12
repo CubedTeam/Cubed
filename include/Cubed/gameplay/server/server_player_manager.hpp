@@ -1,5 +1,5 @@
 #pragma once
-#include "Cubed/gameplay/server_player.hpp"
+#include "Cubed/gameplay/server/server_player.hpp"
 #include "Cubed/tools/uuid.hpp"
 
 #include <atomic>

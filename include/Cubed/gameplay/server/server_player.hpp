@@ -2,7 +2,7 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/game_time.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 
 #include <atomic>
 #include <glm/glm.hpp>

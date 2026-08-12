@@ -1,4 +1,4 @@
-#include "Cubed/gameplay/server_player_manager.hpp"
+#include "Cubed/gameplay/server/server_player_manager.hpp"
 
 namespace Cubed {
 ServerPlayerManager::ServerPlayerManager(ServerWorld& world)

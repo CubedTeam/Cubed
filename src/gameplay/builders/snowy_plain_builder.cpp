@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/builders/snowy_plain_builder.hpp"
 
-#include "Cubed/gameplay/chunk_generator.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 namespace Cubed {
 SnowyPlainBuilder::SnowyPlainBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}

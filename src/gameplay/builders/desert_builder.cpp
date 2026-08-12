@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/builders/desert_builder.hpp"
 
-#include "Cubed/gameplay/chunk_generator.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 namespace Cubed {
 DesertBuilder::DesertBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}

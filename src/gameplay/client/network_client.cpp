@@ -1,6 +1,6 @@
-#include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/gameplay/client/network_client.hpp"
 
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/net_error.hpp"
 

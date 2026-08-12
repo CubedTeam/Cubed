@@ -1,10 +1,10 @@
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/block_manager.hpp"
-#include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"

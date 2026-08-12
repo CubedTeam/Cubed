@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/gameplay/chunk_pos.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
 

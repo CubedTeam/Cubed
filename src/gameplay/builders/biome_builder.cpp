@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/builders/biome_builder.hpp"
 
-#include "Cubed/gameplay/chunk_generator.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 namespace Cubed {
 void BiomeBuilder::build_bottom() {
     ChunkGenerator& chunk_generator = get_chunk_generator();

@@ -1,4 +1,4 @@
-#include "Cubed/gameplay/chunk_generator.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
 
 #include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/builders/desert_builder.hpp"
@@ -11,8 +11,8 @@
 #include "Cubed/gameplay/cave_path.hpp"
 #include "Cubed/gameplay/creatures/spawn.hpp"
 #include "Cubed/gameplay/river.path.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
-#include "Cubed/gameplay/server_world.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/gameplay/tree.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/cubed_hash.hpp"

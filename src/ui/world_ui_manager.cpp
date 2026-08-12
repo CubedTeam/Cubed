@@ -2,7 +2,7 @@
 
 #include "Cubed/app.hpp"
 #include "Cubed/debug_collector.hpp"
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/scene_manager.hpp"

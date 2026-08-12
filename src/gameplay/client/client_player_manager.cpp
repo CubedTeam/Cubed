@@ -1,7 +1,7 @@
-#include "Cubed/gameplay/client_player_manager.hpp"
+#include "Cubed/gameplay/client/client_player_manager.hpp"
 
 #include "Cubed/gameplay/block_manager.hpp"
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/time_tools.hpp"

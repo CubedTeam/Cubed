@@ -1,7 +1,7 @@
 #pragma once
-#include "Cubed/gameplay/client_player.hpp"
-#include "Cubed/gameplay/local_player.hpp"
-#include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/gameplay/client/client_player.hpp"
+#include "Cubed/gameplay/client/local_player.hpp"
+#include "Cubed/gameplay/client/network_client.hpp"
 #include "Cubed/tools/sparse_vector.hpp"
 namespace Cubed {
 class ClientWorld;

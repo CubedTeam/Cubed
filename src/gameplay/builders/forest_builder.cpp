@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/builders/forest_builder.hpp"
 
-#include "Cubed/gameplay/chunk_generator.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 #include "Cubed/gameplay/tree.hpp"
 
 #include <algorithm>

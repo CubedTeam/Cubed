@@ -3,8 +3,8 @@
 #include "Cubed/gameplay/biome.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk.hpp"
-#include "Cubed/gameplay/chunk_generator.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
 
 #include <array>
 #include <atomic>

@@ -1,4 +1,4 @@
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 
 #include "Cubed/tools/cubed_assert.hpp"
 

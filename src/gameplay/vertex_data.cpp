@@ -1,6 +1,6 @@
 #include "Cubed/gameplay/vertex_data.hpp"
 
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 
 namespace Cubed {
 VertexData::VertexData(ClientWorld& world) : m_world(world) {}

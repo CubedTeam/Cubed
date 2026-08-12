@@ -1,7 +1,7 @@
 #include "Cubed/render/player_renderer.hpp"
 
 #include "Cubed/camera.hpp"
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/primitive_data.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/scene/world_scene.hpp"

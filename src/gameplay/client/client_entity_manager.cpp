@@ -1,6 +1,6 @@
-#include "Cubed/gameplay/client_entity_manager.hpp"
+#include "Cubed/gameplay/client/client_entity_manager.hpp"
 
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/gameplay/creatures/creature_manager.hpp"
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"

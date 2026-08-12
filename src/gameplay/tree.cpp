@@ -1,6 +1,6 @@
 #include "Cubed/gameplay/tree.hpp"
 
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 
 #include <array>
 

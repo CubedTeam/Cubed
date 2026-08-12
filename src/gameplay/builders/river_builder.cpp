@@ -1,6 +1,6 @@
 #include "Cubed/gameplay/builders/river_builder.hpp"
 
-#include "Cubed/gameplay/chunk_generator.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
 namespace Cubed {
 RiverBuilder::RiverBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}

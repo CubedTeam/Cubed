@@ -7,7 +7,7 @@ target_sources(${PROJECT_NAME}
         config.cpp
         dev_panel.cpp
         gameplay/biome.cpp
-        gameplay/chunk_generator.cpp
+        gameplay/server/chunk_generator.cpp
         gameplay/tree.cpp
         render/renderer.cpp
         shader.cpp
@@ -31,15 +31,15 @@ target_sources(${PROJECT_NAME}
         gameplay/block.cpp
         gameplay/vertex_data.cpp
         gameplay/builders/ocean_builder.cpp
-        gameplay/network_server.cpp
-        gameplay/server_world.cpp
-        gameplay/client_world.cpp
-        gameplay/server_chunk.cpp
-        gameplay/client_chunk.cpp
-        gameplay/server_player.cpp
-        gameplay/local_player.cpp
-        gameplay/session.cpp
-        gameplay/network_client.cpp
+        gameplay/server/network_server.cpp
+        gameplay/server/server_world.cpp
+        gameplay/client/client_world.cpp
+        gameplay/server/server_chunk.cpp
+        gameplay/client/client_chunk.cpp
+        gameplay/server/server_player.cpp
+        gameplay/client/local_player.cpp
+        gameplay/server/session.cpp
+        gameplay/client/network_client.cpp
         render/player_renderer.cpp
         audio/audio_engine.cpp
         audio/audio_loader.cpp
@@ -99,9 +99,9 @@ target_sources(${PROJECT_NAME}
         gameplay/hitbox_manager.cpp
         gameplay/systems/physical_system.cpp
         gameplay/systems/speed_system.cpp
-        gameplay/client_player_manager.cpp
-        gameplay/server_entity_manager.cpp
-        gameplay/client_entity_manager.cpp
+        gameplay/client/client_player_manager.cpp
+        gameplay/server/server_entity_manager.cpp
+        gameplay/client/client_entity_manager.cpp
         gameplay/systems/wander_ai_system.cpp
         tools/json_utils.cpp
         gameplay/item_manager.cpp
@@ -110,6 +110,6 @@ target_sources(${PROJECT_NAME}
         scene/screenshot_scene.cpp
         ui/scroll_view.cpp
         gameplay/creatures/creature_manager.cpp
-        gameplay/server_player_manager.cpp
-        gameplay/server_chunk_system.cpp
+        gameplay/server/server_player_manager.cpp
+        gameplay/server/server_chunk_system.cpp
 )
