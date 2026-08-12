@@ -7,12 +7,18 @@
 
 #include <tracy/Tracy.hpp>
 using namespace google::protobuf;
+namespace fs = std::filesystem;
 namespace Cubed {
 ServerChunkSystem::ServerChunkSystem(ServerWorld& world) : m_world(world) {}
 
 ServerChunkSystem::~ServerChunkSystem() {}
 
-void ServerChunkSystem::initialize() {
+void ServerChunkSystem::initialize(std::string_view world_name) {
+
+    fs::path save_path = "./saves" + std::string(world_name);
+
+    m_storage = std::make_unique<ChunkStorage>(save_path);
+
     auto gen_threads = Tools::get_server_gen_threads(m_world.get_runmode());
     Logger::info("Server Gen pool threads {}", gen_threads);
     m_generation_threads = gen_threads;
@@ -20,8 +26,67 @@ void ServerChunkSystem::initialize() {
 }
 
 void ServerChunkSystem::stop() {
+    save_all_chunks(true);
     m_finished_chunks.clear();
     m_chunks.clear();
+}
+
+void ServerChunkSystem::save_all_chunks(bool sync) {
+
+    auto chunks = copy_all_chunks();
+
+    if (chunks.empty()) {
+        return;
+    }
+    if (sync) {
+        m_storage->save_batch(chunks, true);
+    } else {
+        auto pool = m_world.get_compute_pool();
+
+        if (!pool) {
+            m_storage->save_batch(chunks);
+            return;
+        }
+
+        pool->enqueue([this, chunks = std::move(chunks)]() mutable {
+            m_storage->save_batch(chunks);
+        });
+    }
+}
+
+std::vector<ChunkStorageData> ServerChunkSystem::copy_all_chunks() const {
+    std::vector<ChunkPos> positions;
+
+    {
+        std::lock_guard lock(m_reconcile_mutex);
+
+        positions.reserve(m_chunks.size());
+
+        for (const auto& [pos, _] : m_chunks) {
+            positions.push_back(pos);
+        }
+    }
+
+    std::vector<ChunkStorageData> chunks;
+    chunks.reserve(positions.size());
+
+    for (const ChunkPos& pos : positions) {
+        chunk_cacc acc;
+
+        if (!m_chunks.find(acc, pos)) {
+            continue;
+        }
+
+        const ChunkEntity& entity = acc->second;
+
+        if (entity.state != ChunkState::READY || !entity.chunk) {
+            continue;
+        }
+
+        chunks.emplace_back(entity.chunk->make_storage_data());
+    }
+
+    return chunks;
 }
 
 void ServerChunkSystem::update() {
@@ -245,6 +310,8 @@ void ServerChunkSystem::reconcile_chunks(
     const ChunkPosSet& old_set, const ChunkPosSet& new_set,
     std::vector<GenerationTicket>& new_generations) {
 
+    std::vector<ChunkEntity> m_removed_chunks;
+
     for (const auto& pos : old_set) {
         if (new_set.contains(pos)) {
             continue;
@@ -272,6 +339,7 @@ void ServerChunkSystem::reconcile_chunks(
         if (acc->second.state == ChunkState::GENERATING) {
             acc->second.state = ChunkState::GENERATING_UNUSED;
         } else {
+            m_removed_chunks.emplace_back(std::move(acc->second));
             m_chunks.erase(acc);
         }
     }
@@ -306,6 +374,21 @@ void ServerChunkSystem::reconcile_chunks(
             }
         }
     }
+
+    auto save_removed_chunk = [this,
+                               chunks = std::move(m_removed_chunks)]() mutable {
+        std::vector<ChunkStorageData> data;
+        for (auto& chunk : chunks) {
+            data.emplace_back(chunk.chunk->make_storage_data());
+        }
+        chunks.clear();
+
+        m_storage->save_batch(data);
+    };
+
+    auto pool = m_generation_pool.load();
+    if (!pool) {
+    }
 }
 
 void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
@@ -324,7 +407,7 @@ void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
             const uint64_t GENERATION_ID = task.generation_id;
             pool_ptr->enqueue([chunk = std::move(task.chunk), POS,
                                GENERATION_ID, this]() mutable {
-                chunk->gen_chunk();
+                chunk->load_or_gen_chunk();
                 m_finished_chunks.push(FinishedChunk{
                     .pos = POS,
                     .generation_id = GENERATION_ID,
@@ -363,7 +446,7 @@ void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
             pool_ptr->enqueue(
                 priority, [this, POS, GENERATION_ID,
                            chunk = std::move(task->chunk)]() mutable {
-                    chunk->gen_chunk();
+                    chunk->load_or_gen_chunk();
                     m_finished_chunks.push(
                         FinishedChunk{.pos = POS,
                                       .generation_id = GENERATION_ID,
@@ -601,4 +684,5 @@ int ServerChunkSystem::generation_threads() const {
     return m_generation_threads;
 }
 size_t ServerChunkSystem::chunk_size() const { return m_chunks.size(); }
+ChunkStorage* ServerChunkSystem::get_storage() { return m_storage.get(); }
 } // namespace Cubed

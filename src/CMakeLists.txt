@@ -112,4 +112,5 @@ target_sources(${PROJECT_NAME}
         gameplay/creatures/creature_manager.cpp
         gameplay/server/server_player_manager.cpp
         gameplay/server/server_chunk_system.cpp
+        gameplay/server/chunk_storage.cpp
 )

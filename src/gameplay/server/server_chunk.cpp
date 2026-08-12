@@ -1,9 +1,9 @@
 #include "Cubed/gameplay/server/server_chunk.hpp"
 
+#include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 
 #include <tracy/Tracy.hpp>
-
 namespace Cubed {
 ServerChunk::ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
                          bool temp_chunk)
@@ -138,19 +138,31 @@ void ServerChunk::gen_phase_five() {
     m_generator->generate_vegetation();
 }
 
-void ServerChunk::gen_chunk() {
-    ZoneScopedN("ServerChunk::gen_chunk");
-    if (m_gening.exchange(true))
+void ServerChunk::load_or_gen_chunk() {
+    ZoneScopedN("ServerChunk::load_or_gen_chunk");
+    if (m_gening.exchange(true)) {
         return;
-    m_gening = true;
+    }
+
     ASSERT_MSG(m_blocks.empty(),
                "Blocks isn't Empty, chunk already generated!");
+
     if (m_blocks.size() != 0) {
         Logger::warn(
             "Request Generator Chunk {} {} ,but the Blocks size is Not 0",
             m_chunk_pos.x, m_chunk_pos.z);
         return;
     }
+
+    auto* storage = m_world.chunk_system().get_storage();
+
+    auto saved_chunk = storage->load(m_chunk_pos);
+
+    if (saved_chunk) {
+        load_storage_data(*saved_chunk);
+        return;
+    }
+
     std::vector<ServerChunk> neighbor;
     for (int i = 0; i < 4; i++) {
         neighbor.emplace_back(m_world, m_chunk_pos + CHUNK_DIR[i], true);
@@ -194,7 +206,16 @@ ChunkStorageData ServerChunk::make_storage_data() const {
     return data;
 }
 
-void ServerChunk::load_storage_data(ChunkStorageData data) {}
+void ServerChunk::load_storage_data(ChunkStorageData data) {
+    ASSERT(data.pos == m_chunk_pos);
+    m_biome = data.biome;
+    m_blocks = std::move(data.blocks);
+    m_chunk_pos = data.pos;
+    m_seed = data.seed;
+
+    m_gening = false;
+    m_generator.reset();
+}
 
 bool ServerChunk::is_temp_chunk() const { return m_temp_chunk.load(); }
 

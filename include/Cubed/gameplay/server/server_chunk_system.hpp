@@ -89,7 +89,7 @@ public:
     ServerChunkSystem(const ServerChunkSystem&) = delete;
     ServerChunkSystem& operator=(const ServerChunkSystem&) = delete;
 
-    void initialize();
+    void initialize(std::string_view world_name);
     void stop();
 
     void update();
@@ -130,6 +130,11 @@ public:
 
     void release_chunk(const std::shared_ptr<ServerPlayer>& player);
 
+    void save_all_chunks(bool sync = false);
+    std::vector<ChunkStorageData> copy_all_chunks() const;
+
+    ChunkStorage* get_storage();
+
 private:
     using ChunkHashMap =
         tbb::concurrent_hash_map<ChunkPos, ChunkEntity, ChunkPos::TBBHash>;
@@ -137,6 +142,8 @@ private:
     using chunk_cacc = ChunkHashMap::const_accessor;
 
     ServerWorld& m_world;
+
+    std::unique_ptr<ChunkStorage> m_storage;
 
     ChunkHashMap m_chunks;
 
@@ -149,7 +156,7 @@ private:
     std::atomic<bool> m_scheduler_alive{false};
     std::mutex m_generation_queue_mutex;
 
-    std::mutex m_reconcile_mutex;
+    mutable std::mutex m_reconcile_mutex;
     std::condition_variable_any m_generation_cv;
     RecentQueue<std::string> m_generation_queue;
 

@@ -31,7 +31,7 @@ public:
     ~ServerWorld();
     void stop();
     void handle_player_exit(const std::string& uuid);
-    void init_world(RunMode mode);
+    void init_world(RunMode mode, std::string_view world_name);
     void request_generation(std::string uuid);
     void update();
     void hot_reload();
@@ -95,6 +95,7 @@ public:
     ServerEntityManager& entity_manager();
     ServerPlayerManager& player_manager();
     ServerChunkSystem& chunk_system();
+
     std::shared_ptr<ThreadPool> get_compute_pool();
     size_t player_sum() const;
     RunMode get_runmode() const;

@@ -54,10 +54,10 @@ void ServerWorld::send_time() {
     }
 }
 
-void ServerWorld::init_world(RunMode mode) {
+void ServerWorld::init_world(RunMode mode, std::string_view world_name) {
     m_runmode = mode;
     m_entity_manager.init();
-    m_chunk_system.initialize();
+    m_chunk_system.initialize(world_name);
     register_timer("player disconnect", 5, [this]() {
         std::vector<std::string> disconnect;
         auto players = m_players_manager.snapshot();
@@ -677,6 +677,7 @@ int ServerWorld::get_per_tick_time() const { return m_per_tick_time; }
 ServerEntityManager& ServerWorld::entity_manager() { return m_entity_manager; }
 ServerPlayerManager& ServerWorld::player_manager() { return m_players_manager; }
 ServerChunkSystem& ServerWorld::chunk_system() { return m_chunk_system; }
+
 std::shared_ptr<ThreadPool> ServerWorld::get_compute_pool() {
     return m_compute_thread_pool.load();
 }

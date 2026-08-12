@@ -7,7 +7,12 @@
     "freetype",
     "opus",
     "assimp",
-    "rocksdb",
+    {
+      "name": "rocksdb",
+      "features": [
+        "zstd"
+      ]
+    },
     {
       "name": "sdl3",
       "default-features": false
