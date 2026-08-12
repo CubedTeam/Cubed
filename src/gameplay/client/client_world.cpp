@@ -4,7 +4,6 @@
 #include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
-#include "Cubed/gameplay/server/chunk_generator.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
@@ -382,7 +381,7 @@ void ClientWorld::init(std::string_view player_name,
 
     reload_config(false);
 
-    m_random.init(ChunkGenerator::seed());
+    m_random.init(std::random_device()());
 
     // timer
     register_timer("player_pos", 0.05f, [this]() {
