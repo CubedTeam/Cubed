@@ -71,7 +71,8 @@ BiomeType ServerChunk::get_biome() const { return m_biome.load(); }
 
 ChunkPos ServerChunk::get_chunk_pos() const { return m_chunk_pos; }
 
-const std::vector<BlockType>& ServerChunk::get_chunk_blocks() const {
+std::vector<BlockType> ServerChunk::get_chunk_blocks() const {
+    std::shared_lock lock(m_blocks_mutex);
     return m_blocks;
 }
 
@@ -155,6 +156,25 @@ void ServerChunk::load_or_gen_chunk() {
     }
 
     auto* storage = m_world.chunk_system().get_storage();
+    std::vector<ServerChunk> neighbor;
+
+    for (int i = 0; i < 4; i++) {
+        auto new_pos = m_chunk_pos + CHUNK_DIR[i];
+        neighbor.emplace_back(m_world, new_pos, true);
+        auto saved_chunk = storage->load(new_pos);
+        if (saved_chunk) {
+            neighbor[i].load_storage_data(*saved_chunk);
+        } else {
+            neighbor[i].gen_phase_one();
+            neighbor[i].gen_phase_two();
+            neighbor[i].gen_phase_three();
+            neighbor[i].gen_phase_five();
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        m_neightbor_blocks[i] = std::move(neighbor[i].blocks());
+    }
 
     auto saved_chunk = storage->load(m_chunk_pos);
 
@@ -162,24 +182,9 @@ void ServerChunk::load_or_gen_chunk() {
         load_storage_data(*saved_chunk);
         return;
     }
-
-    std::vector<ServerChunk> neighbor;
-    for (int i = 0; i < 4; i++) {
-        neighbor.emplace_back(m_world, m_chunk_pos + CHUNK_DIR[i], true);
-    }
-    for (auto& chunk : neighbor) {
-        chunk.gen_phase_one();
-        chunk.gen_phase_two();
-        chunk.gen_phase_three();
-        chunk.gen_phase_five();
-    }
     gen_phase_one();
     gen_phase_two();
     gen_phase_three();
-
-    for (int i = 0; i < 4; i++) {
-        m_neightbor_blocks[i] = neighbor[i].get_chunk_blocks();
-    }
     gen_phase_four(m_neightbor_blocks);
     gen_phase_five();
 
@@ -197,6 +202,7 @@ void ServerChunk::finished_generating() {
 }
 
 ChunkStorageData ServerChunk::make_storage_data() const {
+    std::shared_lock lock(m_blocks_mutex);
     ChunkStorageData data;
     data.biome = m_biome;
     data.blocks = m_blocks;
@@ -217,15 +223,49 @@ void ServerChunk::load_storage_data(ChunkStorageData data) {
     m_generator.reset();
 }
 
+bool ServerChunk::set_block(int world_x, int world_y, int world_z,
+                            BlockType type) {
+
+    auto [x, y, z] =
+        world_to_block(world_x, world_y, world_z, m_chunk_pos.x, m_chunk_pos.z);
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+        z >= CHUNK_SIZE) {
+        return false;
+    }
+    auto idx = index(x, y, z);
+
+    std::lock_guard lock(m_blocks_mutex);
+
+    m_blocks[idx] = type;
+    return true;
+}
+
+bool ServerChunk::set_block(const glm::ivec3& world_pos, BlockType type) {
+    return set_block(world_pos.x, world_pos.y, world_pos.z, type);
+}
+
+BlockType ServerChunk::get_block(int world_x, int world_y, int world_z) const {
+    auto [x, y, z] =
+        world_to_block(world_x, world_y, world_z, m_chunk_pos.x, m_chunk_pos.z);
+    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
+        z >= CHUNK_SIZE) {
+        return 0;
+    }
+    auto idx = index(x, y, z);
+
+    std::shared_lock lock(m_blocks_mutex);
+    return m_blocks[idx];
+}
+BlockType ServerChunk::get_block(const glm::ivec3& world_pos) const {
+    return get_block(world_pos.x, world_pos.y, world_pos.z);
+}
+
 bool ServerChunk::is_temp_chunk() const { return m_temp_chunk.load(); }
 
 const OptionalBlockVectorArray& ServerChunk::get_neightbor_blocks() const {
     return m_neightbor_blocks;
 }
 
-void ServerChunk::set_chunk_block(int index, unsigned id) {
-    m_blocks[index] = id;
-}
 ChunkPos ServerChunk::chunk_pos() const { return m_chunk_pos; }
 
 BiomeType ServerChunk::biome() const { return m_biome; }

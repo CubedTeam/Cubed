@@ -218,7 +218,7 @@ void ServerChunkSystem::send_chunk(int task_id, const std::string& uuid,
         rsp->set_chunk_seed(cacc->second.chunk->seed());
         rsp->set_biome_type(std::to_underlying(cacc->second.chunk->biome()));
         auto* blocks = rsp->mutable_chunk_blocks();
-        auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
+        auto chunk_blocks = cacc->second.chunk->get_chunk_blocks();
         blocks->Assign(chunk_blocks.begin(), chunk_blocks.end());
         auto& neighbor_blocks = cacc->second.chunk->get_neightbor_blocks();
 
@@ -399,13 +399,7 @@ void ServerChunkSystem::reconcile_chunks(
         m_storage->save_batch(data);
     };
 
-    auto pool = m_generation_pool.load();
-    if (!pool) {
-        save_removed_chunk();
-    } else {
-        pool->enqueue(
-            [save = std::move(save_removed_chunk)]() mutable { save(); });
-    }
+    save_removed_chunk();
 }
 
 void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
@@ -574,13 +568,8 @@ int ServerChunkSystem::get_block(const glm::ivec3& pos) const {
     if (cacc->second.state != ChunkState::READY) {
         return 0;
     }
-    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
-    auto [x, y, z] = Chunk::world_to_block(pos, {chunk_x, chunk_z});
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
-        z >= CHUNK_SIZE) {
-        return 0;
-    }
-    return chunk_blocks[Chunk::index(x, y, z)];
+
+    return cacc->second.chunk->get_block(pos);
 }
 
 bool ServerChunkSystem::is_solid(const glm::ivec3& pos) const {
@@ -593,13 +582,8 @@ bool ServerChunkSystem::is_solid(const glm::ivec3& pos) const {
     if (cacc->second.state != ChunkState::READY) {
         return 0;
     }
-    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
-    auto [x, y, z] = Chunk::world_to_block(pos, {chunk_x, chunk_z});
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
-        z >= CHUNK_SIZE) {
-        return false;
-    }
-    auto id = chunk_blocks[Chunk::index(x, y, z)];
+
+    auto id = cacc->second.chunk->get_block(pos);
     if (BlockManager::is_gas(id) || BlockManager::is_liquid(id)) {
         return false;
     } else {
@@ -617,13 +601,8 @@ bool ServerChunkSystem::can_pass_block(const glm::ivec3& pos) const {
     if (cacc->second.state != ChunkState::READY) {
         return 0;
     }
-    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
-    auto [x, y, z] = Chunk::world_to_block(pos, {chunk_x, chunk_z});
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
-        z >= CHUNK_SIZE) {
-        return true;
-    }
-    auto id = chunk_blocks[Chunk::index(x, y, z)];
+
+    auto id = cacc->second.chunk->get_block(pos);
     return BlockManager::is_passable(id);
 }
 
@@ -639,21 +618,13 @@ BlockType ServerChunkSystem::get_block_type(const glm::ivec3& pos) const {
     if (cacc->second.state != ChunkState::READY) {
         return 0;
     }
-    const auto& chunk_blocks = cacc->second.chunk->get_chunk_blocks();
-    auto [x, y, z] = Chunk::world_to_block(pos, {chunk_x, chunk_z});
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
-        z >= CHUNK_SIZE) {
-        // Logger::error("Can't Find Block {} {} {}", block_pos.x, block_pos.y,
-        //               block_pos.z);
-        return 0;
-    }
-    return chunk_blocks[Chunk::index(x, y, z)];
+
+    return cacc->second.chunk->get_block(pos);
 }
 
 bool ServerChunkSystem::set_block(const glm::ivec3& pos, BlockType id) {
-    int world_x, world_y, world_z;
+    int world_x, world_z;
     world_x = pos.x;
-    world_y = pos.y;
     world_z = pos.z;
 
     auto [chunk_x, chunk_z] = get_chunk_pos(world_x, world_z);
@@ -665,15 +636,8 @@ bool ServerChunkSystem::set_block(const glm::ivec3& pos, BlockType id) {
     if (acc->second.state != ChunkState::READY) {
         return false;
     }
-    auto [x, y, z] = ServerChunk::world_to_block(world_x, world_y, world_z,
-                                                 chunk_x, chunk_z);
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
-        z >= CHUNK_SIZE) {
-        return false;
-    }
 
-    acc->second.chunk->set_chunk_block(ServerChunk::index(x, y, z), id);
-    return true;
+    return acc->second.chunk->set_block(pos, id);
 }
 
 void ServerChunkSystem::set_render_distance(int distance) {

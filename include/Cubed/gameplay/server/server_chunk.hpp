@@ -10,6 +10,7 @@
 #include <array>
 #include <atomic>
 #include <optional>
+#include <shared_mutex>
 #include <tuple>
 #include <unordered_set>
 namespace Cubed {
@@ -36,14 +37,13 @@ public:
     static std::tuple<int, int, int> block_to_world(const glm::ivec3& block_pos,
                                                     ChunkPos chunk_pos);
 
-    void set_chunk_block(int index, unsigned id);
     // ensure thread safe!
     void load_or_gen_chunk();
     void finished_generating();
 
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;
-    const std::vector<BlockType>& get_chunk_blocks() const;
+    std::vector<BlockType> get_chunk_blocks() const;
     bool is_temp_chunk() const;
     ChunkPos chunk_pos() const;
     BiomeType biome() const;
@@ -58,6 +58,12 @@ public:
     ChunkStorageData make_storage_data() const;
 
     void load_storage_data(ChunkStorageData data);
+
+    bool set_block(int world_x, int world_y, int world_z, BlockType type);
+    bool set_block(const glm::ivec3& world_pos, BlockType type);
+
+    BlockType get_block(int world_x, int world_y, int world_z) const;
+    BlockType get_block(const glm::ivec3& world_pos) const;
 
     static int index(int x, int y, int z);
     static int index(const glm::vec3& pos);
@@ -74,6 +80,8 @@ private:
 
     ChunkPos m_chunk_pos;
     ServerWorld& m_world;
+
+    mutable std::shared_mutex m_blocks_mutex;
 
     // the index is a array of block id
     std::vector<BlockType> m_blocks;
