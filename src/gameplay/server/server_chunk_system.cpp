@@ -42,23 +42,26 @@ void ServerChunkSystem::save_all_chunks(bool sync) {
         return;
     }
     if (sync) {
-        m_storage->save_batch(chunks, true);
-        Logger::info("Save all chunks success!");
+        if (m_storage->save_batch(chunks, true)) {
+            Logger::info("Save all chunks success!");
+        }
 
     } else {
         auto pool = m_world.get_compute_pool();
 
         if (!pool) {
-            m_storage->save_batch(chunks);
-            Logger::info("Save all chunks success!");
+            if (m_storage->save_batch(chunks)) {
+                Logger::info("Save all chunks success!");
+            }
 
             return;
         }
 
         pool->enqueue([this, chunks = std::move(chunks)]() mutable {
             ZoneScopedN("Save All Chunk Batch");
-            m_storage->save_batch(chunks);
-            Logger::info("Save all chunks success!");
+            if (m_storage->save_batch(chunks)) {
+                Logger::info("Save all chunks success!");
+            }
         });
     }
 }

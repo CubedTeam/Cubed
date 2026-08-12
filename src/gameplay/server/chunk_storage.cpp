@@ -64,23 +64,24 @@ bool ChunkStorage::save_batch(std::span<const ChunkStorageData> chunks,
     }
 
     rocksdb::WriteBatch batch;
-
+    bool error = false;
     for (const auto& chunk : chunks) {
         auto value = serialize(chunk);
 
         if (value.empty()) {
             Logger::error("Failed to serialize chunk {} {}", chunk.pos.x,
                           chunk.pos.z);
+            error = true;
             continue;
         }
 
         batch.Put(make_key(chunk.pos), value);
     }
 
-    rocksdb::WriteOptions opitons;
-    opitons.sync = sync;
+    rocksdb::WriteOptions options;
+    options.sync = sync;
 
-    auto status = m_db->Write(opitons, &batch);
+    auto status = m_db->Write(options, &batch);
 
     if (!status.ok()) {
         Logger::error("Failed to save {} chunks: {}", chunks.size(),
@@ -88,7 +89,7 @@ bool ChunkStorage::save_batch(std::span<const ChunkStorageData> chunks,
         return false;
     }
 
-    return true;
+    return !error;
 }
 
 std::optional<ChunkStorageData> ChunkStorage::load(ChunkPos pos) const {
@@ -158,8 +159,20 @@ ChunkStorage::deserialize(std::string_view data) {
         return std::nullopt;
     }
 
+    if (p->blocks().size() != CHUNK_BLOCK_SUM) {
+        Logger::error("Blocks sum {} != {}", p->blocks().size(),
+                      CHUNK_BLOCK_SUM);
+        return std::nullopt;
+    }
+
     ChunkStorageData d;
-    d.biome = get_biome_from_id(p->biome());
+    try {
+        d.biome = get_biome_from_id(p->biome());
+    } catch (const std::exception& e) {
+        Logger::error("Get Biome Fail {}", e.what());
+        return std::nullopt;
+    }
+
     const auto& blocks = p->blocks();
     d.blocks.assign(blocks.begin(), blocks.end());
     d.pos.x = p->x();

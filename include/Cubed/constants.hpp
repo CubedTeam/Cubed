@@ -25,6 +25,7 @@ constexpr float DEFAULT_G = 22.5f;
 constexpr int SIZE_X = CHUNK_SIZE;
 constexpr int SIZE_Y = WORLD_SIZE_Y;
 constexpr int SIZE_Z = CHUNK_SIZE;
+constexpr int CHUNK_BLOCK_SUM = SIZE_X * SIZE_Y * SIZE_Z;
 constexpr int RESERVED_THREADS = 5;
 
 constexpr float DEFAULT_CAVE_PROBABILITY = 0.035f;
