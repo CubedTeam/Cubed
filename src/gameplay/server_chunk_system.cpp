@@ -312,6 +312,7 @@ void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
     using enum ChunkLoadStyle;
     auto pool_ptr = m_generation_pool.load();
     if (!pool_ptr) {
+        Logger::error("Generation pool is nullptr");
         return;
     }
     switch (m_load_style) {

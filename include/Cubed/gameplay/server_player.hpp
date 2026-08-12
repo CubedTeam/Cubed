@@ -32,7 +32,6 @@ public:
     void update_sync_gametick(TickType gametick);
     bool is_disconnect(TickType current_gametick) const;
     int task_id() const;
-    void task_id(int id);
     bool has_player(ChunkPos pos) const;
     void update_chunk_set(const ChunkPosSet& set);
     ChunkPosSet get_chunk_pos_set() const;
@@ -44,6 +43,8 @@ public:
 
     Gait gait() const;
     void set_gait(Gait gait);
+
+    void update_task_id_max(int new_id);
 
 private:
     static constexpr TickType TIMEOUT = 200;

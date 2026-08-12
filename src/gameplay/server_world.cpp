@@ -390,10 +390,7 @@ void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
         return;
     }
 
-    if (player->task_id() < task_id) {
-        // task_id is an atomic variable, can be operated on directly
-        player->task_id(task_id);
-    }
+    player->update_task_id_max(task_id);
 
     auto pool = m_net_thread_pool.load();
     pool->enqueue([task_id, uuid, pos, this]() {

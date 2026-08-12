@@ -32,7 +32,6 @@ bool ServerPlayer::is_disconnect(TickType current_gametick) const {
 }
 
 int ServerPlayer::task_id() const { return m_chunk_task_id.load(); }
-void ServerPlayer::task_id(int id) { m_chunk_task_id = id; }
 
 bool ServerPlayer::has_player(ChunkPos pos) const {
     std::shared_lock lock(m_chunk_pos_mutex);
@@ -51,6 +50,14 @@ ChunkPosSet ServerPlayer::get_chunk_pos_set() const {
 
 ChunkPosSet ServerPlayer::take_chunk_pos_set() {
     return std::exchange(m_player_chunk_pos_set, {});
+}
+
+void ServerPlayer::update_task_id_max(int new_id) {
+    int current = m_chunk_task_id.load(std::memory_order_relaxed);
+    while (current < new_id && !m_chunk_task_id.compare_exchange_weak(
+                                   current, new_id, std::memory_order_relaxed,
+                                   std::memory_order_relaxed)) {
+    }
 }
 
 void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
