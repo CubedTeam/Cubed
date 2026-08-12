@@ -11,6 +11,7 @@ find_package(Freetype REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(Opus REQUIRED)
 find_package(assimp REQUIRED)
+find_package(RocksDB CONFIG REQUIRED)
 # Third-party libraries
 
 if (WIN32)
