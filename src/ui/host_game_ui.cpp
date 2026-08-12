@@ -35,6 +35,7 @@ void HostGameUI::init() {
         label.set_text(tr("hostgame.create_a_new_world"));
         label.set_scale(0.7f);
     }
+
     {
         auto& label = layout.add_child<Label>();
         label.set_text("NoError");
@@ -42,6 +43,25 @@ void HostGameUI::init() {
         label.set_scale(0.7f);
         label.set_visible(false);
         m_error_label = &label;
+    }
+    {
+        auto& text_field = layout.add_child<TextField>();
+        text_field.set_show_text(tr("hostgame.world_name"));
+        text_field.set_app(&m_scene.scene_manager().app());
+        std::unique_ptr<Image> back = std::make_unique<Image>(&text_field);
+        back->set_image(DEFAULT_TEXT_FIELD_IMAGE, texture_manager, false)
+            .set_fill_parent(true);
+        text_field.set_background(std::move(back));
+
+        text_field.set_on_finish([this, &text_field]() {
+            auto& name = text_field.input_text();
+            if (name.empty()) {
+                m_scene.scene_manager().world_scene_param().world_name =
+                    "new_world";
+            } else {
+                m_scene.scene_manager().world_scene_param().world_name = name;
+            }
+        });
     }
     {
         auto& text_seed = layout.add_child<TextField>();

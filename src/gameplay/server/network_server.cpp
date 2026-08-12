@@ -95,10 +95,11 @@ void NetworkServer::net_run() {
     Logger::info("Server Started!");
 }
 
-void NetworkServer::start_server(int port, RunMode mode) {
+void NetworkServer::start_server(int port, RunMode mode,
+                                 std::string_view world_name) {
     m_port = port;
     m_config.set("port", m_port);
-    m_world.init_world(mode);
+    m_world.init_world(mode, world_name);
     net_run();
     m_started = true;
 }

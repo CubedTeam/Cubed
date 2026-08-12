@@ -147,7 +147,13 @@ void WorldScene::on_enter() {
     if (m_argument.direct_enter) {
         if (!m_argument.ip) {
             ChunkGenerator::init();
-            m_server.start_server(*m_argument.port, m_runmode);
+            if (m_argument.world) {
+                m_server.start_server(*m_argument.port, m_runmode,
+                                      *m_argument.world);
+            } else {
+                m_server.start_server(*m_argument.port, m_runmode, "new_world");
+            }
+
             m_client->start("127.0.0.1", *m_argument.port);
         } else {
             m_client->start(*m_argument.ip, *m_argument.port);
@@ -163,7 +169,7 @@ void WorldScene::on_enter() {
             } else {
                 ChunkGenerator::init();
             }
-            m_server.start_server(param.port, m_runmode);
+            m_server.start_server(param.port, m_runmode, param.world_name);
         }
 
         m_client->start(param.ip, param.port);

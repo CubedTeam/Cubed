@@ -30,7 +30,11 @@ ClientWorld::ClientWorld(AudioEngine& auido, Config& config, WorldScene& scene)
       m_config(config), m_world_scene(scene) {}
 
 ClientWorld::~ClientWorld() {
-    m_client->close();
+    if (m_client) {
+        m_client->close();
+    } else {
+        Logger::warn("Client Session is nullptr");
+    }
 
     stop_client_thread();
     stop_thread_pool();

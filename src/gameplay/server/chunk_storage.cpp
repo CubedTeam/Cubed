@@ -14,7 +14,16 @@ ChunkStorage::ChunkStorage(const fs::path& path) {
     options.create_if_missing = true;
     options.compression = rocksdb::kZSTD;
     const auto DATABASE_PATH = path / "chunks";
+    std::error_code ec;
+    fs::create_directories(DATABASE_PATH.parent_path(), ec);
 
+    if (ec) {
+        throw std::runtime_error("Failed to create world directory " +
+                                 DATABASE_PATH.parent_path().string() + ": " +
+                                 ec.message());
+    }
+
+    Logger::info("Chunks Database Path: {}", DATABASE_PATH.string());
     std::unique_ptr<rocksdb::DB> database = nullptr;
 
     auto status = rocksdb::DB::Open(options, DATABASE_PATH.string(), &database);
@@ -31,8 +40,14 @@ ChunkStorage::ChunkStorage(const fs::path& path) {
 ChunkStorage::~ChunkStorage() {}
 
 bool ChunkStorage::save(const ChunkStorageData& chunk) {
-    auto status = m_db->Put(rocksdb::WriteOptions{}, make_key(chunk.pos),
-                            serialize(chunk));
+
+    auto value = serialize(chunk);
+    if (value.empty()) {
+        return false;
+    }
+
+    auto status =
+        m_db->Put(rocksdb::WriteOptions{}, make_key(chunk.pos), value);
 
     if (!status.ok()) {
         Logger::error("Failed to save chunk {} {}: {}", chunk.pos.x,
@@ -51,7 +66,15 @@ bool ChunkStorage::save_batch(std::span<const ChunkStorageData> chunks,
     rocksdb::WriteBatch batch;
 
     for (const auto& chunk : chunks) {
-        batch.Put(make_key(chunk.pos), serialize(chunk));
+        auto value = serialize(chunk);
+
+        if (value.empty()) {
+            Logger::error("Failed to serialize chunk {} {}", chunk.pos.x,
+                          chunk.pos.z);
+            continue;
+        }
+
+        batch.Put(make_key(chunk.pos), value);
     }
 
     rocksdb::WriteOptions opitons;
@@ -127,6 +150,11 @@ ChunkStorage::deserialize(std::string_view data) {
     auto* p = Arena::Create<StoredChunk>(&arena);
 
     if (!p->ParseFromArray(data.data(), static_cast<int>(data.size()))) {
+        return std::nullopt;
+    }
+
+    if (p->version() > VERSION) {
+        Logger::error("Unsupported chunk version: {}", p->version());
         return std::nullopt;
     }
 

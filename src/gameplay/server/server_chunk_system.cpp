@@ -15,7 +15,7 @@ ServerChunkSystem::~ServerChunkSystem() {}
 
 void ServerChunkSystem::initialize(std::string_view world_name) {
 
-    fs::path save_path = "./saves" + std::string(world_name);
+    fs::path save_path = "./saves/" + std::string(world_name);
 
     m_storage = std::make_unique<ChunkStorage>(save_path);
 
@@ -45,11 +45,13 @@ void ServerChunkSystem::save_all_chunks(bool sync) {
 
         if (!pool) {
             m_storage->save_batch(chunks);
+            Logger::info("Save all chunks success!");
             return;
         }
 
         pool->enqueue([this, chunks = std::move(chunks)]() mutable {
             m_storage->save_batch(chunks);
+            Logger::info("Save all chunks success!");
         });
     }
 }
@@ -388,6 +390,10 @@ void ServerChunkSystem::reconcile_chunks(
 
     auto pool = m_generation_pool.load();
     if (!pool) {
+        save_removed_chunk();
+    } else {
+        pool->enqueue(
+            [save = std::move(save_removed_chunk)]() mutable { save(); });
     }
 }
 

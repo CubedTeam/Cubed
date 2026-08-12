@@ -77,6 +77,9 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name) {
     // Periodically process pending players
     register_timer("player chunk send", 1,
                    [this]() { m_chunk_system.pop_pending_request(); });
+    // 5min(50ms)
+    register_timer("auto save chunk", 6000,
+                   [this]() { m_chunk_system.save_all_chunks(); });
 
     m_cave_carcer.init(ChunkGenerator::seed());
     m_river_worm.init(ChunkGenerator::seed());

@@ -10,6 +10,7 @@ struct Argument {
     std::optional<std::string> video_driver;
     std::optional<bool> enable_exclusive;
     std::optional<std::string> logs_path;
+    std::optional<std::string> world;
     std::optional<int> log_level;
     std::optional<bool> enable_filelog;
     std::optional<bool> enable_consolelog;
