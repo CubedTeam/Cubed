@@ -108,6 +108,7 @@ void ServerWorld::load_metadata(std::string_view world_name,
 }
 
 void ServerWorld::save_metadata(const std::filesystem::path& path) {
+
     Document doc;
     doc.SetObject();
     auto& allocator = doc.GetAllocator();

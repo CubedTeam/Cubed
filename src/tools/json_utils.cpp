@@ -1,5 +1,6 @@
 #include "Cubed/tools/json_utils.hpp"
 
+#include "Cubed/tools/file_utils.hpp"
 #include "Cubed/tools/log.hpp"
 
 #include <fstream>
@@ -83,18 +84,38 @@ void save_json(const rapidjson::Document& doc,
     if (!doc.Accept(writer)) {
         throw std::runtime_error("Failed to serialize JSON");
     }
-
-    std::ofstream file(path, std::ios::binary);
-
-    if (!file) {
-        throw std::runtime_error("Failed to open file: " + path.string());
+    if (path.parent_path().empty()) {
+        throw std::runtime_error(
+            std::format("Failed to create path {}", path.string()));
     }
+    fs::create_directories(path.parent_path());
+    fs::path temp_path = path;
+    temp_path += ".tmp";
+    try {
+        {
+            std::ofstream file(temp_path, std::ios::binary | std::ios::trunc);
 
-    file.write(buffer.GetString(),
-               static_cast<std::streamsize>(buffer.GetSize()));
+            if (!file) {
+                throw std::runtime_error("Failed to open " +
+                                         temp_path.string());
+            }
 
-    if (!file) {
-        throw std::runtime_error("Failed to write file: " + path.string());
+            file.write(buffer.GetString(),
+                       static_cast<std::streamsize>(buffer.GetSize()));
+
+            file.flush();
+
+            if (!file) {
+                throw std::runtime_error("Failed to write " +
+                                         temp_path.string());
+            }
+        }
+
+        atomic_replace(temp_path, path);
+    } catch (...) {
+        std::error_code ec;
+        fs::remove(temp_path, ec);
+        throw;
     }
 }
 

@@ -2,8 +2,8 @@
 #include "Cubed/tools/log.hpp"
 
 #include <filesystem>
+#include <stdexcept>
 #include <string>
-
 #ifdef _WIN32
 // clang-format off
 #include <windows.h>
@@ -60,6 +60,24 @@ inline void open_file_manager(const std::filesystem::path& path) {
     }
 
     Logger::warn("Failed to open file manager for {}", path.string());
+#endif
+}
+
+inline void atomic_replace(const std::filesystem::path& temp_path,
+                           const std::filesystem::path& target_path) {
+#ifdef _WIN32
+    if (!MoveFileExW(temp_path.c_str(), target_path.c_str(),
+                     MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+        throw std::runtime_error("Failed to replace file, Win32 error: " +
+                                 std::to_string(GetLastError()));
+    }
+#else
+    std::error_code ec;
+    std::filesystem::rename(temp_path, target_path, ec);
+
+    if (ec) {
+        throw std::runtime_error("Failed to replace file: " + ec.message());
+    }
 #endif
 }
 
