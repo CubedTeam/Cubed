@@ -1,41 +1,15 @@
 #include "Cubed/gameplay/server/chunk_storage.hpp"
 
+#include "Cubed/gameplay/server/world_storage.hpp"
 #include "save/stored_chunk.pb.h"
 
-#include <filesystem>
 #include <rocksdb/db.h>
 #include <rocksdb/options.h>
 #include <rocksdb/write_batch.h>
 namespace fs = std::filesystem;
 using namespace google::protobuf;
 namespace Cubed {
-ChunkStorage::ChunkStorage(const fs::path& path) {
-    rocksdb::Options options;
-    options.create_if_missing = true;
-    options.compression = rocksdb::kZSTD;
-    const auto DATABASE_PATH = path / "chunks";
-    std::error_code ec;
-    fs::create_directories(DATABASE_PATH.parent_path(), ec);
-
-    if (ec) {
-        throw std::runtime_error("Failed to create world directory " +
-                                 DATABASE_PATH.parent_path().string() + ": " +
-                                 ec.message());
-    }
-
-    Logger::info("Chunks Database Path: {}", DATABASE_PATH.string());
-    std::unique_ptr<rocksdb::DB> database = nullptr;
-
-    auto status = rocksdb::DB::Open(options, DATABASE_PATH.string(), &database);
-
-    if (!status.ok()) {
-        throw std::runtime_error(
-            std::format("Failed to open chunk database {}: {}",
-                        DATABASE_PATH.string(), status.ToString()));
-    }
-
-    m_db = std::move(database);
-}
+ChunkStorage::ChunkStorage(WorldStorage& storage) : m_storage(storage) {}
 
 ChunkStorage::~ChunkStorage() {}
 
@@ -46,8 +20,8 @@ bool ChunkStorage::save(const ChunkStorageData& chunk) {
         return false;
     }
 
-    auto status =
-        m_db->Put(rocksdb::WriteOptions{}, make_key(chunk.pos), value);
+    auto status = m_storage.get_db()->Put(rocksdb::WriteOptions{},
+                                          make_key(chunk.pos), value);
 
     if (!status.ok()) {
         Logger::error("Failed to save chunk {} {}: {}", chunk.pos.x,
@@ -81,7 +55,7 @@ bool ChunkStorage::save_batch(std::span<const ChunkStorageData> chunks,
     rocksdb::WriteOptions options;
     options.sync = sync;
 
-    auto status = m_db->Write(options, &batch);
+    auto status = m_storage.get_db()->Write(options, &batch);
 
     if (!status.ok()) {
         Logger::error("Failed to save {} chunks: {}", chunks.size(),
@@ -94,7 +68,8 @@ bool ChunkStorage::save_batch(std::span<const ChunkStorageData> chunks,
 
 std::optional<ChunkStorageData> ChunkStorage::load(ChunkPos pos) const {
     std::string value;
-    auto status = m_db->Get(rocksdb::ReadOptions{}, make_key(pos), &value);
+    auto status =
+        m_storage.get_db()->Get(rocksdb::ReadOptions{}, make_key(pos), &value);
 
     if (status.IsNotFound()) {
         return std::nullopt;
@@ -126,7 +101,7 @@ std::string ChunkStorage::serialize(const ChunkStorageData& chunk) {
     p->set_biome(std::to_underlying(chunk.biome));
 
     p->set_seed(chunk.seed);
-    p->set_version(VERSION);
+    p->set_version(WorldStorage::VERSION);
     p->set_x(chunk.pos.x);
     p->set_z(chunk.pos.z);
 
@@ -154,7 +129,7 @@ ChunkStorage::deserialize(std::string_view data) {
         return std::nullopt;
     }
 
-    if (p->version() > VERSION) {
+    if (p->version() > WorldStorage::VERSION) {
         Logger::error("Unsupported chunk version: {}", p->version());
         return std::nullopt;
     }
@@ -181,12 +156,12 @@ ChunkStorage::deserialize(std::string_view data) {
 
     return d;
 }
-
+/*
 std::size_t ChunkStorage::size() const {
     std::size_t count = 0;
 
     std::unique_ptr<rocksdb::Iterator> it{
-        m_db->NewIterator(rocksdb::ReadOptions{})};
+        m_storage.get_db()->NewIterator(rocksdb::ReadOptions{})};
 
     for (it->SeekToFirst(); it->Valid(); it->Next()) {
         ++count;
@@ -200,5 +175,5 @@ std::size_t ChunkStorage::size() const {
 
     return count;
 }
-
+*/
 } // namespace Cubed

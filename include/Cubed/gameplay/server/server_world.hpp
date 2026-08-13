@@ -11,6 +11,7 @@
 #include "Cubed/gameplay/server/server_entity_manager.hpp"
 #include "Cubed/gameplay/server/server_player.hpp"
 #include "Cubed/gameplay/server/server_player_manager.hpp"
+#include "Cubed/gameplay/server/world_storage.hpp"
 #include "Cubed/gameplay/world.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/sensitive_filter.hpp"
@@ -103,6 +104,7 @@ public:
     uint32_t get_chunk_ref_count(const glm::vec3& pos) const;
     ServerEntityManager& entity_manager();
     ServerPlayerManager& player_manager();
+    WorldStorage* world_storage();
     ServerChunkSystem& chunk_system();
 
     std::shared_ptr<ThreadPool> get_compute_pool();
@@ -124,6 +126,7 @@ public:
 
 private:
     Config& m_config;
+    std::unique_ptr<WorldStorage> m_storage;
     Metadata m_metadata;
     std::filesystem::path m_metadata_path;
     std::atomic<RunMode> m_runmode{RunMode::HYBRID};

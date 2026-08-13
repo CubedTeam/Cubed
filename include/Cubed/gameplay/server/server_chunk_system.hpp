@@ -89,7 +89,7 @@ public:
     ServerChunkSystem(const ServerChunkSystem&) = delete;
     ServerChunkSystem& operator=(const ServerChunkSystem&) = delete;
 
-    void initialize(std::string_view world_name);
+    void initialize();
     void stop();
 
     void update();

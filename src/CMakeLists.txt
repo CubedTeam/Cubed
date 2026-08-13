@@ -113,4 +113,6 @@ target_sources(${PROJECT_NAME}
         gameplay/server/server_player_manager.cpp
         gameplay/server/server_chunk_system.cpp
         gameplay/server/chunk_storage.cpp
+        gameplay/server/entity_storage.cpp
+        gameplay/server/world_storage.cpp
 )

@@ -9,7 +9,7 @@
 #include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/math_tools.hpp"
-#include "Cubed/tools/net_utils.hpp"
+#include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
 #include <tracy/Tracy.hpp>
@@ -168,8 +168,8 @@ void ClientEntityManager::receive_entity_destory(EntityID id) {
 void ClientEntityManager::receive_entity_update(const S2CEntityUpdate& msg) {
     UpdateInfo e;
     e.id = msg.id();
-    e.pos = Tools::get_net_vec3(msg.pos());
-    e.direction = Tools::get_net_vec3(msg.direction());
+    e.pos = Tools::get_proto_vec3(msg.pos());
+    e.direction = Tools::get_proto_vec3(msg.direction());
     e.gait = get_gait_from_id(msg.gait());
     m_tasks.emplace(Command::UPDATE, std::move(e));
 }
@@ -194,7 +194,7 @@ void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
     auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
     msg->set_name(name);
     msg->set_uuid(m_world.get_player().get_uuid());
-    Tools::set_net_pos(msg, pos);
+    Tools::set_proto_pos(msg, pos);
     client->send(make_packet(msg));
 }
 

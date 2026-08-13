@@ -11,7 +11,7 @@
 #include "Cubed/gameplay/systems/speed_system.hpp"
 #include "Cubed/gameplay/systems/wander_ai_system.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
-#include "Cubed/tools/net_utils.hpp"
+#include "Cubed/tools/proto_utils.hpp"
 
 #include <tracy/Tracy.hpp>
 using namespace google::protobuf;
@@ -69,8 +69,8 @@ void ServerEntityManager::update() {
         for (auto& data : send_data) {
             auto* u = msg->add_updates();
             u->set_id(data.id);
-            Tools::set_net_pos(u, data.pos);
-            Tools::set_net_vec3(u->mutable_direction(), data.dir);
+            Tools::set_proto_pos(u, data.pos);
+            Tools::set_proto_vec3(u->mutable_direction(), data.dir);
             u->set_gait(get_gait_id(data.gait));
         }
         auto packet = make_packet(msg);
@@ -188,7 +188,7 @@ void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
         auto* s2c = Arena::Create<S2CEntityCreate>(&arena);
         s2c->set_id(e.id);
         s2c->set_name(info.name);
-        Tools::set_net_pos(s2c, base.transform.position.value);
+        Tools::set_proto_pos(s2c, base.transform.position.value);
         session->send(make_packet(*s2c));
     }
 }
@@ -202,7 +202,7 @@ void ServerEntityManager::handle_entity_create(EntityID id,
     auto* s2c = Arena::Create<S2CEntityCreate>(&arena);
     s2c->set_id(id);
     s2c->set_name(name);
-    Tools::set_net_pos(s2c, pos);
+    Tools::set_proto_pos(s2c, pos);
     auto packet = make_packet(*s2c);
     for (auto& s : sessions) {
         s->send(packet);

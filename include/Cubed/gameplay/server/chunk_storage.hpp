@@ -4,12 +4,9 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 
 #include <cstdint>
-namespace rocksdb {
-class DB;
-}
 
 namespace Cubed {
-
+class WorldStorage;
 struct ChunkStorageData {
     ChunkPos pos{0, 0};
 
@@ -21,8 +18,7 @@ struct ChunkStorageData {
 
 class ChunkStorage {
 public:
-    static constexpr uint32_t VERSION = 1;
-    explicit ChunkStorage(const std::filesystem::path& world_path);
+    explicit ChunkStorage(WorldStorage& storage);
 
     ~ChunkStorage();
 
@@ -41,10 +37,10 @@ public:
     // bool contains(ChunkPos pos) const;
 
     // bool remove(ChunkPos pos);
-    std::size_t size() const;
+    // std::size_t size() const;
 
 private:
-    std::unique_ptr<rocksdb::DB> m_db;
+    WorldStorage& m_storage;
 
     static std::string make_key(ChunkPos pos);
     static std::string serialize(const ChunkStorageData& chunk);

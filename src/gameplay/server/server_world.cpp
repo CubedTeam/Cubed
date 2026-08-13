@@ -5,7 +5,7 @@
 #include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"
-#include "Cubed/tools/net_utils.hpp"
+#include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 
@@ -39,6 +39,7 @@ void ServerWorld::stop() {
     stop_thread_pool();
 
     m_chunk_system.stop();
+
     try {
         save_metadata(m_metadata_path);
     } catch (const std::exception& e) {
@@ -121,10 +122,14 @@ void ServerWorld::save_metadata(const std::filesystem::path& path) {
 
 void ServerWorld::init_world(RunMode mode, std::string_view world_name,
                              std::optional<uint32_t> seed) {
+    fs::path save_path = "./saves/" + std::string(world_name);
+
+    m_storage = std::make_unique<WorldStorage>(save_path);
+
     load_metadata(world_name, seed);
     m_runmode = mode;
     m_entity_manager.init();
-    m_chunk_system.initialize(world_name);
+    m_chunk_system.initialize();
     register_timer("player disconnect", 5, [this]() {
         std::vector<std::string> disconnect;
         auto players = m_players_manager.snapshot();
@@ -572,7 +577,7 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
 
 void ServerWorld::handle_entity_create(C2SEntityCreateRequest& req) {
 
-    m_entity_manager.add_creature(req.name(), Tools::get_net_vec3(req.pos()));
+    m_entity_manager.add_creature(req.name(), Tools::get_proto_vec3(req.pos()));
 }
 void ServerWorld::handle_entity_destory(C2SEntityDestoryRequest& req) {
     m_entity_manager.destory(req.id());
@@ -753,6 +758,7 @@ BlockType ServerWorld::get_block_tpye(const glm::ivec3& block_pos) const {
 int ServerWorld::get_per_tick_time() const { return m_per_tick_time; }
 ServerEntityManager& ServerWorld::entity_manager() { return m_entity_manager; }
 ServerPlayerManager& ServerWorld::player_manager() { return m_players_manager; }
+WorldStorage* ServerWorld::world_storage() { return m_storage.get(); }
 ServerChunkSystem& ServerWorld::chunk_system() { return m_chunk_system; }
 
 std::shared_ptr<ThreadPool> ServerWorld::get_compute_pool() {

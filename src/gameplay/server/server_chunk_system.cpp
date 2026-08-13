@@ -13,11 +13,9 @@ ServerChunkSystem::ServerChunkSystem(ServerWorld& world) : m_world(world) {}
 
 ServerChunkSystem::~ServerChunkSystem() {}
 
-void ServerChunkSystem::initialize(std::string_view world_name) {
+void ServerChunkSystem::initialize() {
 
-    fs::path save_path = "./saves/" + std::string(world_name);
-
-    m_storage = std::make_unique<ChunkStorage>(save_path);
+    m_storage = std::make_unique<ChunkStorage>(*m_world.world_storage());
 
     auto gen_threads = Tools::get_server_gen_threads(m_world.get_runmode());
     Logger::info("Server Gen pool threads {}", gen_threads);

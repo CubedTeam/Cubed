@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "common/vector3.proto";
+
+message StoredEntity {
+
+    uint32 version = 1;
+    uint64 id = 2;
+    string name = 3;
+    Vec3 pos = 4;
+    Vec3 dir = 5;
+    
+}
