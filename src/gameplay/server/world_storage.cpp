@@ -70,8 +70,11 @@ std::optional<std::string> WorldStorage::get_metadata() {
     std::string value;
     auto status =
         m_db->Get(rocksdb::ReadOptions{}, make_metadata_key(), &value);
+    if (status.IsNotFound()) {
+        return std::nullopt;
+    }
     if (!status.ok()) {
-
+        Logger::error("Failed to read world metadata: {}", status.ToString());
         return std::nullopt;
     }
     return value;
