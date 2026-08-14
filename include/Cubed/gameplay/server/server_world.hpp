@@ -27,9 +27,8 @@ namespace Cubed {
 class Session;
 class ServerWorld : public World {
 public:
-    static constexpr uint32_t METADATA_VERSION = 1;
     struct Metadata {
-        uint32_t version = METADATA_VERSION;
+        uint32_t version = WorldStorage::VERSION;
         uint32_t seed = 0;
         TickType game_ticks = 0;
         TickType day_ticks = 0;

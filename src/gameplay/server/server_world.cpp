@@ -67,7 +67,7 @@ void ServerWorld::load_metadata(std::optional<uint32_t> seed) {
     if (value && Tools::parse_json_from_string(doc, *value)) {
 
         if (Tools::get_json_value(doc, "version", m_metadata.version)) {
-            if (m_metadata.version > METADATA_VERSION) {
+            if (m_metadata.version > WorldStorage::VERSION) {
                 throw std::runtime_error("Local MetaData Version is too low");
             }
         }
