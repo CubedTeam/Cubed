@@ -171,6 +171,7 @@ target_link_libraries(${PROJECT_NAME}
         harfbuzz::harfbuzz
         Opus::Opus
         assimp::assimp
+        libsodium::libsodium
         $<$<PLATFORM_ID:Windows>:ws2_32>
         Tracy::TracyClient
         RocksDB::rocksdb
