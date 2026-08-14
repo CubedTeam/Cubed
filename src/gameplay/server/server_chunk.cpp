@@ -187,8 +187,6 @@ void ServerChunk::load_or_gen_chunk() {
     gen_phase_three();
     gen_phase_four(m_neightbor_blocks);
     gen_phase_five();
-
-    finished_generating();
 }
 // Logger::info("Cross Sum {}", m_cross_vertices_sum.load());
 

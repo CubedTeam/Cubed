@@ -112,6 +112,8 @@ public:
 
     [[nodiscard]] int generation_threads() const;
 
+    [[nodiscard]] bool is_chunk_active(ChunkPos pos) const;
+
     size_t chunk_size() const;
 
     void send_chunk(int task_id, const std::string& uuid, ChunkPos pos);

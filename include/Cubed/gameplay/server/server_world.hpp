@@ -110,6 +110,7 @@ public:
     std::shared_ptr<ThreadPool> get_compute_pool();
     size_t player_sum() const;
     RunMode get_runmode() const;
+    bool is_chunk_active(glm::vec3 pos) const;
 
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;

@@ -43,7 +43,8 @@ public:
     bool remove_batch(std::span<const EntityID> entities);
     // std::size_t size() const;
 
-    void load_all_entities(ServerEntityManager& manager);
+    [[nodiscard]]
+    std::vector<EntityStorageData> load_all();
 
 private:
     WorldStorage& m_storage;

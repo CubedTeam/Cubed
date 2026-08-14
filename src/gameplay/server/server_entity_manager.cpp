@@ -13,6 +13,7 @@
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/proto_utils.hpp"
 
+#include <algorithm>
 #include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 
@@ -34,27 +35,56 @@ void ServerEntityManager::init() {
     });
 
     m_storage = std::make_unique<EntityStorage>(*m_world.world_storage());
-    m_storage->load_all_entities(*this);
+    auto entities = m_storage->load_all();
+
+    for (auto& data : entities) {
+        m_next = std::max(m_next, data.id + 1);
+        add_dormant(std::move(data));
+    }
+
     Logger::info("ServerEntityManager initialization successful.");
 }
 
 void ServerEntityManager::stop() {
     save_all_entities(true);
-    Logger::info("ServerEntityManagerstopped successful.");
+    Logger::info("ServerEntityManager stopped successful.");
 }
 
-void ServerEntityManager::add_entity_on_init(EntityStorageData& data) {
-    ASSERT(m_factories.contains(data.name));
-    auto e = m_factories[data.name](data.id);
+void ServerEntityManager::add_dormant(EntityStorageData data) {
+    auto chunk_pos = get_chunk_pos(data.pos.x, data.pos.z);
 
-    acc c;
-    if (m_entities.find(c, e)) {
-        auto t = m_registry.try_get<BaseServerCreature>(c->second);
-        if (t) {
-            ++m_creature_sum;
-            t->transform.position.value = data.pos;
-            t->transform.direction.value = data.dir;
+    m_dormant_entities[chunk_pos].emplace_back(std::move(data));
+}
+
+void ServerEntityManager::activate_chunk(ChunkPos pos) {
+    auto node = m_dormant_entities.extract(pos);
+    if (node.empty()) {
+        return;
+    }
+    for (auto& data : node.mapped()) {
+        auto factory = m_factories.find(data.name);
+        if (factory == m_factories.end()) {
+            Logger::error("Unknown entity type {}", data.name);
+            add_dormant(std::move(data));
+            continue;
         }
+
+        EntityID id = factory->second(data.id);
+
+        acc a;
+        if (!m_entities.find(a, id)) {
+            Logger::error("Entity {} created but not found", id);
+            add_dormant(std::move(data));
+            continue;
+        }
+        auto* creature = m_registry.try_get<BaseServerCreature>(a->second);
+
+        if (creature) {
+            creature->transform.position.value = data.pos;
+            creature->transform.direction.value = data.dir;
+            ++m_creature_sum;
+        }
+        handle_entity_create(data.id, data.name, data.pos);
     }
 }
 
@@ -76,25 +106,18 @@ void ServerEntityManager::update() {
     tbb::concurrent_vector<EntitySendData> send_data;
     // parallel block touches disjoint entities only;
     // structural registry changes stay on the server thread via m_tasks.
-    parallel_do(
-        *pool, entities.begin(), entities.end(), pool->thread_sum(),
-        [this, &send_data](entt::entity e) {
-            const auto& c = m_registry.get<BaseServerCreature>(e);
-            const auto& entity = m_registry.get<Entity>(e);
-            if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
-
-                ActiveIds::accessor acc;
-                if (m_active_ids.find(acc, entity.id)) {
-                    unload(entity.id);
-                }
-
-                return;
-            }
-            m_active_ids.emplace(entity.id, std::monostate{});
-            update_ai(e);
-            update_move(e);
-            update_send(e, send_data);
-        });
+    parallel_do(*pool, entities.begin(), entities.end(), pool->thread_sum(),
+                [this, &send_data](entt::entity e) {
+                    const auto& c = m_registry.get<BaseServerCreature>(e);
+                    const auto& entity = m_registry.get<Entity>(e);
+                    if (!m_world.is_chunk_active(c.transform.position.value)) {
+                        unload(entity.id);
+                        return;
+                    }
+                    update_ai(e);
+                    update_move(e);
+                    update_send(e, send_data);
+                });
     if (!send_data.empty()) {
         Arena arena;
         auto* msg = Arena::Create<S2CEntityUpdateBatch>(&arena);
@@ -185,20 +208,31 @@ void ServerEntityManager::unload_internal(EntityID id) {
         if (!m_entities.find(a, id)) {
             return;
         }
+        auto data = build_entity_storage_data(a->second);
+        if (!data) {
+            return;
+        }
+        if (m_world.is_chunk_active(data->pos)) {
+            return;
+        }
+
+        if (!m_storage->save(*data)) {
+            Logger::error("Can't unload entity {}, save failed", id);
+            return;
+        }
         auto e = m_registry.try_get<Entity>(a->second);
         ASSERT(e);
         if (e->type == EntityType::CREATURE) {
             --m_creature_sum;
         }
 
-        save(a->second);
+        add_dormant(std::move(*data));
 
         m_registry.destroy(a->second);
-        m_active_ids.erase(id);
         m_entities.erase(a);
+        --m_entity_sum;
     }
 
-    --m_entity_sum;
     auto sessions = m_world.get_all_session();
     Arena arena;
     auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
@@ -359,30 +393,56 @@ void ServerEntityManager::handle_entity_create(EntityID id,
     }
 }
 
-void ServerEntityManager::handle_entity_destory(EntityID id) {
-    if (m_entity_sum == 0) {
-        Logger::error("entity sum is 0!");
-        return;
-    }
+bool ServerEntityManager::destory_internal(EntityID id) {
     {
         acc a;
-        if (!m_entities.find(a, id)) {
-            return;
+        if (m_entities.find(a, id)) {
+            // active
+            auto e = m_registry.try_get<Entity>(a->second);
+            ASSERT(e);
+
+            if (!m_storage->remove(id)) {
+                Logger::error("Can't destroy dormant entity {}", id);
+                return false;
+            }
+            if (e->type == EntityType::CREATURE) {
+                --m_creature_sum;
+            }
+            m_registry.destroy(a->second);
+            m_entities.erase(a);
+            --m_entity_sum;
+            return true;
         }
-        auto e = m_registry.try_get<Entity>(a->second);
-        ASSERT(e);
-        if (e->type == EntityType::CREATURE) {
-            --m_creature_sum;
+    }
+    for (auto chunk = m_dormant_entities.begin();
+         chunk != m_dormant_entities.end(); ++chunk) {
+        auto& entities = chunk->second;
+        auto entity = std::ranges::find(entities, id, &EntityStorageData::id);
+
+        if (entity == entities.end()) {
+            continue;
         }
 
-        m_storage->remove(id);
+        if (!m_storage->remove(id)) {
+            Logger::error("Can't destroy dormant entity {}", id);
+            return false;
+        }
 
-        m_registry.destroy(a->second);
-        m_active_ids.erase(id);
-        m_entities.erase(a);
+        entities.erase(entity);
+        if (entities.empty()) {
+            m_dormant_entities.erase(chunk);
+        }
+        return true;
+    }
+    return false;
+}
+
+void ServerEntityManager::handle_entity_destory(EntityID id) {
+
+    if (!destory_internal(id)) {
+        return;
     }
 
-    --m_entity_sum;
     auto sessions = m_world.get_all_session();
     Arena arena;
     auto* s2c = Arena::Create<S2CEntityDestory>(&arena);

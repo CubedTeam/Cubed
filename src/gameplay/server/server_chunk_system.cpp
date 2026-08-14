@@ -111,43 +111,53 @@ void ServerChunkSystem::update() {
             Logger::error("Finished Queue has nullptr Chunk");
             continue;
         }
-        chunk_acc acc;
 
-        if (!m_chunks.find(acc, finished.pos)) {
-            Logger::error("New Chunk {} {} not Find, don't move to m_chunks",
-                          finished.pos.x, finished.pos.z);
-            continue;
+        std::shared_ptr<ServerChunk> ready_chunk;
+
+        {
+            chunk_acc acc;
+
+            if (!m_chunks.find(acc, finished.pos)) {
+                Logger::error(
+                    "New Chunk {} {} not Find, don't move to m_chunks",
+                    finished.pos.x, finished.pos.z);
+                continue;
+            }
+
+            if (acc->second.generation_id != finished.generation_id) {
+                Logger::warn(
+                    "Discard stale chunk result {} {}, generation {} != {}",
+                    finished.pos.x, finished.pos.z, finished.generation_id,
+                    acc->second.generation_id);
+
+                continue;
+            }
+            if (acc->second.state == ChunkState::GENERATING_UNUSED ||
+                acc->second.ref_count.load(std::memory_order_relaxed) == 0) {
+
+                m_chunks.erase(acc);
+                continue;
+            }
+
+            if (acc->second.state != ChunkState::GENERATING) {
+                // Prevent duplicate completion results from overwriting READY
+                // chunks
+                Logger::warn("Discard duplicate chunk result {} {}",
+                             finished.pos.x, finished.pos.z);
+
+                continue;
+            }
+
+            acc->second.chunk = std::move(finished.chunk);
+            acc->second.state = ChunkState::READY;
+            ready_chunk = acc->second.chunk;
+            consumed = true;
+            pop_pending_request();
         }
-
-        if (acc->second.generation_id != finished.generation_id) {
-            Logger::warn(
-                "Discard stale chunk result {} {}, generation {} != {}",
-                finished.pos.x, finished.pos.z, finished.generation_id,
-                acc->second.generation_id);
-
-            continue;
-        }
-        if (acc->second.state == ChunkState::GENERATING_UNUSED ||
-            acc->second.ref_count.load(std::memory_order_relaxed) == 0) {
-
-            m_chunks.erase(acc);
-            continue;
-        }
-
-        if (acc->second.state != ChunkState::GENERATING) {
-            // Prevent duplicate completion results from overwriting READY
-            // chunks
-            Logger::warn("Discard duplicate chunk result {} {}", finished.pos.x,
-                         finished.pos.z);
-
-            continue;
-        }
-
-        acc->second.chunk = std::move(finished.chunk);
-        acc->second.state = ChunkState::READY;
-        consumed = true;
-        pop_pending_request();
+        ready_chunk->finished_generating();
+        m_world.entity_manager().activate_chunk(finished.pos);
     }
+
     if (consumed) {
         m_could_generate = true;
     }
@@ -659,6 +669,17 @@ void ServerChunkSystem::set_load_style(int id) {
     }
     Logger::error("Can,t Find Chunk Load Style Id {}, Nothing Will Do", id);
 }
+
+bool ServerChunkSystem::is_chunk_active(ChunkPos pos) const {
+    chunk_cacc acc;
+    if (!m_chunks.find(acc, pos)) {
+        return false;
+    }
+
+    return acc->second.state == ChunkState::READY &&
+           acc->second.ref_count.load(std::memory_order_relaxed) > 0;
+}
+
 ChunkLoadStyle ServerChunkSystem::load_style() const { return m_load_style; }
 
 int ServerChunkSystem::generation_threads() const {

@@ -287,9 +287,8 @@ void ServerWorld::update() {
     // poll_finished_chunks();
     send_time();
 
-    m_entity_manager.update();
-
     m_chunk_system.update();
+    m_entity_manager.update();
 
     for (auto& [id, timer] : m_timers) {
         timer.update();
@@ -741,6 +740,11 @@ ServerWorld::get_all_session() const {
         sessions.emplace_back(player->get_session());
     }
     return sessions;
+}
+
+bool ServerWorld::is_chunk_active(glm::vec3 pos) const {
+    auto chunk_pos = get_chunk_pos(pos.x, pos.z);
+    return m_chunk_system.is_chunk_active(chunk_pos);
 }
 
 uint32_t ServerWorld::get_chunk_ref_count(const glm::vec3& pos) const {

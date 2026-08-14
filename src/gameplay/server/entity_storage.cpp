@@ -1,6 +1,5 @@
 #include "Cubed/gameplay/server/entity_storage.hpp"
 
-#include "Cubed/gameplay/server/server_entity_manager.hpp"
 #include "Cubed/gameplay/server/world_storage.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/proto_utils.hpp"
@@ -122,9 +121,9 @@ bool EntityStorage::remove_batch(std::span<const EntityID> entities) {
     return true;
 }
 
-void EntityStorage::load_all_entities(ServerEntityManager& manager) {
+std::vector<EntityStorageData> EntityStorage::load_all() {
     constexpr std::string_view PREFIX = "entity:";
-
+    std::vector<EntityStorageData> datas;
     std::unique_ptr<rocksdb::Iterator> it{
         m_storage.get_db()->NewIterator(rocksdb::ReadOptions{})};
 
@@ -141,8 +140,10 @@ void EntityStorage::load_all_entities(ServerEntityManager& manager) {
             continue;
         }
         // entity manager add entity;
-        manager.add_entity_on_init(*entity);
+        datas.emplace_back(std::move(*entity));
     }
+
+    return datas;
 }
 
 std::string EntityStorage::make_key(EntityID id) {

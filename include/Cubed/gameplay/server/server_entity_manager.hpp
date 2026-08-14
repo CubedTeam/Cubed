@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/ecs/entity.hpp"
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/server/entity_storage.hpp"
@@ -20,7 +21,7 @@ public:
     ServerEntityManager(ServerWorld& world);
 
     void init();
-    void add_entity_on_init(EntityStorageData& data);
+
     void update();
     void add_creature(std::string_view name, const glm::vec3& world_pos);
     void destory(EntityID id);
@@ -33,6 +34,9 @@ public:
     void set_next_value(EntityID id);
     void unload(EntityID id);
     void stop();
+
+    void add_dormant(EntityStorageData data);
+    void activate_chunk(ChunkPos pos);
 
 private:
     enum class Command { CREATE, SEND_ALL_ENTITIES, DESTORY, SAVE_ALL, UNLOAD };
@@ -56,10 +60,14 @@ private:
         std::variant<std::shared_ptr<Session>, EntityCreateElement, EntityID,
                      std::monostate>;
     using TaskPair = std::pair<Command, TaskElement>;
-    using ActiveIds = tbb::concurrent_hash_map<EntityID, std::monostate>;
+    using DormantEntityMap =
+        std::unordered_map<ChunkPos, std::vector<EntityStorageData>,
+                           ChunkPos::Hash>;
     ServerWorld& m_world;
     std::unique_ptr<EntityStorage> m_storage;
-    ActiveIds m_active_ids;
+
+    DormantEntityMap m_dormant_entities;
+
     std::atomic<size_t> m_creature_sum{0};
     std::atomic<size_t> m_entity_sum{0};
     tbb::concurrent_queue<TaskPair> m_tasks;
@@ -71,6 +79,7 @@ private:
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
     void handle_entity_destory(EntityID id);
+    bool destory_internal(EntityID id);
     void handle_task();
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai(entt::entity e);
@@ -83,6 +92,7 @@ private:
     void unload_internal(EntityID id);
     std::optional<EntityStorageData> build_entity_storage_data(EntityID id);
     std::optional<EntityStorageData> build_entity_storage_data(entt::entity id);
+
     template <typename... Args>
     EntityID create_entity_in_factory(EntityID id, Args&&... args) {
         auto entity = m_registry.create();
