@@ -4,6 +4,7 @@
 #include "Cubed/localization.hpp"
 #include "Cubed/scene/host_game_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
+#include "Cubed/tools/world_name.hpp"
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/default_image.hpp"
@@ -35,6 +36,7 @@ void HostGameUI::init() {
         label.set_text(tr("hostgame.create_a_new_world"));
         label.set_scale(0.7f);
     }
+
     {
         auto& label = layout.add_child<Label>();
         label.set_text("NoError");
@@ -42,6 +44,26 @@ void HostGameUI::init() {
         label.set_scale(0.7f);
         label.set_visible(false);
         m_error_label = &label;
+    }
+    {
+        auto& text_field = layout.add_child<TextField>();
+        text_field.set_show_text(tr("hostgame.world_name"));
+        text_field.set_app(&m_scene.scene_manager().app());
+        std::unique_ptr<Image> back = std::make_unique<Image>(&text_field);
+        back->set_image(DEFAULT_TEXT_FIELD_IMAGE, texture_manager, false)
+            .set_fill_parent(true);
+        text_field.set_background(std::move(back));
+        m_world_name_field = &text_field;
+
+        text_field.set_on_finish([this, &text_field]() {
+            auto& name = text_field.input_text();
+            if (name.empty()) {
+                m_scene.scene_manager().world_scene_param().world_name =
+                    "new_world";
+            } else if (Tools::is_valid_world_name(name)) {
+                m_scene.scene_manager().world_scene_param().world_name = name;
+            }
+        });
     }
     {
         auto& text_seed = layout.add_child<TextField>();
@@ -101,6 +123,14 @@ void HostGameUI::init() {
         button.set_default_image(texture_manager);
         button.set_text(tr("hostgame.create_world"));
         button.set_clicked([this, &button]() {
+            const auto& input = m_world_name_field->input_text();
+            if (!input.empty() && !Tools::is_valid_world_name(input)) {
+                set_error(tr("hostgame.invalid_world_name"));
+                return;
+            }
+            clear_error();
+            m_scene.scene_manager().world_scene_param().world_name =
+                input.empty() ? "new_world" : input;
             button.set_enable(false);
             m_scene.scene_manager().request_change(SceneType::WORLD);
         });

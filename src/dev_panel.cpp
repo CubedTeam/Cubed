@@ -3,7 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/cave_path.hpp"
-#include "Cubed/gameplay/local_player.hpp"
+#include "Cubed/gameplay/client/local_player.hpp"
 #include "Cubed/gameplay/river.path.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/log.hpp"
@@ -229,9 +229,9 @@ void DevPanel::show_biome_table_bar() {
 
 void DevPanel::show_time_table_bar() {
     ServerWorld& world = m_world_scene.server_world();
-    ImGui::Text("Game Tick %llu", world.game_tick());
+    ImGui::Text("Game Tick %s", std::format("{}", world.game_tick()).c_str());
     ImGui::SameLine();
-    ImGui::Text("Day Tick %llu", world.day_tick());
+    ImGui::Text("Day Tick %s", std::format("{}", world.day_tick()).c_str());
     m_tick_frezze = !world.is_tick_running();
     ImGui::SameLine();
     if (ImGui::Checkbox("Tick Frezze", &m_tick_frezze)) {

@@ -1,8 +1,8 @@
 #include "Cubed/audio/audio_engine.hpp"
 
 #include "Cubed/audio/audio_error.hpp"
-#include "Cubed/gameplay/client_world.hpp"
-#include "Cubed/gameplay/network_client.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
+#include "Cubed/gameplay/client/network_client.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/log.hpp"
 

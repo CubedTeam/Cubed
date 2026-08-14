@@ -3,11 +3,12 @@
 // Prevent unsigned underflow issues in subtraction
 #include "Cubed/tools/cubed_assert.hpp"
 
+#include <cstdint>
 #include <functional>
 #include <utility>
 namespace Cubed {
 
-using TickType = long long;
+using TickType = int64_t;
 using TimeType = float;
 
 constexpr int DEFAULT_PER_TICK_TIME = 50;

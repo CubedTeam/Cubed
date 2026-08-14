@@ -131,46 +131,50 @@ bool WorldScene::handle_event(const Event& e) {
         e);
 }
 void WorldScene::on_enter() {
-    load_config();
-    m_error_ui.init();
-    m_client = std::make_shared<NetworkClient>(m_client_world);
-    if (m_argument.direct_enter) {
-        if (m_argument.ip) {
-            m_runmode = RunMode::CLIENT_ONLY;
-        }
-    } else {
-        if (!m_scene_manager.world_scene_param().host_game) {
-            m_runmode = RunMode::CLIENT_ONLY;
-        }
-    }
-
-    if (m_argument.direct_enter) {
-        if (!m_argument.ip) {
-            ChunkGenerator::init();
-            m_server.start_server(*m_argument.port, m_runmode);
-            m_client->start("127.0.0.1", *m_argument.port);
-        } else {
-            m_client->start(*m_argument.ip, *m_argument.port);
-        }
-
-    } else {
-        auto& param = m_scene_manager.world_scene_param();
-
-        if (param.host_game) {
-            if (param.seed) {
-                ChunkGenerator::init(*param.seed);
-                param.seed = std::nullopt;
-            } else {
-                ChunkGenerator::init();
-            }
-            m_server.start_server(param.port, m_runmode);
-        }
-
-        m_client->start(param.ip, param.port);
-    }
 
     // init will send packet
     try {
+
+        load_config();
+        m_error_ui.init();
+        m_client = std::make_shared<NetworkClient>(m_client_world);
+        if (m_argument.direct_enter) {
+            if (m_argument.ip) {
+                m_runmode = RunMode::CLIENT_ONLY;
+            }
+        } else {
+            if (!m_scene_manager.world_scene_param().host_game) {
+                m_runmode = RunMode::CLIENT_ONLY;
+            }
+        }
+
+        if (m_argument.direct_enter) {
+            if (!m_argument.ip) {
+
+                if (m_argument.world) {
+                    m_server.start_server(*m_argument.port, m_runmode,
+                                          *m_argument.world);
+                } else {
+                    m_server.start_server(*m_argument.port, m_runmode,
+                                          "new_world");
+                }
+
+                m_client->start("127.0.0.1", *m_argument.port);
+            } else {
+                m_client->start(*m_argument.ip, *m_argument.port);
+            }
+
+        } else {
+            auto& param = m_scene_manager.world_scene_param();
+
+            if (param.host_game) {
+
+                m_server.start_server(param.port, m_runmode, param.world_name,
+                                      param.seed);
+            }
+
+            m_client->start(param.ip, param.port);
+        }
 
         m_client_world.init(m_argument.player.value_or("Unknown"), m_client,
                             m_runmode);

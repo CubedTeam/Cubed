@@ -7,12 +7,12 @@
 #include <zstd.h>
 namespace Cubed {
 constexpr int DEFAULT_ZSTD_LEVEL = 3;
-inline std::vector<uint8_t> compress_data(std::span<const uint8_t> data) {
+inline std::vector<uint8_t> compress_data(std::span<const uint8_t> data,
+                                          int zstd_level = DEFAULT_ZSTD_LEVEL) {
     size_t max_size = ZSTD_compressBound(data.size());
     std::vector<uint8_t> compressed_data(max_size);
-    size_t compressed_bytes =
-        ZSTD_compress(compressed_data.data(), max_size, data.data(),
-                      data.size(), DEFAULT_ZSTD_LEVEL);
+    size_t compressed_bytes = ZSTD_compress(
+        compressed_data.data(), max_size, data.data(), data.size(), zstd_level);
     if (ZSTD_isError(compressed_bytes)) {
         throw std::runtime_error(std::format(
             "Compress Fail {}", ZSTD_getErrorName(compressed_bytes)));

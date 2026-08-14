@@ -14,6 +14,7 @@ struct WorldSceneParam {
     std::optional<unsigned> seed = std::nullopt;
     std::string ip{"127.0.0.1"};
     int port = 25530;
+    std::string world_name{"new_world"};
 };
 
 class SceneManager {
@@ -47,6 +48,7 @@ private:
 
     App& m_app;
     WorldSceneParam m_world_param;
+
     std::vector<std::unique_ptr<Scene>> m_pending_delete_scene;
     std::optional<SceneOperation> m_operation;
     std::stack<std::unique_ptr<Scene>> m_scenes;

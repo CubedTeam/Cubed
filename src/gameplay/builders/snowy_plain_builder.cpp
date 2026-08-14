@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/builders/snowy_plain_builder.hpp"
 
-#include "Cubed/gameplay/chunk_generator.hpp"
-#include "Cubed/gameplay/server_chunk.hpp"
+#include "Cubed/gameplay/server/chunk_generator.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
 namespace Cubed {
 SnowyPlainBuilder::SnowyPlainBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}
@@ -14,7 +14,7 @@ void SnowyPlainBuilder::build_biome() {
 void SnowyPlainBuilder::build_blocks() {
     auto& m_chunk = m_chunk_generator.chunk();
     auto& m_blocks = m_chunk.blocks();
-    auto& m_heightmap = m_chunk.heightmap();
+    auto& m_heightmap = m_chunk_generator.get_heightmap();
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int z = 0; z < CHUNK_SIZE; z++) {
             int height = static_cast<int>(m_heightmap[x][z]);

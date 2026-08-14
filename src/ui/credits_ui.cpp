@@ -86,6 +86,7 @@ void CreditsUI::update_layout(int, int height) {
         add_text("assimp - BSD-3-Clause");
         add_text("EnTT - MIT licensed");
         add_text("tracy - BSD-3-Clause");
+        add_text("RocksDB - Apache License 2.0");
         add_text("Music", 0.8f);
         add_text("'Find a Peaceful Place' by ROZKOL (Free Music Archive), CC "
                  "BY 4.0.");

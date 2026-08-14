@@ -195,7 +195,15 @@ void App::handle_argument(int argc, char** argv) {
             {"--enable-consolelog",
              [&](ArgParser&) { m_argument.enable_consolelog = true; }},
             {"--direct-enter",
-             [&](ArgParser&) { m_argument.direct_enter = true; }}
+             [&](ArgParser&) { m_argument.direct_enter = true; }},
+            {"--world",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--world");
+                 if (arg.empty()) {
+                     throw std::runtime_error("World name is empty");
+                 }
+                 m_argument.world = arg;
+             }}
 
         };
     ArgParser parser(argc, argv);

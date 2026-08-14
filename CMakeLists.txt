@@ -173,6 +173,7 @@ target_link_libraries(${PROJECT_NAME}
         assimp::assimp
         $<$<PLATFORM_ID:Windows>:ws2_32>
         Tracy::TracyClient
+        RocksDB::rocksdb
 )
 
 if(WIN32)

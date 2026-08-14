@@ -1,0 +1,868 @@
+#include "Cubed/gameplay/server/chunk_generator.hpp"
+
+#include "Cubed/gameplay/block_manager.hpp"
+#include "Cubed/gameplay/builders/desert_builder.hpp"
+#include "Cubed/gameplay/builders/forest_builder.hpp"
+#include "Cubed/gameplay/builders/mountain_builder.hpp"
+#include "Cubed/gameplay/builders/ocean_builder.hpp"
+#include "Cubed/gameplay/builders/plain_builder.hpp"
+#include "Cubed/gameplay/builders/river_builder.hpp"
+#include "Cubed/gameplay/builders/snowy_plain_builder.hpp"
+#include "Cubed/gameplay/cave_path.hpp"
+#include "Cubed/gameplay/creatures/spawn.hpp"
+#include "Cubed/gameplay/river.path.hpp"
+#include "Cubed/gameplay/server/server_chunk.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
+#include "Cubed/gameplay/tree.hpp"
+#include "Cubed/tools/cubed_assert.hpp"
+#include "Cubed/tools/cubed_hash.hpp"
+#include "Cubed/tools/math_tools.hpp"
+#include "Cubed/tools/perlin_noise.hpp"
+
+#include <algorithm>
+#include <tracy/Tracy.hpp>
+namespace Cubed {
+
+namespace {
+template <typename F>
+void carve_worm(const std::vector<PathPoint>& points, const ChunkPos& chunk_pos,
+                F&& on_hit) {
+    const int CHUNK_MIN_X = chunk_pos.x * CHUNK_SIZE;
+    const int CHUNK_MIN_Z = chunk_pos.z * CHUNK_SIZE;
+    const int CHUNK_MAX_X = CHUNK_MIN_X + SIZE_X - 1;
+    const int CHUNK_MAX_Z = CHUNK_MIN_Z + SIZE_Z - 1;
+    const int CHUNK_MIN_Y = 0;
+    const int CHUNK_MAX_Y = SIZE_Y - 1;
+    for (const auto& point : points) {
+
+        const glm::vec3& center = point.pos;
+        float rad_xz = point.rad_xz;
+        float rad_y = point.rad_y;
+
+        if (center.x + rad_xz < CHUNK_MIN_X ||
+            center.x - rad_xz > CHUNK_MAX_X ||
+            center.z + rad_xz < CHUNK_MIN_Z ||
+            center.z - rad_xz > CHUNK_MAX_Z || center.y + rad_y < CHUNK_MIN_Y ||
+            center.y - rad_y > CHUNK_MAX_Y) {
+            continue;
+        }
+
+        int min_x = static_cast<int>(std::floor(center.x - rad_xz));
+        int max_x = static_cast<int>(std::floor(center.x + rad_xz));
+        int min_z = static_cast<int>(std::floor(center.z - rad_xz));
+        int max_z = static_cast<int>(std::floor(center.z + rad_xz));
+        int min_y = static_cast<int>(std::floor(center.y - rad_y));
+        int max_y = static_cast<int>(std::floor(center.y + rad_y));
+
+        min_x = std::max(min_x, CHUNK_MIN_X);
+        max_x = std::min(max_x, CHUNK_MAX_X);
+        min_z = std::max(min_z, CHUNK_MIN_Z);
+        max_z = std::min(max_z, CHUNK_MAX_Z);
+        min_y = std::max(min_y, CHUNK_MIN_Y);
+        max_y = std::min(max_y, CHUNK_MAX_Y);
+
+        glm::vec3 right_raw =
+            glm::cross(point.tangent, glm::vec3(0.0f, 1.0f, 0.0f));
+        if (glm::dot(right_raw, right_raw) < 1e-6f)
+            right_raw = glm::cross(point.tangent, glm::vec3(1.0f, 0.0f, 0.0f));
+        glm::vec3 right = glm::normalize(right_raw);
+        glm::vec3 up = glm::normalize(glm::cross(point.tangent, right));
+
+        float inv_a2 = 1.0f / (point.rad_xz * point.rad_xz);
+        float inv_b2 = 1.0f / (point.rad_y * point.rad_y);
+
+        for (int wy = min_y; wy <= max_y; ++wy) {
+            if (wy == 0)
+                continue;
+            float dy = static_cast<float>(wy) - point.pos.y;
+
+            float vy_contrib = dy * up.y;
+            float vy2 = vy_contrib * vy_contrib * inv_b2;
+            if (vy2 >= 1.0f)
+                continue;
+
+            for (int wx = min_x; wx <= max_x; ++wx) {
+                float dx = static_cast<float>(wx) - point.pos.x;
+                for (int wz = min_z; wz <= max_z; ++wz) {
+                    float dz = static_cast<float>(wz) - point.pos.z;
+                    glm::vec3 to_point(dx, dy, dz);
+
+                    float h = glm::dot(to_point, right);
+                    float v = glm::dot(to_point, up);
+
+                    if (h * h * inv_a2 + v * v * inv_b2 > 1.0f)
+                        continue;
+                    int x = wx - CHUNK_MIN_X;
+                    on_hit(x, wy, wz - CHUNK_MIN_Z);
+                }
+            }
+        }
+    }
+}
+} // namespace
+
+using enum BiomeType;
+
+constexpr int BLEND_RADIUS = 8;
+ChunkGenerator::ChunkGenerator(ServerChunk& chunk) : m_chunk(chunk) {
+    ASSERT_MSG(is_init, "ChunksGenerator is not init");
+    ChunkPos pos = m_chunk.get_chunk_pos();
+    unsigned seed = HASH::chunk_seed_hash(pos.x, pos.z, m_generator_seed);
+    m_random.init(seed);
+    m_chunk_seed = seed;
+    m_neighbor_biome.fill(NONE);
+}
+
+void ChunkGenerator::init() {
+
+    std::random_device d;
+    init(d());
+}
+
+void ChunkGenerator::init(unsigned seed) {
+    m_generator_seed = seed;
+    Logger::info("Chunk Generator Seed {}", m_generator_seed);
+    PerlinNoise3D::init(m_generator_seed);
+    PerlinNoise2D::init(m_generator_seed);
+    is_init = true;
+}
+
+void ChunkGenerator::reload() {
+    if (!is_seed_change) {
+        return;
+    }
+    PerlinNoise3D::reload(m_generator_seed);
+    is_seed_change = false;
+}
+
+const unsigned& ChunkGenerator::seed() { return m_generator_seed; }
+void ChunkGenerator::seed(unsigned s) {
+    is_seed_change = true;
+    m_generator_seed = s;
+}
+
+unsigned ChunkGenerator::chunk_seed() const {
+    if (m_chunk_seed == 0) {
+        Logger::warn("Chunk Seed Generator Fail");
+    }
+    return m_chunk_seed;
+}
+void ChunkGenerator::assign_chunk_biome() {
+    auto m_chunk_pos = m_chunk.chunk_pos();
+    float x = static_cast<float>(m_chunk_pos.x);
+    float z = static_cast<float>(m_chunk_pos.z);
+    float temp = PerlinNoise3D::noise(x * BIOME_NOISE_FREQUENCY, 0.0f,
+                                      z * BIOME_NOISE_FREQUENCY);
+    float humid = PerlinNoise3D::noise(x * BIOME_NOISE_FREQUENCY, 1.0f,
+                                       z * BIOME_NOISE_FREQUENCY);
+    float center_x = static_cast<float>(SIZE_X / 2) + x * CHUNK_SIZE + 0.5f;
+    float center_z = static_cast<float>(SIZE_Z / 2) + z * CHUNK_SIZE + 0.5f;
+    float mountainous =
+        PerlinNoise2D::noise(center_x * MOUNTAINOUS_NOISE_FREQUENCY,
+                             center_z * MOUNTAINOUS_NOISE_FREQUENCY);
+    auto& conditions = m_chunk.conditions();
+    conditions.mountainous = mountainous;
+    conditions.humid = humid;
+    conditions.temp = temp;
+    auto biome = determine_biome(conditions);
+    m_chunk.biome(biome);
+}
+
+void ChunkGenerator::resolve_biome_adjacency_conflict(
+    const std::array<const ServerChunk*, 8>& adj_chunks) {
+    auto m_biome = m_chunk.biome();
+    for (int i = 0; i < 8; i++) {
+        auto& chunk = adj_chunks[i];
+        if (chunk == nullptr) {
+            continue;
+        }
+        BiomeType biome = chunk->get_biome();
+        for (const auto& non : NON_ADJACENT) {
+            if (m_biome != non.first) {
+                continue;
+            }
+            for (auto b : non.second) {
+                if (b == biome) {
+                    m_biome = non.replace;
+                    m_chunk.biome(m_biome);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+/*
+void ChunkGenerator::generate_heightmap() {
+
+    auto m_chunk_pos = m_chunk.chunk_pos();
+    auto& m_heightmap = m_chunk.heightmap();
+    auto m_biome = m_chunk.biome();
+
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+
+            float world_x = static_cast<float>(x + m_chunk_pos.x * CHUNK_SIZE);
+            float world_z = static_cast<float>(z + m_chunk_pos.z * CHUNK_SIZE);
+
+            auto sample_height = [&](BiomeType b) -> int {
+                auto range = get_biome_height_range(b);
+                auto [f1, f2, f3] = get_noise_frequencies_for_biome(b);
+                float n = 1.00f * PerlinNoise::noise(world_x * f1, 0.5f,
+                                                     world_z * f1) +
+                          0.50f * PerlinNoise::noise(world_x * f2, 0.5f,
+                                                     world_z * f2) +
+                          0.25f * PerlinNoise::noise(world_x * f3, 0.5f,
+                                                     world_z * f3);
+                n /= 1.75f;
+                return range.base_y + std::round(n * range.amplitude);
+            };
+            m_heightmap[x][z] = sample_height(m_biome);
+        }
+    }
+}
+*/
+
+void ChunkGenerator::generate_heightmap() {
+    ZoneScopedN("ChunkGen::generate_heightmap");
+    auto chunk_pos = m_chunk.chunk_pos();
+    auto& heightmap = m_heightmap;
+
+    for (int x = 0; x < CHUNK_SIZE; ++x) {
+        for (int z = 0; z < CHUNK_SIZE; ++z) {
+            float world_x = static_cast<float>(x + chunk_pos.x * CHUNK_SIZE);
+            float world_z = static_cast<float>(z + chunk_pos.z * CHUNK_SIZE);
+
+            auto fbm_height = [](float x, float y, int octaves,
+                                 float lacunarity, float gain, float amplitude,
+                                 float frequency) -> float {
+                float value = 0.0f;
+                for (int i = 0; i < octaves; i++) {
+                    value += amplitude *
+                             PerlinNoise2D::noise(x * frequency, y * frequency);
+                    frequency *= lacunarity;
+                    amplitude *= gain;
+                }
+                return value;
+            };
+
+            int octaves = 4;
+            float lacunarity = 2.0f;
+            float gain = 0.5f;
+            float base_y = 64;
+            float amplitude = 40.0f;
+            float mountainous =
+                PerlinNoise2D::noise(world_x * MOUNTAINOUS_NOISE_FREQUENCY,
+                                     world_z * MOUNTAINOUS_NOISE_FREQUENCY);
+            /*
+            float t = Math::smootherstep(0.6, 0.7, mountainous);
+            base_y = std::lerp(64, 85, t);
+            amplitude = std::lerp(10, 40, t);
+            */
+            float t;
+            if (mountainous >= 0.95f) {
+                t = Math::smootherstep(0.95f, 1.0f, mountainous);
+                base_y = std::lerp(130, 140, t);
+                amplitude = std::lerp(38, 48, t);
+            } else if (mountainous >= 0.85f) {
+                t = Math::smootherstep(0.85f, 0.95f, mountainous);
+                base_y = std::lerp(100, 130, t);
+                amplitude = std::lerp(28, 38, t);
+            } else if (mountainous >= 0.8) {
+                t = Math::smootherstep(0.8f, 0.85f, mountainous);
+                base_y = std::lerp(85, 100, t);
+                amplitude = std::lerp(18, 28, t);
+            } else if (mountainous >= 0.75f) {
+                t = Math::smootherstep(0.75f, 0.8f, mountainous);
+                base_y = std::lerp(70, 85, t);
+                amplitude = std::lerp(6, 18, t);
+            } else if (mountainous >= 0.7) {
+                t = Math::smootherstep(0.7f, 0.75f, mountainous);
+                base_y = std::lerp(66, 70, t);
+                amplitude = std::lerp(6, 6, t);
+
+            } else if (mountainous >= 0.45f) {
+                t = Math::smootherstep(0.45f, 0.7f, mountainous);
+                base_y = std::lerp(64, 66, t);
+                amplitude = std::lerp(6, 6, t);
+            } else if (mountainous >= 0.3f) {
+                t = Math::smootherstep(0.3f, 0.45f, mountainous);
+                base_y = std::lerp(60, 64, t);
+                amplitude = std::lerp(6, 6, t);
+            } else if (mountainous >= 0.25f) {
+                t = Math::smootherstep(0.25f, 0.3f, mountainous);
+                base_y = std::lerp(44, 60, t);
+                amplitude = std::lerp(6, 6, t);
+            } else {
+                t = Math::smootherstep(0.0f, 0.25f, mountainous);
+                base_y = std::lerp(35, 44, t);
+                amplitude = std::lerp(3, 6, t);
+            }
+            heightmap[x][z] =
+                base_y + fbm_height(world_x, world_z, octaves, lacunarity, gain,
+                                    amplitude, 0.005f);
+        }
+    }
+}
+
+void ChunkGenerator::blend_heightmap_boundaries(
+    const std::array<std::optional<HeightMapArray>, 8>& neighbor_heightmap,
+    const std::array<BiomeType, 8>& neighbor_biome) {
+
+    auto m_biome = m_chunk.biome();
+    m_neighbor_biome = neighbor_biome;
+    // --- Right neighbor neighbor[0]: (1, 0) ---
+    for (int z = 0; z < SIZE_Z; z++) {
+        if (neighbor_heightmap[0] != std::nullopt &&
+            neighbor_biome[0] != m_biome) {
+            is_cur_chunk_ins = true;
+            int edge_x = CHUNK_SIZE - 1;
+            int h = m_heightmap[edge_x][z];
+            int neighbor_h = (*neighbor_heightmap[0])[0][z];
+            if (h <= neighbor_h) {
+                continue;
+            }
+            const int DIR = (edge_x == 0) ? 1 : -1;
+            for (int i = 0; i < BLEND_RADIUS; i++) {
+                int x = edge_x + DIR * i;
+                float t = static_cast<float>(i) / BLEND_RADIUS;
+
+                // float smooth_t = t * t * (3.0f - 2.0f * t);
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(neighbor_h + (h - neighbor_h) * smooth_t));
+            }
+        }
+    }
+    // --- Left neighbor neighbor[1]: (-1, 0) ---
+    for (int z = 0; z < SIZE_Z; z++) {
+        if (neighbor_heightmap[1] != std::nullopt &&
+            neighbor_biome[1] != m_biome) {
+            is_cur_chunk_ins = true;
+            int edge_x = 0;
+            int h = m_heightmap[edge_x][z];
+            int neighbor_h = (*neighbor_heightmap[1])[CHUNK_SIZE - 1][z];
+            if (h <= neighbor_h) {
+                continue;
+            }
+
+            const int DIR = (edge_x == 0) ? 1 : -1;
+            for (int i = 0; i < BLEND_RADIUS; i++) {
+                int x = edge_x + DIR * i;
+                float t = static_cast<float>(i) / BLEND_RADIUS;
+
+                // float smooth_t = t * t * (3.0f - 2.0f * t);
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(neighbor_h + (h - neighbor_h) * smooth_t));
+            }
+        }
+    }
+    // --- Front neighbor neighbor[2]: (0, 1) ---
+    for (int x = 0; x < SIZE_X; x++) {
+        if (neighbor_heightmap[2] != std::nullopt &&
+            neighbor_biome[2] != m_biome) {
+            is_cur_chunk_ins = true;
+            int edge_z = CHUNK_SIZE - 1;
+            int h = m_heightmap[x][edge_z];
+            int neighbor_h = (*neighbor_heightmap[2])[x][0];
+            if (h <= neighbor_h) {
+                continue;
+            }
+            const int DIR = (edge_z == 0) ? 1 : -1;
+            for (int i = 0; i < BLEND_RADIUS; i++) {
+                int z = edge_z + DIR * i;
+                float t = static_cast<float>(i) / BLEND_RADIUS;
+
+                // float smooth_t = t * t * (3.0f - 2.0f * t);
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(neighbor_h + (h - neighbor_h) * smooth_t));
+            }
+        }
+    }
+
+    // --- Back neighbor neighbor[3]: (0, -1) ---
+    for (int x = 0; x < SIZE_X; x++) {
+        if (neighbor_heightmap[3] != std::nullopt &&
+            neighbor_biome[3] != m_biome) {
+            is_cur_chunk_ins = true;
+            int edge_z = 0;
+            int h = m_heightmap[x][edge_z];
+            int neighbor_h = (*neighbor_heightmap[3])[x][CHUNK_SIZE - 1];
+            if (h <= neighbor_h) {
+                continue;
+            }
+
+            const int DIR = (edge_z == 0) ? 1 : -1;
+            for (int i = 0; i < BLEND_RADIUS; i++) {
+                int z = edge_z + DIR * i;
+                float t = static_cast<float>(i) / BLEND_RADIUS;
+
+                // float smooth_t = t * t * (3.0f - 2.0f * t);
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(neighbor_h + (h - neighbor_h) * smooth_t));
+            }
+        }
+    }
+
+    if (is_cur_chunk_ins) {
+        return;
+    }
+    // --- Right-Front corner neighbor[4]: (1, 1) ---
+    if (neighbor_heightmap[4] != std::nullopt && neighbor_biome[4] != m_biome) {
+        for (int i = 0; i < BLEND_RADIUS; i++) {
+            for (int j = 0; j < BLEND_RADIUS; j++) {
+                int x = (CHUNK_SIZE - 1) - i;
+                int z = (CHUNK_SIZE - 1) - j;
+                int h = m_heightmap[x][z];
+
+                int h_right = (neighbor_heightmap[0] != std::nullopt)
+                                  ? (*neighbor_heightmap[0])[0][z]
+                                  : h;
+
+                int h_front = (neighbor_heightmap[2] != std::nullopt)
+                                  ? (*neighbor_heightmap[2])[x][0]
+                                  : h;
+
+                int h_corner = (*neighbor_heightmap[4])[0][0];
+
+                float tx = static_cast<float>(i) / BLEND_RADIUS;
+                float tz = static_cast<float>(j) / BLEND_RADIUS;
+
+                float target_h = h_corner * (1 - tx) * (1 - tz) +
+                                 h_front * tx * (1 - tz) +
+                                 h_right * (1 - tx) * tz + h * tx * tz;
+
+                if (h <= static_cast<int>(std::round(target_h)))
+                    continue;
+
+                float t = static_cast<float>(std::max(i, j)) / BLEND_RADIUS;
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(target_h + (h - target_h) * smooth_t));
+            }
+        }
+    }
+
+    // --- Left-Front corner neighbor[5]: (-1, 1) ---
+    if (neighbor_heightmap[5] != std::nullopt && neighbor_biome[5] != m_biome) {
+        for (int i = 0; i < BLEND_RADIUS; i++) {
+            for (int j = 0; j < BLEND_RADIUS; j++) {
+                int x = i;
+                int z = (CHUNK_SIZE - 1) - j;
+                int h = m_heightmap[x][z];
+                int h_left = (neighbor_heightmap[1] != std::nullopt)
+                                 ? (*neighbor_heightmap[1])[CHUNK_SIZE - 1][z]
+                                 : h;
+                int h_front = (neighbor_heightmap[2] != std::nullopt)
+                                  ? (*neighbor_heightmap[2])[x][0]
+                                  : h;
+                int h_corner = (*neighbor_heightmap[5])[CHUNK_SIZE - 1][0];
+
+                float tx = static_cast<float>(i) / BLEND_RADIUS;
+                float tz = static_cast<float>(j) / BLEND_RADIUS;
+                float target_h = h_corner * (1 - tx) * (1 - tz) +
+                                 h_front * tx * (1 - tz) +
+                                 h_left * (1 - tx) * tz + h * tx * tz;
+
+                if (h <= static_cast<int>(std::round(target_h)))
+                    continue;
+
+                float t = static_cast<float>(std::max(i, j)) / BLEND_RADIUS;
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(target_h + (h - target_h) * smooth_t));
+            }
+        }
+    }
+
+    // --- Right-Back corner neighbor[6]: (1, -1) ---
+    if (neighbor_heightmap[6] != std::nullopt && neighbor_biome[6] != m_biome) {
+        for (int i = 0; i < BLEND_RADIUS; i++) {
+            for (int j = 0; j < BLEND_RADIUS; j++) {
+                int x = (CHUNK_SIZE - 1) - i;
+                int z = j;
+                int h = m_heightmap[x][z];
+                int h_right = (neighbor_heightmap[0] != std::nullopt)
+                                  ? (*neighbor_heightmap[0])[0][z]
+                                  : h;
+                int h_back = (neighbor_heightmap[3] != std::nullopt)
+                                 ? (*neighbor_heightmap[3])[x][CHUNK_SIZE - 1]
+                                 : h;
+                int h_corner = (*neighbor_heightmap[6])[0][CHUNK_SIZE - 1];
+
+                float tx = static_cast<float>(i) / BLEND_RADIUS;
+                float tz = static_cast<float>(j) / BLEND_RADIUS;
+                float target_h = h_corner * (1 - tx) * (1 - tz) +
+                                 h_back * tx * (1 - tz) +
+                                 h_right * (1 - tx) * tz + h * tx * tz;
+
+                if (h <= static_cast<int>(std::round(target_h)))
+                    continue;
+
+                float t = static_cast<float>(std::max(i, j)) / BLEND_RADIUS;
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(target_h + (h - target_h) * smooth_t));
+            }
+        }
+    }
+
+    // --- Left-Back corner neighbor[7]: (-1, -1) ---
+    if (neighbor_heightmap[7] != std::nullopt && neighbor_biome[7] != m_biome) {
+        for (int i = 0; i < BLEND_RADIUS; i++) {
+            for (int j = 0; j < BLEND_RADIUS; j++) {
+                int x = i;
+                int z = j;
+                int h = m_heightmap[x][z];
+                int h_left = (neighbor_heightmap[1] != std::nullopt)
+                                 ? (*neighbor_heightmap[1])[CHUNK_SIZE - 1][z]
+                                 : h;
+                int h_back = (neighbor_heightmap[3] != std::nullopt)
+                                 ? (*neighbor_heightmap[3])[x][CHUNK_SIZE - 1]
+                                 : h;
+                int h_corner =
+                    (*neighbor_heightmap[7])[CHUNK_SIZE - 1][CHUNK_SIZE - 1];
+
+                float tx = static_cast<float>(i) / BLEND_RADIUS;
+                float tz = static_cast<float>(j) / BLEND_RADIUS;
+                float target_h = h_corner * (1 - tx) * (1 - tz) +
+                                 h_back * tx * (1 - tz) +
+                                 h_left * (1 - tx) * tz + h * tx * tz;
+
+                if (h <= static_cast<int>(std::round(target_h)))
+                    continue;
+
+                float t = static_cast<float>(std::max(i, j)) / BLEND_RADIUS;
+                float smooth_t = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+                m_heightmap[x][z] = static_cast<int>(
+                    std::round(target_h + (h - target_h) * smooth_t));
+            }
+        }
+    }
+}
+
+void ChunkGenerator::generate_terrain_blocks() {
+    ZoneScopedN("ChunkGen::generate_terrain_blocks");
+    make_biome_builder();
+    if (!m_biome_builder) {
+        Logger::error("BiomeBuilder is nullptr");
+        return;
+    }
+    m_chunk.blocks().assign(CHUNK_SIZE * CHUNK_SIZE * WORLD_SIZE_Y, 0);
+    m_biome_builder->build_biome();
+}
+
+void ChunkGenerator::blend_surface_blocks_borders(
+    const std::array<std::optional<std::vector<BlockType>>, 4>&
+        neighbor_block) {
+    ZoneScopedN("ChunkGen::blend_surface_blocks_borders");
+    auto& m_blocks = m_chunk.blocks();
+
+    constexpr int WORLD_HEIGHT = WORLD_SIZE_Y;
+
+    // Helper lambda: get top block type from a neighbor's block data at (nx,
+    // nz)
+    auto get_top_block_from_neighbor = [&](const std::vector<BlockType>& blocks,
+                                           int nx, int nz) -> BlockType {
+        // Search from topmost y downwards for the first non-zero block
+        for (int y = WORLD_HEIGHT - 1; y >= 0; --y) {
+            int idx =
+                ServerChunk::index(nx, y,
+                                   nz); // linear index: y * area + z * size + x
+            if (idx >= 0 && idx < static_cast<int>(blocks.size())) {
+                BlockType neighbor_type = blocks[idx];
+                if (BlockManager::is_transitional(neighbor_type)) {
+                    return neighbor_type;
+                }
+            }
+        }
+        return 0; // fallback, should not happen for valid chunks
+    };
+
+    // For each column (x, z)
+    for (int x = 0; x < CHUNK_SIZE; ++x) {
+        for (int z = 0; z < CHUNK_SIZE; ++z) {
+            // Get the current top block type of this column from m_blocks
+            BlockType type_self = 0;
+            int top_y = -1;
+            top_y = m_heightmap[x][z];
+            type_self = m_blocks[ServerChunk::index(x, top_y, z)];
+
+            if (top_y == -1)
+                continue; // no block? skip
+
+            // Weight map: type -> total weight
+            std::unordered_map<BlockType, float> weights;
+            float self_weight = 1.0f;
+            weights[type_self] = self_weight;
+            // --- Right neighbor (index 0) ---
+            if (neighbor_block[0] && x >= CHUNK_SIZE - BLEND_RADIUS) {
+                int dist = (CHUNK_SIZE - 1) - x;
+                float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
+                t = t * t * (3.0f - 2.0f * t); // smoothstep
+                if (t > 0.0f) {
+                    BlockType type_neighbor =
+                        get_top_block_from_neighbor(*neighbor_block[0], 0, z);
+                    weights[type_neighbor] += t;
+                }
+            }
+
+            // --- Left neighbor (index 1) ---
+            if (neighbor_block[1] && x < BLEND_RADIUS) {
+                int dist = x;
+                float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
+                t = t * t * (3.0f - 2.0f * t);
+                if (t > 0.0f) {
+                    BlockType type_neighbor = get_top_block_from_neighbor(
+                        *neighbor_block[1], CHUNK_SIZE - 1, z);
+                    weights[type_neighbor] += t;
+                }
+            }
+
+            // --- Front neighbor (index 2) ---
+            if (neighbor_block[2] && z >= CHUNK_SIZE - BLEND_RADIUS) {
+                int dist = (CHUNK_SIZE - 1) - z;
+                float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
+                t = t * t * (3.0f - 2.0f * t);
+                if (t > 0.0f) {
+                    BlockType type_neighbor =
+                        get_top_block_from_neighbor(*neighbor_block[2], x, 0);
+                    weights[type_neighbor] += t;
+                }
+            }
+
+            // --- Back neighbor (index 3) ---
+            if (neighbor_block[3] && z < BLEND_RADIUS) {
+                int dist = z;
+                float t = 1.0f - static_cast<float>(dist) / BLEND_RADIUS;
+                t = t * t * (3.0f - 2.0f * t);
+                if (t > 0.0f) {
+                    BlockType type_neighbor = get_top_block_from_neighbor(
+                        *neighbor_block[3], x, CHUNK_SIZE - 1);
+                    weights[type_neighbor] += t;
+                }
+            }
+
+            if (weights.empty()) {
+                continue;
+            }
+            // Find type with maximum total weight
+            BlockType final_type = type_self;
+            /*float max_weight = weights[type_self];
+            for (const auto& [type, w] : weights) {
+                if (w > max_weight) {
+                    max_weight = w;
+                    final_type = type;
+                }
+            }*/
+
+            float sum = 0.0f;
+            for (auto& kv : weights) {
+                sum += kv.second;
+            }
+            float rnd = m_random.random_float(0.0f, 1.0f);
+            float accum = 0.0f;
+            for (auto [t, w] : weights) {
+                accum += w / sum;
+                if (rnd < accum) {
+                    final_type = t;
+                    break;
+                }
+            }
+
+            if (!BlockManager::is_transitional(final_type)) {
+                continue;
+            }
+            // Update the top block if the type changed
+            if (final_type != type_self) {
+                // top block
+                BlockType new_surface = final_type;
+                m_blocks[ServerChunk::index(x, top_y, z)] = new_surface;
+                // bottom block
+                unsigned fill_type = 2;
+                if (final_type == 1 || final_type == 8) {
+                    fill_type = 2;
+                } else {
+                    fill_type = final_type;
+                }
+                for (int y = std::max(0, top_y - 5); y < top_y; y++) {
+                    m_blocks[ServerChunk::index(x, y, z)] = fill_type;
+                }
+            }
+        }
+    }
+}
+
+void ChunkGenerator::generate_vegetation() {
+
+    if (!m_biome_builder) {
+        Logger::error("BiomeBuilder is nullptr");
+        return;
+    }
+    m_biome_builder->build_vegetation();
+}
+
+void ChunkGenerator::make_biome_builder() {
+    auto biome = m_chunk.biome();
+    switch (biome) {
+    case PLAIN:
+        m_biome_builder = std::make_unique<PlainBuilder>(*this);
+        break;
+    case DESERT:
+        m_biome_builder = std::make_unique<DesertBuilder>(*this);
+        break;
+    case FOREST:
+        m_biome_builder = std::make_unique<ForestBuilder>(*this);
+        break;
+    case MOUNTAIN:
+        m_biome_builder = std::make_unique<MountainBuilder>(*this);
+        break;
+    case RIVER:
+        m_biome_builder = std::make_unique<RiverBuilder>(*this);
+        break;
+    case SNOWY_PLAIN:
+        m_biome_builder = std::make_unique<SnowyPlainBuilder>(*this);
+        break;
+    case OCEAN:
+        m_biome_builder = std::make_unique<OceanBuilder>(*this);
+        break;
+    case NONE:
+        m_biome_builder = nullptr;
+        break;
+    }
+}
+
+void ChunkGenerator::ocean_build() { m_biome_builder->ocean_water_build(); }
+
+void ChunkGenerator::generate_cave() {
+    ZoneScopedN("ChunkGen::generate_cave");
+    const auto& chunk_pos = m_chunk.chunk_pos();
+    auto& blocks = m_chunk.blocks();
+    auto& carver = m_chunk.world().cave_carcer();
+
+    int search_r = carver.search_radius();
+    for (int dx = -search_r; dx <= search_r; dx++) {
+        for (int dz = -search_r; dz <= search_r; dz++) {
+            ChunkPos origin_pos{chunk_pos.x + dx, chunk_pos.z + dz};
+            auto origin = carver.get_origin(origin_pos);
+            if (!origin.exists)
+                continue;
+
+            // Deterministically reconstruct this path (lightweight: only
+            // compute points, no storage).
+            CavePath path{origin.seed, carver.world_seed(), origin.pos};
+
+            carve_worm(
+                path.points(), chunk_pos, [&](int x, int y, int z) -> void {
+                    int idx = ServerChunk::index(x, y, z);
+
+                    auto type = blocks[idx];
+
+                    if (BlockManager::is_water(type)) {
+                        return;
+                    }
+
+                    if (y < WORLD_SIZE_Y - 1) {
+
+                        if (BlockManager::is_water(
+                                blocks[ServerChunk::index(x, y + 1, z)])) {
+                            return;
+                        }
+                    }
+                    blocks[idx] = 0;
+                });
+        }
+    }
+}
+
+void ChunkGenerator::generate_river() {
+    ZoneScopedN("ChunkGen::generate_river");
+    if ((m_chunk.biome() == BiomeType::DESERT) ||
+        (m_chunk.biome() == BiomeType::OCEAN)) {
+
+        return;
+    }
+    auto& river_worm = m_chunk.world().river_worm();
+
+    const auto& chunk_pos = m_chunk.chunk_pos();
+    auto& blocks = m_chunk.blocks();
+    bool is_river = false;
+    int search_r = river_worm.search_radius();
+
+    for (int dx = -search_r; dx <= search_r; dx++) {
+        for (int dz = -search_r; dz <= search_r; dz++) {
+            ChunkPos origin_pos{chunk_pos.x + dx, chunk_pos.z + dz};
+            auto origin = river_worm.get_origin(origin_pos);
+            if (!origin.exists)
+                continue;
+
+            // Deterministically reconstruct this path (lightweight: only
+            // compute points, no storage).
+            RiverPath path{origin.seed, river_worm.world_seed(), origin.pos};
+
+            carve_worm(path.points(), chunk_pos,
+                       [&](int x, int y, int z) -> void {
+                           int idx = ServerChunk::index(x, y, z);
+                           if (y > SEA_LEVEL) {
+                               blocks[idx] = 0;
+                               return;
+                           }
+                           is_river = true;
+                           if (blocks[idx] == 0) {
+                               return;
+                           }
+                           blocks[idx] = 7;
+                       });
+        }
+    }
+
+    if (is_river) {
+        m_chunk.biome(RIVER);
+    }
+}
+
+void ChunkGenerator::spawn_creature() {
+    ZoneScopedN("ChunkGenerator::spawn_creature");
+    auto biome = m_chunk.biome();
+    const auto& blocks = m_chunk.blocks();
+    const auto& heightmap = m_heightmap;
+    const auto& chunk_pos = m_chunk.chunk_pos();
+    if (std::ranges::contains(SpawnDefaults::PIG.biomes, biome)) {
+
+        if (m_random.random_bool(SpawnDefaults::PIG.probability)) {
+            int want =
+                m_random.random_int(0, SpawnDefaults::PIG.max_spawn_count);
+            for (int i = 0; i < want; ++i) {
+                int x = m_random.random_int(0, CHUNK_SIZE - 1);
+                int z = m_random.random_int(0, CHUNK_SIZE - 1);
+                int y = static_cast<int>(heightmap[x][z]);
+                glm::vec3 pos(x, y + 1, z);
+                auto type = blocks[Chunk::index(pos)];
+                if (type != 0) {
+                    continue;
+                }
+                auto [world_x, world_y, world_z] = Chunk::block_to_world(
+                    x, y + 1, z, chunk_pos.x, chunk_pos.z);
+                m_chunk.world().entity_manager().add_creature(
+                    SpawnDefaults::PIG.name,
+                    glm::vec3{world_x, world_y, world_z});
+            }
+        }
+    }
+}
+
+ServerChunk& ChunkGenerator::chunk() { return m_chunk; }
+
+Random& ChunkGenerator::random() { return m_random; }
+const std::array<BiomeType, 8>& ChunkGenerator::neighbor_biome() const {
+    return m_neighbor_biome;
+}
+
+const HeightMapArray& ChunkGenerator::get_heightmap() const {
+    return m_heightmap;
+}
+
+} // namespace Cubed

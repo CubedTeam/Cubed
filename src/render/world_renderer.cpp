@@ -2,7 +2,7 @@
 
 #include "Cubed/camera.hpp"
 #include "Cubed/debug_collector.hpp"
-#include "Cubed/gameplay/client_world.hpp"
+#include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/render/renderer.hpp"

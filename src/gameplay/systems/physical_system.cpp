@@ -2,7 +2,7 @@
 
 #include "Cubed/gameplay/ecs/server_entity.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
-#include "Cubed/gameplay/server_world.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
 
 #include <tracy/Tracy.hpp>
 namespace Cubed {

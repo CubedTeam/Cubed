@@ -33,6 +33,8 @@
     "hostgame.world_seed": "World Seed",
     "hostgame.port": "Port",
     "hostgame.create_world": "Create World",
+    "hostgame.world_name": "World Name",
+    "hostgame.invalid_world_name": "Invalid world name",
     "joingame.join_a_world": "Join A World",
     "joingame.server_ip": "Server Ip",
     "joingame.join_world": "Join World",
