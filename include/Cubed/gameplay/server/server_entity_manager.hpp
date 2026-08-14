@@ -92,8 +92,10 @@ private:
          ...);
         if (!m_entities.emplace(id, entity)) {
             Logger::error("Can't emplace entity id {}", id);
+        } else {
+            ++m_entity_sum;
         }
-        ++m_entity_sum;
+
         return id;
     }
 };

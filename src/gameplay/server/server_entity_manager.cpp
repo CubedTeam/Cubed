@@ -40,7 +40,7 @@ void ServerEntityManager::init() {
 
 void ServerEntityManager::stop() {
     save_all_entities(true);
-    Logger::info("ServerChunkSystem stopped successful.");
+    Logger::info("ServerEntityManagerstopped successful.");
 }
 
 void ServerEntityManager::add_entity_on_init(EntityStorageData& data) {
