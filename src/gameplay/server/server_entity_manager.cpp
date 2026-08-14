@@ -20,7 +20,8 @@ namespace Cubed {
 ServerEntityManager::ServerEntityManager(ServerWorld& world) : m_world(world) {}
 
 void ServerEntityManager::init() {
-    m_factories.try_emplace("cubed:pig", [this]() {
+
+    m_factories.try_emplace("cubed:pig", [this](EntityID id) {
         BaseServerCreature c;
         c.hitbox = HitboxManager::instance().get_hitbox_id("cubed:pig");
         c.gravity.value = PigDefaults::GRAVITY;
@@ -28,10 +29,29 @@ void ServerEntityManager::init() {
         c.movement.deceleration = PigDefaults::DECELERATION;
         c.velocity.max.x = c.velocity.max.z = PigDefaults::MAX_SPEED;
         return create_entity_in_factory(
-            Entity{m_next, EntityType::CREATURE}, EntityInfo{"cubed:pig", ""},
+            id, Entity{id, EntityType::CREATURE}, EntityInfo{"cubed:pig", ""},
             std::move(c), PigTag{}, AIBase{}, WanderAITag{}, MoveBoost{});
     });
+
+    m_storage = std::make_unique<EntityStorage>(*m_world.world_storage());
+    m_storage->load_all_entities(*this);
 }
+
+void ServerEntityManager::add_entity_on_init(EntityStorageData& data) {
+    ASSERT(m_factories.contains(data.name));
+    auto e = m_factories[data.name](data.id);
+    ++m_entity_sum;
+    acc c;
+    if (m_entities.find(c, e)) {
+        auto t = m_registry.try_get<BaseServerCreature>(c->second);
+        if (t) {
+            ++m_creature_sum;
+            t->transform.position.value = data.pos;
+            t->transform.direction.value = data.dir;
+        }
+    }
+}
+
 void ServerEntityManager::update() {
     ZoneScopedN("Server Entity update");
     handle_task();
@@ -54,11 +74,17 @@ void ServerEntityManager::update() {
         *pool, entities.begin(), entities.end(), pool->thread_sum(),
         [this, &send_data](entt::entity e) {
             const auto& c = m_registry.get<BaseServerCreature>(e);
+            const auto& entity = m_registry.get<Entity>(e);
             if (!m_world.get_chunk_ref_count(c.transform.position.value)) {
-                const auto& entity = m_registry.get<Entity>(e);
-                destory(entity.id);
+
+                ActiveIds::accessor acc;
+                if (m_active_ids.find(acc, entity.id)) {
+                    unload(entity.id);
+                }
+
                 return;
             }
+            m_active_ids.emplace(entity.id, std::monostate{});
             update_ai(e);
             update_move(e);
             update_send(e, send_data);
@@ -113,6 +139,102 @@ void ServerEntityManager::update_send(
     send_data.emplace_back(std::move(data));
 }
 
+void ServerEntityManager::save_all() {
+    auto view = m_registry.view<Entity, EntityInfo>();
+    std::vector<EntityStorageData> datas;
+    for (auto e : view) {
+        auto data = build_entity_storage_data(e);
+        if (data) {
+            datas.emplace_back(std::move(*data));
+        }
+    }
+
+    m_storage->save_batch(datas);
+}
+
+void ServerEntityManager::save(EntityID id) {
+    auto data = build_entity_storage_data(id);
+    if (!data) {
+        return;
+    }
+
+    m_storage->save(*data);
+}
+void ServerEntityManager::save(entt::entity e) {
+    auto data = build_entity_storage_data(e);
+    if (!data) {
+        return;
+    }
+    m_storage->save(*data);
+}
+
+void ServerEntityManager::unload_internal(EntityID id) {
+
+    if (m_entity_sum == 0) {
+        Logger::error("entity sum is 0!");
+        return;
+    }
+    {
+        acc a;
+        if (!m_entities.find(a, id)) {
+            return;
+        }
+        auto e = m_registry.try_get<Entity>(a->second);
+        ASSERT(e);
+        if (e->type == EntityType::CREATURE) {
+            --m_creature_sum;
+        }
+
+        save(a->second);
+
+        m_registry.destroy(a->second);
+        m_active_ids.erase(id);
+        m_entities.erase(a);
+    }
+
+    --m_entity_sum;
+    auto sessions = m_world.get_all_session();
+    Arena arena;
+    auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
+    s2c->set_id(id);
+    auto packet = make_packet(*s2c);
+    for (auto& s : sessions) {
+        s->send(packet);
+    }
+}
+
+std::optional<EntityStorageData>
+ServerEntityManager::build_entity_storage_data(EntityID id) {
+    entt::entity e;
+    {
+        EntityMap::const_accessor cacc;
+        if (!m_entities.find(cacc, id)) {
+            Logger::error("Can't find entity {} id entities map", id);
+            return std::nullopt;
+        }
+        e = cacc->second;
+    }
+    return build_entity_storage_data(e);
+}
+
+std::optional<EntityStorageData>
+ServerEntityManager::build_entity_storage_data(entt::entity e) {
+    EntityStorageData data;
+    auto entity = m_registry.try_get<Entity>(e);
+    ASSERT(entity);
+    data.id = entity->id;
+    auto base = m_registry.try_get<BaseServerCreature>(e);
+    if (base) {
+        data.dir = base->transform.direction.value;
+        data.pos = base->transform.position.value;
+    }
+    auto info = m_registry.try_get<EntityInfo>(e);
+    ASSERT(info);
+    data.name = info->name;
+
+    return data;
+}
+
 void ServerEntityManager::handle_task() {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {
@@ -132,6 +254,14 @@ void ServerEntityManager::handle_task() {
             ASSERT(c);
             handle_entity_destory(*c);
         } break;
+        case Command::SAVE_ALL: {
+            save_all();
+        } break;
+        case Command::UNLOAD: {
+            auto* c = std::get_if<EntityID>(&pair.second);
+            ASSERT(c);
+            unload_internal(*c);
+        }; break;
         }
     }
 }
@@ -156,6 +286,14 @@ void ServerEntityManager::handle_player_login(
     m_tasks.emplace(Command::SEND_ALL_ENTITIES, std::move(session));
 }
 
+void ServerEntityManager::save_all_entities(bool immediately) {
+    if (immediately) {
+        save_all();
+    } else {
+        m_tasks.emplace(Command::SAVE_ALL, std::monostate{});
+    }
+}
+
 size_t ServerEntityManager::max_creature_sum() const {
     return PER_CREATURE_LIMITS * m_world.player_sum();
 }
@@ -165,10 +303,12 @@ size_t ServerEntityManager::creature_sum() const {
 }
 size_t ServerEntityManager::entity_sum() const { return m_entity_sum.load(); }
 
+EntityID ServerEntityManager::get_next_value() const { return m_next; }
+void ServerEntityManager::set_next_value(EntityID id) { m_next = id; }
 void ServerEntityManager::create_entity(std::string_view name,
                                         const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
-    auto e = m_factories[name]();
+    auto e = m_factories[name](m_next++);
     acc c;
     if (m_entities.find(c, e)) {
         auto t = m_registry.try_get<BaseServerCreature>(c->second);
@@ -177,6 +317,10 @@ void ServerEntityManager::create_entity(std::string_view name,
     }
 
     handle_entity_create(e, name, pos);
+}
+
+void ServerEntityManager::unload(EntityID id) {
+    m_tasks.emplace(Command::UNLOAD, id);
 }
 
 void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
@@ -214,17 +358,23 @@ void ServerEntityManager::handle_entity_destory(EntityID id) {
         Logger::error("entity sum is 0!");
         return;
     }
-    acc a;
-    if (!m_entities.find(a, id)) {
-        return;
+    {
+        acc a;
+        if (!m_entities.find(a, id)) {
+            return;
+        }
+        auto e = m_registry.try_get<Entity>(a->second);
+        ASSERT(e);
+        if (e->type == EntityType::CREATURE) {
+            --m_creature_sum;
+        }
+
+        m_storage->remove(id);
+
+        m_registry.destroy(a->second);
+        m_active_ids.erase(id);
+        m_entities.erase(a);
     }
-    auto e = m_registry.try_get<Entity>(a->second);
-    ASSERT(e);
-    if (e->type == EntityType::CREATURE) {
-        --m_creature_sum;
-    }
-    m_registry.destroy(a->second);
-    m_entities.erase(a);
 
     --m_entity_sum;
     auto sessions = m_world.get_all_session();

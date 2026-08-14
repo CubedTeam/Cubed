@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/server/entity_storage.hpp"
 
+#include "Cubed/gameplay/server/server_entity_manager.hpp"
 #include "Cubed/gameplay/server/world_storage.hpp"
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/proto_utils.hpp"
@@ -140,6 +141,7 @@ void EntityStorage::load_all_entities(ServerEntityManager& manager) {
             continue;
         }
         // entity manager add entity;
+        manager.add_entity_on_init(*entity);
     }
 }
 

@@ -39,7 +39,7 @@ void ServerWorld::stop() {
     stop_thread_pool();
 
     m_chunk_system.stop();
-
+    m_entity_manager.save_all_entities(true);
     try {
         save_metadata(m_metadata_path);
     } catch (const std::exception& e) {
@@ -95,6 +95,10 @@ void ServerWorld::load_metadata(std::string_view world_name,
         if (Tools::get_json_value(doc, "day_ticks", m_metadata.day_ticks)) {
             m_day_ticks = m_metadata.day_ticks % DAY_TIME;
         }
+        EntityID next = 0;
+        if (Tools::get_json_value(doc, "entity_next", next)) {
+            m_entity_manager.set_next_value(next);
+        }
 
     } else {
         if (seed) {
@@ -117,6 +121,7 @@ void ServerWorld::save_metadata(const std::filesystem::path& path) {
     doc.AddMember("seed", m_metadata.seed, allocator);
     doc.AddMember("game_ticks", m_game_ticks.load(), allocator);
     doc.AddMember("day_ticks", m_day_ticks.load(), allocator);
+    doc.AddMember("entity_next", m_entity_manager.get_next_value(), allocator);
     Tools::save_json(doc, path);
 }
 
@@ -153,7 +158,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
     register_timer("auto save world", 6000, [this]() {
         try {
             m_chunk_system.save_all_chunks();
-
+            m_entity_manager.save_all_entities(false);
             save_metadata(m_metadata_path);
         } catch (const std::exception& e) {
             Logger::error("Save World Error {}", e.what());
