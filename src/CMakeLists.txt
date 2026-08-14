@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME}
         shader.cpp
         texture_manager.cpp
         tools/cubed_random.cpp
+        tools/uuid.cpp
         tools/shader_tools.cpp
         tools/font.cpp
         tools/perlin_noise.cpp

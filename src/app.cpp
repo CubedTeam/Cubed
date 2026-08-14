@@ -16,6 +16,7 @@
 
 #include <exception>
 #include <imgui_impl_sdl3.h>
+#include <sodium.h>
 #include <tracy/Tracy.hpp>
 
 namespace Cubed {
@@ -76,6 +77,10 @@ void App::init(int argc, char** argv) {
         }
         Localization::instance().load_language(
             m_game_config.get("language", default_value));
+    }
+
+    if (sodium_init() < 0) {
+        throw std::runtime_error("Failed to initialize libsodium");
     }
 
     CreatureManager::instance().init();
