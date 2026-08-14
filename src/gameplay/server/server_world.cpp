@@ -8,6 +8,7 @@
 #include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
+#include "Cubed/tools/world_name.hpp"
 
 #include <ranges>
 #include <rapidjson/document.h>
@@ -125,9 +126,18 @@ void ServerWorld::save_metadata() {
 
 void ServerWorld::init_world(RunMode mode, std::string_view world_name,
                              std::optional<uint32_t> seed) {
-    fs::path save_path = "./saves/" + std::string(world_name);
+    if (!Tools::is_valid_world_name(world_name)) {
+        throw std::invalid_argument("Invalid world name");
+    }
 
-    m_storage = std::make_unique<WorldStorage>(save_path);
+    const fs::path SAVE_ROOT = "./saves";
+    const fs::path SAVE_PATH = SAVE_ROOT / std::string(world_name);
+    if (SAVE_PATH.lexically_normal().parent_path() !=
+        SAVE_ROOT.lexically_normal()) {
+        throw std::invalid_argument("World path escapes save directory");
+    }
+
+    m_storage = std::make_unique<WorldStorage>(SAVE_PATH);
 
     load_metadata(seed);
     m_runmode = mode;

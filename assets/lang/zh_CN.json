@@ -34,6 +34,7 @@
     "hostgame.port": "端口",
     "hostgame.create_world": "创建世界",
     "hostgame.world_name": "世界名",
+    "hostgame.invalid_world_name": "世界名包含非法字符",
     "joingame.join_a_world": "加入世界",
     "joingame.server_ip": "服务器IP",
     "joingame.join_world": "加入世界",
