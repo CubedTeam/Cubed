@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <unordered_map>
 namespace Cubed::Tools {
@@ -16,6 +17,7 @@ std::unordered_map<std::string, std::string>
 doc_to_map(const rapidjson::Document& doc);
 
 bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path);
+bool parse_json_from_string(rapidjson::Document& doc, std::string_view json);
 void save_json(const rapidjson::Document& doc,
                const std::filesystem::path& path);
 std::string to_json_string(const rapidjson::Value& value);

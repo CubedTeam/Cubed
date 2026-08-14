@@ -56,4 +56,27 @@ WorldStorage::~WorldStorage() {}
 
 rocksdb::DB* WorldStorage::get_db() { return m_db.get(); }
 
+bool WorldStorage::save_metadata(const std::string& data) {
+    auto status = m_db->Put(rocksdb::WriteOptions{}, make_metadata_key(), data);
+
+    if (!status.ok()) {
+        Logger::error("Failed to save metadata {}", status.ToString());
+        return false;
+    }
+    return true;
+}
+
+std::optional<std::string> WorldStorage::get_metadata() {
+    std::string value;
+    auto status =
+        m_db->Get(rocksdb::ReadOptions{}, make_metadata_key(), &value);
+    if (!status.ok()) {
+
+        return std::nullopt;
+    }
+    return value;
+}
+
+std::string WorldStorage::make_metadata_key() { return "metadata:world"; }
+
 } // namespace Cubed

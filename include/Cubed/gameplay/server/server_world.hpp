@@ -129,7 +129,7 @@ private:
     Config& m_config;
     std::unique_ptr<WorldStorage> m_storage;
     Metadata m_metadata;
-    std::filesystem::path m_metadata_path;
+
     std::atomic<RunMode> m_runmode{RunMode::HYBRID};
     ServerEntityManager m_entity_manager;
     ServerPlayerManager m_players_manager;
@@ -177,8 +177,7 @@ private:
                            Color color = Color::WHITE, bool system_msg = false);
     void player_exit(const std::string& uuid);
 
-    void load_metadata(std::string_view world_name,
-                       std::optional<uint32_t> seed);
-    void save_metadata(const std::filesystem::path& path);
+    void load_metadata(std::optional<uint32_t> seed);
+    void save_metadata();
 };
 } // namespace Cubed

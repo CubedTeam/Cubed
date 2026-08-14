@@ -17,7 +17,13 @@ public:
     ~WorldStorage();
     rocksdb::DB* get_db();
 
+    bool save_metadata(const std::string& data);
+
+    std::optional<std::string> get_metadata();
+
 private:
     std::unique_ptr<rocksdb::DB> m_db;
+
+    static std::string make_metadata_key();
 };
 } // namespace Cubed

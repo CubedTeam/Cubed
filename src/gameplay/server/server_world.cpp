@@ -42,7 +42,7 @@ void ServerWorld::stop() {
     m_entity_manager.stop();
 
     try {
-        save_metadata(m_metadata_path);
+        save_metadata();
     } catch (const std::exception& e) {
         Logger::error("Save Metadata Error {}", e.what());
     }
@@ -61,14 +61,10 @@ void ServerWorld::send_time() {
     }
 }
 
-void ServerWorld::load_metadata(std::string_view world_name,
-                                std::optional<uint32_t> seed) {
-    fs::path path = "./saves/" + std::string(world_name);
-    fs::create_directories(path);
-    m_metadata_path = path / "metadata.json";
-
+void ServerWorld::load_metadata(std::optional<uint32_t> seed) {
+    auto value = m_storage->get_metadata();
     Document doc;
-    if (Tools::parse_json(doc, m_metadata_path)) {
+    if (value && Tools::parse_json_from_string(doc, *value)) {
 
         if (Tools::get_json_value(doc, "version", m_metadata.version)) {
             if (m_metadata.version > METADATA_VERSION) {
@@ -110,10 +106,10 @@ void ServerWorld::load_metadata(std::string_view world_name,
         m_metadata.seed = ChunkGenerator::seed();
     }
 
-    save_metadata(m_metadata_path);
+    save_metadata();
 }
 
-void ServerWorld::save_metadata(const std::filesystem::path& path) {
+void ServerWorld::save_metadata() {
 
     Document doc;
     doc.SetObject();
@@ -123,7 +119,8 @@ void ServerWorld::save_metadata(const std::filesystem::path& path) {
     doc.AddMember("game_ticks", m_game_ticks.load(), allocator);
     doc.AddMember("day_ticks", m_day_ticks.load(), allocator);
     doc.AddMember("entity_next", m_entity_manager.get_next_value(), allocator);
-    Tools::save_json(doc, path);
+    std::string value = Tools::to_json_string(doc);
+    m_storage->save_metadata(value);
 }
 
 void ServerWorld::init_world(RunMode mode, std::string_view world_name,
@@ -132,7 +129,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
 
     m_storage = std::make_unique<WorldStorage>(save_path);
 
-    load_metadata(world_name, seed);
+    load_metadata(seed);
     m_runmode = mode;
     m_entity_manager.init();
     m_chunk_system.initialize();
@@ -160,7 +157,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
         try {
             m_chunk_system.save_all_chunks();
             m_entity_manager.save_all_entities(false);
-            save_metadata(m_metadata_path);
+            save_metadata();
         } catch (const std::exception& e) {
             Logger::error("Save World Error {}", e.what());
         }

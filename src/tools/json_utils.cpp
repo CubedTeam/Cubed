@@ -76,6 +76,17 @@ bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path) {
     return true;
 }
 
+bool parse_json_from_string(rapidjson::Document& doc, std::string_view json) {
+    doc.Parse(json.data(), json.size());
+    if (doc.HasParseError()) {
+        const auto CODE = doc.GetParseError();
+        Logger::error("Parse json string failed, error code {}",
+                      static_cast<int>(CODE));
+        return false;
+    }
+    return true;
+}
+
 void save_json(const rapidjson::Document& doc,
                const std::filesystem::path& path) {
     rapidjson::StringBuffer buffer;
