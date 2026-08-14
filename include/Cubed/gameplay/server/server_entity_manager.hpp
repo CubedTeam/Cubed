@@ -32,6 +32,7 @@ public:
     EntityID get_next_value() const;
     void set_next_value(EntityID id);
     void unload(EntityID id);
+    void stop();
 
 private:
     enum class Command { CREATE, SEND_ALL_ENTITIES, DESTORY, SAVE_ALL, UNLOAD };
@@ -92,6 +93,7 @@ private:
         if (!m_entities.emplace(id, entity)) {
             Logger::error("Can't emplace entity id {}", id);
         }
+        ++m_entity_sum;
         return id;
     }
 };

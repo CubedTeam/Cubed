@@ -39,7 +39,8 @@ void ServerWorld::stop() {
     stop_thread_pool();
 
     m_chunk_system.stop();
-    m_entity_manager.save_all_entities(true);
+    m_entity_manager.stop();
+
     try {
         save_metadata(m_metadata_path);
     } catch (const std::exception& e) {
@@ -193,6 +194,8 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
 
     start_server_thread();
     m_init = true;
+
+    Logger::info("Server world initialization successful.");
 }
 
 void ServerWorld::init_chunks() { hot_reload(); }

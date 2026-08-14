@@ -21,6 +21,7 @@ void ServerChunkSystem::initialize() {
     Logger::info("Server Gen pool threads {}", gen_threads);
     m_generation_threads = gen_threads;
     m_generation_pool.store(std::make_shared<PriorityThreadPool>(gen_threads));
+    Logger::info("ServerChunkSystem initialization successful.");
 }
 
 void ServerChunkSystem::stop() {
@@ -30,6 +31,7 @@ void ServerChunkSystem::stop() {
     save_all_chunks(true);
     m_finished_chunks.clear();
     m_chunks.clear();
+    Logger::info("ServerChunkSystem stopped successful.");
 }
 
 void ServerChunkSystem::save_all_chunks(bool sync) {

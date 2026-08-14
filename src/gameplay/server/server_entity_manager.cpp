@@ -35,12 +35,18 @@ void ServerEntityManager::init() {
 
     m_storage = std::make_unique<EntityStorage>(*m_world.world_storage());
     m_storage->load_all_entities(*this);
+    Logger::info("ServerEntityManager initialization successful.");
+}
+
+void ServerEntityManager::stop() {
+    save_all_entities(true);
+    Logger::info("ServerChunkSystem stopped successful.");
 }
 
 void ServerEntityManager::add_entity_on_init(EntityStorageData& data) {
     ASSERT(m_factories.contains(data.name));
     auto e = m_factories[data.name](data.id);
-    ++m_entity_sum;
+
     acc c;
     if (m_entities.find(c, e)) {
         auto t = m_registry.try_get<BaseServerCreature>(c->second);
@@ -272,7 +278,7 @@ void ServerEntityManager::add_creature(std::string_view name,
         m_creature_sum.fetch_sub(1);
         return;
     }
-    ++m_entity_sum;
+
     m_tasks.emplace(Command::CREATE,
                     EntityCreateElement{std::string(name), world_pos});
 }
