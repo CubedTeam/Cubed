@@ -196,14 +196,14 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
         auto data = BlockManager::data(origin_id);
         if (data.sound.break_s) {
             fs::path path = data.sound.break_s->full_path();
-            m_pending_sound.emplace(path, sound_pos);
+            m_pending_sound.emplace(path.string(), sound_pos);
         }
 
     } else {
         auto data = BlockManager::data(id);
         if (data.sound.place) {
             fs::path path = data.sound.place->full_path();
-            m_pending_sound.emplace(path, sound_pos);
+            m_pending_sound.emplace(path.string(), sound_pos);
         }
     }
 
@@ -360,7 +360,8 @@ void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
     fs::path root_path = ResourceLocation::get_assets_path_prefix(
         ResourceLocation::DEFAULT_NAMESPACE);
     m_pending_sound.emplace(
-        root_path / "sounds/ambient/water/in_and_out_of_water.flac", pos);
+        (root_path / "sounds/ambient/water/in_and_out_of_water.flac").string(),
+        pos);
 }
 
 void ClientWorld::send_player_water_sound(bool underwater,

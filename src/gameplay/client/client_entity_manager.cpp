@@ -253,7 +253,7 @@ void ClientEntityManager::player_sound(float dt) {
 
             auto data = CreatureManager::data(info.name);
             if (data.sound.call) {
-                audio.play_3d(data.sound.call->full_path(),
+                audio.play_3d(data.sound.call->full_path().string(),
                               creature.transform.position.value, true, false);
             }
             sound_time.next_call_time = m_random.random_float(8.0f, 25.0f);

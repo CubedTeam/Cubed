@@ -244,8 +244,8 @@ void ClientPlayerManager::update_players_data(float dt) {
             auto data = BlockManager::data(id);
             if (data.sound.walk) {
                 fs::path path = data.sound.walk->full_path();
-                m_world.get_audio().play_3d(path, player.render_pos.value,
-                                            true);
+                m_world.get_audio().play_3d(path.string(),
+                                            player.render_pos.value, true);
             }
         };
 
