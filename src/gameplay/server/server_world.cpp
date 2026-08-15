@@ -483,8 +483,12 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
         Logger::error("Invailed signature");
         return;
     }
-
-    if (session->challenge()->first > Session::CHALLENGE_EXPIRE_MS) {
+    if (!session->challenge()) {
+        Logger::error("Challenge is null");
+        return;
+    }
+    if (Tools::get_utc_timestamp_ms() - session->challenge()->first >
+        Session::CHALLENGE_EXPIRE_MS) {
         Logger::error("Challenge expire");
         session->challenge().reset();
         return;
@@ -506,9 +510,17 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     auto name = msg.name();
 
     auto u = Uuid::uuid_from_proto_bytes(msg.uuid());
+    if (!u) {
+        Logger::error("Can't parse uuid from proto");
+        return;
+    }
 
-    Uuid uuid =
-        u ? *u : Crypto::Ed25519::uuid_from_public_key(session->public_key());
+    Uuid uuid = Crypto::Ed25519::uuid_from_public_key(session->public_key());
+
+    if (uuid != *u) {
+        Logger::error("Uuid is not equal");
+        return;
+    }
 
     Logger::info("Player {} (uuid {}) join the world", name, uuid.to_string());
 

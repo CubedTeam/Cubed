@@ -710,21 +710,21 @@ void LocalPlayer::init_identity() {
 
     auto identity_path = path / "identity.json";
     Document doc;
-    if (Tools::parse_json(doc, path)) {
+    if (Tools::parse_json(doc, identity_path)) {
         std::string s;
         if (!Tools::get_json_value(doc, "public_key", s)) {
             return create_identity(identity_path);
         }
         if (!Crypto::Ed25519::from_hex(s, m_key_pair->public_key.data.data(),
                                        m_key_pair->public_key.data.size())) {
-            return create_identity(path);
+            return create_identity(identity_path);
         }
         if (!Tools::get_json_value(doc, "private_key", s)) {
-            return create_identity(path);
+            return create_identity(identity_path);
         }
         if (!Crypto::Ed25519::from_hex(s, m_key_pair->private_key.data.data(),
                                        m_key_pair->private_key.data.size())) {
-            return create_identity(path);
+            return create_identity(identity_path);
         }
     }
     m_uuid = Crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
