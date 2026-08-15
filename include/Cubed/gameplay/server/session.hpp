@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Cubed/crypto/ed25519.hpp"
 #include "Cubed/gameplay/packet.hpp"
 
 #include <asio.hpp>
@@ -13,6 +14,7 @@ class ServerWorld;
 class Session : public std::enable_shared_from_this<Session> {
 
 public:
+    static constexpr uint64_t CHALLENGE_EXPIRE_MS = 30'000;
     Session(tcp::socket socket, ServerWorld& server_world,
             asio::io_context& io);
     ~Session();
@@ -21,6 +23,9 @@ public:
 
     void close();
     const std::string& uuid() const;
+
+    Crypto::Ed25519PublicKey& public_key();
+    std::optional<std::pair<uint64_t, Crypto::Ed25519::Challenge>>& challenge();
 
 private:
     struct Task {
@@ -48,6 +53,10 @@ private:
     std::priority_queue<Task, std::vector<Task>, TaskCompare> m_write_queue;
     asio::strand<asio::io_context::executor_type> m_strand;
     std::string m_uuid;
+
+    Crypto::Ed25519PublicKey m_public_key;
+    std::optional<std::pair<uint64_t, Crypto::Ed25519::Challenge>> m_challenge;
+
     ServerWorld& m_server_world;
     std::atomic<bool> m_closed{false};
 

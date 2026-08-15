@@ -168,7 +168,7 @@ void ClientPlayerManager::report_player_info(NetworkClient* client) {
     }
     Arena arena;
     auto* info = Arena::Create<C2S_PlayerInfo>(&arena);
-    info->set_uuid(m_local.get_uuid());
+    info->set_uuid(m_local.get_uuid_string());
     glm::vec3 player_pos = m_local.get_player_pos();
     auto* v3 = info->mutable_pos();
     v3->set_x(player_pos.x);
@@ -290,7 +290,7 @@ void ClientPlayerManager::update_players_data(float dt) {
             render_data.angle.roll = angle;
             render_data.gait = m_local.get_gait();
             render_data.info.name = m_local.get_name();
-            render_data.info.uuid = m_local.get_uuid();
+            render_data.info.uuid = m_local.get_uuid_string();
             m_render_data.emplace_back(std::move(render_data));
         }
     }

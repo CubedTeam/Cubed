@@ -130,6 +130,17 @@ void save_json(const rapidjson::Document& doc,
     }
 }
 
+rapidjson::Value vec3_to_json(const glm::vec3& v,
+                              rapidjson::Document::AllocatorType& allocator) {
+    rapidjson::Value result(rapidjson::kArrayType);
+
+    result.PushBack(v.x, allocator);
+    result.PushBack(v.y, allocator);
+    result.PushBack(v.z, allocator);
+
+    return result;
+}
+
 std::string to_json_string(const rapidjson::Value& value) {
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);

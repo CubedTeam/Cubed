@@ -3,6 +3,7 @@
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/server/server_chunk.hpp"
+#include "Cubed/tools/uuid.hpp"
 
 #include <atomic>
 #include <glm/glm.hpp>
@@ -20,13 +21,12 @@ public:
     ServerPlayer(ServerPlayer&&) = delete;
     ServerPlayer& operator=(const ServerPlayer&) = delete;
     ServerPlayer& operator=(ServerPlayer&&) = delete;
-    ServerPlayer(std::string_view name, std::string_view uuid,
-                 ServerWorld& m_world, std::shared_ptr<Session> session,
-                 TickType gametick);
+    ServerPlayer(std::string_view name, Uuid uuid, ServerWorld& m_world,
+                 std::shared_ptr<Session> session, TickType gametick);
 
     glm::vec3 get_pos() const;
     const std::string& get_name() const;
-    const std::string& get_uuid() const;
+    std::string get_uuid() const;
     std::shared_ptr<Session> get_session() const;
     void update_pos(float x, float y, float z);
     void update_sync_gametick(TickType gametick);
@@ -49,7 +49,7 @@ public:
 private:
     static constexpr TickType TIMEOUT = 200;
     const std::string M_NAME;
-    const std::string M_UUID;
+    const Uuid M_UUID;
     std::atomic<glm::vec3> m_pos{glm::vec3(0.0f)};
     ServerWorld& m_world;
     ChunkPos m_last_chunk_pos{0, 0};

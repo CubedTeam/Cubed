@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/gameplay/server/player_storage.hpp"
 #include "Cubed/gameplay/server/server_player.hpp"
 #include "Cubed/tools/uuid.hpp"
 
@@ -19,6 +20,8 @@ public:
 
     ~ServerPlayerManager();
 
+    void init();
+
     bool add(PlayerPtr player);
     PlayerPtr remove(std::string_view uuid);
 
@@ -38,9 +41,11 @@ public:
 
     std::vector<std::shared_ptr<Session>> get_all_session() const;
 
+    PlayerStorage* get_storage();
+
 private:
     ServerWorld& m_world;
-
+    std::unique_ptr<PlayerStorage> m_storage;
     std::mutex m_write_mutex;
 
     // key = uuid

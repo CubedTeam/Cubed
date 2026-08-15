@@ -6,6 +6,7 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/proto_utils.hpp"
+#include "Cubed/tools/system_time_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 #include "Cubed/tools/world_name.hpp"
@@ -141,6 +142,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
 
     load_metadata(seed);
     m_runmode = mode;
+    m_players_manager.init();
     m_entity_manager.init();
     m_chunk_system.initialize();
     register_timer("player disconnect", 5, [this]() {
@@ -409,27 +411,52 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     }
 }
 
-void ServerWorld::handle_player_login(const std::string& name,
+void ServerWorld::handle_player_login(LoginReq& msg,
                                       std::shared_ptr<Session> session) {
-    std::string uuid = generate_uuid();
-    Logger::info("Player {} (uuid {}) join the world", name, uuid);
-    bool sucess = true;
 
-    auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
-                                                 m_game_ticks);
-    bool inserted = m_players_manager.add(std::move(player));
-    if (!inserted) {
-        Logger::error("Player insert Fail");
-    }
-    sucess = inserted;
-
-    Arena arena;
-    if (!sucess) {
-        auto* rsp = Arena::Create<LoginRsp>(&arena);
-        rsp->set_success(false);
-        session->send(make_packet(*rsp), 0);
+    auto uuid = Uuid::uuid_from_proto_bytes(msg.uuid());
+    if (!uuid) {
+        Logger::error("Can't parse uuid {}", msg.uuid());
         return;
     }
+    std::optional<Crypto::Ed25519PublicKey> pk =
+        Crypto::Ed25519::public_key_from_proto_bytes(msg.public_key());
+    if (!pk) {
+        Logger::error("Can't parse pk ");
+        return;
+    }
+    auto uuid_pk = Crypto::Ed25519::uuid_from_public_key(*pk);
+    if (*uuid != uuid_pk) {
+        Logger::error(
+            "uuid {} from net is not equal with uuid {} from public compute",
+            uuid->to_string(), uuid_pk.to_string());
+        return;
+    }
+
+    auto storage = m_players_manager.get_storage();
+    auto player_data = storage->load(*uuid);
+    if (player_data) {
+        if (player_data->uuid != *uuid || player_data->public_key != *pk) {
+            Logger::error("uuid {} and pk not equal with database",
+                          uuid->to_string());
+            return;
+        }
+    }
+
+    session->public_key() = *pk;
+    std::pair<uint64_t, Crypto::Ed25519::Challenge> challenge;
+    challenge.second = Crypto::Ed25519::generate_challenge();
+    challenge.first = Tools::get_utc_timestamp_ms();
+    session->challenge() = challenge;
+
+    Arena arena;
+    auto* p = Arena::Create<LoginChallenge>(&arena);
+
+    p->set_challenge(challenge.second.data(), challenge.second.size());
+    p->set_uuid(uuid->bytes().data(), uuid->bytes().size());
+
+    session->send(make_packet(p), 0);
+
     // Pre-insert into new_chunks to ensure correct addition to waiting_player
     /*ChunkPosSet required_chunks;
     compute_required_chunks(required_chunks, uuid);
@@ -444,17 +471,69 @@ void ServerWorld::handle_player_login(const std::string& name,
         }
     }
     */
-    request_generation(uuid);
+    /*
+     */
+}
+
+void ServerWorld::handle_login_proof(LoginProof& msg,
+                                     std::shared_ptr<Session> session) {
+
+    auto s = msg.signature();
+    if (s.size() != 64) {
+        Logger::error("Invailed signature");
+        return;
+    }
+
+    if (session->challenge()->first > Session::CHALLENGE_EXPIRE_MS) {
+        Logger::error("Challenge expire");
+        session->challenge().reset();
+        return;
+    }
+
+    Crypto::Ed25519Signature sign;
+    std::copy_n(reinterpret_cast<const unsigned char*>(s.data()), s.size(),
+                sign.data.begin());
+
+    auto signing_message = Crypto::Ed25519::make_login_signing_data(
+        session->challenge()->second, session->public_key());
+
+    if (!Crypto::Ed25519::verify(signing_message, sign,
+                                 session->public_key())) {
+        Logger::error("Can't verify signature");
+        return;
+    }
+
+    auto name = msg.name();
+
+    auto u = Uuid::uuid_from_proto_bytes(msg.uuid());
+
+    Uuid uuid =
+        u ? *u : Crypto::Ed25519::uuid_from_public_key(session->public_key());
+
+    Logger::info("Player {} (uuid {}) join the world", name, uuid.to_string());
+
+    auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
+                                                 m_game_ticks);
+    bool inserted = m_players_manager.add(std::move(player));
+    if (!inserted) {
+        Logger::error("Player insert Fail");
+        return;
+    }
+
+    Arena arena;
 
     auto* rsp = Arena::Create<LoginRsp>(&arena);
-    rsp->set_success(true);
-    rsp->set_uuid(uuid);
+    rsp->set_ec(0);
     rsp->set_voice_chat(m_voice_chat);
     session->send(make_packet(*rsp), 0);
 
     boardcast_message("Server", std::format("Player {} Join Game", name),
                       Color::YELLOW, true);
+
+    request_generation(uuid.to_string());
     m_entity_manager.handle_player_login(session);
+
+    return;
 }
 
 void ServerWorld::handle_player_exit(const std::string& uuid) {

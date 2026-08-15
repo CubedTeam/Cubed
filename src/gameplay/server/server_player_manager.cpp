@@ -1,9 +1,14 @@
 #include "Cubed/gameplay/server/server_player_manager.hpp"
 
+#include "Cubed/gameplay/server/server_world.hpp"
 namespace Cubed {
 ServerPlayerManager::ServerPlayerManager(ServerWorld& world)
     : m_world(world), m_players(std::make_shared<PlayerMap>()) {}
 ServerPlayerManager::~ServerPlayerManager() {}
+
+void ServerPlayerManager::init() {
+    m_storage = std::make_unique<PlayerStorage>(*m_world.world_storage());
+}
 
 bool ServerPlayerManager::add(PlayerPtr player) {
     if (!player) {
@@ -110,5 +115,7 @@ ServerPlayerManager::get_all_session() const {
 
     return sessions;
 }
+
+PlayerStorage* ServerPlayerManager::get_storage() { return m_storage.get(); }
 
 } // namespace Cubed

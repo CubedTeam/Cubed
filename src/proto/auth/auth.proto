@@ -1,13 +1,24 @@
 syntax = "proto3";
 
 message LoginReq {
-    string name = 1;
+    bytes public_key = 1;
+    bytes uuid = 2;
+}
+
+message LoginChallenge {
+    bytes challenge = 1;
+    bytes uuid = 2;
+}
+
+message LoginProof {
+    bytes signature = 1; 
+    bytes uuid = 2;
+    string name = 3;
 }
 
 message LoginRsp {
-    bool success = 1;
-    string uuid = 2;
-    bool voice_chat = 3;
+    int32 ec = 1;
+    bool voice_chat = 2;
 }
 
 message LogoutReq {

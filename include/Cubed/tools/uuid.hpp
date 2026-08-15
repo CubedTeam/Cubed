@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
-
 namespace Cubed {
 
 class Uuid final {
@@ -22,8 +22,13 @@ public:
 
     [[nodiscard]] std::string to_string() const;
 
+    [[nodiscard]] static std::optional<Uuid>
+    from_string(std::string_view value);
+
     bool operator==(const Uuid&) const = default;
     auto operator<=>(const Uuid&) const = default;
+
+    static std::optional<Uuid> uuid_from_proto_bytes(const std::string& value);
 
     struct Hash {
         [[nodiscard]] std::size_t operator()(const Uuid& uuid) const noexcept;

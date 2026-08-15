@@ -210,7 +210,7 @@ void PlayerRenderer::render(const Shader& shader, ClientWorld& world,
 
     for (auto& player : players) {
 
-        if (player.info.uuid == m_player.get_uuid()) {
+        if (player.info.uuid == m_player.get_uuid_string()) {
             if (camera.is_first_person()) {
                 continue;
             }

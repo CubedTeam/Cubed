@@ -185,7 +185,7 @@ void ClientEntityManager::destory(EntityID id) {
     Arena arena;
     auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
     msg->set_id(id);
-    msg->set_uuid(m_world.get_player().get_uuid());
+    msg->set_uuid(m_world.get_player().get_uuid_string());
     client->send(make_packet(*msg));
 }
 void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
@@ -193,7 +193,7 @@ void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
     Arena arena;
     auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
     msg->set_name(name);
-    msg->set_uuid(m_world.get_player().get_uuid());
+    msg->set_uuid(m_world.get_player().get_uuid_string());
     Tools::set_proto_pos(msg, pos);
     client->send(make_packet(msg));
 }

@@ -51,6 +51,8 @@ enum class PacketEnum : uint16_t {
     LOGIN_RSP = 1002,
     LOGOUT_REQ = 1003,
     LOGOUT_RSP = 1004,
+    LOGIN_CHALLENGE = 1005,
+    LOGIN_PROOF = 1006,
 
     PLAYER_INFO = 2001,
     C2S_PLAYER_INFO = 2002,
@@ -96,6 +98,12 @@ template <> constexpr uint16_t get_packet_id<LogoutReq>() {
 }
 template <> constexpr uint16_t get_packet_id<LogoutRsp>() {
     return std::to_underlying(PacketEnum::LOGOUT_RSP);
+}
+template <> constexpr uint16_t get_packet_id<LoginChallenge>() {
+    return std::to_underlying(PacketEnum::LOGIN_CHALLENGE);
+}
+template <> constexpr uint16_t get_packet_id<LoginProof>() {
+    return std::to_underlying(PacketEnum::LOGIN_PROOF);
 }
 template <> constexpr uint16_t get_packet_id<PlayerInfo>() {
     return std::to_underlying(PacketEnum::PLAYER_INFO);
