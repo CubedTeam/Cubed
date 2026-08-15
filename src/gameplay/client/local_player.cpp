@@ -726,6 +726,8 @@ void LocalPlayer::init_identity() {
                                        m_key_pair->private_key.data.size())) {
             return create_identity(identity_path);
         }
+    } else {
+        return create_identity(identity_path);
     }
     m_uuid = Crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
 }

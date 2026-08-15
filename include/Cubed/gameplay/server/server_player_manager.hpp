@@ -20,6 +20,7 @@ public:
 
     ~ServerPlayerManager();
 
+    void stop();
     void init();
 
     bool add(PlayerPtr player);
@@ -42,6 +43,8 @@ public:
     std::vector<std::shared_ptr<Session>> get_all_session() const;
 
     PlayerStorage* get_storage();
+
+    void save_all();
 
 private:
     ServerWorld& m_world;

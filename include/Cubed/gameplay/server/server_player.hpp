@@ -26,9 +26,9 @@ public:
 
     glm::vec3 get_pos() const;
     const std::string& get_name() const;
-    std::string get_uuid() const;
+    std::string get_uuid_string() const;
     std::shared_ptr<Session> get_session() const;
-    void update_pos(float x, float y, float z);
+
     void update_sync_gametick(TickType gametick);
     bool is_disconnect(TickType current_gametick) const;
     int task_id() const;
@@ -45,6 +45,8 @@ public:
     void set_gait(Gait gait);
 
     void update_task_id_max(int new_id);
+    void update_pos(float x, float y, float z);
+    Uuid get_uuid() const;
 
 private:
     static constexpr TickType TIMEOUT = 200;

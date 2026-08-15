@@ -1,10 +1,13 @@
 #include "Cubed/gameplay/server/server_player_manager.hpp"
 
 #include "Cubed/gameplay/server/server_world.hpp"
+#include "Cubed/gameplay/server/session.hpp"
 namespace Cubed {
 ServerPlayerManager::ServerPlayerManager(ServerWorld& world)
     : m_world(world), m_players(std::make_shared<PlayerMap>()) {}
 ServerPlayerManager::~ServerPlayerManager() {}
+
+void ServerPlayerManager::stop() { save_all(); }
 
 void ServerPlayerManager::init() {
     m_storage = std::make_unique<PlayerStorage>(*m_world.world_storage());
@@ -15,16 +18,25 @@ bool ServerPlayerManager::add(PlayerPtr player) {
         return false;
     }
 
-    const auto& uuid = player->get_uuid();
+    const auto& uuid = player->get_uuid_string();
 
     std::lock_guard lock(m_write_mutex);
 
     auto old = m_players.load();
     auto next = std::make_shared<PlayerMap>(*old);
-    auto [_, insert] = next->try_emplace(uuid, std::move(player));
+    auto [it, insert] = next->try_emplace(uuid, std::move(player));
     if (insert) {
-
         m_players.store(next);
+        auto data = m_storage->load(player->get_uuid());
+        if (data) {
+            player->update_pos(data->pos.x, data->pos.y, data->pos.z);
+        } else {
+            data = PlayerStorageData{};
+            data->pos = player->get_pos();
+        }
+        data->public_key = it->second->get_session()->public_key();
+        data->uuid = it->second->get_uuid();
+        m_storage->save(*data);
     }
 
     return insert;
@@ -45,6 +57,13 @@ ServerPlayerManager::remove(std::string_view uuid) {
     next->erase(it);
 
     m_players.store(next);
+
+    PlayerStorageData data;
+    data.pos = player->get_pos();
+    data.public_key = player->get_session()->public_key();
+    data.uuid = player->get_uuid();
+    m_storage->save(data);
+
     return player;
 }
 
@@ -114,6 +133,20 @@ ServerPlayerManager::get_all_session() const {
     }
 
     return sessions;
+}
+
+void ServerPlayerManager::save_all() {
+    auto players = snapshot();
+    std::vector<PlayerStorageData> datas;
+    for (auto& [_, player] : *players) {
+        PlayerStorageData data;
+        data.pos = player->get_pos();
+        data.public_key = player->get_session()->public_key();
+        data.uuid = player->get_uuid();
+        datas.emplace_back(std::move(data));
+    }
+
+    m_storage->save_batch(datas);
 }
 
 PlayerStorage* ServerPlayerManager::get_storage() { return m_storage.get(); }

@@ -39,9 +39,9 @@ void ServerWorld::stop() {
     stop_server_thread();
     // wait_all_chunk_tasks();
     stop_thread_pool();
-
-    m_chunk_system.stop();
+    m_players_manager.stop();
     m_entity_manager.stop();
+    m_chunk_system.stop();
 
     try {
         save_metadata();
@@ -167,6 +167,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
     // 5min(50ms)
     register_timer("auto save world", 6000, [this]() {
         try {
+            m_players_manager.save_all();
             m_chunk_system.save_all_chunks();
             m_entity_manager.save_all_entities(false);
             save_metadata();
@@ -526,6 +527,7 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
 
     auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
                                                  m_game_ticks);
+
     bool inserted = m_players_manager.add(std::move(player));
     if (!inserted) {
         Logger::error("Player insert Fail");
