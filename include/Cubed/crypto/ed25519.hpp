@@ -3,6 +3,7 @@
 
 #include <array>
 #include <span>
+#include <vector>
 namespace Cubed::Crypto {
 struct Ed25519PublicKey {
     std::array<unsigned char, 32> data;

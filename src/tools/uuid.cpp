@@ -68,12 +68,12 @@ std::optional<Uuid> Uuid::from_string(std::string_view value) {
             ++input;
         }
 
-        const auto high = hex_value(value[input++]);
-        const auto low = hex_value(value[input++]);
-        if (!high || !low) {
+        const auto HIGH = hex_value(value[input++]);
+        const auto LOW = hex_value(value[input++]);
+        if (!HIGH || !LOW) {
             return std::nullopt;
         }
-        byte = static_cast<std::uint8_t>((*high << 4U) | *low);
+        byte = static_cast<std::uint8_t>((*HIGH << 4U) | *LOW);
     }
 
     return Uuid{bytes};

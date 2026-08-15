@@ -45,7 +45,7 @@ bool PlayerStorage::save(const PlayerStorageData& data) {
                                           make_key(data.uuid), value);
 
     if (!status.ok()) {
-        Logger::error("Failed to save entity {}: {}", data.uuid.to_string(),
+        Logger::error("Failed to save player {}: {}", data.uuid.to_string(),
                       status.ToString());
         return false;
     }
