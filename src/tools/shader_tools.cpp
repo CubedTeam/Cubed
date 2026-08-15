@@ -175,13 +175,13 @@ void delete_image_data(unsigned char* data) {
     stbi_image_free(data);
 }
 
-ImageData load_image_data(const std::string& tex_image_path, bool check_exist,
+ImageData load_image_data(const fs::path& tex_image_path, bool check_exist,
                           bool full_path) {
     fs::path path;
     if (full_path) {
         path = tex_image_path;
     } else {
-        path = ASSETS_PATH + tex_image_path;
+        path = ASSETS_PATH + tex_image_path.string();
     }
     if (check_exist) {
         ASSERT_MSG(fs::is_regular_file(path), path.string().c_str());

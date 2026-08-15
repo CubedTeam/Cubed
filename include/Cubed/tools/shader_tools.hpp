@@ -1,8 +1,10 @@
 #pragma once
 
+#include <filesystem>
 #include <glad/glad.h>
 #include <string>
 #include <utility>
+
 namespace Cubed {
 
 namespace Tools {
@@ -46,7 +48,7 @@ void print_program_info(int prog);
 bool check_opengl_error();
 std::string read_shader_source(const std::string& file_path);
 
-ImageData load_image_data(const std::string& tex_image_path,
+ImageData load_image_data(const std::filesystem::path& tex_image_path,
                           bool check_exist = true, bool full_path = true);
 
 } // namespace Tools

@@ -763,7 +763,7 @@ void LocalPlayer::init(std::string_view name) {
         if (data.sound.walk) {
             fs::path path = data.sound.walk->full_path();
             auto& audio = m_world.get_audio();
-            audio.play_3d(path, pos, true);
+            audio.play_3d(path.string(), pos, true);
             Logger::debug("Player block {} walk sound", path.string());
         }
     });
