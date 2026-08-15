@@ -8,14 +8,14 @@ ServerPlayer::ServerPlayer(std::string_view name, Uuid uuid, ServerWorld& world,
       m_last_gametick(gametick) {}
 glm::vec3 ServerPlayer::get_pos() const { return m_pos.load(); }
 const std::string& ServerPlayer::get_name() const { return M_NAME; }
-std::string ServerPlayer::get_uuid_string() const { return M_UUID.to_string(); }
+
 std::shared_ptr<Session> ServerPlayer::get_session() const { return m_session; }
 void ServerPlayer::update_pos(float x, float y, float z) {
     m_pos = glm::vec3{x, y, z};
     ChunkPos chunk_pos = get_chunk_pos(x, z);
     float dist = distance2(chunk_pos, m_last_chunk_pos);
     if (dist > 2) {
-        m_world.request_generation(M_UUID.to_string());
+        m_world.request_generation(M_UUID);
         m_last_chunk_pos = chunk_pos;
     }
 }

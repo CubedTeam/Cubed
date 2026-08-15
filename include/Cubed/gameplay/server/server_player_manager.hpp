@@ -5,16 +5,14 @@
 
 #include <atomic>
 #include <mutex>
-#include <string>
-
+#include <unordered_map>
+#include <vector>
 namespace Cubed {
 class ServerWorld;
 class ServerPlayerManager {
 public:
     using PlayerPtr = std::shared_ptr<ServerPlayer>;
-    using PlayerMap =
-        std::unordered_map<std::string, PlayerPtr, TransparentStringHash,
-                           std::equal_to<>>;
+    using PlayerMap = std::unordered_map<Uuid, PlayerPtr>;
     using PlayerMapPtr = std::shared_ptr<const PlayerMap>;
     ServerPlayerManager(ServerWorld& world);
 
@@ -24,19 +22,17 @@ public:
     void init();
 
     bool add(PlayerPtr player);
-    PlayerPtr remove(std::string_view uuid);
+    PlayerPtr remove(const Uuid& uuid);
 
-    [[nodiscard]] PlayerPtr find(std::string_view uuid) const;
-    [[nodiscard]] bool contains(std::string_view uuid) const;
+    [[nodiscard]] PlayerPtr find(const Uuid& uuid) const;
+    [[nodiscard]] bool contains(const Uuid& uuid) const;
     [[nodiscard]] std::size_t sum() const;
     [[nodiscard]] bool empty() const;
 
-    [[nodiscard]] int get_task_id(std::string_view uuid) const;
-    [[nodiscard]] std::optional<glm::vec3>
-    get_position(std::string_view uuid) const;
+    [[nodiscard]] int get_task_id(const Uuid& uuid) const;
+    [[nodiscard]] std::optional<glm::vec3> get_position(const Uuid& uuid) const;
 
-    [[nodiscard]] std::shared_ptr<Session>
-    get_session(std::string_view uuid) const;
+    [[nodiscard]] std::shared_ptr<Session> get_session(const Uuid& uuid) const;
 
     [[nodiscard]] ServerPlayerManager::PlayerMapPtr snapshot() const;
 

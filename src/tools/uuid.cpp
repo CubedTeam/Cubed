@@ -38,6 +38,11 @@ Uuid::Uuid() {
     m_bytes[8] = static_cast<std::uint8_t>((m_bytes[8] & 0x3fU) | 0x80U);
 }
 
+std::string Uuid::to_proto_bytes() const {
+    return std::string(reinterpret_cast<const char*>(m_bytes.data()),
+                       m_bytes.size());
+}
+
 std::string Uuid::to_string() const {
     static constexpr char HEX[] = "0123456789abcdef";
     std::string result(36, '-');
@@ -92,8 +97,7 @@ std::size_t Uuid::Hash::operator()(const Uuid& uuid) const noexcept {
     return static_cast<std::size_t>(HASH);
 }
 
-std::optional<Cubed::Uuid>
-Uuid::uuid_from_proto_bytes(const std::string& value) {
+std::optional<Cubed::Uuid> Uuid::from_proto_bytes(const std::string& value) {
 
     if (value.size() != 16) {
         return std::nullopt;

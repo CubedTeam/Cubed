@@ -68,7 +68,6 @@ public:
 
     ClientWorld& get_world();
 
-    std::string get_uuid_string() const;
     Uuid get_uuid() const;
     const std::string& get_name() const;
     void reset_input_status();

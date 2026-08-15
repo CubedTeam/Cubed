@@ -654,12 +654,6 @@ const ItemStack& LocalPlayer::get_current_itemstack() const {
 GameMode& LocalPlayer::game_mode() { return m_game_mode; }
 ClientWorld& LocalPlayer::get_world() { return m_world; }
 
-std::string LocalPlayer::get_uuid_string() const {
-
-    std::shared_lock lock(m_uuid_mutex);
-    return m_uuid.to_string();
-}
-
 Uuid LocalPlayer::get_uuid() const {
 
     std::shared_lock lock(m_uuid_mutex);

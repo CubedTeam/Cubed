@@ -18,7 +18,7 @@ bool ServerPlayerManager::add(PlayerPtr player) {
         return false;
     }
 
-    const auto& uuid = player->get_uuid_string();
+    auto uuid = player->get_uuid();
 
     std::lock_guard lock(m_write_mutex);
 
@@ -46,8 +46,7 @@ bool ServerPlayerManager::add(PlayerPtr player) {
     return insert;
 }
 
-ServerPlayerManager::PlayerPtr
-ServerPlayerManager::remove(std::string_view uuid) {
+ServerPlayerManager::PlayerPtr ServerPlayerManager::remove(const Uuid& uuid) {
     std::lock_guard lock(m_write_mutex);
     auto old = m_players.load();
     if (!old->contains(uuid)) {
@@ -70,7 +69,7 @@ ServerPlayerManager::remove(std::string_view uuid) {
 }
 
 ServerPlayerManager::PlayerPtr
-ServerPlayerManager::find(std::string_view uuid) const {
+ServerPlayerManager::find(const Uuid& uuid) const {
     auto players = m_players.load();
     auto it = players->find(uuid);
     if (it == players->end()) {
@@ -79,7 +78,7 @@ ServerPlayerManager::find(std::string_view uuid) const {
     return it->second;
 }
 
-bool ServerPlayerManager::contains(std::string_view uuid) const {
+bool ServerPlayerManager::contains(const Uuid& uuid) const {
     auto players = m_players.load();
     return players->contains(uuid);
 }
@@ -93,7 +92,7 @@ bool ServerPlayerManager::empty() const {
 }
 
 std::optional<glm::vec3>
-ServerPlayerManager::get_position(std::string_view uuid) const {
+ServerPlayerManager::get_position(const Uuid& uuid) const {
 
     auto player = find(uuid);
     if (!player) {
@@ -104,7 +103,7 @@ ServerPlayerManager::get_position(std::string_view uuid) const {
 }
 
 std::shared_ptr<Session>
-ServerPlayerManager::get_session(std::string_view uuid) const {
+ServerPlayerManager::get_session(const Uuid& uuid) const {
     auto player = find(uuid);
     return player ? player->get_session() : nullptr;
 }
@@ -113,9 +112,9 @@ ServerPlayerManager::PlayerMapPtr ServerPlayerManager::snapshot() const {
     return m_players.load();
 }
 
-int ServerPlayerManager::get_task_id(std::string_view id) const {
+int ServerPlayerManager::get_task_id(const Uuid& uuid) const {
     auto players = snapshot();
-    auto it = players->find(id);
+    auto it = players->find(uuid);
 
     return it == players->end() ? -1 : it->second->task_id();
 }

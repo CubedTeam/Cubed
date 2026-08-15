@@ -102,9 +102,9 @@ void ClientEntityManager::init() {
         c.model = ModelManager::instance().get_model_id("cubed:pig");
         float next_call_time = m_random.random_float(8.0f, 25.0f);
         create_entity_in_registry(
-            id, Entity{id, EntityType::CREATURE}, EntityInfo{"cubed:pig", ""},
-            std::move(c), PigTag{}, RenderTransform{},
-            SoundTime{next_call_time}, ClientEntityState{});
+            id, Entity{id, EntityType::CREATURE},
+            EntityInfo{"cubed:pig", std::nullopt}, std::move(c), PigTag{},
+            RenderTransform{}, SoundTime{next_call_time}, ClientEntityState{});
     });
 }
 // not thread safe
@@ -185,7 +185,7 @@ void ClientEntityManager::destory(EntityID id) {
     Arena arena;
     auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
     msg->set_id(id);
-    msg->set_uuid(m_world.get_player().get_uuid_string());
+    msg->set_uuid(m_world.get_player().get_uuid().to_proto_bytes());
     client->send(make_packet(*msg));
 }
 void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
@@ -193,7 +193,7 @@ void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
     Arena arena;
     auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
     msg->set_name(name);
-    msg->set_uuid(m_world.get_player().get_uuid_string());
+    msg->set_uuid(m_world.get_player().get_uuid().to_proto_bytes());
     Tools::set_proto_pos(msg, pos);
     client->send(make_packet(msg));
 }

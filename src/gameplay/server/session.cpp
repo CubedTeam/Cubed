@@ -84,9 +84,14 @@ asio::awaitable<void> Session::read_loop() {
                 auto* req = Arena::Create<ChunkDataReq>(&arena);
                 // Logger::info("Session: Receive Chunk Data req");
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_chunk_req(
-                        req->task_id(), req->uuid(),
-                        ChunkPos(req->pos().x(), req->pos().z()));
+                    auto uuid = Uuid::from_proto_bytes(req->uuid());
+                    if (!uuid) {
+                        Logger::error("Can't parse uuid from proto");
+                    } else {
+                        m_server_world.handle_chunk_req(
+                            req->task_id(), *uuid,
+                            ChunkPos(req->pos().x(), req->pos().z()));
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::BLOCK_CHANGE_REQ)) {
@@ -99,7 +104,12 @@ asio::awaitable<void> Session::read_loop() {
             if (cmd_id == std::to_underlying(PacketEnum::LOGOUT_REQ)) {
                 auto* req = Arena::Create<LogoutReq>(&arena);
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_player_exit(req->uuid());
+                    auto uuid = Uuid::from_proto_bytes(req->uuid());
+                    if (!uuid) {
+                        Logger::error("Can't parse uuid from proto");
+                    } else {
+                        m_server_world.handle_player_exit(*uuid);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::PLAYER_WATER_SOUND)) {

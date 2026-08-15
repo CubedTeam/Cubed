@@ -4,7 +4,7 @@ import "common/chunk_pos.proto";
 
 message ChunkDataReq {
     int32 task_id = 1;
-    string uuid = 2;
+    bytes uuid = 2;
     ChunkPosNet pos = 3;
 }
 

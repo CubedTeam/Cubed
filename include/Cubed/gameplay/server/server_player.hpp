@@ -26,7 +26,7 @@ public:
 
     glm::vec3 get_pos() const;
     const std::string& get_name() const;
-    std::string get_uuid_string() const;
+
     std::shared_ptr<Session> get_session() const;
 
     void update_sync_gametick(TickType gametick);

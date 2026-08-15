@@ -317,7 +317,7 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
 
     Arena arena;
     auto* req = Arena::Create<BlockChangeReq>(&arena);
-    req->set_uuid(m_player_manager.get_local().get_uuid_string());
+    req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     req->set_block(id);
     auto* p = req->mutable_pos();
     p->set_x(pos.x);
@@ -341,7 +341,8 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
         m_receive_exit = true;
         return;
     }
-    if (rsp.uuid() == m_player_manager.get_local().get_uuid_string()) {
+    if (rsp.uuid() ==
+        m_player_manager.get_local().get_uuid().to_proto_bytes()) {
         m_receive_exit = true;
         return;
     }
@@ -349,7 +350,8 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
 }
 
 void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
-    if (rsp.uuid() == m_player_manager.get_local().get_uuid_string()) {
+    if (rsp.uuid() ==
+        m_player_manager.get_local().get_uuid().to_proto_bytes()) {
         return;
     }
     glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
@@ -371,7 +373,7 @@ void ClientWorld::send_player_water_sound(bool underwater,
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
-    r->set_uuid(m_player_manager.get_local().get_uuid_string());
+    r->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
 
     m_client->send(make_packet(*r));
     Logger::info("Client: Send Player Water Sound");
@@ -488,7 +490,7 @@ void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
     auto p = Arena::Create<LoginProof>(&arena);
     p->set_name(player.get_name());
     auto uuid = player.get_uuid();
-    p->set_uuid(uuid.bytes().data(), uuid.bytes().size());
+    p->set_uuid(uuid.to_proto_bytes());
     p->set_signature(signature.data.data(), signature.data.size());
 
     m_client->send(make_packet(p), 0);
@@ -676,13 +678,13 @@ void ClientWorld::request_chunk() {
                   });
     }
     }
-    auto uuid = m_player_manager.get_local().get_uuid_string();
+    auto uuid = m_player_manager.get_local().get_uuid();
     Arena arena;
     ++m_chunk_task_id;
     auto* req = Arena::Create<ChunkDataReq>(&arena);
     for (const auto& pos : need_send_pos) {
         req->set_task_id(m_chunk_task_id.load());
-        req->set_uuid(uuid);
+        req->set_uuid(uuid.to_proto_bytes());
         auto* p = req->mutable_pos();
         p->set_x(pos.x);
         p->set_z(pos.z);
@@ -752,7 +754,7 @@ void ClientWorld::request_exit() {
     }
     Arena arena;
     auto* req = Arena::Create<LogoutReq>(&arena);
-    req->set_uuid(m_player_manager.get_local().get_uuid_string());
+    req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
