@@ -109,13 +109,15 @@ std::string PlayerStorage::serialize(const PlayerStorageData& player) {
     Document doc;
     doc.SetObject();
     auto& allocator = doc.GetAllocator();
-    doc.AddMember("uuid", player.uuid.to_string(), allocator);
+    doc.AddMember("uuid",
+                  rapidjson::Value(player.uuid.to_string().c_str(), allocator),
+                  allocator);
     doc.AddMember("version", WorldStorage::VERSION, allocator);
     auto j_pos = Tools::vec3_to_json(player.pos, allocator);
     doc.AddMember("position", j_pos, allocator);
-    doc.AddMember("public_key",
-                  Crypto::Ed25519::to_hex(player.public_key.data.data(),
-                                          player.public_key.data.size()),
+    std::string pk = Crypto::Ed25519::to_hex(player.public_key.data.data(),
+                                             player.public_key.data.size());
+    doc.AddMember("public_key", rapidjson::Value(pk.c_str(), allocator),
                   allocator);
     return Tools::to_json_string(doc);
 }

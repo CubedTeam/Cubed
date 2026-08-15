@@ -70,7 +70,7 @@ bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
             return false;
         }
         out = static_cast<ValueType>(v.GetInt64());
-    } else if (std::is_same_v<ValueType, glm::vec3>) {
+    } else if constexpr (std::is_same_v<ValueType, glm::vec3>) {
         if (!value.IsArray() || value.Size() != 3) {
             return false;
         }

@@ -60,8 +60,9 @@ public:
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;
-    void start_client_thread(std::string_view uuid);
+    void start_client_thread();
     void receive_login_rsp(LoginRsp& rsp);
+    void receive_login_challenge(LoginChallenge& msg);
     void stop_client_thread();
 
     void start_thread_pool();

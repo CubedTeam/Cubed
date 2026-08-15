@@ -170,6 +170,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.entity_manager().receive_entity_update(*msg);
                 }
             } break;
+            case std::to_underlying(PacketEnum::LOGIN_CHALLENGE): {
+                auto* msg = Arena::Create<LoginChallenge>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_login_challenge(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

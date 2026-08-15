@@ -688,8 +688,10 @@ void LocalPlayer::create_identity(const std::filesystem::path& path) {
     doc.SetObject();
     auto& allocator = doc.GetAllocator();
 
-    doc.AddMember("public_key", pks, allocator);
-    doc.AddMember("private_key", prs, allocator);
+    doc.AddMember("public_key", rapidjson::Value(pks.c_str(), allocator),
+                  allocator);
+    doc.AddMember("private_key", rapidjson::Value(prs.c_str(), allocator),
+                  allocator);
 
     Tools::save_json(doc, path);
 
@@ -875,5 +877,7 @@ float LocalPlayer::pitch() const { return m_angle.pitch; }
 float& LocalPlayer::roll() { return m_angle.roll; }
 float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
 Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }
-
+std::optional<Crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
+    return m_key_pair;
+}
 } // namespace Cubed

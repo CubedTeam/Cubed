@@ -66,7 +66,6 @@ public:
 
     ClientWorld& get_world();
 
-    void set_uuid(std::string_view uuid);
     std::string get_uuid_string() const;
     Uuid get_uuid() const;
     const std::string& get_name() const;
@@ -94,6 +93,8 @@ public:
     float& roll();
     float& walk_time();
     Gait get_gait() const;
+
+    std::optional<Crypto::Ed25519KeyPair>& key_pair();
 
 private:
     using enum GameMode;

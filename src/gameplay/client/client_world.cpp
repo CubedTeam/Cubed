@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
+#include "Cubed/tools/net_error.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
@@ -136,7 +137,7 @@ void ClientWorld::rebuild_world() {
     m_pending_upload_queue.clear();
 
     start_thread_pool();
-    start_client_thread(m_player_manager.get_local().get_uuid());
+    start_client_thread();
     request_chunk();
     m_is_rebuilding = false;
 }
@@ -316,7 +317,7 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
 
     Arena arena;
     auto* req = Arena::Create<BlockChangeReq>(&arena);
-    req->set_uuid(m_player_manager.get_local().get_uuid());
+    req->set_uuid(m_player_manager.get_local().get_uuid_string());
     req->set_block(id);
     auto* p = req->mutable_pos();
     p->set_x(pos.x);
@@ -340,7 +341,7 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
         m_receive_exit = true;
         return;
     }
-    if (rsp.uuid() == m_player_manager.get_local().get_uuid()) {
+    if (rsp.uuid() == m_player_manager.get_local().get_uuid_string()) {
         m_receive_exit = true;
         return;
     }
@@ -348,7 +349,7 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
 }
 
 void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
-    if (rsp.uuid() == m_player_manager.get_local().get_uuid()) {
+    if (rsp.uuid() == m_player_manager.get_local().get_uuid_string()) {
         return;
     }
     glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
@@ -370,7 +371,7 @@ void ClientWorld::send_player_water_sound(bool underwater,
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
-    r->set_uuid(m_player_manager.get_local().get_uuid());
+    r->set_uuid(m_player_manager.get_local().get_uuid_string());
 
     m_client->send(make_packet(*r));
     Logger::info("Client: Send Player Water Sound");
@@ -447,7 +448,12 @@ void ClientWorld::init(std::string_view player_name,
     });
 
     LoginReq req;
-    req.set_name(m_player_manager.get_local().get_name());
+    auto& player = m_player_manager.get_local();
+    auto& pk = player.key_pair()->public_key;
+    req.set_public_key(pk.data.data(), pk.data.size());
+    auto uuid = player.get_uuid();
+    req.set_uuid(uuid.bytes().data(), uuid.bytes().size());
+
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
             throw std::runtime_error(client->get_error_string());
@@ -461,18 +467,48 @@ void ClientWorld::init(std::string_view player_name,
     m_audio.play_bgm();
 }
 
-void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
-    m_voice_chat = rsp.voice_chat();
-    start_client_thread(rsp.uuid());
+void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
+
+    if (msg.challenge().size() != 32) {
+        Logger::error("Invailed challenge");
+        return;
+    }
+
+    Crypto::Ed25519::Challenge challenge;
+    std::copy_n(msg.challenge().data(), msg.challenge().size(),
+                challenge.begin());
+
+    auto& player = m_player_manager.get_local();
+    auto message = Crypto::Ed25519::make_login_signing_data(
+        challenge, player.key_pair()->public_key);
+    auto signature =
+        Crypto::Ed25519::sign(message, player.key_pair()->private_key);
+
+    Arena arena;
+    auto p = Arena::Create<LoginProof>(&arena);
+    p->set_name(player.get_name());
+    auto uuid = player.get_uuid();
+    p->set_uuid(uuid.bytes().data(), uuid.bytes().size());
+    p->set_signature(signature.data.data(), signature.data.size());
+
+    m_client->send(make_packet(p), 0);
 }
 
-void ClientWorld::start_client_thread(std::string_view uuid) {
+void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
+    if (rsp.ec()) {
+        m_world_scene.set_error(cubed_net_error_message(rsp.ec()));
+        return;
+    }
+    m_voice_chat = rsp.voice_chat();
+    start_client_thread();
+}
+
+void ClientWorld::start_client_thread() {
     if (m_game_running) {
         Logger::error("Game Already Running");
         return;
     }
     // response
-    m_player_manager.get_local().set_uuid(uuid);
     /*
     m_client_thread = std::jthread([this](std::stop_token token) {
         m_game_running = true;
@@ -633,7 +669,7 @@ void ClientWorld::request_chunk() {
                   });
     }
     }
-    auto uuid = m_player_manager.get_local().get_uuid();
+    auto uuid = m_player_manager.get_local().get_uuid_string();
     Arena arena;
     ++m_chunk_task_id;
     auto* req = Arena::Create<ChunkDataReq>(&arena);
@@ -709,7 +745,7 @@ void ClientWorld::request_exit() {
     }
     Arena arena;
     auto* req = Arena::Create<LogoutReq>(&arena);
-    req->set_uuid(m_player_manager.get_local().get_uuid());
+    req->set_uuid(m_player_manager.get_local().get_uuid_string());
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
