@@ -3,12 +3,14 @@
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
+#include <filesystem>
+
 namespace Cubed {
 
 class ModelLoader {
 public:
     ModelLoader();
-    ModelNode load(const std::string& path);
+    ModelNode load(const std::filesystem::path& path);
 
 private:
     Assimp::Importer m_importer;

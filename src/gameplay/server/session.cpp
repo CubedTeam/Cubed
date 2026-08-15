@@ -38,6 +38,12 @@ void Session::send(std::shared_ptr<std::vector<uint8_t>> packet, int priority) {
 
 const std::string& Session::uuid() const { return m_uuid; }
 
+Crypto::Ed25519PublicKey& Session::public_key() { return m_public_key; }
+std::optional<std::pair<uint64_t, Crypto::Ed25519::Challenge>>&
+Session::challenge() {
+    return m_challenge;
+}
+
 asio::awaitable<void> Session::read_loop() {
     ZoneScopedN("Session::read_loop");
     try {
@@ -64,7 +70,7 @@ asio::awaitable<void> Session::read_loop() {
                 auto* req = Arena::Create<LoginReq>(&arena);
                 Logger::info("Session: Receive Login req");
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_player_login(req->name(),
+                    m_server_world.handle_player_login(*req,
                                                        shared_from_this());
                 }
             }
@@ -78,9 +84,14 @@ asio::awaitable<void> Session::read_loop() {
                 auto* req = Arena::Create<ChunkDataReq>(&arena);
                 // Logger::info("Session: Receive Chunk Data req");
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_chunk_req(
-                        req->task_id(), req->uuid(),
-                        ChunkPos(req->pos().x(), req->pos().z()));
+                    auto uuid = Uuid::from_proto_bytes(req->uuid());
+                    if (!uuid) {
+                        Logger::error("Can't parse uuid from proto");
+                    } else {
+                        m_server_world.handle_chunk_req(
+                            req->task_id(), *uuid,
+                            ChunkPos(req->pos().x(), req->pos().z()));
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::BLOCK_CHANGE_REQ)) {
@@ -93,7 +104,12 @@ asio::awaitable<void> Session::read_loop() {
             if (cmd_id == std::to_underlying(PacketEnum::LOGOUT_REQ)) {
                 auto* req = Arena::Create<LogoutReq>(&arena);
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_player_exit(req->uuid());
+                    auto uuid = Uuid::from_proto_bytes(req->uuid());
+                    if (!uuid) {
+                        Logger::error("Can't parse uuid from proto");
+                    } else {
+                        m_server_world.handle_player_exit(*uuid);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::PLAYER_WATER_SOUND)) {
@@ -126,6 +142,12 @@ asio::awaitable<void> Session::read_loop() {
                 auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_server_world.handle_entity_destory(*msg);
+                }
+            }
+            if (cmd_id == std::to_underlying(PacketEnum::LOGIN_PROOF)) {
+                auto* msg = Arena::Create<LoginProof>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_login_proof(*msg, shared_from_this());
                 }
             }
         }

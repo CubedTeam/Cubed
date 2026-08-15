@@ -290,7 +290,7 @@ void AudioEngine::send_voice(
         }
         Arena arena;
         auto msg = Arena::Create<VoiceMsg>(&arena);
-        msg->set_uuid(c->world().get_player().get_uuid());
+        msg->set_uuid(c->world().get_player().get_uuid().to_proto_bytes());
         msg->set_opus_data(reinterpret_cast<char*>(opus.data()), len);
         auto* pos = msg->mutable_pos();
         auto p = c->world().get_player().get_player_pos();

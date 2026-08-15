@@ -3,7 +3,7 @@ syntax = "proto3";
 import "common/vector3.proto";
 
 message BlockChangeReq {
-    string uuid = 1;
+    bytes uuid = 1;
     Vec3 pos = 2;
     uint32 block = 3;
 }

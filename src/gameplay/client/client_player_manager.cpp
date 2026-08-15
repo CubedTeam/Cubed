@@ -105,16 +105,22 @@ bool ClientPlayerManager::has_player(const Hitbox& hitbox) const {
 }
 
 void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
+    auto uuid = Uuid::from_proto_bytes(rsp.uuid());
+    if (!uuid) {
+        Logger::error("Can't parse proto uuid");
+        return;
+    }
     auto pitch = rsp.pitch();
     auto yaw = rsp.yaw();
     {
+
         std::lock_guard lock(m_players_mutex);
         glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
-        auto it = m_players_handle.find(rsp.uuid());
+        auto it = m_players_handle.find(*uuid);
         if (it == m_players_handle.end()) {
             ClientPlayer data{};
             data.entity.name = rsp.name();
-            data.entity.uuid = rsp.uuid();
+            data.entity.uuid = *uuid;
             data.angle.pitch = pitch;
             data.angle.yaw = yaw;
             data.render_angle.pitch = pitch;
@@ -125,21 +131,19 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
             data.history.value.emplace_back(
                 static_cast<double>(Tools::get_time_ticks()), pos, yaw, pitch);
             auto handle = m_players.emplace(std::move(data));
-            m_players_handle.try_emplace(rsp.uuid(), handle);
+            m_players_handle.try_emplace(*uuid, handle);
         } else {
-            auto it = m_players_handle.find(rsp.uuid());
-            if (it != m_players_handle.end()) {
-                auto& data = m_players[it->second];
-                data.pos.value = pos;
-                data.walk.gait = get_gait_from_id(rsp.gait());
-                data.angle.yaw = yaw;
-                data.angle.pitch = pitch;
-                data.history.value.push_back(
-                    {static_cast<double>(Tools::get_time_ticks()), pos, yaw,
-                     pitch});
-                while (data.history.value.size() > ENTITY_SNAPSHOT_MAX) {
-                    data.history.value.pop_front();
-                }
+
+            auto& data = m_players[it->second];
+            data.pos.value = pos;
+            data.walk.gait = get_gait_from_id(rsp.gait());
+            data.angle.yaw = yaw;
+            data.angle.pitch = pitch;
+            data.history.value.push_back(
+                {static_cast<double>(Tools::get_time_ticks()), pos, yaw,
+                 pitch});
+            while (data.history.value.size() > ENTITY_SNAPSHOT_MAX) {
+                data.history.value.pop_front();
             }
         }
         // Logger::info("Player {} pos Update", rsp.name());
@@ -148,14 +152,19 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
 
 void ClientPlayerManager::receive_player_logout(const LogoutRsp& rsp) {
     {
+        auto uuid = Uuid::from_proto_bytes(rsp.uuid());
+        if (!uuid) {
+            Logger::error("Can't parse proto uuid");
+            return;
+        }
         std::lock_guard lock(m_players_mutex);
-        auto it = m_players_handle.find(rsp.uuid());
+        auto it = m_players_handle.find(*uuid);
         if (it == m_players_handle.end()) {
-            Logger::warn("Player {} not find", rsp.uuid());
+            Logger::warn("Player {} not find", uuid->to_string());
         } else {
             m_players.erase(it->second);
             m_players_handle.erase(it);
-            Logger::info("Player {} erase", rsp.uuid());
+            Logger::info("Player {} erase", uuid->to_string());
         }
     }
 }
@@ -168,7 +177,8 @@ void ClientPlayerManager::report_player_info(NetworkClient* client) {
     }
     Arena arena;
     auto* info = Arena::Create<C2S_PlayerInfo>(&arena);
-    info->set_uuid(m_local.get_uuid());
+    auto uuid = m_local.get_uuid();
+    info->set_uuid(uuid.to_proto_bytes());
     glm::vec3 player_pos = m_local.get_player_pos();
     auto* v3 = info->mutable_pos();
     v3->set_x(player_pos.x);
@@ -234,8 +244,8 @@ void ClientPlayerManager::update_players_data(float dt) {
             auto data = BlockManager::data(id);
             if (data.sound.walk) {
                 fs::path path = data.sound.walk->full_path();
-                m_world.get_audio().play_3d(path, player.render_pos.value,
-                                            true);
+                m_world.get_audio().play_3d(path.string(),
+                                            player.render_pos.value, true);
             }
         };
 

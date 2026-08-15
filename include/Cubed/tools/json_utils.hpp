@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/tools/log.hpp"
+#include "glm/ext/vector_float3.hpp"
 
 #include <filesystem>
 #include <rapidjson/document.h>
@@ -20,10 +21,13 @@ bool parse_json(rapidjson::Document& doc, const std::filesystem::path& path);
 bool parse_json_from_string(rapidjson::Document& doc, std::string_view json);
 void save_json(const rapidjson::Document& doc,
                const std::filesystem::path& path);
+rapidjson::Value vec3_to_json(const glm::vec3& v,
+                              rapidjson::Document::AllocatorType& allocator);
+
 std::string to_json_string(const rapidjson::Value& value);
 template <typename T>
 bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
-    using ValueType = std::decay_t<T>;
+    using ValueType = std::remove_cvref_t<T>;
     if (!value.HasMember(key)) {
         return false;
     }
@@ -66,6 +70,22 @@ bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
             return false;
         }
         out = static_cast<ValueType>(v.GetInt64());
+    } else if constexpr (std::is_same_v<ValueType, glm::vec3>) {
+        if (!v.IsArray() || v.Size() != 3) {
+            return false;
+        }
+
+        if (!v[0].IsNumber() || !v[1].IsNumber() || !v[2].IsNumber()) {
+            return false;
+        }
+
+        out = glm::vec3{
+            v[0].GetFloat(),
+            v[1].GetFloat(),
+            v[2].GetFloat(),
+        };
+        return true;
+
     } else {
         static_assert(detail::always_false_v<ValueType>,
                       "get_json_value: unsupported type");

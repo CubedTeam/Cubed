@@ -4,13 +4,13 @@
 #include "Cubed/gameplay/server/server_chunk.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 #include "Cubed/tools/recent_queue.hpp"
+#include "Cubed/tools/uuid.hpp"
 
 #include <absl/container/flat_hash_set.h>
 #include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <optional>
-#include <string>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <utility>
@@ -26,7 +26,7 @@ class ServerPlayer;
 class ServerChunkSystem {
 public:
     struct ChunkRequest {
-        std::string uuid;
+        Uuid uuid;
         int task_id;
         ChunkPos pos;
     };
@@ -116,7 +116,7 @@ public:
 
     size_t chunk_size() const;
 
-    void send_chunk(int task_id, const std::string& uuid, ChunkPos pos);
+    void send_chunk(int task_id, const Uuid& uuid, ChunkPos pos);
 
     void pop_pending_request();
 
@@ -126,7 +126,7 @@ public:
 
     void stop_generation_pool();
 
-    void request_generation(const std::string& uuid);
+    void request_generation(const Uuid& uuid);
 
     void hot_reload();
 
@@ -160,7 +160,7 @@ private:
 
     mutable std::mutex m_reconcile_mutex;
     std::condition_variable_any m_generation_cv;
-    RecentQueue<std::string> m_generation_queue;
+    RecentQueue<Uuid> m_generation_queue;
 
     std::atomic<std::shared_ptr<PriorityThreadPool>> m_generation_pool;
     std::atomic<int> m_generation_threads{0};
@@ -173,12 +173,12 @@ private:
     tbb::concurrent_queue<ChunkRequest> m_waiting_requests;
     tbb::concurrent_queue<FinishedChunk> m_finished_chunks;
 
-    void gen_chunks_internal(const std::string& uuid);
+    void gen_chunks_internal(const Uuid& uuid);
 
     void compute_required_chunks(ChunkPosSet& required_chunks,
-                                 const std::optional<std::string>& uuid);
+                                 const std::optional<Uuid>& uuid);
 
-    void submit_new_chunks(const std::string& uuid, NewChunkVector& new_chunks);
+    void submit_new_chunks(const Uuid& uuid, NewChunkVector& new_chunks);
 
     void reconcile_chunks(const ChunkPosSet& old_set,
                           const ChunkPosSet& new_set,

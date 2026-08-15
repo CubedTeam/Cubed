@@ -34,6 +34,8 @@ public:
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client, RunMode mode);
     void update(float dt);
+    bool is_player_chunk_ready() const;
+    void process_pending_chunks();
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
     LocalPlayer& get_player();
@@ -60,8 +62,9 @@ public:
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;
-    void start_client_thread(std::string_view uuid);
+    void start_client_thread();
     void receive_login_rsp(LoginRsp& rsp);
+    void receive_login_challenge(LoginChallenge& msg);
     void stop_client_thread();
 
     void start_thread_pool();

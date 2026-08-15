@@ -1,44 +1,46 @@
 #pragma once
 
 #include <array>
-#include <chrono>
+#include <cstddef>
 #include <cstdint>
-#include <iomanip>
-#include <iostream>
-#include <random>
-#include <sstream>
+#include <functional>
+#include <optional>
 #include <string>
+#include <string_view>
 namespace Cubed {
-inline std::string generate_uuid() {
 
-    static std::mt19937_64 rng(
-        std::chrono::steady_clock::now().time_since_epoch().count() ^
-        (std::random_device{}()));
-    std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX);
+class Uuid final {
+public:
+    using Storage = std::array<std::uint8_t, 16>;
 
-    uint64_t a = dist(rng);
-    uint64_t b = dist(rng);
+    Uuid();
+    constexpr explicit Uuid(Storage bytes) noexcept : m_bytes(bytes) {}
 
-    std::array<uint8_t, 16> bytes{};
-    for (int i = 0; i < 8; ++i) {
-        bytes[i] = (a >> (56 - 8 * i)) & 0xFF;
-        bytes[8 + i] = (b >> (56 - 8 * i)) & 0xFF;
+    [[nodiscard]] constexpr const Storage& bytes() const noexcept {
+        return m_bytes;
     }
 
-    bytes[6] = (bytes[6] & 0x0F) | 0x40;
+    [[nodiscard]] std::string to_proto_bytes() const;
 
-    bytes[8] = (bytes[8] & 0x3F) | 0x80;
+    [[nodiscard]] std::string to_string() const;
 
-    std::ostringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < bytes.size(); ++i) {
-        if (i == 4 || i == 6 || i == 8 || i == 10) {
-            ss << '-';
-        }
-        ss << std::setw(2) << static_cast<int>(bytes[i]);
-    }
-    return ss.str();
-}
+    [[nodiscard]] static std::optional<Uuid>
+    from_string(std::string_view value);
+
+    bool operator==(const Uuid&) const = default;
+    auto operator<=>(const Uuid&) const = default;
+
+    static std::optional<Uuid> from_proto_bytes(const std::string& value);
+
+    struct Hash {
+        [[nodiscard]] std::size_t operator()(const Uuid& uuid) const noexcept;
+    };
+
+private:
+    Storage m_bytes;
+};
+
+[[nodiscard]] std::string generate_uuid();
 
 struct TransparentStringHash {
     using is_transparent = void;
@@ -73,3 +75,9 @@ struct TransparentStringHashCompare {
 };
 
 } // namespace Cubed
+
+template <> struct std::hash<Cubed::Uuid> {
+    std::size_t operator()(const Cubed::Uuid& uuid) const noexcept {
+        return Cubed::Uuid::Hash{}(uuid);
+    }
+};

@@ -1,21 +1,36 @@
 syntax = "proto3";
-
+import "common/vector3.proto";
+import "common/error.proto";
 message LoginReq {
-    string name = 1;
+    bytes public_key = 1;
+    bytes uuid = 2;
+}
+
+message LoginChallenge {
+    bytes challenge = 1;
+    bytes uuid = 2;
+}
+
+message LoginProof {
+    bytes signature = 1; 
+    bytes uuid = 2;
+    string name = 3;
 }
 
 message LoginRsp {
-    bool success = 1;
-    string uuid = 2;
-    bool voice_chat = 3;
+    Error error = 1;
+    bool voice_chat = 2;
+    Vec3 pos = 3;
+    float yaw = 4;
+    float pitch = 5;
 }
 
 message LogoutReq {
-    string uuid = 1;
+    bytes uuid = 1;
 }
 
 message LogoutRsp {
-    string uuid = 1;
+    bytes uuid = 1;
     bool server_stop = 2;
 }
 

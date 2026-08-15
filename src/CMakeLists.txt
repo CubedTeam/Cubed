@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME}
         shader.cpp
         texture_manager.cpp
         tools/cubed_random.cpp
+        tools/uuid.cpp
         tools/shader_tools.cpp
         tools/font.cpp
         tools/perlin_noise.cpp
@@ -116,4 +117,6 @@ target_sources(${PROJECT_NAME}
         gameplay/server/chunk_storage.cpp
         gameplay/server/entity_storage.cpp
         gameplay/server/world_storage.cpp
+        gameplay/crypto/ed25519.cpp
+        gameplay/server/player_storage.cpp
 )

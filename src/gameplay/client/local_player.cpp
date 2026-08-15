@@ -7,9 +7,13 @@
 #include "Cubed/gameplay/client/client_world.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
+#include "Cubed/tools/json_utils.hpp"
+#include "Cubed/tools/standard_paths.hpp"
 
 #include <filesystem>
+#include <rapidjson/document.h>
 #include <tracy/Tracy.hpp>
+using rapidjson::Document;
 namespace fs = std::filesystem;
 namespace Cubed {
 
@@ -578,6 +582,11 @@ bool LocalPlayer::update_scroll(float yoffset) {
     return true;
 }
 
+void LocalPlayer::clear_key() { m_key_pair.reset(); }
+void LocalPlayer::reset_speed() {
+    m_moving = false;
+    m_velocity.value = glm::vec3(0.0f);
+}
 bool LocalPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS) {
         if (e.key == MouseKey::LEFT_BUTTON) {
@@ -645,15 +654,12 @@ const ItemStack& LocalPlayer::get_current_itemstack() const {
 GameMode& LocalPlayer::game_mode() { return m_game_mode; }
 ClientWorld& LocalPlayer::get_world() { return m_world; }
 
-void LocalPlayer::set_uuid(std::string_view uuid) {
-    std::lock_guard lock(m_uuid_mutex);
-    m_uuid = uuid;
-}
-std::string LocalPlayer::get_uuid() const {
+Uuid LocalPlayer::get_uuid() const {
 
     std::shared_lock lock(m_uuid_mutex);
     return m_uuid;
 }
+
 const std::string& LocalPlayer::get_name() const { return m_name; }
 
 void LocalPlayer::reset_input_status() {
@@ -667,8 +673,66 @@ void LocalPlayer::reset_input_status() {
     m_move_state.up = false;
 }
 
-void LocalPlayer::init(std::string_view name) {
+void LocalPlayer::create_identity(const std::filesystem::path& path) {
 
+    auto pair = Crypto::Ed25519::generate_key_pair();
+    m_key_pair = pair;
+    m_uuid = Crypto::Ed25519::uuid_from_public_key(pair.public_key);
+    auto pks = Crypto::Ed25519::to_hex(pair.public_key.data.data(),
+                                       pair.public_key.data.size());
+    auto prs = Crypto::Ed25519::to_hex(pair.private_key.data.data(),
+                                       pair.private_key.data.size());
+
+    Document doc;
+    doc.SetObject();
+    auto& allocator = doc.GetAllocator();
+
+    doc.AddMember("public_key", rapidjson::Value(pks.c_str(), allocator),
+                  allocator);
+    doc.AddMember("private_key", rapidjson::Value(prs.c_str(), allocator),
+                  allocator);
+
+    Tools::save_json(doc, path);
+
+#ifdef __linux__
+    std::filesystem::permissions(path,
+                                 std::filesystem::perms::owner_read |
+                                     std::filesystem::perms::owner_write,
+                                 std::filesystem::perm_options::replace);
+#endif
+}
+
+void LocalPlayer::init_identity() {
+    m_key_pair = Crypto::Ed25519KeyPair{};
+    StandardPaths standard("Cubed");
+    auto path = standard.ensure(StandardPaths::Location::DATA);
+
+    auto identity_path = path / "identity.json";
+    Document doc;
+    if (Tools::parse_json(doc, identity_path)) {
+        std::string s;
+        if (!Tools::get_json_value(doc, "public_key", s)) {
+            return create_identity(identity_path);
+        }
+        if (!Crypto::Ed25519::from_hex(s, m_key_pair->public_key.data.data(),
+                                       m_key_pair->public_key.data.size())) {
+            return create_identity(identity_path);
+        }
+        if (!Tools::get_json_value(doc, "private_key", s)) {
+            return create_identity(identity_path);
+        }
+        if (!Crypto::Ed25519::from_hex(s, m_key_pair->private_key.data.data(),
+                                       m_key_pair->private_key.data.size())) {
+            return create_identity(identity_path);
+        }
+    } else {
+        return create_identity(identity_path);
+    }
+    m_uuid = Crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
+}
+
+void LocalPlayer::init(std::string_view name) {
+    init_identity();
     m_hitbox = HitboxManager::hitbox("cubed:player").id;
 
     {
@@ -699,7 +763,7 @@ void LocalPlayer::init(std::string_view name) {
         if (data.sound.walk) {
             fs::path path = data.sound.walk->full_path();
             auto& audio = m_world.get_audio();
-            audio.play_3d(path, pos, true);
+            audio.play_3d(path.string(), pos, true);
             Logger::debug("Player block {} walk sound", path.string());
         }
     });
@@ -811,8 +875,12 @@ float& LocalPlayer::g() { return m_gravity.value; }
 void LocalPlayer::set_gait(Gait gait) { m_walk_pose.gait = gait; }
 float LocalPlayer::yaw() const { return m_angle.yaw; }
 float LocalPlayer::pitch() const { return m_angle.pitch; }
+void LocalPlayer::set_yaw(float yaw) { m_angle.yaw = yaw; }
+void LocalPlayer::set_pitch(float pitch) { m_angle.pitch = pitch; }
 float& LocalPlayer::roll() { return m_angle.roll; }
 float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
 Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }
-
+std::optional<Crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
+    return m_key_pair;
+}
 } // namespace Cubed

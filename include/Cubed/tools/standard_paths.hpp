@@ -318,17 +318,17 @@ private:
     [[nodiscard]] static std::filesystem::path
     user_directory(UserDirectory directory) {
         switch (directory) {
-        case UserDirectory::Desktop:
+        case UserDirectory::DESKTOP:
             return known_folder(FOLDERID_Desktop);
-        case UserDirectory::Documents:
+        case UserDirectory::DOCUMENTS:
             return known_folder(FOLDERID_Documents);
-        case UserDirectory::Downloads:
+        case UserDirectory::DOWNLOADS:
             return known_folder(FOLDERID_Downloads);
-        case UserDirectory::Music:
+        case UserDirectory::MUSIC:
             return known_folder(FOLDERID_Music);
-        case UserDirectory::Pictures:
+        case UserDirectory::PICTURES:
             return known_folder(FOLDERID_Pictures);
-        case UserDirectory::Videos:
+        case UserDirectory::VIDEOS:
             return known_folder(FOLDERID_Videos);
         }
         throw std::invalid_argument("unknown user directory");

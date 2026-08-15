@@ -86,8 +86,8 @@ configure_file(
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE
-        $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
-        $<$<CONFIG:Debug>:-g>
+        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang>>:-fno-omit-frame-pointer>
+        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang>>:-g>
         #$<$<CONFIG:Debug>:-fsanitize=address>
         #$<$<CONFIG:Debug>:-fsanitize=thread>
 
@@ -171,6 +171,7 @@ target_link_libraries(${PROJECT_NAME}
         harfbuzz::harfbuzz
         Opus::Opus
         assimp::assimp
+        libsodium::libsodium
         $<$<PLATFORM_ID:Windows>:ws2_32>
         Tracy::TracyClient
         RocksDB::rocksdb

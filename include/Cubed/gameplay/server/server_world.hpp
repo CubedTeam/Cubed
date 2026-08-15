@@ -38,10 +38,10 @@ public:
     ServerWorld(Config& config);
     ~ServerWorld();
     void stop();
-    void handle_player_exit(const std::string& uuid);
+    void handle_player_exit(const Uuid& uuid);
     void init_world(RunMode mode, std::string_view world_name,
                     std::optional<uint32_t> seed);
-    void request_generation(std::string uuid);
+    void request_generation(Uuid uuid);
     void update();
     void hot_reload();
 
@@ -84,10 +84,12 @@ public:
 
     void sync_player_pos(const C2S_PlayerInfo& rsp);
     void sync_player_water_sound(const PlayerWaterSound& rsp);
-    void handle_player_login(const std::string& player_name,
-                             std::shared_ptr<Session> session);
-    glm::vec3 get_player_pos(const std::string& uuid) const;
-    void handle_chunk_req(int task_id, const std::string& uuid, ChunkPos pos);
+    void handle_player_login(LoginReq& msg, std::shared_ptr<Session> session);
+    void handle_login_proof(LoginProof& msg, std::shared_ptr<Session> session);
+    void send_player_login_error(int32_t ec, std::string_view msg,
+                                 std::shared_ptr<Session> session);
+    glm::vec3 get_player_pos(const Uuid& uuid) const;
+    void handle_chunk_req(int task_id, const Uuid& uuid, ChunkPos pos);
     void handle_block_change(const BlockChangeReq& req);
 
     void handle_chat_message(ChatMsg& msg);
@@ -174,7 +176,7 @@ private:
 
     void boardcast_message(const std::string& name, const std::string& message,
                            Color color = Color::WHITE, bool system_msg = false);
-    void player_exit(const std::string& uuid);
+    void player_exit(const Uuid& uuid);
 
     void load_metadata(std::optional<uint32_t> seed);
     void save_metadata();

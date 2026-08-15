@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
+#include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
@@ -136,7 +137,7 @@ void ClientWorld::rebuild_world() {
     m_pending_upload_queue.clear();
 
     start_thread_pool();
-    start_client_thread(m_player_manager.get_local().get_uuid());
+    start_client_thread();
     request_chunk();
     m_is_rebuilding = false;
 }
@@ -195,14 +196,14 @@ void ClientWorld::set_block(const glm::ivec3& block_pos, unsigned id) {
         auto data = BlockManager::data(origin_id);
         if (data.sound.break_s) {
             fs::path path = data.sound.break_s->full_path();
-            m_pending_sound.emplace(path, sound_pos);
+            m_pending_sound.emplace(path.string(), sound_pos);
         }
 
     } else {
         auto data = BlockManager::data(id);
         if (data.sound.place) {
             fs::path path = data.sound.place->full_path();
-            m_pending_sound.emplace(path, sound_pos);
+            m_pending_sound.emplace(path.string(), sound_pos);
         }
     }
 
@@ -316,7 +317,7 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
 
     Arena arena;
     auto* req = Arena::Create<BlockChangeReq>(&arena);
-    req->set_uuid(m_player_manager.get_local().get_uuid());
+    req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     req->set_block(id);
     auto* p = req->mutable_pos();
     p->set_x(pos.x);
@@ -340,7 +341,8 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
         m_receive_exit = true;
         return;
     }
-    if (rsp.uuid() == m_player_manager.get_local().get_uuid()) {
+    if (rsp.uuid() ==
+        m_player_manager.get_local().get_uuid().to_proto_bytes()) {
         m_receive_exit = true;
         return;
     }
@@ -348,7 +350,8 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
 }
 
 void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
-    if (rsp.uuid() == m_player_manager.get_local().get_uuid()) {
+    if (rsp.uuid() ==
+        m_player_manager.get_local().get_uuid().to_proto_bytes()) {
         return;
     }
     glm::vec3 pos = {rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
@@ -357,7 +360,8 @@ void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
     fs::path root_path = ResourceLocation::get_assets_path_prefix(
         ResourceLocation::DEFAULT_NAMESPACE);
     m_pending_sound.emplace(
-        root_path / "sounds/ambient/water/in_and_out_of_water.flac", pos);
+        (root_path / "sounds/ambient/water/in_and_out_of_water.flac").string(),
+        pos);
 }
 
 void ClientWorld::send_player_water_sound(bool underwater,
@@ -370,7 +374,7 @@ void ClientWorld::send_player_water_sound(bool underwater,
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
-    r->set_uuid(m_player_manager.get_local().get_uuid());
+    r->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
 
     m_client->send(make_packet(*r));
     Logger::info("Client: Send Player Water Sound");
@@ -447,7 +451,12 @@ void ClientWorld::init(std::string_view player_name,
     });
 
     LoginReq req;
-    req.set_name(m_player_manager.get_local().get_name());
+    auto& player = m_player_manager.get_local();
+    auto& pk = player.key_pair()->public_key;
+    req.set_public_key(pk.data.data(), pk.data.size());
+    auto uuid = player.get_uuid();
+    req.set_uuid(uuid.bytes().data(), uuid.bytes().size());
+
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
             throw std::runtime_error(client->get_error_string());
@@ -461,30 +470,67 @@ void ClientWorld::init(std::string_view player_name,
     m_audio.play_bgm();
 }
 
-void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
-    m_voice_chat = rsp.voice_chat();
-    start_client_thread(rsp.uuid());
+void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
+
+    if (msg.challenge().size() != 32) {
+        Logger::error("Invailed challenge");
+        return;
+    }
+
+    Crypto::Ed25519::Challenge challenge;
+    std::copy_n(msg.challenge().data(), msg.challenge().size(),
+                challenge.begin());
+
+    auto& player = m_player_manager.get_local();
+    auto message = Crypto::Ed25519::make_login_signing_data(
+        challenge, player.key_pair()->public_key);
+    auto signature =
+        Crypto::Ed25519::sign(message, player.key_pair()->private_key);
+
+    Arena arena;
+    auto p = Arena::Create<LoginProof>(&arena);
+    p->set_name(player.get_name());
+    auto uuid = player.get_uuid();
+    p->set_uuid(uuid.to_proto_bytes());
+    p->set_signature(signature.data.data(), signature.data.size());
+
+    m_client->send(make_packet(p), 0);
 }
 
-void ClientWorld::start_client_thread(std::string_view uuid) {
+void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
+    if (rsp.error().code()) {
+        auto mes = rsp.error().mes();
+        m_world_scene.set_error(mes);
+        return;
+    }
+    m_voice_chat = rsp.voice_chat();
+    auto& player = m_player_manager.get_local();
+    player.clear_key();
+    player.reset_speed();
+    player.reset_input_status();
+
+    auto pos = Tools::get_proto_vec3(rsp.pos());
+    player.set_yaw(rsp.yaw());
+    player.set_pitch(rsp.pitch());
+    player.set_player_pos(pos);
+
+    start_client_thread();
+}
+
+void ClientWorld::start_client_thread() {
     if (m_game_running) {
         Logger::error("Game Already Running");
         return;
     }
     // response
-    m_player_manager.get_local().set_uuid(uuid);
     /*
     m_client_thread = std::jthread([this](std::stop_token token) {
         m_game_running = true;
         client_run(token);
     });*/
 
-    // Wait for 20 ticks, after the server's central chunk is generated, then
-    // request chunks
-
-    std::this_thread::sleep_for(milliseconds(20 * m_per_tick_time));
-
     request_chunk();
+    m_game_running = true;
 }
 
 void ClientWorld::stop_client_thread() {
@@ -639,7 +685,7 @@ void ClientWorld::request_chunk() {
     auto* req = Arena::Create<ChunkDataReq>(&arena);
     for (const auto& pos : need_send_pos) {
         req->set_task_id(m_chunk_task_id.load());
-        req->set_uuid(uuid);
+        req->set_uuid(uuid.to_proto_bytes());
         auto* p = req->mutable_pos();
         p->set_x(pos.x);
         p->set_z(pos.z);
@@ -709,7 +755,7 @@ void ClientWorld::request_exit() {
     }
     Arena arena;
     auto* req = Arena::Create<LogoutReq>(&arena);
-    req->set_uuid(m_player_manager.get_local().get_uuid());
+    req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
@@ -756,20 +802,14 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
     m_client->send(make_packet(*msg));
 }
 
-void ClientWorld::update(float delta_time) {
-    ZoneScopedN("ClientWorld::update");
-    m_player_manager.update(delta_time);
-    m_entity_manager.update(delta_time);
-    {
-        std::lock_guard lk(m_delete_vbo_mutex);
-        m_pending_delete_vbo.clear();
-    }
+bool ClientWorld::is_player_chunk_ready() const {
+    auto pos = m_player_manager.get_local().get_player_pos();
+    auto chunk_pos = get_chunk_pos(pos.x, pos.z);
 
-    {
-        std::lock_guard lk(m_delete_vao_mutex);
-        m_pending_delete_vao.clear();
-    }
-
+    chunk_cacc acc;
+    return m_chunks.find(acc, chunk_pos);
+}
+void ClientWorld::process_pending_chunks() {
     std::vector<std::unique_ptr<ClientChunk>> new_chunks;
     {
         std::unique_ptr<ClientChunk> chunk;
@@ -791,6 +831,27 @@ void ClientWorld::update(float delta_time) {
     for (auto& c : new_chunks) {
         m_chunks.emplace(c->get_chunk_pos(), std::move(c));
     }
+}
+void ClientWorld::update(float delta_time) {
+
+    ZoneScopedN("ClientWorld::update");
+
+    process_pending_chunks();
+
+    if (m_game_running && is_player_chunk_ready()) {
+        m_player_manager.update(delta_time);
+        m_entity_manager.update(delta_time);
+    }
+    {
+        std::lock_guard lk(m_delete_vbo_mutex);
+        m_pending_delete_vbo.clear();
+    }
+
+    {
+        std::lock_guard lk(m_delete_vao_mutex);
+        m_pending_delete_vao.clear();
+    }
+
     m_render_snapshots.clear();
 
     ChunkPos pos;

@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/constants.hpp"
+#include "Cubed/crypto/ed25519.hpp"
 #include "Cubed/gameplay/block.hpp"
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/ecs/animation.hpp"
@@ -30,6 +31,8 @@ public:
     LocalPlayer(ClientWorld& world);
     ~LocalPlayer();
 
+    void clear_key();
+    void reset_speed();
     bool handle_mouse_button_event(const MouseButtonEvent& e);
     bool handle_key_event(const KeyEvent& e);
     bool handle_mouse_wheel_event(const MouseWheelEvent& e);
@@ -65,8 +68,7 @@ public:
 
     ClientWorld& get_world();
 
-    void set_uuid(std::string_view uuid);
-    std::string get_uuid() const;
+    Uuid get_uuid() const;
     const std::string& get_name() const;
     void reset_input_status();
     void init(std::string_view name);
@@ -89,9 +91,13 @@ public:
     void set_gait(Gait gait);
     float yaw() const;
     float pitch() const;
+    void set_yaw(float yaw);
+    void set_pitch(float pitch);
     float& roll();
     float& walk_time();
     Gait get_gait() const;
+
+    std::optional<Crypto::Ed25519KeyPair>& key_pair();
 
 private:
     using enum GameMode;
@@ -100,6 +106,8 @@ private:
     float m_max_y_speed = 7.5f;
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
+
+    std::optional<Crypto::Ed25519KeyPair> m_key_pair;
 
     EntityInfo m_info;
     Position m_pos;
@@ -137,7 +145,7 @@ private:
     std::optional<LookBlock> m_look_block = std::nullopt;
     std::string m_name{};
     mutable std::shared_mutex m_uuid_mutex;
-    std::string m_uuid;
+    Uuid m_uuid;
     ClientWorld& m_world;
 
     std::unordered_map<std::string, Timer> m_timers;
@@ -145,6 +153,9 @@ private:
     mutable std::shared_mutex m_player_pos_mutex;
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
+
+    void init_identity();
+    void create_identity(const std::filesystem::path& path);
 
     void update_direction();
     void update_lookup_block();

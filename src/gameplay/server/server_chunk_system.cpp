@@ -174,7 +174,7 @@ void ServerChunkSystem::release_chunk(
     reconcile_chunks(old_set, ChunkPosSet{}, unused);
 }
 
-void ServerChunkSystem::send_chunk(int task_id, const std::string& uuid,
+void ServerChunkSystem::send_chunk(int task_id, const Uuid& uuid,
                                    ChunkPos pos) {
 
     ZoneScopedN("ServerChunkSystem::send_chunk");
@@ -192,13 +192,13 @@ void ServerChunkSystem::send_chunk(int task_id, const std::string& uuid,
     }
     auto player = m_players_manager.find(uuid);
     if (!player) {
-        Logger::error("Can't get player {}", uuid);
+        Logger::error("Can't get player {}", uuid.to_string());
         return;
     }
     player->update_sync_gametick(m_game_ticks);
     std::shared_ptr<Session> s = player->get_session();
     if (!s) {
-        Logger::error("Player {} session not exist", uuid);
+        Logger::error("Player {} session not exist", uuid.to_string());
         return;
     }
     Arena arean;
@@ -263,7 +263,7 @@ void ServerChunkSystem::pop_pending_request() {
     }
 }
 
-void ServerChunkSystem::gen_chunks_internal(const std::string& uuid) {
+void ServerChunkSystem::gen_chunks_internal(const Uuid& uuid) {
     ZoneScopedN("ServerChunkSystem::gen_chunks_internal");
     // Logger::info("gen_chunks_internal");
     m_chunk_gen_finished = false;
@@ -306,7 +306,7 @@ void ServerChunkSystem::gen_chunks_internal(const std::string& uuid) {
 }
 
 void ServerChunkSystem::compute_required_chunks(
-    ChunkPosSet& required_chunks, const std::optional<std::string>& uuid) {
+    ChunkPosSet& required_chunks, const std::optional<Uuid>& uuid) {
     glm::vec3 player_pos;
     if (uuid == std::nullopt) {
         player_pos = glm::vec3{0.0f};
@@ -412,7 +412,7 @@ void ServerChunkSystem::reconcile_chunks(
     save_removed_chunk();
 }
 
-void ServerChunkSystem::submit_new_chunks(const std::string& uuid,
+void ServerChunkSystem::submit_new_chunks(const Uuid& uuid,
                                           NewChunkVector& new_chunks) {
     using enum ChunkLoadStyle;
     auto pool_ptr = m_generation_pool.load();
@@ -500,13 +500,15 @@ void ServerChunkSystem::start_gen_thread() {
                 break;
             }
             m_need_generation = false;
-            std::string uuid;
+            std::optional<Uuid> uuid;
             if (!m_generation_queue.empty()) {
                 uuid = m_generation_queue.front();
                 m_generation_queue.pop();
             }
             lk.unlock();
-            gen_chunks_internal(uuid);
+            if (uuid) {
+                gen_chunks_internal(*uuid);
+            }
         }
         m_scheduler_alive = false;
     });
@@ -532,7 +534,7 @@ void ServerChunkSystem::stop_generation_pool() {
     Logger::info("Generation Pool Stopped");
 }
 
-void ServerChunkSystem::request_generation(const std::string& uuid) {
+void ServerChunkSystem::request_generation(const Uuid& uuid) {
     if (!m_scheduler_alive) {
         return;
     }

@@ -6,16 +6,18 @@
 
 #include <assimp/postprocess.h>
 #include <stb_image.h>
+
+namespace fs = std::filesystem;
 namespace Cubed {
 ModelLoader::ModelLoader() {}
 
-ModelNode ModelLoader::load(const std::string& path) {
+ModelNode ModelLoader::load(const fs::path& path) {
     const aiScene* scene = m_importer.ReadFile(
-        path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs |
-                  aiProcess_JoinIdenticalVertices |
-                  aiProcess_ImproveCacheLocality);
+        path.string(), aiProcess_Triangulate | aiProcess_GenNormals |
+                           aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices |
+                           aiProcess_ImproveCacheLocality);
     if (!scene || !scene->mRootNode) {
-        Logger::error("Load Model {} Error: {}", path,
+        Logger::error("Load Model {} Error: {}", path.string(),
                       m_importer.GetErrorString());
         return {};
     }

@@ -6,6 +6,7 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/proto_utils.hpp"
+#include "Cubed/tools/system_time_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 #include "Cubed/tools/world_name.hpp"
@@ -38,9 +39,9 @@ void ServerWorld::stop() {
     stop_server_thread();
     // wait_all_chunk_tasks();
     stop_thread_pool();
-
-    m_chunk_system.stop();
+    m_players_manager.stop();
     m_entity_manager.stop();
+    m_chunk_system.stop();
 
     try {
         save_metadata();
@@ -141,10 +142,11 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
 
     load_metadata(seed);
     m_runmode = mode;
+    m_players_manager.init();
     m_entity_manager.init();
     m_chunk_system.initialize();
     register_timer("player disconnect", 5, [this]() {
-        std::vector<std::string> disconnect;
+        std::vector<Uuid> disconnect;
         auto players = m_players_manager.snapshot();
         if (!players) {
             return;
@@ -165,6 +167,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
     // 5min(50ms)
     register_timer("auto save world", 6000, [this]() {
         try {
+            m_players_manager.save_all();
             m_chunk_system.save_all_chunks();
             m_entity_manager.save_all_entities(false);
             save_metadata();
@@ -279,7 +282,7 @@ void ServerWorld::serever_run(std::stop_token stoken) {
     Logger::info("Server Thread Stopped!");
 }
 
-void ServerWorld::request_generation(std::string uuid) {
+void ServerWorld::request_generation(Uuid uuid) {
     m_chunk_system.request_generation(uuid);
 }
 
@@ -308,13 +311,17 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     auto x = prsp.pos().x();
     auto y = prsp.pos().y();
     auto z = prsp.pos().z();
-    auto uuid = prsp.uuid();
+    auto uuid = Uuid::from_proto_bytes(prsp.uuid());
+    if (!uuid) {
+        Logger::error("Can't parse uuid from proto");
+        return;
+    }
     auto yaw = prsp.yaw();
     auto pitch = prsp.pitch();
 
-    auto player = m_players_manager.find(uuid);
+    auto player = m_players_manager.find(*uuid);
     if (!player) {
-        Logger::warn("Player {} is not in this Server", uuid);
+        Logger::warn("Player {} is not in this Server", uuid->to_string());
         return;
     }
 
@@ -335,7 +342,7 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
         return;
     }
     for (auto& [o_uuid, player] : *players) {
-        if (o_uuid == uuid) {
+        if (o_uuid == *uuid) {
             continue;
         }
         if (player->has_player(c_pos)) {
@@ -345,7 +352,7 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
 
     Arena arena;
     auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
-    rsp->set_uuid(uuid);
+    rsp->set_uuid(uuid->to_proto_bytes());
     rsp->set_name(name);
     auto* pos = rsp->mutable_pos();
     pos->set_x(x);
@@ -370,7 +377,11 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     auto y = rsp.pos().y();
     auto z = rsp.pos().z();
     ChunkPos pos = get_chunk_pos(x, z);
-    auto uuid = rsp.uuid();
+    auto uuid = Uuid::from_proto_bytes(rsp.uuid());
+    if (!uuid) {
+        Logger::error("Can't parse uuid from proto");
+        return;
+    }
     auto underwater = rsp.underwater();
 
     std::vector<std::shared_ptr<Session>> other;
@@ -382,7 +393,7 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     }
 
     for (auto& [o_uuid, player] : *players) {
-        if (o_uuid == uuid) {
+        if (o_uuid == *uuid) {
             continue;
         }
         if (player->has_player(pos)) {
@@ -392,7 +403,7 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
 
     Arena arena;
     auto* r = Arena::Create<PlayerWaterSound>(&arena);
-    r->set_uuid(uuid);
+    r->set_uuid(uuid->to_proto_bytes());
     r->set_underwater(underwater);
     auto* p = r->mutable_pos();
 
@@ -409,27 +420,71 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     }
 }
 
-void ServerWorld::handle_player_login(const std::string& name,
-                                      std::shared_ptr<Session> session) {
-    std::string uuid = generate_uuid();
-    Logger::info("Player {} (uuid {}) join the world", name, uuid);
-    bool sucess = true;
-
-    auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
-                                                 m_game_ticks);
-    bool inserted = m_players_manager.add(std::move(player));
-    if (!inserted) {
-        Logger::error("Player insert Fail");
-    }
-    sucess = inserted;
-
+void ServerWorld::send_player_login_error(int32_t ec, std::string_view err_msg,
+                                          std::shared_ptr<Session> session) {
     Arena arena;
-    if (!sucess) {
-        auto* rsp = Arena::Create<LoginRsp>(&arena);
-        rsp->set_success(false);
-        session->send(make_packet(*rsp), 0);
+    auto msg = Arena::Create<LoginRsp>(&arena);
+    auto err = msg->mutable_error();
+    err->set_mes(err_msg);
+    err->set_code(ec);
+    session->send(make_packet(msg));
+}
+
+void ServerWorld::handle_player_login(LoginReq& msg,
+                                      std::shared_ptr<Session> session) {
+
+    auto uuid = Uuid::from_proto_bytes(msg.uuid());
+    if (!uuid) {
+        send_player_login_error(
+            1, std::format("Can't parse uuid {}", msg.uuid()), session);
         return;
     }
+    std::optional<Crypto::Ed25519PublicKey> pk =
+        Crypto::Ed25519::public_key_from_proto_bytes(msg.public_key());
+    if (!pk) {
+        send_player_login_error(1, "Can't parse public key ", session);
+        return;
+    }
+    auto uuid_pk = Crypto::Ed25519::uuid_from_public_key(*pk);
+    if (*uuid != uuid_pk) {
+        send_player_login_error(1,
+                                std::format("uuid {} from net is not equal "
+                                            "with uuid {} from public compute",
+                                            uuid->to_string(),
+                                            uuid_pk.to_string()),
+                                session);
+
+        return;
+    }
+
+    auto storage = m_players_manager.get_storage();
+    auto player_data = storage->load(*uuid);
+    if (player_data) {
+        if (player_data->uuid != *uuid || player_data->public_key != *pk) {
+            send_player_login_error(
+                1,
+                std::format("uuid {} and pk not equal with database",
+                            uuid->to_string()),
+                session);
+
+            return;
+        }
+    }
+
+    session->public_key() = *pk;
+    std::pair<uint64_t, Crypto::Ed25519::Challenge> challenge;
+    challenge.second = Crypto::Ed25519::generate_challenge();
+    challenge.first = Tools::get_utc_timestamp_ms();
+    session->challenge() = challenge;
+
+    Arena arena;
+    auto* p = Arena::Create<LoginChallenge>(&arena);
+
+    p->set_challenge(challenge.second.data(), challenge.second.size());
+    p->set_uuid(uuid->to_proto_bytes());
+
+    session->send(make_packet(p), 0);
+
     // Pre-insert into new_chunks to ensure correct addition to waiting_player
     /*ChunkPosSet required_chunks;
     compute_required_chunks(required_chunks, uuid);
@@ -444,20 +499,98 @@ void ServerWorld::handle_player_login(const std::string& name,
         }
     }
     */
-    request_generation(uuid);
+    /*
+     */
+}
+
+void ServerWorld::handle_login_proof(LoginProof& msg,
+                                     std::shared_ptr<Session> session) {
+
+    auto s = msg.signature();
+    if (s.size() != 64) {
+        send_player_login_error(1, "Invailed signature", session);
+
+        return;
+    }
+    if (!session->challenge()) {
+        send_player_login_error(1, "Challenge is null", session);
+
+        return;
+    }
+    if (Tools::get_utc_timestamp_ms() - session->challenge()->first >
+        Session::CHALLENGE_EXPIRE_MS) {
+        send_player_login_error(1, "Challenge expire", session);
+        session->challenge().reset();
+        return;
+    }
+
+    Crypto::Ed25519Signature sign;
+    std::copy_n(reinterpret_cast<const unsigned char*>(s.data()), s.size(),
+                sign.data.begin());
+
+    auto signing_message = Crypto::Ed25519::make_login_signing_data(
+        session->challenge()->second, session->public_key());
+
+    session->challenge().reset();
+
+    if (!Crypto::Ed25519::verify(signing_message, sign,
+                                 session->public_key())) {
+        send_player_login_error(1, "Can't verify signature", session);
+
+        return;
+    }
+
+    auto name = msg.name();
+
+    auto u = Uuid::from_proto_bytes(msg.uuid());
+    if (!u) {
+        send_player_login_error(1, "Can't parse uuid from proto", session);
+
+        return;
+    }
+
+    Uuid uuid = Crypto::Ed25519::uuid_from_public_key(session->public_key());
+
+    if (uuid != *u) {
+        send_player_login_error(
+            1, "uuid from proto is not equal with uuid from public", session);
+        return;
+    }
+
+    Logger::info("Player {} (uuid {}) join the world", name, uuid.to_string());
+
+    auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
+                                                 m_game_ticks);
+
+    bool inserted = m_players_manager.add(player);
+    if (!inserted) {
+        send_player_login_error(1, "Player insert fail", session);
+
+        return;
+    }
+
+    Arena arena;
 
     auto* rsp = Arena::Create<LoginRsp>(&arena);
-    rsp->set_success(true);
-    rsp->set_uuid(uuid);
+    auto err = rsp->mutable_error();
+    err->set_code(0);
     rsp->set_voice_chat(m_voice_chat);
+    rsp->set_pitch(player->pitch());
+    rsp->set_yaw(player->yaw());
+    Tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
+
     session->send(make_packet(*rsp), 0);
 
     boardcast_message("Server", std::format("Player {} Join Game", name),
                       Color::YELLOW, true);
+
+    request_generation(uuid);
     m_entity_manager.handle_player_login(session);
+
+    return;
 }
 
-void ServerWorld::handle_player_exit(const std::string& uuid) {
+void ServerWorld::handle_player_exit(const Uuid& uuid) {
     auto pool = m_net_thread_pool.load();
     if (!pool) {
         Logger::error("Net Pool Can't find");
@@ -467,18 +600,18 @@ void ServerWorld::handle_player_exit(const std::string& uuid) {
     pool->enqueue([this, uuid]() { player_exit(uuid); });
 }
 
-glm::vec3 ServerWorld::get_player_pos(const std::string& uuid) const {
+glm::vec3 ServerWorld::get_player_pos(const Uuid& uuid) const {
     auto pos = m_players_manager.get_position(uuid);
 
     if (!pos) {
-        Logger::error("Can't find player uuid {}", uuid);
+        Logger::error("Can't find player uuid {}", uuid.to_string());
         return glm::vec3{0.0f};
     }
 
     return *pos;
 }
 
-void ServerWorld::handle_chunk_req(int task_id, const std::string& uuid,
+void ServerWorld::handle_chunk_req(int task_id, const Uuid& uuid,
                                    ChunkPos pos) {
 
     auto player = m_players_manager.find(uuid);
@@ -510,7 +643,11 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
         return;
     }
     auto pool = m_net_thread_pool.load();
-    std::string uuid = msg.uuid();
+    auto uuid = Uuid::from_proto_bytes(msg.uuid());
+    if (!uuid) {
+        Logger::error("Can't parse uuid from proto");
+        return;
+    }
     std::string data = msg.opus_data();
     auto pos = msg.pos();
     glm::vec3 p{pos.x(), pos.y(), pos.z()};
@@ -533,7 +670,7 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
 
         Arena arena;
         auto msg = Arena::Create<VoiceMsg>(&arena);
-        msg->set_uuid(uuid);
+        msg->set_uuid(uuid->to_proto_bytes());
 
         msg->set_opus_data(data);
 
@@ -693,7 +830,7 @@ void ServerWorld::boardcast_message(const std::string& name,
     }
 }
 
-void ServerWorld::player_exit(const std::string& uuid) {
+void ServerWorld::player_exit(const Uuid& uuid) {
     auto player = m_players_manager.remove(uuid);
 
     if (!player) {
@@ -709,7 +846,7 @@ void ServerWorld::player_exit(const std::string& uuid) {
 
     Arena arena;
     auto* rsp = Arena::Create<LogoutRsp>(&arena);
-    rsp->set_uuid(uuid);
+    rsp->set_uuid(uuid.to_proto_bytes());
     rsp->set_server_stop(false);
     exit_session->send(make_packet(*rsp), 0);
 

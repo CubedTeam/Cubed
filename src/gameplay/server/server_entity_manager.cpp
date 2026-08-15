@@ -29,9 +29,10 @@ void ServerEntityManager::init() {
         c.movement.acceleration = PigDefaults::ACCELERATION;
         c.movement.deceleration = PigDefaults::DECELERATION;
         c.velocity.max.x = c.velocity.max.z = PigDefaults::MAX_SPEED;
-        return create_entity_in_factory(
-            id, Entity{id, EntityType::CREATURE}, EntityInfo{"cubed:pig", ""},
-            std::move(c), PigTag{}, AIBase{}, WanderAITag{}, MoveBoost{});
+        return create_entity_in_factory(id, Entity{id, EntityType::CREATURE},
+                                        EntityInfo{"cubed:pig", std::nullopt},
+                                        std::move(c), PigTag{}, AIBase{},
+                                        WanderAITag{}, MoveBoost{});
     });
 
     m_storage = std::make_unique<EntityStorage>(*m_world.world_storage());

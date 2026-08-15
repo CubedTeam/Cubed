@@ -37,7 +37,7 @@ private:
     using PlayerHandle = SparseVector<ClientPlayer>::Handle;
     SparseVector<ClientPlayer> m_players;
     std::vector<PlayerRenderData> m_render_data;
-    std::unordered_map<std::string, PlayerHandle> m_players_handle;
+    std::unordered_map<Uuid, PlayerHandle> m_players_handle;
     LocalPlayer m_local;
 
     void update_players_data(float dt);

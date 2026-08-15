@@ -4,6 +4,7 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 
 #include <cstdint>
+#include <span>
 
 namespace Cubed {
 class WorldStorage;

@@ -8,7 +8,7 @@ message ChatMsg {
 }
 
 message VoiceMsg {
-    string uuid = 1;
+    bytes uuid = 1;
     Vec3 pos = 2;
     bytes opus_data = 3; 
 }

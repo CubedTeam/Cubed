@@ -1,10 +1,12 @@
 #pragma once
 
-#include <string>
+#include "Cubed/tools/uuid.hpp"
 
+#include <optional>
+#include <string>
 namespace Cubed {
 struct EntityInfo {
     std::string name;
-    std::string uuid;
+    std::optional<Uuid> uuid;
 };
 } // namespace Cubed

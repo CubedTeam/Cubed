@@ -185,7 +185,7 @@ EntityStorage::deserialize(std::string_view data) {
     }
 
     if (msg->version() > WorldStorage::VERSION) {
-        Logger::error("Unsupported chunk version: {}", msg->version());
+        Logger::error("Unsupported entity version: {}", msg->version());
         return std::nullopt;
     }
 

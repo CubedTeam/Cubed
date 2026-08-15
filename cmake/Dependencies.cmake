@@ -12,6 +12,8 @@ find_package(SDL3 REQUIRED)
 find_package(Opus REQUIRED)
 find_package(assimp REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
+find_package(libsodium REQUIRED)
+
 # Third-party libraries
 
 if (WIN32)
@@ -33,4 +35,3 @@ if (WIN32)
     unset(_BUILD_SHARED_LIBS_SAVED)
 
 endif()
-
