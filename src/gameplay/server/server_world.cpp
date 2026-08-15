@@ -567,7 +567,8 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     auto err = rsp->mutable_error();
     err->set_code(0);
     rsp->set_voice_chat(m_voice_chat);
-
+    rsp->set_pitch(player->pitch());
+    rsp->set_yaw(player->yaw());
     Tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
 
     session->send(make_packet(*rsp), 0);

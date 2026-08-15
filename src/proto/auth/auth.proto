@@ -21,6 +21,8 @@ message LoginRsp {
     Error error = 1;
     bool voice_chat = 2;
     Vec3 pos = 3;
+    float yaw = 4;
+    float pitch = 5;
 }
 
 message LogoutReq {

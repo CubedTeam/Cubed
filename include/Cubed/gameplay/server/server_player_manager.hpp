@@ -46,6 +46,8 @@ public:
 
     void save_all();
 
+    PlayerStorageData build_data(const ServerPlayer& player);
+
 private:
     ServerWorld& m_world;
     std::unique_ptr<PlayerStorage> m_storage;

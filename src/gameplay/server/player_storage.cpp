@@ -119,6 +119,8 @@ std::string PlayerStorage::serialize(const PlayerStorageData& player) {
                                              player.public_key.data.size());
     doc.AddMember("public_key", rapidjson::Value(pk.c_str(), allocator),
                   allocator);
+    doc.AddMember("yaw", player.yaw, allocator);
+    doc.AddMember("pitch", player.pitch, allocator);
     return Tools::to_json_string(doc);
 }
 
@@ -171,6 +173,13 @@ PlayerStorage::deserialize(std::string_view data) {
     if (!Tools::get_json_value(doc, "position", player.pos)) {
         Logger::error("Parse player position fail");
         return std::nullopt;
+    }
+
+    if (!Tools::get_json_value(doc, "yaw", player.yaw)) {
+        Logger::error("Parse player yaw fail");
+    }
+    if (!Tools::get_json_value(doc, "pitch", player.pitch)) {
+        Logger::error("Parse player pitch fail");
     }
 
     return player;

@@ -881,6 +881,8 @@ float& LocalPlayer::g() { return m_gravity.value; }
 void LocalPlayer::set_gait(Gait gait) { m_walk_pose.gait = gait; }
 float LocalPlayer::yaw() const { return m_angle.yaw; }
 float LocalPlayer::pitch() const { return m_angle.pitch; }
+void LocalPlayer::set_yaw(float yaw) { m_angle.yaw = yaw; }
+void LocalPlayer::set_pitch(float pitch) { m_angle.pitch = pitch; }
 float& LocalPlayer::roll() { return m_angle.roll; }
 float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
 Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }

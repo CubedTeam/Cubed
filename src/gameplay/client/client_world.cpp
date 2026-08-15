@@ -507,7 +507,8 @@ void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
     player.reset_input_status();
 
     auto pos = Tools::get_proto_vec3(rsp.pos());
-
+    player.set_yaw(rsp.yaw());
+    player.set_pitch(rsp.pitch());
     player.set_player_pos(pos);
 
     start_client_thread();

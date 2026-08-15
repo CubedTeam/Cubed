@@ -13,6 +13,8 @@ struct PlayerStorageData {
     Uuid uuid{};
     glm::vec3 pos{0.0f, 255.0f, 0.0f};
     Crypto::Ed25519PublicKey public_key;
+    float yaw = 0.0f;
+    float pitch = 0.0f;
 };
 
 class PlayerStorage {

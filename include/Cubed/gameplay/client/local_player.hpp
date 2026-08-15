@@ -92,6 +92,8 @@ public:
     void set_gait(Gait gait);
     float yaw() const;
     float pitch() const;
+    void set_yaw(float yaw);
+    void set_pitch(float pitch);
     float& roll();
     float& walk_time();
     Gait get_gait() const;

@@ -30,9 +30,13 @@ bool ServerPlayerManager::add(PlayerPtr player) {
         auto data = m_storage->load(it->second->get_uuid());
         if (data) {
             it->second->update_pos(data->pos.x, data->pos.y, data->pos.z);
+            it->second->set_yaw(data->yaw);
+            it->second->set_pitch(data->pitch);
         } else {
             data = PlayerStorageData{};
             data->pos = it->second->get_pos();
+            data->yaw = it->second->yaw();
+            data->pitch = it->second->pitch();
         }
         data->public_key = it->second->get_session()->public_key();
         data->uuid = it->second->get_uuid();
@@ -58,10 +62,8 @@ ServerPlayerManager::remove(std::string_view uuid) {
 
     m_players.store(next);
 
-    PlayerStorageData data;
-    data.pos = player->get_pos();
-    data.public_key = player->get_session()->public_key();
-    data.uuid = player->get_uuid();
+    PlayerStorageData data = build_data(*player);
+
     m_storage->save(data);
 
     return player;
@@ -139,14 +141,22 @@ void ServerPlayerManager::save_all() {
     auto players = snapshot();
     std::vector<PlayerStorageData> datas;
     for (auto& [_, player] : *players) {
-        PlayerStorageData data;
-        data.pos = player->get_pos();
-        data.public_key = player->get_session()->public_key();
-        data.uuid = player->get_uuid();
+        PlayerStorageData data = build_data(*player);
+
         datas.emplace_back(std::move(data));
     }
 
     m_storage->save_batch(datas);
+}
+
+PlayerStorageData ServerPlayerManager::build_data(const ServerPlayer& player) {
+    PlayerStorageData data;
+    data.pos = player.get_pos();
+    data.public_key = player.get_session()->public_key();
+    data.uuid = player.get_uuid();
+    data.yaw = player.yaw();
+    data.pitch = player.pitch();
+    return data;
 }
 
 PlayerStorage* ServerPlayerManager::get_storage() { return m_storage.get(); }
