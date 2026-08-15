@@ -34,6 +34,8 @@ public:
     void init(std::string_view player_name,
               std::shared_ptr<NetworkClient> client, RunMode mode);
     void update(float dt);
+    bool is_player_chunk_ready() const;
+    void process_pending_chunks();
     bool handle_event(const Event& e);
     const std::optional<LookBlock>& get_look_block_pos() const;
     LocalPlayer& get_player();

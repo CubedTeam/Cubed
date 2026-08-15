@@ -503,8 +503,13 @@ void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
     m_voice_chat = rsp.voice_chat();
     auto& player = m_player_manager.get_local();
     player.clear_key();
+    player.reset_speed();
+    player.reset_input_status();
+
     auto pos = Tools::get_proto_vec3(rsp.pos());
+
     player.set_player_pos(pos);
+
     start_client_thread();
 }
 
@@ -520,12 +525,8 @@ void ClientWorld::start_client_thread() {
         client_run(token);
     });*/
 
-    // Wait for 20 ticks, after the server's central chunk is generated, then
-    // request chunks
-
-    std::this_thread::sleep_for(milliseconds(20 * m_per_tick_time));
-
     request_chunk();
+    m_game_running = true;
 }
 
 void ClientWorld::stop_client_thread() {
@@ -797,20 +798,14 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
     m_client->send(make_packet(*msg));
 }
 
-void ClientWorld::update(float delta_time) {
-    ZoneScopedN("ClientWorld::update");
-    m_player_manager.update(delta_time);
-    m_entity_manager.update(delta_time);
-    {
-        std::lock_guard lk(m_delete_vbo_mutex);
-        m_pending_delete_vbo.clear();
-    }
+bool ClientWorld::is_player_chunk_ready() const {
+    auto pos = m_player_manager.get_local().get_player_pos();
+    auto chunk_pos = get_chunk_pos(pos.x, pos.z);
 
-    {
-        std::lock_guard lk(m_delete_vao_mutex);
-        m_pending_delete_vao.clear();
-    }
-
+    chunk_cacc acc;
+    return m_chunks.find(acc, chunk_pos);
+}
+void ClientWorld::process_pending_chunks() {
     std::vector<std::unique_ptr<ClientChunk>> new_chunks;
     {
         std::unique_ptr<ClientChunk> chunk;
@@ -832,6 +827,27 @@ void ClientWorld::update(float delta_time) {
     for (auto& c : new_chunks) {
         m_chunks.emplace(c->get_chunk_pos(), std::move(c));
     }
+}
+void ClientWorld::update(float delta_time) {
+
+    ZoneScopedN("ClientWorld::update");
+
+    process_pending_chunks();
+
+    if (m_game_running && is_player_chunk_ready()) {
+        m_player_manager.update(delta_time);
+        m_entity_manager.update(delta_time);
+    }
+    {
+        std::lock_guard lk(m_delete_vbo_mutex);
+        m_pending_delete_vbo.clear();
+    }
+
+    {
+        std::lock_guard lk(m_delete_vao_mutex);
+        m_pending_delete_vao.clear();
+    }
+
     m_render_snapshots.clear();
 
     ChunkPos pos;

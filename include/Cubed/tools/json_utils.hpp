@@ -71,18 +71,19 @@ bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
         }
         out = static_cast<ValueType>(v.GetInt64());
     } else if constexpr (std::is_same_v<ValueType, glm::vec3>) {
-        if (!value.IsArray() || value.Size() != 3) {
+        if (!v.IsArray() || v.Size() != 3) {
             return false;
         }
 
-        if (!value[0].IsNumber() || !value[1].IsNumber() ||
-            !value[2].IsNumber()) {
+        if (!v[0].IsNumber() || !v[1].IsNumber() || !v[2].IsNumber()) {
             return false;
         }
 
-        out = glm::vec3{value[0].GetFloat(), value[1].GetFloat(),
-                        value[2].GetFloat()};
-
+        out = glm::vec3{
+            v[0].GetFloat(),
+            v[1].GetFloat(),
+            v[2].GetFloat(),
+        };
         return true;
 
     } else {

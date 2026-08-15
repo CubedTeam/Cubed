@@ -32,7 +32,7 @@ public:
     ~LocalPlayer();
 
     void clear_key();
-
+    void reset_speed();
     bool handle_mouse_button_event(const MouseButtonEvent& e);
     bool handle_key_event(const KeyEvent& e);
     bool handle_mouse_wheel_event(const MouseWheelEvent& e);

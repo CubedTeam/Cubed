@@ -168,7 +168,10 @@ PlayerStorage::deserialize(std::string_view data) {
         return std::nullopt;
     }
 
-    Tools::get_json_value(doc, "position", player.pos);
+    if (!Tools::get_json_value(doc, "position", player.pos)) {
+        Logger::error("Parse player position fail");
+        return std::nullopt;
+    }
 
     return player;
 }

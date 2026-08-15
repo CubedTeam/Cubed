@@ -583,7 +583,10 @@ bool LocalPlayer::update_scroll(float yoffset) {
 }
 
 void LocalPlayer::clear_key() { m_key_pair.reset(); }
-
+void LocalPlayer::reset_speed() {
+    m_moving = false;
+    m_velocity.value = glm::vec3(0.0f);
+}
 bool LocalPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS) {
         if (e.key == MouseKey::LEFT_BUTTON) {
