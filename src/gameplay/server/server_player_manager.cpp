@@ -27,12 +27,12 @@ bool ServerPlayerManager::add(PlayerPtr player) {
     auto [it, insert] = next->try_emplace(uuid, std::move(player));
     if (insert) {
         m_players.store(next);
-        auto data = m_storage->load(player->get_uuid());
+        auto data = m_storage->load(it->second->get_uuid());
         if (data) {
-            player->update_pos(data->pos.x, data->pos.y, data->pos.z);
+            it->second->update_pos(data->pos.x, data->pos.y, data->pos.z);
         } else {
             data = PlayerStorageData{};
-            data->pos = player->get_pos();
+            data->pos = it->second->get_pos();
         }
         data->public_key = it->second->get_session()->public_key();
         data->uuid = it->second->get_uuid();

@@ -412,25 +412,40 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     }
 }
 
+void ServerWorld::send_player_login_error(int32_t ec, std::string_view err_msg,
+                                          std::shared_ptr<Session> session) {
+    Arena arena;
+    auto msg = Arena::Create<LoginRsp>(&arena);
+    auto err = msg->mutable_error();
+    err->set_mes(err_msg);
+    err->set_code(ec);
+    session->send(make_packet(msg));
+}
+
 void ServerWorld::handle_player_login(LoginReq& msg,
                                       std::shared_ptr<Session> session) {
 
     auto uuid = Uuid::uuid_from_proto_bytes(msg.uuid());
     if (!uuid) {
-        Logger::error("Can't parse uuid {}", msg.uuid());
+        send_player_login_error(
+            1, std::format("Can't parse uuid {}", msg.uuid()), session);
         return;
     }
     std::optional<Crypto::Ed25519PublicKey> pk =
         Crypto::Ed25519::public_key_from_proto_bytes(msg.public_key());
     if (!pk) {
-        Logger::error("Can't parse pk ");
+        send_player_login_error(1, "Can't parse public key ", session);
         return;
     }
     auto uuid_pk = Crypto::Ed25519::uuid_from_public_key(*pk);
     if (*uuid != uuid_pk) {
-        Logger::error(
-            "uuid {} from net is not equal with uuid {} from public compute",
-            uuid->to_string(), uuid_pk.to_string());
+        send_player_login_error(1,
+                                std::format("uuid {} from net is not equal "
+                                            "with uuid {} from public compute",
+                                            uuid->to_string(),
+                                            uuid_pk.to_string()),
+                                session);
+
         return;
     }
 
@@ -438,8 +453,12 @@ void ServerWorld::handle_player_login(LoginReq& msg,
     auto player_data = storage->load(*uuid);
     if (player_data) {
         if (player_data->uuid != *uuid || player_data->public_key != *pk) {
-            Logger::error("uuid {} and pk not equal with database",
-                          uuid->to_string());
+            send_player_login_error(
+                1,
+                std::format("uuid {} and pk not equal with database",
+                            uuid->to_string()),
+                session);
+
             return;
         }
     }
@@ -481,16 +500,18 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
 
     auto s = msg.signature();
     if (s.size() != 64) {
-        Logger::error("Invailed signature");
+        send_player_login_error(1, "Invailed signature", session);
+
         return;
     }
     if (!session->challenge()) {
-        Logger::error("Challenge is null");
+        send_player_login_error(1, "Challenge is null", session);
+
         return;
     }
     if (Tools::get_utc_timestamp_ms() - session->challenge()->first >
         Session::CHALLENGE_EXPIRE_MS) {
-        Logger::error("Challenge expire");
+        send_player_login_error(1, "Challenge expire", session);
         session->challenge().reset();
         return;
     }
@@ -502,9 +523,12 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     auto signing_message = Crypto::Ed25519::make_login_signing_data(
         session->challenge()->second, session->public_key());
 
+    session->challenge().reset();
+
     if (!Crypto::Ed25519::verify(signing_message, sign,
                                  session->public_key())) {
-        Logger::error("Can't verify signature");
+        send_player_login_error(1, "Can't verify signature", session);
+
         return;
     }
 
@@ -512,14 +536,16 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
 
     auto u = Uuid::uuid_from_proto_bytes(msg.uuid());
     if (!u) {
-        Logger::error("Can't parse uuid from proto");
+        send_player_login_error(1, "Can't parse uuid from proto", session);
+
         return;
     }
 
     Uuid uuid = Crypto::Ed25519::uuid_from_public_key(session->public_key());
 
     if (uuid != *u) {
-        Logger::error("Uuid is not equal");
+        send_player_login_error(
+            1, "uuid from proto is not equal with uuid from public", session);
         return;
     }
 
@@ -528,17 +554,22 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
                                                  m_game_ticks);
 
-    bool inserted = m_players_manager.add(std::move(player));
+    bool inserted = m_players_manager.add(player);
     if (!inserted) {
-        Logger::error("Player insert Fail");
+        send_player_login_error(1, "Player insert fail", session);
+
         return;
     }
 
     Arena arena;
 
     auto* rsp = Arena::Create<LoginRsp>(&arena);
-    rsp->set_ec(0);
+    auto err = rsp->mutable_error();
+    err->set_code(0);
     rsp->set_voice_chat(m_voice_chat);
+
+    Tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
+
     session->send(make_packet(*rsp), 0);
 
     boardcast_message("Server", std::format("Player {} Join Game", name),

@@ -5,7 +5,7 @@
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
-#include "Cubed/tools/net_error.hpp"
+#include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
@@ -495,11 +495,16 @@ void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
 }
 
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
-    if (rsp.ec()) {
-        m_world_scene.set_error(cubed_net_error_message(rsp.ec()));
+    if (rsp.error().code()) {
+        auto mes = rsp.error().mes();
+        m_world_scene.set_error(mes);
         return;
     }
     m_voice_chat = rsp.voice_chat();
+    auto& player = m_player_manager.get_local();
+    player.clear_key();
+    auto pos = Tools::get_proto_vec3(rsp.pos());
+    player.set_player_pos(pos);
     start_client_thread();
 }
 

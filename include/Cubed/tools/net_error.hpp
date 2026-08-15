@@ -75,13 +75,4 @@ inline std::string_view net_error_message(const asio::error_code& ec) {
     return "Unknown network error.";
 }
 
-inline std::string_view cubed_net_error_message(int32_t ec) {
-    switch (ec) {
-    case 0:
-        return "No error.";
-    default:
-        return "Unknown network error.";
-    }
-}
-
 } // namespace Cubed

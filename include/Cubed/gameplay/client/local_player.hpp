@@ -31,6 +31,8 @@ public:
     LocalPlayer(ClientWorld& world);
     ~LocalPlayer();
 
+    void clear_key();
+
     bool handle_mouse_button_event(const MouseButtonEvent& e);
     bool handle_key_event(const KeyEvent& e);
     bool handle_mouse_wheel_event(const MouseWheelEvent& e);

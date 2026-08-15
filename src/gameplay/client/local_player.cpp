@@ -582,6 +582,8 @@ bool LocalPlayer::update_scroll(float yoffset) {
     return true;
 }
 
+void LocalPlayer::clear_key() { m_key_pair.reset(); }
+
 bool LocalPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS) {
         if (e.key == MouseKey::LEFT_BUTTON) {

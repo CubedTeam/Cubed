@@ -1,5 +1,6 @@
 syntax = "proto3";
-
+import "common/vector3.proto";
+import "common/error.proto";
 message LoginReq {
     bytes public_key = 1;
     bytes uuid = 2;
@@ -17,8 +18,9 @@ message LoginProof {
 }
 
 message LoginRsp {
-    int32 ec = 1;
+    Error error = 1;
     bool voice_chat = 2;
+    Vec3 pos = 3;
 }
 
 message LogoutReq {
