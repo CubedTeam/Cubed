@@ -186,11 +186,9 @@ jobs:
           fi
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          files: |
-            artifacts/**/*
-            artifacts/SHA256SUMS
+          files: artifacts/**/*
           generate_release_notes: true
           draft: false
           prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
