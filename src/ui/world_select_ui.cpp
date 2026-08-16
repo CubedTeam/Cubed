@@ -51,7 +51,7 @@ void WorldSelectUI::update_layout(int, int height) {
     title.set_offset({0, 5});
 
     auto& error = rect.add_child<Label>();
-    error.set_text("No error")
+    error.set_text(tr("error.no_error"))
         .set_color(Color::RED)
         .set_anchor(Anchor::TOP_CENTER)
         .set_visible(false);
@@ -65,7 +65,7 @@ void WorldSelectUI::update_layout(int, int height) {
     std::vector<fs::path> worlds;
 
     fs::path save = ServerWorld::SAVE_ROOT;
-
+    fs::create_directories(save);
     for (auto& world : fs::directory_iterator(
              save, fs::directory_options::skip_permission_denied)) {
         if (!world.is_directory()) {
@@ -130,16 +130,17 @@ void WorldSelectUI::update_layout(int, int height) {
                                              text.data() + text.size(), port);
                     if (r.ec != std::errc{} ||
                         r.ptr != text.data() + text.size()) {
-                        std::string error =
-                            std::format("Invalid port: {}", text);
-                        Logger::error("{}", error);
+                        std::string error = tr("error.invalid_port",
+                                               arg("port", std::string(text)));
+
                         set_error(error);
                         return;
                     }
                     if (port > 65535 || port < 0) {
                         std::string error =
-                            std::format("Port {} out of range", port);
-                        Logger::error("{}", error);
+                            tr("error.port_out_of_range",
+                               arg("port", std::to_string(port)));
+
                         set_error(error);
                         return;
                     }
@@ -155,7 +156,7 @@ void WorldSelectUI::update_layout(int, int height) {
         enter.set_text(tr("hostgame.enter_world"));
         enter.set_clicked([this, &param]() {
             if (m_select_world.empty()) {
-                set_error(tr("hsotgame.you_must_select_a_world"));
+                set_error(tr("hostgame.you_must_select_a_world"));
                 return;
             }
             param.world_name = m_select_world;
@@ -174,10 +175,10 @@ void WorldSelectUI::update_layout(int, int height) {
             [this]() { m_scene.scene_manager().request_pop(); });
     }
     bottom_layout.layout();
-    float botton_height = bottom_layout.height();
+    float bottom_height = bottom_layout.height();
 
     scroll.set_offset({0, up_height + 5});
-    scroll.set_height(std::max(0.0f, height - botton_height));
+    scroll.set_height(std::max(0.0f, height - bottom_height - up_height - 5));
 
     m_root_widget = std::move(bi);
 }
@@ -190,7 +191,7 @@ void WorldSelectUI::set_error(std::string_view error) {
 }
 void WorldSelectUI::clear_error() {
     if (m_error) {
-        m_error->set_text("No error");
+        m_error->set_text(tr("error.no_error"));
         m_error->set_visible(false);
     }
 }

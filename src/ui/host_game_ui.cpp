@@ -35,6 +35,7 @@ void HostGameUI::init() {
     layout.set_spacing(20.0f);
     auto& param = m_scene.scene_manager().world_scene_param();
     param.host_game = true;
+    param.seed = std::nullopt;
     {
         auto& label = layout.add_child<Label>();
         label.set_text(tr("hostgame.create_a_new_world"));
@@ -43,7 +44,7 @@ void HostGameUI::init() {
 
     {
         auto& label = layout.add_child<Label>();
-        label.set_text("NoError");
+        label.set_text(tr("error.no_error"));
         label.set_color(Color::RED);
         label.set_scale(0.7f);
         label.set_visible(false);
@@ -84,8 +85,7 @@ void HostGameUI::init() {
                 std::from_chars(text.data(), text.data() + text.size(), seed);
 
             if (r.ec != std::errc{} || r.ptr != text.data() + text.size()) {
-                std::string error = std::format("Invalid seed: {}", text);
-                Logger::error("{}", error);
+                std::string error = tr("error.invalid_seed", arg("seed", text));
                 set_error(error);
                 return;
             }
@@ -107,14 +107,16 @@ void HostGameUI::init() {
             auto r =
                 std::from_chars(text.data(), text.data() + text.size(), port);
             if (r.ec != std::errc{} || r.ptr != text.data() + text.size()) {
-                std::string error = std::format("Invalid port: {}", text);
-                Logger::error("{}", error);
+                std::string error =
+                    tr("error.invalid_port", arg("port", std::string(text)));
+
                 set_error(error);
                 return;
             }
             if (port > 65535 || port < 0) {
-                std::string error = std::format("Port {} out of range", port);
-                Logger::error("{}", error);
+                std::string error = tr("error.port_out_of_range",
+                                       arg("port", std::to_string(port)));
+
                 set_error(error);
                 return;
             }
@@ -149,8 +151,7 @@ void HostGameUI::init() {
                 return;
             }
             clear_error();
-            m_scene.scene_manager().world_scene_param().world_name =
-                input.empty() ? "new_world" : input;
+            m_scene.scene_manager().world_scene_param().world_name = input;
             button.set_enable(false);
             m_scene.scene_manager().request_change(SceneType::WORLD);
         });
