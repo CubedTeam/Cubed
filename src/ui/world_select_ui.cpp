@@ -82,13 +82,14 @@ void WorldSelectUI::update_layout(int, int height) {
 
         for (const auto& world : worlds) {
             auto& button = layout->add_child<Button>();
+            auto world_name = world.filename().string();
 
-            button.set_text(world.filename());
+            button.set_text(world_name);
             button.set_border_size(2);
             button.set_border_visale(false);
             button.set_mouse_highlight(false);
-            button.set_clicked([this, world, &button]() {
-                m_select_world = world.filename();
+            button.set_clicked([this, world_name, &button]() {
+                m_select_world = world_name;
                 button.set_border_visale(true);
 
                 for (auto w : m_worlds) {
