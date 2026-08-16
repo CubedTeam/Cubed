@@ -7,6 +7,7 @@
 #include "Cubed/scene/screenshot_scene.hpp"
 #include "Cubed/scene/settings_scene.hpp"
 #include "Cubed/scene/world_scene.hpp"
+#include "Cubed/scene/world_select_scene.hpp"
 
 #include <tracy/Tracy.hpp>
 
@@ -119,6 +120,8 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<JoinGameScene>(*this);
     case SceneType::SCREENSHOT:
         return std::make_unique<ScreenshotScene>(*this);
+    case SceneType::WORLD_SELECT:
+        return std::make_unique<WorldSelectScene>(*this);
     }
 
     std::string err = std::format("Unknown Scene");

@@ -29,6 +29,7 @@ public:
                                  TextureManager& texture_manager);
     Button& set_default_image(TextureManager& texture_manager);
     Button& set_texture(const Texture* texture, bool change_button_size);
+    Button& set_mouse_highlight(bool highlight);
     virtual Button& set_text(const std::string& text);
 
     Button& set_auto_scale(bool auto_scale);
@@ -57,6 +58,7 @@ private:
 
     float m_scale = DEFAULT_SCALE;
     bool m_auto_scale = false;
+    bool m_mouse_highlight = true;
     void on_render(Renderer& renderer) override;
     void on_update(float dt) override;
 };

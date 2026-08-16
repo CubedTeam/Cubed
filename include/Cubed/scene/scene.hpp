@@ -10,7 +10,8 @@ enum class SceneType {
     SETTINGS,
     HOST_GAME,
     JOIN_GAME,
-    SCREENSHOT
+    SCREENSHOT,
+    WORLD_SELECT
 };
 
 class Scene {

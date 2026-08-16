@@ -119,4 +119,6 @@ target_sources(${PROJECT_NAME}
         gameplay/server/world_storage.cpp
         gameplay/crypto/ed25519.cpp
         gameplay/server/player_storage.cpp
+        scene/world_select_scene.cpp
+        ui/world_select_ui.cpp
 )
