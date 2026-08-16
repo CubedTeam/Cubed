@@ -79,9 +79,9 @@ target_sources(${PROJECT_NAME}
         scene/settings_scene.cpp
         ui/combo_button.cpp
         ui/text_field.cpp
-        scene/host_game_scene.cpp
+        scene/create_game_scene.cpp
         scene/join_game_scene.cpp
-        ui/host_game_ui.cpp
+        ui/create_game_ui.cpp
         ui/join_game_ui.cpp
         ui/error_ui.cpp
         localization.cpp

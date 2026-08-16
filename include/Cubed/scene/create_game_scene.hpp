@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Cubed/scene/scene.hpp"
-#include "Cubed/ui/host_game_ui.hpp"
+#include "Cubed/ui/create_game_ui.hpp"
 namespace Cubed {
 class SceneManager;
-class HostGameScene : public Scene {
+class CreateGameScene : public Scene {
 public:
-    HostGameScene(SceneManager& scene_manager);
-    ~HostGameScene();
+    CreateGameScene(SceneManager& scene_manager);
+    ~CreateGameScene();
 
-    HostGameScene(const HostGameScene&) = delete;
-    HostGameScene(HostGameScene&&) = delete;
-    HostGameScene& operator=(const HostGameScene&) = delete;
-    HostGameScene& operator=(HostGameScene&&) = delete;
+    CreateGameScene(const CreateGameScene&) = delete;
+    CreateGameScene(CreateGameScene&&) = delete;
+    CreateGameScene& operator=(const CreateGameScene&) = delete;
+    CreateGameScene& operator=(CreateGameScene&&) = delete;
 
     void update(float dt) override;
     void render(Renderer& renderer) override;
@@ -24,6 +24,6 @@ public:
 
 private:
     SceneManager& m_scene_manager;
-    HostGameUI m_ui;
+    CreateGameUI m_ui;
 };
 } // namespace Cubed

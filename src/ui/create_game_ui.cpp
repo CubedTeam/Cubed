@@ -1,9 +1,9 @@
-#include "Cubed/ui/host_game_ui.hpp"
+#include "Cubed/ui/create_game_ui.hpp"
 
 #include "Cubed/app.hpp"
 #include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/localization.hpp"
-#include "Cubed/scene/host_game_scene.hpp"
+#include "Cubed/scene/create_game_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/tools/world_name.hpp"
 #include "Cubed/ui/button.hpp"
@@ -15,8 +15,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 namespace Cubed {
-HostGameUI::HostGameUI(HostGameScene& scene) : m_scene(scene) {}
-void HostGameUI::init() {
+CreateGameUI::CreateGameUI(CreateGameScene& scene) : m_scene(scene) {}
+void CreateGameUI::init() {
     auto bi = std::make_unique<Image>(nullptr);
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
 
@@ -167,14 +167,14 @@ void HostGameUI::init() {
     }
     m_root_widget = std::move(bi);
 }
-void HostGameUI::on_re_enter() {}
+void CreateGameUI::on_re_enter() {}
 
-void HostGameUI::set_error(std::string_view error) {
+void CreateGameUI::set_error(std::string_view error) {
     if (!m_error_label) {
         return;
     }
     m_error_label->set_text(error);
     m_error_label->set_visible(true);
 }
-void HostGameUI::clear_error() { m_error_label->set_visible(false); }
+void CreateGameUI::clear_error() { m_error_label->set_visible(false); }
 } // namespace Cubed

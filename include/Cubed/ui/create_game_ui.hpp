@@ -3,17 +3,17 @@
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 namespace Cubed {
-class HostGameScene;
+class CreateGameScene;
 class TextField;
-class HostGameUI : public UIManager {
+class CreateGameUI : public UIManager {
 public:
-    HostGameUI(HostGameScene& scene);
+    CreateGameUI(CreateGameScene& scene);
 
     void init() override;
     void on_re_enter();
 
 private:
-    HostGameScene& m_scene;
+    CreateGameScene& m_scene;
     Label* m_error_label = nullptr;
     TextField* m_world_name_field = nullptr;
     void set_error(std::string_view error);
