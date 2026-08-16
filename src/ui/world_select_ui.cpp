@@ -93,7 +93,7 @@ void WorldSelectUI::update_layout(int, int height) {
 
                 for (auto w : m_worlds) {
                     if (&button == w) {
-                        return;
+                        continue;
                     }
                     if (w) {
                         w->set_border_visale(false);
