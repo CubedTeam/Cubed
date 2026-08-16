@@ -1,6 +1,7 @@
 #include "Cubed/ui/host_game_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/localization.hpp"
 #include "Cubed/scene/host_game_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
@@ -10,6 +11,9 @@
 #include "Cubed/ui/default_image.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/text_field.hpp"
+
+#include <filesystem>
+namespace fs = std::filesystem;
 namespace Cubed {
 HostGameUI::HostGameUI(HostGameScene& scene) : m_scene(scene) {}
 void HostGameUI::init() {
@@ -126,6 +130,22 @@ void HostGameUI::init() {
             const auto& input = m_world_name_field->input_text();
             if (!input.empty() && !Tools::is_valid_world_name(input)) {
                 set_error(tr("hostgame.invalid_world_name"));
+                return;
+            }
+            if (input.empty()) {
+                set_error(tr("hostgame.empty_world_name"));
+                return;
+            }
+
+            auto save = ServerWorld::SAVE_ROOT / input;
+            std::error_code ec;
+            bool exists = fs::exists(save, ec);
+            if (ec) {
+                set_error(ec.message());
+                return;
+            }
+            if (exists) {
+                set_error(tr("hostgame.world_name_already_exists"));
                 return;
             }
             clear_error();
