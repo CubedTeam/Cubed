@@ -114,7 +114,7 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
         return std::make_unique<CreditsScene>(*this);
     case SceneType::SETTINGS:
         return std::make_unique<SettingsScene>(*this);
-    case SceneType::HOST_GAME:
+    case SceneType::CREATE_GAME:
         return std::make_unique<CreateGameScene>(*this);
     case SceneType::JOIN_GAME:
         return std::make_unique<JoinGameScene>(*this);

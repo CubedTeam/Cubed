@@ -166,7 +166,7 @@ void WorldSelectUI::update_layout(int, int height) {
         create.set_default_image(texture_manager);
         create.set_text(tr("hostgame.create_world"));
         create.set_clicked([this]() {
-            m_scene.scene_manager().request_change(SceneType::HOST_GAME);
+            m_scene.scene_manager().request_change(SceneType::CREATE_GAME);
         });
         auto& return_button = bottom_layout.add_child<Button>();
         return_button.set_default_image(texture_manager);
