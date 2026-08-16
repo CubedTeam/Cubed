@@ -35,7 +35,7 @@ void JoinGameUI::init() {
     }
     {
         auto& label = layout.add_child<Label>();
-        label.set_text("NoError");
+        label.set_text(tr("error.no_error"));
         label.set_color(Color::RED);
         label.set_scale(0.7f);
         label.set_visible(false);
@@ -53,23 +53,17 @@ void JoinGameUI::init() {
             auto& ip = text_ip.input_text();
             auto p = ip.find(":");
             if (p == std::string::npos) {
-                std::string error = "Missing ':'";
-                Logger::error("{}", error);
-                set_error(error);
+                set_error(tr("error.missing_colon"));
                 return;
             }
             auto addr = ip.substr(0, p);
             if (addr.empty()) {
-                std::string error = "Empty address";
-                Logger::error("{}", error);
-                set_error(error);
+                set_error(tr("error.empty_address"));
                 return;
             }
             auto port_str = ip.substr(p + 1);
             if (port_str.empty()) {
-                std::string error = "Missing port";
-                Logger::error("{}", error);
-                set_error(error);
+                set_error(tr("error.missing_port"));
                 return;
             }
             int port = 25530;
@@ -77,14 +71,14 @@ void JoinGameUI::init() {
                                      port_str.data() + port_str.size(), port);
             if (r.ec != std::errc{} ||
                 r.ptr != port_str.data() + port_str.size()) {
-                std::string error = std::format("Invalid port: {}", port_str);
-                Logger::error("{}", error);
+                std::string error = tr("error.invalid_port",
+                                       arg("port", std::string(port_str)));
                 set_error(error);
                 return;
             }
             if (port > 65535 || port < 0) {
-                std::string error = std::format("Port {} out of range", port);
-                Logger::error("{}", error);
+                std::string error = tr("error.port_out_of_range",
+                                       arg("port", std::to_string(port)));
                 set_error(error);
 
                 return;

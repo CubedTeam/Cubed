@@ -1,8 +1,9 @@
-#include "Cubed/ui/host_game_ui.hpp"
+#include "Cubed/ui/create_game_ui.hpp"
 
 #include "Cubed/app.hpp"
+#include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/localization.hpp"
-#include "Cubed/scene/host_game_scene.hpp"
+#include "Cubed/scene/create_game_scene.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/tools/world_name.hpp"
 #include "Cubed/ui/button.hpp"
@@ -10,9 +11,12 @@
 #include "Cubed/ui/default_image.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/text_field.hpp"
+
+#include <filesystem>
+namespace fs = std::filesystem;
 namespace Cubed {
-HostGameUI::HostGameUI(HostGameScene& scene) : m_scene(scene) {}
-void HostGameUI::init() {
+CreateGameUI::CreateGameUI(CreateGameScene& scene) : m_scene(scene) {}
+void CreateGameUI::init() {
     auto bi = std::make_unique<Image>(nullptr);
     auto& texture_manager = m_scene.scene_manager().app().texture_manager();
 
@@ -31,6 +35,7 @@ void HostGameUI::init() {
     layout.set_spacing(20.0f);
     auto& param = m_scene.scene_manager().world_scene_param();
     param.host_game = true;
+    param.seed = std::nullopt;
     {
         auto& label = layout.add_child<Label>();
         label.set_text(tr("hostgame.create_a_new_world"));
@@ -39,7 +44,7 @@ void HostGameUI::init() {
 
     {
         auto& label = layout.add_child<Label>();
-        label.set_text("NoError");
+        label.set_text(tr("error.no_error"));
         label.set_color(Color::RED);
         label.set_scale(0.7f);
         label.set_visible(false);
@@ -80,8 +85,7 @@ void HostGameUI::init() {
                 std::from_chars(text.data(), text.data() + text.size(), seed);
 
             if (r.ec != std::errc{} || r.ptr != text.data() + text.size()) {
-                std::string error = std::format("Invalid seed: {}", text);
-                Logger::error("{}", error);
+                std::string error = tr("error.invalid_seed", arg("seed", text));
                 set_error(error);
                 return;
             }
@@ -103,14 +107,16 @@ void HostGameUI::init() {
             auto r =
                 std::from_chars(text.data(), text.data() + text.size(), port);
             if (r.ec != std::errc{} || r.ptr != text.data() + text.size()) {
-                std::string error = std::format("Invalid port: {}", text);
-                Logger::error("{}", error);
+                std::string error =
+                    tr("error.invalid_port", arg("port", std::string(text)));
+
                 set_error(error);
                 return;
             }
             if (port > 65535 || port < 0) {
-                std::string error = std::format("Port {} out of range", port);
-                Logger::error("{}", error);
+                std::string error = tr("error.port_out_of_range",
+                                       arg("port", std::to_string(port)));
+
                 set_error(error);
                 return;
             }
@@ -128,9 +134,24 @@ void HostGameUI::init() {
                 set_error(tr("hostgame.invalid_world_name"));
                 return;
             }
+            if (input.empty()) {
+                set_error(tr("hostgame.empty_world_name"));
+                return;
+            }
+
+            auto save = ServerWorld::SAVE_ROOT / input;
+            std::error_code ec;
+            bool exists = fs::exists(save, ec);
+            if (ec) {
+                set_error(ec.message());
+                return;
+            }
+            if (exists) {
+                set_error(tr("hostgame.world_name_already_exists"));
+                return;
+            }
             clear_error();
-            m_scene.scene_manager().world_scene_param().world_name =
-                input.empty() ? "new_world" : input;
+            m_scene.scene_manager().world_scene_param().world_name = input;
             button.set_enable(false);
             m_scene.scene_manager().request_change(SceneType::WORLD);
         });
@@ -146,14 +167,14 @@ void HostGameUI::init() {
     }
     m_root_widget = std::move(bi);
 }
-void HostGameUI::on_re_enter() {}
+void CreateGameUI::on_re_enter() {}
 
-void HostGameUI::set_error(std::string_view error) {
+void CreateGameUI::set_error(std::string_view error) {
     if (!m_error_label) {
         return;
     }
     m_error_label->set_text(error);
     m_error_label->set_visible(true);
 }
-void HostGameUI::clear_error() { m_error_label->set_visible(false); }
+void CreateGameUI::clear_error() { m_error_label->set_visible(false); }
 } // namespace Cubed

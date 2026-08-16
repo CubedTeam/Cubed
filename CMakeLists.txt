@@ -26,6 +26,33 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+option(CUBED_USE_CCACHE "Enable ccache" OFF)
+
+option(CUBED_USE_MOLD "Enable mold linker" OFF)
+
+if(CUBED_USE_CCACHE)
+    find_program(CCACHE_EXECUTABLE ccache)
+
+    if(CCACHE_EXECUTABLE)
+        set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
+        message(STATUS "ccache enabled")
+    else()
+        message(WARNING "ccache not found")
+    endif()
+endif()
+
+if(CUBED_USE_MOLD AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    find_program(MOLD_EXECUTABLE mold)
+
+    if(MOLD_EXECUTABLE)
+        add_link_options("-fuse-ld=mold")
+        message(STATUS "mold enabled")
+    else()
+        message(WARNING "mold not found")
+    endif()
+endif()
+
 list(APPEND CMAKE_MODULE_PATH 
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"

@@ -52,7 +52,7 @@ private:
     static constexpr TickType TIMEOUT = 200;
     const std::string M_NAME;
     const Uuid M_UUID;
-    std::atomic<glm::vec3> m_pos{glm::vec3(0.0f)};
+    std::atomic<glm::vec3> m_pos{glm::vec3{0.0f, 255.0f, 0.0f}};
     ServerWorld& m_world;
     ChunkPos m_last_chunk_pos{0, 0};
     std::atomic<std::shared_ptr<Session>> m_session;

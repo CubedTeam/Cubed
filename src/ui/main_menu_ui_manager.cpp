@@ -33,7 +33,7 @@ void MainMenuUIManager::init() {
         start_game_button.set_text(tr("menu.main.host_game"));
         start_game_button.set_clicked([this, &start_game_button]() {
             start_game_button.set_enable(false);
-            m_scene.scene_manager().request_push(SceneType::HOST_GAME);
+            m_scene.scene_manager().request_push(SceneType::WORLD_SELECT);
         });
         m_pending_enable.emplace_back(&start_game_button);
     }

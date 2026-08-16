@@ -528,7 +528,9 @@ void ClientWorld::start_client_thread() {
         m_game_running = true;
         client_run(token);
     });*/
-
+    // Wait for 20 ticks, after the server's central chunk is generated, then
+    // request chunks
+    std::this_thread::sleep_for(milliseconds(20 * m_per_tick_time));
     request_chunk();
     m_game_running = true;
 }

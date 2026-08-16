@@ -131,7 +131,6 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
         throw std::invalid_argument("Invalid world name");
     }
 
-    const fs::path SAVE_ROOT = "./saves";
     const fs::path SAVE_PATH = SAVE_ROOT / std::string(world_name);
     if (SAVE_PATH.lexically_normal().parent_path() !=
         SAVE_ROOT.lexically_normal()) {

@@ -27,6 +27,7 @@ namespace Cubed {
 class Session;
 class ServerWorld : public World {
 public:
+    static inline const std::filesystem::path SAVE_ROOT = "./saves";
     struct Metadata {
         uint32_t version = WorldStorage::VERSION;
         uint32_t seed = 0;
