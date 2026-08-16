@@ -30,7 +30,8 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-            VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
+      VCPKG_DOWNLOADS: ${{ github.workspace }}/.vcpkg-downloads
     steps:
 
       - uses: actions/checkout@v4
@@ -54,8 +55,10 @@ jobs:
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
-          path: .vcpkg-cache
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+          path: |
+            .vcpkg-cache
+            .vcpkg-downloads
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json', '.github/workflows/release-build.yml') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-
       - name: Bootstrap vcpkg
@@ -65,16 +68,44 @@ jobs:
       
       - name: Configure
         if: matrix.platform == 'windows'
-        run: >
-          cmake
-          -B build
-          -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-          -DVCPKG_TARGET_TRIPLET=x64-windows-release
-          -DVCPKG_BUILD_TYPE=release
-          -DBUILD_TESTING=OFF
-          "-DCUBED_VERSION=${{ steps.version.outputs.version }}"
+        shell: pwsh
+        run: |
+          # AI-generated: Retry transient dependency downloads.
+          $arguments = @(
+            '-B', 'build',
+            '-G', 'Ninja',
+            '-DCMAKE_BUILD_TYPE=Release',
+            '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake',
+            '-DVCPKG_TARGET_TRIPLET=x64-windows-release',
+            '-DVCPKG_BUILD_TYPE=release',
+            '-DBUILD_TESTING=OFF',
+            '-DCUBED_VERSION=${{ steps.version.outputs.version }}'
+          )
+
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            & cmake @arguments
+            if ($LASTEXITCODE -eq 0) {
+              exit 0
+            }
+
+            if ($attempt -lt 3) {
+              Write-Warning "Configure attempt $attempt failed; retrying in 15 seconds."
+              Start-Sleep -Seconds 15
+            }
+          }
+
+          exit $LASTEXITCODE
+
+      - name: Upload vcpkg failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vcpkg-failure-logs
+          path: |
+            build/vcpkg-manifest-install.log
+            vcpkg/buildtrees/**/issue_body.md
+            vcpkg/buildtrees/**/*.log
+          if-no-files-found: warn
 
       - name: Build
         run: cmake --build build --config Release --target Cubed
