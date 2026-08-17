@@ -26,6 +26,16 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Setup compiler cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: windows-msvc2022-release
+          variant: sccache
+
+      - name: Prepare vcpkg cache directories
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force .vcpkg-cache, .vcpkg-downloads
+
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
@@ -53,6 +63,7 @@ jobs:
             '-DVCPKG_TARGET_TRIPLET=x64-windows-release',
             '-DVCPKG_BUILD_TYPE=release',
             '-DBUILD_TESTING=OFF',
+            '-DCUBED_USE_CCACHE=ON',
             '-DCUBED_VERSION=${{ inputs.version }}'
           )
 
@@ -82,7 +93,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Build
-        run: cmake --build build --config Release --target Cubed
+        run: cmake --build build --config Release --target Cubed --parallel $env:NUMBER_OF_PROCESSORS
 
       - name: Copy assets
         if: inputs.package
@@ -108,4 +119,3 @@ jobs:
         with:
           name: windows
           path: Cubed-${{ inputs.version }}-windows-x64.zip
-
