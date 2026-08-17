@@ -30,6 +30,10 @@ option(CUBED_USE_CCACHE "Enable ccache" OFF)
 
 option(CUBED_USE_MOLD "Enable mold linker" OFF)
 
+option(CUBED_TRACY_ENABLE "Enable Tracy profiler" OFF)
+
+option(CUBED_STATIC_STD "Enable static libstdc++ and libgcc" OFF)
+
 if(CUBED_USE_CCACHE)
     find_program(CCACHE_EXECUTABLE ccache)
 
@@ -58,7 +62,7 @@ list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
 )
 
-option(CUBED_TRACY_ENABLE "Enable Tracy profiler" OFF)
+
 
 set(TRACY_TIMER_FALLBACK ON CACHE BOOL
     "Use fallback timer" FORCE)
@@ -132,6 +136,16 @@ target_link_options(${PROJECT_NAME}
         #$<$<CONFIG:Debug>:-fsanitize=thread>
 )
 
+if (CUBED_STATIC_STD)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(Cubed PRIVATE
+            -static-libstdc++
+            -static-libgcc
+        )
+    endif()
+endif()
+
+
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         ASIO_STANDALONE
@@ -185,7 +199,7 @@ target_link_libraries(${PROJECT_NAME}
         Freetype::Freetype
         imgui
         dr_libs
-        tbb
+        TBB::tbb
         stb
         protobuf::libprotobuf
         absl::log
