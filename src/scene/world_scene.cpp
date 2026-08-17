@@ -444,6 +444,7 @@ Camera& WorldScene::camera() { return m_camera; }
 SceneManager& WorldScene::scene_manager() { return m_scene_manager; }
 ClientWorld& WorldScene::client_world() { return m_client_world; }
 ServerWorld& WorldScene::server_world() { return m_server.server_world(); }
+const Argument& WorldScene::argument() const { return m_argument; }
 bool WorldScene::pause() const { return m_paused; }
 void WorldScene::set_pause(bool pause) {
     if (m_paused == pause) {

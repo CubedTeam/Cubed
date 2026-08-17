@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/argument.hpp"
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/block.hpp"
@@ -92,6 +93,7 @@ public:
     ClientPlayerManager& player_manager();
     ClientEntityManager& entity_manager();
     std::shared_ptr<NetworkClient> get_client() const;
+    const Argument& argument() const;
     void set_direct_exit();
 
     void send_ping();

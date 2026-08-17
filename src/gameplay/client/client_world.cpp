@@ -767,6 +767,10 @@ ClientEntityManager& ClientWorld::entity_manager() { return m_entity_manager; }
 std::shared_ptr<NetworkClient> ClientWorld::get_client() const {
     return m_client;
 }
+const Argument& ClientWorld::argument() const {
+    return m_world_scene.argument();
+}
+
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }
 
 void ClientWorld::send_ping() {

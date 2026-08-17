@@ -208,6 +208,14 @@ void App::handle_argument(int argc, char** argv) {
                      throw std::runtime_error("World name is empty");
                  }
                  m_argument.world = arg;
+             }},
+            {"--identify",
+             [&](ArgParser& p) {
+                 auto arg = p.require_next("--identify");
+                 if (arg.empty()) {
+                     throw std::runtime_error("Identify path is empty");
+                 }
+                 m_argument.identify = arg;
              }}
 
         };
