@@ -570,11 +570,11 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
 
     bool inserted = m_players_manager.add(player);
     if (!inserted) {
-        send_player_login_error(1, "Player insert fail", session);
+        send_player_login_error(1, "Player already in this server", session);
 
         return;
     }
-
+    session->set_player_uuid(uuid);
     Arena arena;
 
     auto* rsp = Arena::Create<LoginRsp>(&arena);
@@ -603,7 +603,7 @@ void ServerWorld::handle_player_exit(const Uuid& uuid) {
         player_exit(uuid);
         return;
     }
-    pool->enqueue([this, uuid]() { player_exit(uuid); });
+    pool->enqueue([this, uuid]() mutable { player_exit(uuid); });
 }
 
 glm::vec3 ServerWorld::get_player_pos(const Uuid& uuid) const {
@@ -635,11 +635,18 @@ void ServerWorld::handle_chunk_req(int task_id, const Uuid& uuid,
 
 void ServerWorld::handle_chat_message(ChatMsg& msg) {
 
-    std::string name = msg.name();
+    auto uuid = Uuid::from_proto_bytes(msg.uuid());
+    if (!uuid) {
+        return;
+    }
     std::string message = msg.msg();
     auto pool = m_net_thread_pool.load();
-    pool->enqueue([this, player = std::move(name), m = std::move(message)]() {
-        boardcast_message(player, m);
+    pool->enqueue([this, player = *uuid, m = std::move(message)]() {
+        auto p = m_players_manager.find(player);
+        if (!p) {
+            return;
+        }
+        boardcast_message(p->get_name(), m);
     });
 }
 
@@ -843,9 +850,8 @@ void ServerWorld::player_exit(const Uuid& uuid) {
         return; // Already removed
     }
 
-    const std::string NAME = player->get_name();
     auto exit_session = player->get_session();
-
+    const std::string NAME = player->get_name();
     Logger::info("Player {} Exit the Server", NAME);
 
     m_chunk_system.release_chunk(player);
@@ -855,7 +861,7 @@ void ServerWorld::player_exit(const Uuid& uuid) {
     rsp->set_uuid(uuid.to_proto_bytes());
     rsp->set_server_stop(false);
     exit_session->send(make_packet(*rsp), 0);
-
+    exit_session->set_player_uuid(std::nullopt);
     auto sessions = get_all_session();
 
     auto packet = make_packet(*rsp);

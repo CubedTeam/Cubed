@@ -43,7 +43,12 @@ std::optional<std::pair<uint64_t, Crypto::Ed25519::Challenge>>&
 Session::challenge() {
     return m_challenge;
 }
-
+void Session::set_player_uuid(std::optional<Uuid> uuid) {
+    auto self = shared_from_this();
+    asio::dispatch(m_strand, [self, uuid = std::move(uuid)]() mutable {
+        self->m_player_uuid = std::move(uuid);
+    });
+}
 asio::awaitable<void> Session::read_loop() {
     ZoneScopedN("Session::read_loop");
     try {
@@ -67,17 +72,22 @@ asio::awaitable<void> Session::read_loop() {
             auto cmd_id = header.cmd;
             Arena arena;
             if (cmd_id == std::to_underlying(PacketEnum::LOGIN_REQ)) {
-                auto* req = Arena::Create<LoginReq>(&arena);
-                Logger::info("Session: Receive Login req");
-                if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_player_login(*req,
-                                                       shared_from_this());
+                if (!m_player_uuid) {
+                    auto* req = Arena::Create<LoginReq>(&arena);
+                    Logger::info("Session: Receive Login req");
+                    if (decode_packet(*req, body_data, header)) {
+                        m_server_world.handle_player_login(*req,
+                                                           shared_from_this());
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::C2S_PLAYER_INFO)) {
                 auto* pos = Arena::Create<C2S_PlayerInfo>(&arena);
                 if (decode_packet(*pos, body_data, header)) {
-                    m_server_world.sync_player_pos(*pos);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(pos->uuid())) {
+                        m_server_world.sync_player_pos(*pos);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::CHUNK_DATA_REQ)) {
@@ -85,12 +95,15 @@ asio::awaitable<void> Session::read_loop() {
                 // Logger::info("Session: Receive Chunk Data req");
                 if (decode_packet(*req, body_data, header)) {
                     auto uuid = Uuid::from_proto_bytes(req->uuid());
+
                     if (!uuid) {
                         Logger::error("Can't parse uuid from proto");
                     } else {
-                        m_server_world.handle_chunk_req(
-                            req->task_id(), *uuid,
-                            ChunkPos(req->pos().x(), req->pos().z()));
+                        if (m_player_uuid && m_player_uuid == uuid) {
+                            m_server_world.handle_chunk_req(
+                                req->task_id(), *uuid,
+                                ChunkPos(req->pos().x(), req->pos().z()));
+                        }
                     }
                 }
             }
@@ -98,7 +111,10 @@ asio::awaitable<void> Session::read_loop() {
                 auto* req = Arena::Create<BlockChangeReq>(&arena);
 
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.handle_block_change(*req);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(req->uuid())) {
+                        m_server_world.handle_block_change(*req);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::LOGOUT_REQ)) {
@@ -108,40 +124,57 @@ asio::awaitable<void> Session::read_loop() {
                     if (!uuid) {
                         Logger::error("Can't parse uuid from proto");
                     } else {
-                        m_server_world.handle_player_exit(*uuid);
+                        if (m_player_uuid && m_player_uuid == uuid) {
+                            m_server_world.handle_player_exit(*uuid);
+                        }
                     }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::PLAYER_WATER_SOUND)) {
                 auto* req = Arena::Create<PlayerWaterSound>(&arena);
                 if (decode_packet(*req, body_data, header)) {
-                    m_server_world.sync_player_water_sound(*req);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(req->uuid())) {
+                        m_server_world.sync_player_water_sound(*req);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::CHAT_MSG)) {
                 auto* msg = Arena::Create<ChatMsg>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
-                    m_server_world.handle_chat_message(*msg);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
+                        m_server_world.handle_chat_message(*msg);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::VOICE_MSG)) {
                 auto* msg = Arena::Create<VoiceMsg>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
-                    m_server_world.handle_voice_message(*msg);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
+                        m_server_world.handle_voice_message(*msg);
+                    }
                 }
             }
             if (cmd_id ==
                 std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQUEST)) {
                 auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
-                    m_server_world.handle_entity_create(*msg);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
+                        m_server_world.handle_entity_create(*msg);
+                    }
                 }
             }
             if (cmd_id ==
                 std::to_underlying(PacketEnum::C2S_ENTITY_DESTORY_REQUEST)) {
                 auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
-                    m_server_world.handle_entity_destory(*msg);
+                    if (m_player_uuid &&
+                        m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
+                        m_server_world.handle_entity_destory(*msg);
+                    }
                 }
             }
             if (cmd_id == std::to_underlying(PacketEnum::LOGIN_PROOF)) {

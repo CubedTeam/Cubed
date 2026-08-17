@@ -26,6 +26,7 @@ public:
 
     Crypto::Ed25519PublicKey& public_key();
     std::optional<std::pair<uint64_t, Crypto::Ed25519::Challenge>>& challenge();
+    void set_player_uuid(std::optional<Uuid> uuid);
 
 private:
     struct Task {
@@ -56,7 +57,7 @@ private:
 
     Crypto::Ed25519PublicKey m_public_key;
     std::optional<std::pair<uint64_t, Crypto::Ed25519::Challenge>> m_challenge;
-
+    std::optional<Uuid> m_player_uuid;
     ServerWorld& m_server_world;
     std::atomic<bool> m_closed{false};
 

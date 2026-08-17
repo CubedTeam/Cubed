@@ -5,6 +5,7 @@ message ChatMsg {
     string msg = 2;
     int32 color = 3;
     bool system_msg = 4;
+    bytes uuid = 5;
 }
 
 message VoiceMsg {

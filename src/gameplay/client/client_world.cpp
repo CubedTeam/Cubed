@@ -504,8 +504,10 @@ void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
     if (rsp.error().code()) {
         m_task_queue.emplace(TaskType::ERR, rsp.error().mes());
+        m_login_success = false;
         return;
     }
+    m_login_success = true;
     m_voice_chat = rsp.voice_chat();
     auto& player = m_player_manager.get_local();
     player.clear_key();
@@ -799,7 +801,7 @@ void ClientWorld::request_exit() {
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
-        if (m_client->is_connect_error() || m_exit_direct) {
+        if (m_client->is_connect_error() || m_exit_direct || !m_login_success) {
             break;
         }
         std::this_thread::sleep_for(milliseconds(m_per_tick_time));
@@ -839,6 +841,7 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
     auto msg = Arena::Create<ChatMsg>(&arena);
     msg->set_name(message.player);
     msg->set_msg(message.text);
+    msg->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     m_client->send(make_packet(*msg));
 }
 

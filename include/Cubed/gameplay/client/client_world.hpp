@@ -166,6 +166,7 @@ private:
     std::atomic<bool> m_exit_direct{false};
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};
+    std::atomic<bool> m_login_success{false};
     std::atomic<int> m_rendering_distance{24};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
