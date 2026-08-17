@@ -563,6 +563,11 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
         return;
     }
 
+    auto p = m_players_manager.find(uuid);
+    if (p && p->is_disconnect(m_game_ticks)) {
+        handle_player_exit(p, true);
+    }
+
     Logger::info("Player {} (uuid {}) join the world", name, uuid.to_string());
 
     auto player = std::make_shared<ServerPlayer>(name, uuid, *this, session,
@@ -570,6 +575,7 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
 
     bool inserted = m_players_manager.add(player);
     if (!inserted) {
+
         send_player_login_error(1, "Player already in this server", session);
 
         return;
@@ -596,13 +602,13 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     return;
 }
 
-void ServerWorld::handle_player_exit(std::shared_ptr<ServerPlayer> player) {
+void ServerWorld::handle_player_exit(std::shared_ptr<ServerPlayer> player,
+                                     bool sync) {
     if (!player) {
         return;
     }
     auto pool = m_net_thread_pool.load();
-    if (!pool) {
-        Logger::error("Net Pool Can't find");
+    if (!pool || sync) {
         player_exit(std::move(player));
         return;
     }

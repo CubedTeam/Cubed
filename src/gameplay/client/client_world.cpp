@@ -392,7 +392,7 @@ void ClientWorld::init(std::string_view player_name,
     reload_config(false);
 
     m_random.init(std::random_device()());
-
+    m_exit_direct = false;
     // timer
     register_timer("player_pos", 0.05f, [this]() {
         m_player_manager.report_player_info(m_client.get());
@@ -711,10 +711,11 @@ void ClientWorld::receive_pong(Pong& pong) {
     if (ping_time == 0 || pong.timestamp() != ping_time) {
         return;
     }
-    uint64_t latency = Tools::get_steady_timestamp_ms() - m_ping_time;
+    uint64_t latency = Tools::get_steady_timestamp_ms() - ping_time;
     m_task_queue.emplace(TaskType::PONG, latency);
-    m_ping_time = 0;
-    m_timeout_count = 0;
+    if (m_ping_time.compare_exchange_strong(ping_time, 0)) {
+        m_timeout_count = 0;
+    }
 }
 
 void ClientWorld::receive_chunk(std::vector<uint8_t> raw_data,
@@ -960,7 +961,7 @@ void ClientWorld::update(float delta_time) {
 
 void ClientWorld::handle_task() {
     std::pair<TaskType, TaskData> task;
-    if (m_task_queue.try_pop(task)) {
+    while (m_task_queue.try_pop(task)) {
         switch (task.first) {
         case TaskType::PONG: {
             auto* v = std::get_if<uint64_t>(&task.second);

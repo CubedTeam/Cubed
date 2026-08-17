@@ -39,7 +39,8 @@ public:
     ServerWorld(Config& config);
     ~ServerWorld();
     void stop();
-    void handle_player_exit(std::shared_ptr<ServerPlayer> player);
+    void handle_player_exit(std::shared_ptr<ServerPlayer> player,
+                            bool sync = false);
     void init_world(RunMode mode, std::string_view world_name,
                     std::optional<uint32_t> seed);
     void request_generation(Uuid uuid);
