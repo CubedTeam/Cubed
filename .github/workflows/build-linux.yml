@@ -1,0 +1,130 @@
+name: Build-Linux
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      package:
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    env:
+      CC: gcc-14
+      CXX: g++-14
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
+      VCPKG_DOWNLOADS: ${{ github.workspace }}/.vcpkg-downloads
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GCC 14 and Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y \
+            curl \
+            gcc-14 \
+            g++-14 \
+            libegl1-mesa-dev \
+            libgl1-mesa-dev \
+            libibus-1.0-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxext-dev \
+            libxft-dev \
+            libxkbcommon-dev \
+            ninja-build \
+            pkg-config \
+            unzip \
+            zip
+
+      - name: Show compiler version
+        run: |
+          "$CC" --version
+          "$CXX" --version
+
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vcpkg-cache
+            .vcpkg-downloads
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json', '.github/workflows/build-linux.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
+
+      - name: Bootstrap vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Configure
+        shell: bash
+        run: |
+          # AI-generated: Retry transient dependency downloads.
+          arguments=(
+            -B build
+            -G Ninja
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_C_COMPILER=gcc-14
+            -DCMAKE_CXX_COMPILER=g++-14
+            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            -DVCPKG_TARGET_TRIPLET=x64-linux-release
+            -DVCPKG_BUILD_TYPE=release
+            -DBUILD_TESTING=OFF
+            -DCUBED_STATIC_STD=ON
+            -DCUBED_VERSION="${{ inputs.version }}"
+          )
+
+          for attempt in 1 2 3; do
+            if cmake "${arguments[@]}"; then
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 3 ]]; then
+              echo "Configure attempt $attempt failed; retrying in 15 seconds." >&2
+              sleep 15
+            fi
+          done
+
+          exit 1
+
+      - name: Upload vcpkg failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-vcpkg-failure-logs
+          path: |
+            build/vcpkg-manifest-install.log
+            vcpkg/buildtrees/**/issue_body.md
+            vcpkg/buildtrees/**/*.log
+          if-no-files-found: warn
+
+      - name: Build
+        run: cmake --build build --config Release --target Cubed
+
+      - name: Copy assets
+        if: inputs.package
+        run: cmake -E copy_directory assets build/Cubed/assets
+
+      - name: Create tar archive
+        if: inputs.package
+        run: tar -czf Cubed-${{ inputs.version }}-linux-x64.tar.gz -C build Cubed
+
+      - name: Upload Linux Artifact
+        if: inputs.package
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: Cubed-${{ inputs.version }}-linux-x64.tar.gz
+
