@@ -145,19 +145,19 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
     m_entity_manager.init();
     m_chunk_system.initialize();
     register_timer("player disconnect", 5, [this]() {
-        std::vector<Uuid> disconnect;
+        std::vector<std::shared_ptr<ServerPlayer>> disconnect;
         auto players = m_players_manager.snapshot();
         if (!players) {
             return;
         }
-        for (auto& [uuid, player] : *players) {
+        for (auto& [_, player] : *players) {
             if (player->is_disconnect(m_game_ticks)) {
-                disconnect.emplace_back(uuid);
+                disconnect.emplace_back(player);
             }
         }
 
-        for (auto& uuid : disconnect) {
-            handle_player_exit(uuid);
+        for (auto& player : disconnect) {
+            handle_player_exit(player);
         }
     });
     // Periodically process pending players
@@ -596,14 +596,19 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     return;
 }
 
-void ServerWorld::handle_player_exit(const Uuid& uuid) {
+void ServerWorld::handle_player_exit(std::shared_ptr<ServerPlayer> player) {
+    if (!player) {
+        return;
+    }
     auto pool = m_net_thread_pool.load();
     if (!pool) {
         Logger::error("Net Pool Can't find");
-        player_exit(uuid);
+        player_exit(std::move(player));
         return;
     }
-    pool->enqueue([this, uuid]() mutable { player_exit(uuid); });
+    pool->enqueue([this, player = std::move(player)]() mutable {
+        player_exit(std::move(player));
+    });
 }
 
 glm::vec3 ServerWorld::get_player_pos(const Uuid& uuid) const {
@@ -843,13 +848,17 @@ void ServerWorld::boardcast_message(const std::string& name,
     }
 }
 
-void ServerWorld::player_exit(const Uuid& uuid) {
-    auto player = m_players_manager.remove(uuid);
+void ServerWorld::player_exit(std::shared_ptr<ServerPlayer> expected_player) {
 
-    if (!player) {
+    if (!expected_player) {
         return; // Already removed
     }
+    const Uuid UUID = expected_player->get_uuid();
+    auto player = m_players_manager.remove(UUID, expected_player);
 
+    if (!player) {
+        return;
+    }
     auto exit_session = player->get_session();
     const std::string NAME = player->get_name();
     Logger::info("Player {} Exit the Server", NAME);
@@ -858,7 +867,7 @@ void ServerWorld::player_exit(const Uuid& uuid) {
 
     Arena arena;
     auto* rsp = Arena::Create<LogoutRsp>(&arena);
-    rsp->set_uuid(uuid.to_proto_bytes());
+    rsp->set_uuid(UUID.to_proto_bytes());
     rsp->set_server_stop(false);
     exit_session->send(make_packet(*rsp), 0);
     exit_session->set_player_uuid(std::nullopt);

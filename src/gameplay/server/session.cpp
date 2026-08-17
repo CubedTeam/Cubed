@@ -125,7 +125,13 @@ asio::awaitable<void> Session::read_loop() {
                         Logger::error("Can't parse uuid from proto");
                     } else {
                         if (m_player_uuid && m_player_uuid == uuid) {
-                            m_server_world.handle_player_exit(*uuid);
+                            auto player =
+                                m_server_world.player_manager().find(*uuid);
+                            if (player &&
+                                player->get_session() == shared_from_this()) {
+                                m_server_world.handle_player_exit(
+                                    std::move(player));
+                            }
                         }
                     }
                 }

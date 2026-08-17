@@ -22,7 +22,7 @@ public:
     void init();
 
     bool add(PlayerPtr player);
-    PlayerPtr remove(const Uuid& uuid);
+    PlayerPtr remove(const Uuid& uuid, const PlayerPtr& expected_player);
 
     [[nodiscard]] PlayerPtr find(const Uuid& uuid) const;
     [[nodiscard]] bool contains(const Uuid& uuid) const;

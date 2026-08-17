@@ -46,15 +46,22 @@ bool ServerPlayerManager::add(PlayerPtr player) {
     return insert;
 }
 
-ServerPlayerManager::PlayerPtr ServerPlayerManager::remove(const Uuid& uuid) {
+ServerPlayerManager::PlayerPtr
+ServerPlayerManager::remove(const Uuid& uuid,
+                            const PlayerPtr& expected_player) {
+    if (!expected_player) {
+        return {};
+    }
+
     std::lock_guard lock(m_write_mutex);
+
     auto old = m_players.load();
-    if (!old->contains(uuid)) {
+    auto old_it = old->find(uuid);
+    if (old_it == old->end() || old_it->second != expected_player) {
         return {};
     }
 
     auto next = std::make_shared<PlayerMap>(*old);
-
     auto it = next->find(uuid);
     auto player = it->second;
     next->erase(it);
@@ -62,7 +69,6 @@ ServerPlayerManager::PlayerPtr ServerPlayerManager::remove(const Uuid& uuid) {
     m_players.store(next);
 
     PlayerStorageData data = build_data(*player);
-
     m_storage->save(data);
 
     return player;
