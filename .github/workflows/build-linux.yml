@@ -53,6 +53,11 @@ jobs:
           "$CC" --version
           "$CXX" --version
 
+      - name: Setup compiler cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-gcc14-release
+
       - name: Prepare vcpkg cache directories
         run: mkdir -p .vcpkg-cache .vcpkg-downloads
 
@@ -85,6 +90,7 @@ jobs:
             -DVCPKG_TARGET_TRIPLET=x64-linux-release
             -DVCPKG_BUILD_TYPE=release
             -DBUILD_TESTING=OFF
+            -DCUBED_USE_CCACHE=ON
             -DCUBED_STATIC_STD=ON
             -DCUBED_VERSION="${{ inputs.version }}"
           )
@@ -114,7 +120,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Build
-        run: cmake --build build --config Release --target Cubed
+        run: cmake --build build --config Release --target Cubed --parallel "$(nproc)"
 
       - name: Copy assets
         if: inputs.package

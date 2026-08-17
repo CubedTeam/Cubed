@@ -26,7 +26,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-option(CUBED_USE_CCACHE "Enable ccache" OFF)
+option(CUBED_USE_CCACHE "Enable compiler cache" OFF)
 
 option(CUBED_USE_MOLD "Enable mold linker" OFF)
 
@@ -35,14 +35,21 @@ option(CUBED_TRACY_ENABLE "Enable Tracy profiler" OFF)
 option(CUBED_STATIC_STD "Enable static libstdc++ and libgcc" OFF)
 
 if(CUBED_USE_CCACHE)
-    find_program(CCACHE_EXECUTABLE ccache)
-
-    if(CCACHE_EXECUTABLE)
-        set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
-        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
-        message(STATUS "ccache enabled")
+    # AI-generated: Select the cache for the active compiler.
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        set(COMPILER_CACHE_NAME sccache)
     else()
-        message(WARNING "ccache not found")
+        set(COMPILER_CACHE_NAME ccache)
+    endif()
+
+    find_program(COMPILER_CACHE_EXECUTABLE "${COMPILER_CACHE_NAME}")
+
+    if(COMPILER_CACHE_EXECUTABLE)
+        set(CMAKE_C_COMPILER_LAUNCHER "${COMPILER_CACHE_EXECUTABLE}")
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${COMPILER_CACHE_EXECUTABLE}")
+        message(STATUS "${COMPILER_CACHE_NAME} enabled")
+    else()
+        message(WARNING "${COMPILER_CACHE_NAME} not found")
     endif()
 endif()
 
