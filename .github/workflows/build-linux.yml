@@ -53,6 +53,9 @@ jobs:
           "$CC" --version
           "$CXX" --version
 
+      - name: Prepare vcpkg cache directories
+        run: mkdir -p .vcpkg-cache .vcpkg-downloads
+
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
@@ -127,4 +130,3 @@ jobs:
         with:
           name: linux
           path: Cubed-${{ inputs.version }}-linux-x64.tar.gz
-

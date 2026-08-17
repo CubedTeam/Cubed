@@ -26,6 +26,10 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Prepare vcpkg cache directories
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force .vcpkg-cache, .vcpkg-downloads
+
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
@@ -108,4 +112,3 @@ jobs:
         with:
           name: windows
           path: Cubed-${{ inputs.version }}-windows-x64.zip
-
