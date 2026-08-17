@@ -225,6 +225,11 @@ target_link_libraries(${PROJECT_NAME}
         RocksDB::rocksdb
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # AI-generated: Complete static Linux dependencies.
+    target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt atomic)
+endif()
+
 if(WIN32)
     add_custom_command(
         TARGET ${PROJECT_NAME}
