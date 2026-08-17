@@ -176,6 +176,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_login_challenge(*msg);
                 }
             } break;
+            case std::to_underlying(PacketEnum::PONG): {
+                auto* msg = Arena::Create<Pong>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_pong(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

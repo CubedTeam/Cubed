@@ -87,6 +87,7 @@ public:
     void sync_player_water_sound(const PlayerWaterSound& rsp);
     void handle_player_login(LoginReq& msg, std::shared_ptr<Session> session);
     void handle_login_proof(LoginProof& msg, std::shared_ptr<Session> session);
+    void handle_ping(Ping& ping, std::shared_ptr<Session> session);
     void send_player_login_error(int32_t ec, std::string_view msg,
                                  std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const Uuid& uuid) const;

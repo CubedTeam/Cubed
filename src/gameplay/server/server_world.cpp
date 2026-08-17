@@ -502,6 +502,13 @@ void ServerWorld::handle_player_login(LoginReq& msg,
      */
 }
 
+void ServerWorld::handle_ping(Ping& ping, std::shared_ptr<Session> session) {
+    Arena arena;
+    auto* msg = Arena::Create<Pong>(&arena);
+    msg->set_timestamp(ping.timestamp());
+    session->send(make_packet(msg), 0);
+}
+
 void ServerWorld::handle_login_proof(LoginProof& msg,
                                      std::shared_ptr<Session> session) {
 

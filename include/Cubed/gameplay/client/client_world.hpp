@@ -25,6 +25,7 @@ namespace Cubed {
 class WorldScene;
 class ClientWorld : public World {
 public:
+    static constexpr int PING_TIMEOUT = 5 * 1000; // ms
     ClientWorld(const ClientWorld&) = delete;
     ClientWorld(ClientWorld&&) = delete;
     ClientWorld& operator=(const ClientWorld&) = delete;
@@ -73,6 +74,7 @@ public:
     void reload_config(bool chunk_build = true);
     void request_chunk();
     void reset_key_status();
+    void receive_pong(Pong& pong);
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
 
@@ -91,6 +93,8 @@ public:
     ClientEntityManager& entity_manager();
     std::shared_ptr<NetworkClient> get_client() const;
     void set_direct_exit();
+
+    void send_ping();
 
     void receive_chat_message(ChatMsg& msg);
     void send_chat_message(ChatMessage& message);
@@ -149,6 +153,7 @@ private:
     tbb::concurrent_queue<PendingSound> m_pending_sound;
     tbb::concurrent_queue<ChatMessage> m_message_queue;
     tbb::concurrent_queue<VoiceMessage> m_voice_queue;
+    tbb::concurrent_queue<uint64_t> m_pong_queue;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
@@ -165,6 +170,8 @@ private:
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_chunk_task_id{0};
     std::atomic<bool> m_voice_chat{true};
+    std::atomic<uint64_t> m_ping_time{0};
+    std::atomic<uint32_t> m_timeout_count{0};
     std::shared_ptr<NetworkClient> m_client;
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 
