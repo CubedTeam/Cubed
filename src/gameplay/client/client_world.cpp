@@ -503,8 +503,7 @@ void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
 
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
     if (rsp.error().code()) {
-        auto mes = rsp.error().mes();
-        m_world_scene.set_error(mes);
+        m_task_queue.emplace(TaskType::ERR, rsp.error().mes());
         return;
     }
     m_voice_chat = rsp.voice_chat();
@@ -711,7 +710,7 @@ void ClientWorld::receive_pong(Pong& pong) {
         return;
     }
     uint64_t latency = Tools::get_steady_timestamp_ms() - m_ping_time;
-    m_pong_queue.emplace(latency);
+    m_task_queue.emplace(TaskType::PONG, latency);
     m_ping_time = 0;
     m_timeout_count = 0;
 }
@@ -873,6 +872,7 @@ void ClientWorld::process_pending_chunks() {
         m_chunks.emplace(c->get_chunk_pos(), std::move(c));
     }
 }
+
 void ClientWorld::update(float delta_time) {
 
     ZoneScopedN("ClientWorld::update");
@@ -880,10 +880,8 @@ void ClientWorld::update(float delta_time) {
         m_world_scene.set_error("Connect Server Timeout");
         return;
     }
-    uint64_t ms;
-    if (m_pong_queue.try_pop(ms)) {
-        d_rep("latency", "Latency: {}ms", ms);
-    }
+
+    handle_task();
 
     process_pending_chunks();
 
@@ -954,6 +952,24 @@ void ClientWorld::update(float delta_time) {
     VoiceMessage vm;
     while (m_voice_queue.try_pop(vm)) {
         m_audio.receive_voice(vm.data, vm.pos);
+    }
+}
+
+void ClientWorld::handle_task() {
+    std::pair<TaskType, TaskData> task;
+    if (m_task_queue.try_pop(task)) {
+        switch (task.first) {
+        case TaskType::PONG: {
+            auto* v = std::get_if<uint64_t>(&task.second);
+            ASSERT(v);
+            d_rep("latency", "Latency: {}ms", *v);
+        } break;
+        case TaskType::ERR: {
+            auto* v = std::get_if<std::string>(&task.second);
+            ASSERT(v);
+            m_world_scene.set_error(*v);
+        } break;
+        }
     }
 }
 

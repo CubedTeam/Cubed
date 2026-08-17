@@ -26,6 +26,8 @@ namespace Cubed {
 class WorldScene;
 class ClientWorld : public World {
 public:
+    enum class TaskType { PONG, ERR };
+    using TaskData = std::variant<uint64_t, std::monostate, std::string>;
     static constexpr int PING_TIMEOUT = 5 * 1000; // ms
     ClientWorld(const ClientWorld&) = delete;
     ClientWorld(ClientWorld&&) = delete;
@@ -155,7 +157,7 @@ private:
     tbb::concurrent_queue<PendingSound> m_pending_sound;
     tbb::concurrent_queue<ChatMessage> m_message_queue;
     tbb::concurrent_queue<VoiceMessage> m_voice_queue;
-    tbb::concurrent_queue<uint64_t> m_pong_queue;
+    tbb::concurrent_queue<std::pair<TaskType, TaskData>> m_task_queue;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
@@ -184,5 +186,7 @@ private:
     void set_block(const glm::ivec3& pos, unsigned id);
 
     void update_chunk(const ChunkPosSet& old, const ChunkPosSet& now);
+
+    void handle_task();
 };
 } // namespace Cubed
