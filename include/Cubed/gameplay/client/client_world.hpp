@@ -1,4 +1,5 @@
 #pragma once
+#include "Cubed/argument.hpp"
 #include "Cubed/audio/audio_engine.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/gameplay/block.hpp"
@@ -25,6 +26,9 @@ namespace Cubed {
 class WorldScene;
 class ClientWorld : public World {
 public:
+    enum class TaskType { PONG, ERR };
+    using TaskData = std::variant<uint64_t, std::monostate, std::string>;
+    static constexpr int PING_TIMEOUT = 5 * 1000; // ms
     ClientWorld(const ClientWorld&) = delete;
     ClientWorld(ClientWorld&&) = delete;
     ClientWorld& operator=(const ClientWorld&) = delete;
@@ -73,6 +77,7 @@ public:
     void reload_config(bool chunk_build = true);
     void request_chunk();
     void reset_key_status();
+    void receive_pong(Pong& pong);
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
 
@@ -90,7 +95,10 @@ public:
     ClientPlayerManager& player_manager();
     ClientEntityManager& entity_manager();
     std::shared_ptr<NetworkClient> get_client() const;
+    const Argument& argument() const;
     void set_direct_exit();
+
+    void send_ping();
 
     void receive_chat_message(ChatMsg& msg);
     void send_chat_message(ChatMessage& message);
@@ -149,6 +157,7 @@ private:
     tbb::concurrent_queue<PendingSound> m_pending_sound;
     tbb::concurrent_queue<ChatMessage> m_message_queue;
     tbb::concurrent_queue<VoiceMessage> m_voice_queue;
+    tbb::concurrent_queue<std::pair<TaskType, TaskData>> m_task_queue;
 
     std::deque<ChunkPos> m_dirty_queue;
     std::vector<const ChunkRenderSnapshot*> m_render_snapshots;
@@ -157,6 +166,7 @@ private:
     std::atomic<bool> m_exit_direct{false};
     std::atomic<bool> m_game_running{false};
     std::atomic<bool> m_receive_exit{false};
+    std::atomic<bool> m_login_success{false};
     std::atomic<int> m_rendering_distance{24};
     std::atomic<TickType> m_game_ticks{0};
     std::atomic<TickType> m_day_tick{6000};
@@ -165,6 +175,8 @@ private:
     std::atomic<bool> m_is_rebuilding{false};
     std::atomic<int> m_chunk_task_id{0};
     std::atomic<bool> m_voice_chat{true};
+    std::atomic<uint64_t> m_ping_time{0};
+    std::atomic<uint32_t> m_timeout_count{0};
     std::shared_ptr<NetworkClient> m_client;
     ChunkLoadStyle m_chunk_load_style{ChunkLoadStyle::CENTER};
 
@@ -175,5 +187,7 @@ private:
     void set_block(const glm::ivec3& pos, unsigned id);
 
     void update_chunk(const ChunkPosSet& old, const ChunkPosSet& now);
+
+    void handle_task();
 };
 } // namespace Cubed

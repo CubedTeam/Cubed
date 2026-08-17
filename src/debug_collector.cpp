@@ -62,6 +62,9 @@ void DebugCollector::init(int, int) {
 
     add_label("FPS: 0", "fps");
 
+    // latency
+    add_label("Latency: 0ms", "latency");
+
     // player_pos
     add_label("x: 0.00 y: 0.00 z: 0.00", "player_pos");
 

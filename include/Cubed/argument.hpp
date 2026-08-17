@@ -15,5 +15,6 @@ struct Argument {
     std::optional<bool> enable_filelog;
     std::optional<bool> enable_consolelog;
     std::optional<bool> direct_enter;
+    std::optional<std::string> identify;
 };
 } // namespace Cubed

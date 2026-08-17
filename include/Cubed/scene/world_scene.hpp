@@ -32,6 +32,7 @@ public:
     SceneManager& scene_manager();
     ClientWorld& client_world();
     ServerWorld& server_world();
+    const Argument& argument() const;
     bool pause() const;
     void set_pause(bool pause);
     void set_error(std::string_view error);

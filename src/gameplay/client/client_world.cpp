@@ -1,11 +1,13 @@
 #include "Cubed/gameplay/client/client_world.hpp"
 
 #include "Cubed/config.hpp"
+#include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/tools/proto_utils.hpp"
+#include "Cubed/tools/system_time_utils.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/time_tools.hpp"
 
@@ -390,7 +392,7 @@ void ClientWorld::init(std::string_view player_name,
     reload_config(false);
 
     m_random.init(std::random_device()());
-
+    m_exit_direct = false;
     // timer
     register_timer("player_pos", 0.05f, [this]() {
         m_player_manager.report_player_info(m_client.get());
@@ -450,6 +452,8 @@ void ClientWorld::init(std::string_view player_name,
         }
     });
 
+    register_timer("ping", 1.0f, [this]() { send_ping(); });
+
     LoginReq req;
     auto& player = m_player_manager.get_local();
     auto& pk = player.key_pair()->public_key;
@@ -499,10 +503,11 @@ void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
 
 void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
     if (rsp.error().code()) {
-        auto mes = rsp.error().mes();
-        m_world_scene.set_error(mes);
+        m_task_queue.emplace(TaskType::ERR, rsp.error().mes());
+        m_login_success = false;
         return;
     }
+    m_login_success = true;
     m_voice_chat = rsp.voice_chat();
     auto& player = m_player_manager.get_local();
     player.clear_key();
@@ -699,6 +704,20 @@ void ClientWorld::request_chunk() {
 void ClientWorld::reset_key_status() {
     m_player_manager.get_local().reset_input_status();
 }
+
+void ClientWorld::receive_pong(Pong& pong) {
+
+    auto ping_time = m_ping_time.load();
+    if (ping_time == 0 || pong.timestamp() != ping_time) {
+        return;
+    }
+    uint64_t latency = Tools::get_steady_timestamp_ms() - ping_time;
+    m_task_queue.emplace(TaskType::PONG, latency);
+    if (m_ping_time.compare_exchange_strong(ping_time, 0)) {
+        m_timeout_count = 0;
+    }
+}
+
 void ClientWorld::receive_chunk(std::vector<uint8_t> raw_data,
                                 PacketHeader header) {
 
@@ -750,7 +769,29 @@ ClientEntityManager& ClientWorld::entity_manager() { return m_entity_manager; }
 std::shared_ptr<NetworkClient> ClientWorld::get_client() const {
     return m_client;
 }
+const Argument& ClientWorld::argument() const {
+    return m_world_scene.argument();
+}
+
 void ClientWorld::set_direct_exit() { m_exit_direct = true; }
+
+void ClientWorld::send_ping() {
+    if (m_ping_time != 0) {
+        if (Tools::get_steady_timestamp_ms() - m_ping_time > PING_TIMEOUT) {
+            ++m_timeout_count;
+
+            m_ping_time = 0;
+        } else {
+            return;
+        }
+    }
+    Arena arena;
+    auto msg = Arena::Create<Ping>(&arena);
+    m_ping_time = Tools::get_steady_timestamp_ms();
+    msg->set_timestamp(m_ping_time);
+    m_client->send(make_packet(msg));
+}
+
 void ClientWorld::request_exit() {
     if (m_receive_exit) {
         return;
@@ -761,7 +802,7 @@ void ClientWorld::request_exit() {
     m_client->send(make_packet(*req));
     int cnt = 0;
     while (!m_receive_exit) {
-        if (m_client->is_connect_error() || m_exit_direct) {
+        if (m_client->is_connect_error() || m_exit_direct || !m_login_success) {
             break;
         }
         std::this_thread::sleep_for(milliseconds(m_per_tick_time));
@@ -801,6 +842,7 @@ void ClientWorld::send_chat_message(ChatMessage& message) {
     auto msg = Arena::Create<ChatMsg>(&arena);
     msg->set_name(message.player);
     msg->set_msg(message.text);
+    msg->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     m_client->send(make_packet(*msg));
 }
 
@@ -834,9 +876,16 @@ void ClientWorld::process_pending_chunks() {
         m_chunks.emplace(c->get_chunk_pos(), std::move(c));
     }
 }
+
 void ClientWorld::update(float delta_time) {
 
     ZoneScopedN("ClientWorld::update");
+    if (m_timeout_count > 6) {
+        m_world_scene.set_error("Connect Server Timeout");
+        return;
+    }
+
+    handle_task();
 
     process_pending_chunks();
 
@@ -907,6 +956,24 @@ void ClientWorld::update(float delta_time) {
     VoiceMessage vm;
     while (m_voice_queue.try_pop(vm)) {
         m_audio.receive_voice(vm.data, vm.pos);
+    }
+}
+
+void ClientWorld::handle_task() {
+    std::pair<TaskType, TaskData> task;
+    while (m_task_queue.try_pop(task)) {
+        switch (task.first) {
+        case TaskType::PONG: {
+            auto* v = std::get_if<uint64_t>(&task.second);
+            ASSERT(v);
+            d_rep("latency", "Latency: {}ms", *v);
+        } break;
+        case TaskType::ERR: {
+            auto* v = std::get_if<std::string>(&task.second);
+            ASSERT(v);
+            m_world_scene.set_error(*v);
+        } break;
+        }
     }
 }
 

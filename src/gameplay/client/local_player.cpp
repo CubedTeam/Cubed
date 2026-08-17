@@ -706,8 +706,9 @@ void LocalPlayer::init_identity() {
     m_key_pair = Crypto::Ed25519KeyPair{};
     StandardPaths standard("Cubed");
     auto path = standard.ensure(StandardPaths::Location::DATA);
-
-    auto identity_path = path / "identity.json";
+    auto& argument = m_world.argument();
+    auto identity_path = argument.identify ? fs::path(*argument.identify)
+                                           : path / "identity.json";
     Document doc;
     if (Tools::parse_json(doc, identity_path)) {
         std::string s;

@@ -39,7 +39,8 @@ public:
     ServerWorld(Config& config);
     ~ServerWorld();
     void stop();
-    void handle_player_exit(const Uuid& uuid);
+    void handle_player_exit(std::shared_ptr<ServerPlayer> player,
+                            bool sync = false);
     void init_world(RunMode mode, std::string_view world_name,
                     std::optional<uint32_t> seed);
     void request_generation(Uuid uuid);
@@ -87,6 +88,7 @@ public:
     void sync_player_water_sound(const PlayerWaterSound& rsp);
     void handle_player_login(LoginReq& msg, std::shared_ptr<Session> session);
     void handle_login_proof(LoginProof& msg, std::shared_ptr<Session> session);
+    void handle_ping(Ping& ping, std::shared_ptr<Session> session);
     void send_player_login_error(int32_t ec, std::string_view msg,
                                  std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const Uuid& uuid) const;
@@ -177,7 +179,7 @@ private:
 
     void boardcast_message(const std::string& name, const std::string& message,
                            Color color = Color::WHITE, bool system_msg = false);
-    void player_exit(const Uuid& uuid);
+    void player_exit(std::shared_ptr<ServerPlayer> expected_player);
 
     void load_metadata(std::optional<uint32_t> seed);
     void save_metadata();
