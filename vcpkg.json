@@ -2,7 +2,18 @@
   "dependencies": [
     "protobuf",
     "zstd",
-    "openal-soft",
+    {
+      "name": "openal-soft",
+      "features": [
+        "pipewire",
+        "pulseaudio"
+      ],
+      "platform": "linux"
+    },
+    {
+      "name": "openal-soft",
+      "platform": "!linux"
+    },
     "harfbuzz",
     "freetype",
     "opus",

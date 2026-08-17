@@ -32,6 +32,9 @@ jobs:
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
           sudo apt-get install -y \
+            autoconf \
+            autoconf-archive \
+            automake \
             curl \
             gcc-14 \
             g++-14 \
@@ -40,9 +43,15 @@ jobs:
             libibus-1.0-dev \
             libwayland-dev \
             libx11-dev \
+            libxcursor-dev \
             libxext-dev \
+            libxfixes-dev \
             libxft-dev \
+            libxi-dev \
             libxkbcommon-dev \
+            libxrandr-dev \
+            libxtst-dev \
+            libtool \
             ninja-build \
             pkg-config \
             unzip \
