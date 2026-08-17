@@ -13,25 +13,6 @@ find_package(Opus REQUIRED)
 find_package(assimp REQUIRED)
 find_package(RocksDB CONFIG REQUIRED)
 find_package(libsodium REQUIRED)
-
+find_package(TBB CONFIG REQUIRED)
 # Third-party libraries
 
-if (WIN32)
-
-    set(_BUILD_SHARED_LIBS_SAVED ${BUILD_SHARED_LIBS})
-    set(BUILD_SHARED_LIBS ON)
-
-    FetchContent_Declare(
-    onetbb                           
-    GIT_REPOSITORY https://github.com/uxlfoundation/oneTBB.git
-    GIT_TAG v2023.0.0
-    )
-    
-    set(BUILD_TESTING OFF CACHE BOOL "Build tests" FORCE)
-    set(TBB_TEST OFF CACHE BOOL "Build TBB tests" FORCE)
-    FetchContent_MakeAvailable(onetbb)
-
-    set(BUILD_SHARED_LIBS ${_BUILD_SHARED_LIBS_SAVED})
-    unset(_BUILD_SHARED_LIBS_SAVED)
-
-endif()
