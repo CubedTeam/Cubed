@@ -24,7 +24,6 @@ namespace Cubed {
 class ClientWorld;
 class LocalPlayer {
 public:
-    static constexpr size_t HOTBAR_SUM = 10;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
     static constexpr float RUN_SOUND_INTERVAL = 0.3f;
     using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
@@ -82,7 +81,7 @@ public:
 
     int selected_hotbar() const;
     void set_hotbar(int pos, const ItemStack& item);
-    std::span<const ItemStack, HOTBAR_SUM> get_hotbar() const;
+    std::span<const ItemStack, HOTBAR_STACK_SUM> get_hotbar() const;
 
     glm::vec3& max_speed();
     float& acceleration();
@@ -122,7 +121,7 @@ private:
 
     float m_place_time = PLACE_BLOCK_INTERVAL;
 
-    std::array<ItemStack, HOTBAR_SUM> m_hotbar;
+    std::array<ItemStack, HOTBAR_STACK_SUM> m_hotbar;
     float m_sensitivity = 0.15f;
 
     float space_on_time = 0.0f;

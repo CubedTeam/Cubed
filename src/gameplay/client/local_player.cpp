@@ -416,7 +416,7 @@ void LocalPlayer::place_block(float dt) {
         }
     }
     if (m_mouse_state.right) {
-        auto data = ItemManager::get(m_hotbar[m_selected_hotbar].id);
+        auto data = ItemManager::get(m_hotbar[m_selected_hotbar].item);
         if (data.kind == ItemKind::BLOCK) {
             auto* t = std::get_if<BlockType>(&data.property);
             ASSERT(t);
@@ -446,11 +446,10 @@ void LocalPlayer::place_block(float dt) {
 
 int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
 void LocalPlayer::set_hotbar(int pos, const ItemStack& item) {
-    ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_SUM);
+    ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_STACK_SUM);
     m_hotbar[pos] = item;
 }
-std::span<const ItemStack, LocalPlayer::HOTBAR_SUM>
-LocalPlayer::get_hotbar() const {
+std::span<const ItemStack, HOTBAR_STACK_SUM> LocalPlayer::get_hotbar() const {
     return m_hotbar;
 }
 
@@ -770,7 +769,7 @@ void LocalPlayer::init(std::string_view name) {
     });
 
     for (int i = 0; i < 10; i++) {
-        m_hotbar[i].id = i;
+        m_hotbar[i].item = i;
     }
 }
 

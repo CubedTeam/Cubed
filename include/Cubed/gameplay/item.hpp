@@ -24,6 +24,7 @@ struct ItemData {
     std::optional<ResourceLocation> path;
     ItemKind kind = ItemKind::NONE;
     ItemProperty property;
+    uint32_t max_stack_size = 64;
 };
 
 inline constexpr ItemKind get_item_kind(std::string_view kind) {

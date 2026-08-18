@@ -73,12 +73,12 @@ void InventoryUI::init() {
             auto& item = row.add_child<ItemSlot>();
             item.set_default_background(texture_manager);
             item.set_scale(5.0f);
-            if (h.id == 0) {
+            if (h.item == 0) {
                 item.set_item(0, nullptr);
             } else {
-                auto it = item_textures.find(h.id);
+                auto it = item_textures.find(h.item);
                 ASSERT(it != item_textures.end());
-                item.set_item(h.id, it->second.get());
+                item.set_item(h.item, it->second.get());
             }
             m_hotbar.emplace_back(&item);
         }
@@ -194,8 +194,9 @@ ItemSlot* InventoryUI::get_hovered_slot() {
     }
     return nullptr;
 }
+
 std::pair<ItemSlot*, size_t> InventoryUI::get_hovered_hotbar_slot() {
-    for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
+    for (size_t i = 0; i < HOTBAR_STACK_SUM; ++i) {
         auto& slot = m_hotbar[i];
         if (slot->hovered()) {
 
