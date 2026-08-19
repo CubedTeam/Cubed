@@ -523,6 +523,13 @@ void ClientWorld::receive_login_rsp(protocol::S2CLoginRsp& rsp) {
     player.set_pitch(rsp.pitch());
     player.set_player_pos(pos);
 
+    for (const auto& stack : rsp.inventory()) {
+        ItemStack s;
+        s.item = stack.item();
+        s.count = stack.count();
+        player.set_inventory(stack.position(), std::move(s));
+    }
+
     start_client_thread();
 }
 

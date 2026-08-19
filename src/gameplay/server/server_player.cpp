@@ -86,7 +86,10 @@ void ServerPlayer::add(ItemStack item, size_t position) {
 void ServerPlayer::remove(size_t position) {
     m_task.emplace(Task::REMOVE_ITEM, position);
 }
-
+std::span<const std::optional<ItemStack>, INVENTORY_SIZE>
+ServerPlayer::inventory() const {
+    return m_inventory;
+}
 void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
 void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
 float ServerPlayer::yaw() const { return m_yaw.load(); }
@@ -96,9 +99,18 @@ void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 Uuid ServerPlayer::get_uuid() const { return M_UUID; }
 
 void ServerPlayer::add_internal(ItemStack item, size_t position) {
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        return;
+    }
+
     m_inventory[position] = std::move(item);
 }
 void ServerPlayer::remove_internal(size_t position) {
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        return;
+    }
     m_inventory[position] = std::nullopt;
 }
 

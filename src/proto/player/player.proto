@@ -30,5 +30,5 @@ message S2CPlayerWaterSound {
 
 message C2SPlayerInventory {
     bytes uuid = 1;
-    repeated common.InventoryStack inventory = 2;
+    repeated common.InventoryStack inventory = 3;
 }

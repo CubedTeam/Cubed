@@ -121,6 +121,21 @@ std::string PlayerStorage::serialize(const PlayerStorageData& player) {
                   allocator);
     doc.AddMember("yaw", player.yaw, allocator);
     doc.AddMember("pitch", player.pitch, allocator);
+
+    rapidjson::Value inventory(rapidjson::kArrayType);
+
+    for (const auto& stack : player.inventory) {
+        rapidjson::Value item(rapidjson::kObjectType);
+
+        item.AddMember("item_id", stack.item_id, allocator);
+        item.AddMember("count", stack.count, allocator);
+        item.AddMember("position", stack.position, allocator);
+
+        inventory.PushBack(item, allocator);
+    }
+
+    doc.AddMember("inventory", inventory, allocator);
+
     return tools::to_json_string(doc);
 }
 
@@ -180,6 +195,29 @@ PlayerStorage::deserialize(std::string_view data) {
     }
     if (!tools::get_json_value(doc, "pitch", player.pitch)) {
         Logger::error("Parse player pitch fail");
+    }
+
+    if (doc.HasMember("inventory") && doc["inventory"].IsArray()) {
+        const auto& inventory = doc["items"];
+        for (const auto& stack : inventory.GetArray()) {
+            if (stack.IsObject()) {
+                continue;
+            }
+            StoredItemStack item_stack;
+
+            if (!tools::get_json_value(stack, "item_id", item_stack.item_id)) {
+                continue;
+            }
+            if (!tools::get_json_value(stack, "count", item_stack.count)) {
+                continue;
+            }
+            if (!tools::get_json_value(stack, "position",
+                                       item_stack.position)) {
+                continue;
+            }
+
+            player.inventory.push_back(std::move(item_stack));
+        }
     }
 
     return player;

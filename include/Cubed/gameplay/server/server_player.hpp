@@ -57,6 +57,8 @@ public:
     void add(ItemStack item, size_t position);
     void remove(size_t position);
 
+    std::span<const std::optional<ItemStack>, INVENTORY_SIZE> inventory() const;
+
 private:
     using ItemStackPair = std::pair<size_t, ItemStack>;
     using TaskElement = std::variant<ItemStackPair, size_t>;

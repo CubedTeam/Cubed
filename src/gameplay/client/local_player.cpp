@@ -446,8 +446,13 @@ void LocalPlayer::place_block(float dt) {
 }
 
 int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
-void LocalPlayer::set_inventory(int pos, std::optional<ItemStack> item) {
-    ASSERT(pos >= 0 && static_cast<size_t>(pos) < INVENTORY_SIZE);
+void LocalPlayer::set_inventory(size_t pos, std::optional<ItemStack> item) {
+    if (pos >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error("Client player inventory postion {} is out of range",
+                      pos);
+        return;
+    }
     m_inventory[pos] = std::move(item);
 }
 

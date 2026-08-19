@@ -81,7 +81,7 @@ public:
 
     int selected_hotbar() const;
 
-    void set_inventory(int pos, std::optional<ItemStack> item);
+    void set_inventory(size_t pos, std::optional<ItemStack> item);
 
     std::span<const std::optional<ItemStack>> get_inventory() const;
 
