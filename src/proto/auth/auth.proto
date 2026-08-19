@@ -1,35 +1,39 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
+
 import "common/vector3.proto";
 import "common/error.proto";
-message LoginReq {
+
+message C2SLoginReq {
     bytes public_key = 1;
     bytes uuid = 2;
 }
 
-message LoginChallenge {
+message S2CLoginChallenge {
     bytes challenge = 1;
     bytes uuid = 2;
 }
 
-message LoginProof {
+message C2SLoginProof {
     bytes signature = 1; 
     bytes uuid = 2;
     string name = 3;
 }
 
-message LoginRsp {
-    Error error = 1;
+message S2CLoginRsp {
+    common.Error error = 1;
     bool voice_chat = 2;
-    Vec3 pos = 3;
+    common.Vec3 pos = 3;
     float yaw = 4;
     float pitch = 5;
 }
 
-message LogoutReq {
+message C2SLogoutReq {
     bytes uuid = 1;
 }
 
-message LogoutRsp {
+message S2CLogoutRsp {
     bytes uuid = 1;
     bool server_stop = 2;
 }

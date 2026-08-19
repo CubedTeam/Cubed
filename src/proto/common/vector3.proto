@@ -1,4 +1,6 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.common;
 
 message Vec3 {
     float x = 1;

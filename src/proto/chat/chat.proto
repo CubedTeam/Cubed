@@ -1,5 +1,9 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
+
 import "common/vector3.proto";
+
 message ChatMsg {
     string name = 1;
     string msg = 2;
@@ -10,6 +14,6 @@ message ChatMsg {
 
 message VoiceMsg {
     bytes uuid = 1;
-    Vec3 pos = 2;
+    common.Vec3 pos = 2;
     bytes opus_data = 3; 
 }

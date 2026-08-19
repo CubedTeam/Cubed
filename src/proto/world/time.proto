@@ -1,6 +1,8 @@
-syntax = "proto3";
+edition = "2024";
 
-message UpdateTime {
+package cubed.protocol;
+
+message S2CUpdateTime {
     int64 game_tick = 1;
     int64 day_tick = 2;
 }

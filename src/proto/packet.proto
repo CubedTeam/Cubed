@@ -1,8 +1,8 @@
-syntax = "proto3";
+edition = "2024";
 
 import "common/error.proto";
-import "common/player_info.proto";
 import "common/vector3.proto";
+import "common/inventory.proto";
 import "player/player.proto";
 import "auth/auth.proto";
 import "system/ping.proto";

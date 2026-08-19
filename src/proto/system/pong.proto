@@ -1,4 +1,6 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
 
 message Pong {
     uint64 timestamp = 1;
