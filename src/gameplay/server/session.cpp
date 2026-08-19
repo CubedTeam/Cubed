@@ -71,7 +71,7 @@ asio::awaitable<void> Session::read_loop() {
             }
             Arena arena;
             switch (header.cmd) {
-            case std::to_underlying(PacketEnum::LOGIN_REQ): {
+            case std::to_underlying(PacketEnum::C2S_LOGIN_REQ): {
                 if (!m_player_uuid) {
                     auto* req = Arena::Create<protocol::C2SLoginReq>(&arena);
                     Logger::info("Session: Receive Login req");
@@ -90,7 +90,7 @@ asio::awaitable<void> Session::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::CHUNK_DATA_REQ): {
+            case std::to_underlying(PacketEnum::C2S_CHUNK_DATA_REQ): {
                 auto* req = Arena::Create<protocol::C2SChunkDataReq>(&arena);
                 // Logger::info("Session: Receive Chunk Data req");
                 if (decode_packet(*req, body_data, header)) {
@@ -107,7 +107,7 @@ asio::awaitable<void> Session::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::BLOCK_CHANGE_REQ): {
+            case std::to_underlying(PacketEnum::C2S_BLOCK_CHANGE_REQ): {
                 auto* req = Arena::Create<protocol::C2SBlockChangeReq>(&arena);
 
                 if (decode_packet(*req, body_data, header)) {
@@ -117,7 +117,7 @@ asio::awaitable<void> Session::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::LOGOUT_REQ): {
+            case std::to_underlying(PacketEnum::C2S_LOGOUT_REQ): {
                 auto* req = Arena::Create<protocol::C2SLogoutReq>(&arena);
                 if (decode_packet(*req, body_data, header)) {
                     auto uuid = Uuid::from_proto_bytes(req->uuid());
@@ -183,7 +183,7 @@ asio::awaitable<void> Session::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::LOGIN_PROOF): {
+            case std::to_underlying(PacketEnum::C2S_LOGIN_PROOF): {
                 auto* msg = Arena::Create<protocol::C2SLoginProof>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_server_world.handle_login_proof(*msg, shared_from_this());

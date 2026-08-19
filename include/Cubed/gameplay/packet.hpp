@@ -47,24 +47,24 @@ struct PacketHeader {
 };
 
 enum class PacketEnum : uint16_t {
-    LOGIN_REQ = 1001,
-    LOGIN_RSP = 1002,
-    LOGOUT_REQ = 1003,
-    LOGOUT_RSP = 1004,
-    LOGIN_CHALLENGE = 1005,
-    LOGIN_PROOF = 1006,
+    C2S_LOGIN_REQ = 1001,
+    S2C_LOGIN_RSP = 1002,
+    C2S_LOGOUT_REQ = 1003,
+    S2C_LOGOUT_RSP = 1004,
+    S2C_LOGIN_CHALLENGE = 1005,
+    C2S_LOGIN_PROOF = 1006,
 
     C2S_PLAYER_INVENTORY = 2001,
     C2S_PLAYER_INFO = 2002,
     S2C_PLAYER_INFO_RSP = 2003,
     S2C_PLAYER_WATER_SOUND = 2004,
 
-    CHUNK_DATA_REQ = 3001,
-    CHUNK_DATA_RSP = 3002,
-    BLOCK_CHANGE_REQ = 3003,
-    BLOCK_CHANGE_RSP = 3004,
+    C2S_CHUNK_DATA_REQ = 3001,
+    S2C_CHUNK_DATA_RSP = 3002,
+    C2S_BLOCK_CHANGE_REQ = 3003,
+    S2C_BLOCK_CHANGE_RSP = 3004,
     S2C_CLEAR_ALL_CHUNKS = 3005,
-    UPDATE_TIME = 3006,
+    S2C_UPDATE_TIME = 3006,
     S2C_ENTITY_CREATE = 3007,
     S2C_ENTITY_DESTROY = 3008,
     C2S_ENTITY_CREATE_REQ = 3009,
@@ -88,22 +88,22 @@ template <typename T> constexpr uint16_t get_packet_id() {
 }
 
 template <> constexpr uint16_t get_packet_id<protocol::C2SLoginReq>() {
-    return std::to_underlying(PacketEnum::LOGIN_REQ);
+    return std::to_underlying(PacketEnum::C2S_LOGIN_REQ);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CLoginRsp>() {
-    return std::to_underlying(PacketEnum::LOGIN_RSP);
+    return std::to_underlying(PacketEnum::S2C_LOGIN_RSP);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SLogoutReq>() {
-    return std::to_underlying(PacketEnum::LOGOUT_REQ);
+    return std::to_underlying(PacketEnum::C2S_LOGOUT_REQ);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CLogoutRsp>() {
-    return std::to_underlying(PacketEnum::LOGOUT_RSP);
+    return std::to_underlying(PacketEnum::S2C_LOGOUT_RSP);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CLoginChallenge>() {
-    return std::to_underlying(PacketEnum::LOGIN_CHALLENGE);
+    return std::to_underlying(PacketEnum::S2C_LOGIN_CHALLENGE);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SLoginProof>() {
-    return std::to_underlying(PacketEnum::LOGIN_PROOF);
+    return std::to_underlying(PacketEnum::C2S_LOGIN_PROOF);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInventory>() {
     return std::to_underlying(PacketEnum::C2S_PLAYER_INVENTORY);
@@ -115,16 +115,16 @@ template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerInfoRsp>() {
     return std::to_underlying(PacketEnum::S2C_PLAYER_INFO_RSP);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SChunkDataReq>() {
-    return std::to_underlying(PacketEnum::CHUNK_DATA_REQ);
+    return std::to_underlying(PacketEnum::C2S_CHUNK_DATA_REQ);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CChunkDataRsp>() {
-    return std::to_underlying(PacketEnum::CHUNK_DATA_RSP);
+    return std::to_underlying(PacketEnum::S2C_CHUNK_DATA_RSP);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SBlockChangeReq>() {
-    return std::to_underlying(PacketEnum::BLOCK_CHANGE_REQ);
+    return std::to_underlying(PacketEnum::C2S_BLOCK_CHANGE_REQ);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CBlockChangeRsp>() {
-    return std::to_underlying(PacketEnum::BLOCK_CHANGE_RSP);
+    return std::to_underlying(PacketEnum::S2C_BLOCK_CHANGE_RSP);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CClearAllChunks>() {
     return std::to_underlying(PacketEnum::S2C_CLEAR_ALL_CHUNKS);
@@ -142,7 +142,7 @@ template <> constexpr uint16_t get_packet_id<protocol::C2SEntityDestroyReq>() {
     return std::to_underlying(PacketEnum::C2S_ENTITY_DESTROY_REQ);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CUpdateTime>() {
-    return std::to_underlying(PacketEnum::UPDATE_TIME);
+    return std::to_underlying(PacketEnum::S2C_UPDATE_TIME);
 }
 template <> constexpr uint16_t get_packet_id<protocol::Ping>() {
     return std::to_underlying(PacketEnum::PING);
