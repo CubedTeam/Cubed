@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/ecs/movement.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/gameplay/hitbox.hpp"
-namespace Cubed {
+namespace cubed {
 
 struct BaseServerCreature {
     Transform transform{};
@@ -19,4 +19,4 @@ struct BaseServerCreature {
     HitboxID hitbox{};
 };
 
-} // namespace Cubed
+} // namespace cubed

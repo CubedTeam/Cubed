@@ -2,7 +2,7 @@
 #include "Cubed/gameplay/hitbox.hpp"
 
 #include <tbb/concurrent_hash_map.h>
-namespace Cubed {
+namespace cubed {
 class HitboxManager {
 public:
     struct Handle {
@@ -35,4 +35,4 @@ private:
     HitboxMap m_hitboxes;
     Handle load(std::string_view name);
 };
-} // namespace Cubed
+} // namespace cubed

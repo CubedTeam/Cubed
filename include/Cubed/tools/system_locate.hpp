@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Cubed {
+namespace cubed {
 struct SystemLocale {
     std::string country; // CN、US、JP...
     std::string locale;  // zh_CN、en_US...
@@ -10,4 +10,4 @@ struct SystemLocale {
 
 SystemLocale get_system_locale();
 
-} // namespace Cubed
+} // namespace cubed

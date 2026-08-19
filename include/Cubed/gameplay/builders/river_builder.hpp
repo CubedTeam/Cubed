@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/gameplay/builders/biome_builder.hpp"
-namespace Cubed {
+namespace cubed {
 
 class ChunkGenerator;
 
@@ -18,4 +18,4 @@ private:
     void build_blocks();
 };
 
-} // namespace Cubed
+} // namespace cubed

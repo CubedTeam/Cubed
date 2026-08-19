@@ -10,7 +10,7 @@
 #include <rapidjson/istreamwrapper.h>
 namespace fs = std::filesystem;
 using namespace rapidjson;
-namespace Cubed {
+namespace cubed {
 
 namespace {
 const HitboxManager::Handle EMPTY{};
@@ -78,7 +78,7 @@ HitboxManager::Handle HitboxManager::load(std::string_view name) {
         glm::vec3 half{0.0f};
 
         Document doc;
-        if (!Tools::parse_json(doc, p)) {
+        if (!tools::parse_json(doc, p)) {
             Logger::error("Can't parse hitbox {}", name);
             ASSERT(false);
             return EMPTY;
@@ -119,4 +119,4 @@ HitboxManager::Handle HitboxManager::load(std::string_view name) {
     return {Hitbox{glm::vec3(0.0f), glm::vec3(0.0f)}, 0};
 }
 
-} // namespace Cubed
+} // namespace cubed

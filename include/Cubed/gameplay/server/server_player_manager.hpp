@@ -7,7 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class ServerWorld;
 class ServerPlayerManager {
 public:
@@ -54,4 +54,4 @@ private:
     // key = uuid
     std::atomic<std::shared_ptr<const PlayerMap>> m_players;
 };
-} // namespace Cubed
+} // namespace cubed

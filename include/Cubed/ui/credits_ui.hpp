@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/ui/ui_manager.hpp"
-namespace Cubed {
+namespace cubed {
 
 class CreditsScene;
 
@@ -16,4 +16,4 @@ private:
     bool handle_window_resize_event(const WindowResizeEvent& e) override;
     CreditsScene& m_scene;
 };
-} // namespace Cubed
+} // namespace cubed

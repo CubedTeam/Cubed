@@ -4,7 +4,7 @@
 #endif
 #include <AL/alc.h>
 #include <AL/efx.h>
-namespace Cubed {
+namespace cubed {
 AudioFilter::AudioFilter() { alGenFilters(1, &m_filter); }
 AudioFilter::~AudioFilter() {
     if (m_filter != 0) {
@@ -19,4 +19,4 @@ void AudioFilter::set_lowpass(float gain, float gain_hf) {
 
 ALuint AudioFilter::filter() const { return m_filter; }
 
-} // namespace Cubed
+} // namespace cubed

@@ -2,7 +2,7 @@
 
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/ui_manager.hpp"
-namespace Cubed {
+namespace cubed {
 class CreateGameScene;
 class TextField;
 class CreateGameUI : public UIManager {
@@ -19,4 +19,4 @@ private:
     void set_error(std::string_view error);
     void clear_error();
 };
-} // namespace Cubed
+} // namespace cubed

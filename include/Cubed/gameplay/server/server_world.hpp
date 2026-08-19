@@ -23,7 +23,7 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
-namespace Cubed {
+namespace cubed {
 class Session;
 class ServerWorld : public World {
 public:
@@ -84,22 +84,24 @@ public:
 
     bool set_block(const glm::ivec3& block_pos, BlockType id);
 
-    void sync_player_pos(const C2S_PlayerInfo& rsp);
-    void sync_player_water_sound(const PlayerWaterSound& rsp);
-    void handle_player_login(LoginReq& msg, std::shared_ptr<Session> session);
-    void handle_login_proof(LoginProof& msg, std::shared_ptr<Session> session);
-    void handle_ping(Ping& ping, std::shared_ptr<Session> session);
+    void sync_player_pos(const protocol::C2SPlayerInfo& rsp);
+    void sync_player_water_sound(const protocol::PlayerWaterSound& rsp);
+    void handle_player_login(protocol::C2SLoginReq& msg,
+                             std::shared_ptr<Session> session);
+    void handle_login_proof(protocol::C2SLoginProof& msg,
+                            std::shared_ptr<Session> session);
+    void handle_ping(protocol::Ping& ping, std::shared_ptr<Session> session);
     void send_player_login_error(int32_t ec, std::string_view msg,
                                  std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const Uuid& uuid) const;
     void handle_chunk_req(int task_id, const Uuid& uuid, ChunkPos pos);
-    void handle_block_change(const BlockChangeReq& req);
+    void handle_block_change(const protocol::C2SBlockChangeReq& req);
 
-    void handle_chat_message(ChatMsg& msg);
-    void handle_voice_message(VoiceMsg& msg);
+    void handle_chat_message(protocol::ChatMsg& msg);
+    void handle_voice_message(protocol::VoiceMsg& msg);
 
-    void handle_entity_create(C2SEntityCreateRequest& req);
-    void handle_entity_destory(C2SEntityDestoryRequest& req);
+    void handle_entity_create(protocol::C2SEntityCreateReq& req);
+    void handle_entity_destroy(protocol::C2SEntityDestroyReq& req);
 
     int chunk_size() const;
 
@@ -184,4 +186,4 @@ private:
     void load_metadata(std::optional<uint32_t> seed);
     void save_metadata();
 };
-} // namespace Cubed
+} // namespace cubed

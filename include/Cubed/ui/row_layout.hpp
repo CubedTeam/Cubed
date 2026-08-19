@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 class RowLayout : public Widget {
 public:
     RowLayout(Widget* parent);
@@ -19,4 +19,4 @@ private:
     float m_content_width = 0.0f;
     void on_update(float dt) override;
 };
-} // namespace Cubed
+} // namespace cubed

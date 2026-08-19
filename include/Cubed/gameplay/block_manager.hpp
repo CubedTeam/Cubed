@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/block.hpp"
 
 #include <tbb/concurrent_hash_map.h>
-namespace Cubed {
+namespace cubed {
 class BlockManager {
 
 public:
@@ -50,4 +50,4 @@ private:
     static void set_up_cross_plane_map(
         const std::vector<std::pair<bool, BlockType>>& types);
 };
-} // namespace Cubed
+} // namespace cubed

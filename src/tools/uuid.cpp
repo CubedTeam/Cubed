@@ -4,7 +4,7 @@
 #include <bit>
 #include <cstring>
 #include <sodium.h>
-namespace Cubed {
+namespace cubed {
 
 namespace {
 
@@ -97,7 +97,7 @@ std::size_t Uuid::Hash::operator()(const Uuid& uuid) const noexcept {
     return static_cast<std::size_t>(HASH);
 }
 
-std::optional<Cubed::Uuid> Uuid::from_proto_bytes(const std::string& value) {
+std::optional<cubed::Uuid> Uuid::from_proto_bytes(std::string_view value) {
 
     if (value.size() != 16) {
         return std::nullopt;
@@ -107,9 +107,9 @@ std::optional<Cubed::Uuid> Uuid::from_proto_bytes(const std::string& value) {
     std::copy_n(reinterpret_cast<const std::uint8_t*>(value.data()),
                 bytes.size(), bytes.begin());
 
-    return Cubed::Uuid{bytes};
+    return cubed::Uuid{bytes};
 }
 
 std::string generate_uuid() { return Uuid{}.to_string(); }
 
-} // namespace Cubed
+} // namespace cubed

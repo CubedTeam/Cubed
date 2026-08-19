@@ -4,9 +4,9 @@
 
 #include <cstdlib>
 #include <string>
-namespace Cubed {
+namespace cubed {
 
-namespace Tools {
+namespace tools {
 inline std::string detect_wm() {
 #ifdef _WIN32
     return "Windows";
@@ -23,6 +23,6 @@ inline std::string detect_wm() {
 
     return "Unknown";
 }
-} // namespace Tools
+} // namespace tools
 
-} // namespace Cubed
+} // namespace cubed

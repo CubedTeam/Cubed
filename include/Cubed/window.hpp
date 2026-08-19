@@ -5,7 +5,7 @@
 #include "Cubed/input/event.hpp"
 
 #include <SDL3/SDL.h>
-namespace Cubed {
+namespace cubed {
 class Camera;
 class Renderer;
 class Window {
@@ -67,4 +67,4 @@ private:
     void set_borderless_fullscreen(bool full);
 };
 
-} // namespace Cubed
+} // namespace cubed

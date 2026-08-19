@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/gameplay/item.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
-namespace Cubed {
+namespace cubed {
 
 constexpr size_t HOTBAR_SIZE = 10;
 constexpr size_t BACKPACK_SIZE = 30;
@@ -21,4 +21,4 @@ struct ItemStack {
         return ItemManager::get(item).max_stack_size;
     }
 };
-} // namespace Cubed
+} // namespace cubed

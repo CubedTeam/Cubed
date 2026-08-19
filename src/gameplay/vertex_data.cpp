@@ -2,7 +2,7 @@
 
 #include "Cubed/gameplay/client/client_world.hpp"
 
-namespace Cubed {
+namespace cubed {
 VertexData::VertexData(ClientWorld& world) : m_world(world) {}
 VertexData::~VertexData() {
 
@@ -64,4 +64,4 @@ void VertexData::upload() {
     m_vertices.clear();
 }
 void VertexData::update_sum() { m_sum = m_vertices.size(); }
-} // namespace Cubed
+} // namespace cubed

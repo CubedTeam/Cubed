@@ -7,7 +7,7 @@
 #include <rapidjson/document.h>
 namespace fs = std::filesystem;
 using namespace rapidjson;
-namespace Cubed {
+namespace cubed {
 CreatureManager::CreatureManager() {}
 CreatureManager::~CreatureManager() {}
 CreatureManager& CreatureManager::instance() {
@@ -33,12 +33,12 @@ void CreatureManager::init() {
         }
 
         Document doc;
-        if (!Tools::parse_json(doc, entry.path())) {
+        if (!tools::parse_json(doc, entry.path())) {
             continue;
         }
 
         std::string name;
-        if (!Tools::get_json_value(doc, "name", name)) {
+        if (!tools::get_json_value(doc, "name", name)) {
             Logger::error("creature json {} doesn't have name",
                           entry.path().string());
             continue;
@@ -51,19 +51,19 @@ void CreatureManager::init() {
         }
         data.name = *n;
         std::string s;
-        if (Tools::get_json_value(doc, "model", s)) {
+        if (tools::get_json_value(doc, "model", s)) {
             data.model = ResourceLocation::parse(s);
         }
-        if (Tools::get_json_value(doc, "animation", s)) {
+        if (tools::get_json_value(doc, "animation", s)) {
             data.animation = ResourceLocation::parse(s);
         }
-        if (Tools::get_json_value(doc, "collision", s)) {
+        if (tools::get_json_value(doc, "collision", s)) {
             data.collision = ResourceLocation::parse(s);
         }
 
         if (doc.HasMember("sounds") && doc["sounds"].IsObject()) {
             auto& sounds = doc["sounds"];
-            if (Tools::get_json_value(sounds, "call", s)) {
+            if (tools::get_json_value(sounds, "call", s)) {
                 data.sound.call = ResourceLocation::parse(s);
             }
         }
@@ -100,4 +100,4 @@ CreatureData CreatureManager::data(const ResourceLocation& location) {
     return instance().get_creature_data(location);
 }
 
-} // namespace Cubed
+} // namespace cubed

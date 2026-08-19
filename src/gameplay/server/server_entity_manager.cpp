@@ -17,7 +17,7 @@
 #include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 
-namespace Cubed {
+namespace cubed {
 ServerEntityManager::ServerEntityManager(ServerWorld& world) : m_world(world) {}
 
 void ServerEntityManager::init() {
@@ -25,10 +25,10 @@ void ServerEntityManager::init() {
     m_factories.try_emplace("cubed:pig", [this](EntityID id) {
         BaseServerCreature c;
         c.hitbox = HitboxManager::instance().get_hitbox_id("cubed:pig");
-        c.gravity.value = PigDefaults::GRAVITY;
-        c.movement.acceleration = PigDefaults::ACCELERATION;
-        c.movement.deceleration = PigDefaults::DECELERATION;
-        c.velocity.max.x = c.velocity.max.z = PigDefaults::MAX_SPEED;
+        c.gravity.value = pig_defaults::GRAVITY;
+        c.movement.acceleration = pig_defaults::ACCELERATION;
+        c.movement.deceleration = pig_defaults::DECELERATION;
+        c.velocity.max.x = c.velocity.max.z = pig_defaults::MAX_SPEED;
         return create_entity_in_factory(id, Entity{id, EntityType::CREATURE},
                                         EntityInfo{"cubed:pig", std::nullopt},
                                         std::move(c), PigTag{}, AIBase{},
@@ -121,12 +121,12 @@ void ServerEntityManager::update() {
                 });
     if (!send_data.empty()) {
         Arena arena;
-        auto* msg = Arena::Create<S2CEntityUpdateBatch>(&arena);
+        auto* msg = Arena::Create<protocol::S2CEntityUpdateBatch>(&arena);
         for (auto& data : send_data) {
             auto* u = msg->add_updates();
             u->set_id(data.id);
-            Tools::set_proto_pos(u, data.pos);
-            Tools::set_proto_vec3(u->mutable_direction(), data.dir);
+            tools::set_proto_pos(u, data.pos);
+            tools::set_proto_vec3(u->mutable_direction(), data.dir);
             u->set_gait(get_gait_id(data.gait));
         }
         auto packet = make_packet(msg);
@@ -236,7 +236,7 @@ void ServerEntityManager::unload_internal(EntityID id) {
 
     auto sessions = m_world.get_all_session();
     Arena arena;
-    auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
+    auto* s2c = Arena::Create<protocol::S2CEntityDestroy>(&arena);
     s2c->set_id(id);
     auto packet = make_packet(*s2c);
     for (auto& s : sessions) {
@@ -290,10 +290,10 @@ void ServerEntityManager::handle_task() {
             ASSERT(c);
             send_all_entities(*c);
         } break;
-        case Command::DESTORY: {
+        case Command::DESTROY: {
             auto* c = std::get_if<EntityID>(&pair.second);
             ASSERT(c);
-            handle_entity_destory(*c);
+            handle_entity_destroy(*c);
         } break;
         case Command::SAVE_ALL: {
             save_all();
@@ -318,8 +318,8 @@ void ServerEntityManager::add_creature(std::string_view name,
                     EntityCreateElement{std::string(name), world_pos});
 }
 
-void ServerEntityManager::destory(EntityID id) {
-    m_tasks.emplace(Command::DESTORY, id);
+void ServerEntityManager::destroy(EntityID id) {
+    m_tasks.emplace(Command::DESTROY, id);
 }
 
 void ServerEntityManager::handle_player_login(
@@ -370,10 +370,10 @@ void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
         auto [e, info, base] =
             view.get<Entity, EntityInfo, BaseServerCreature>(entity);
         Arena arena;
-        auto* s2c = Arena::Create<S2CEntityCreate>(&arena);
+        auto* s2c = Arena::Create<protocol::S2CEntityCreate>(&arena);
         s2c->set_id(e.id);
         s2c->set_name(info.name);
-        Tools::set_proto_pos(s2c, base.transform.position.value);
+        tools::set_proto_pos(s2c, base.transform.position.value);
         session->send(make_packet(*s2c));
     }
 }
@@ -384,17 +384,17 @@ void ServerEntityManager::handle_entity_create(EntityID id,
     auto sessions = m_world.get_all_session();
 
     Arena arena;
-    auto* s2c = Arena::Create<S2CEntityCreate>(&arena);
+    auto* s2c = Arena::Create<protocol::S2CEntityCreate>(&arena);
     s2c->set_id(id);
     s2c->set_name(name);
-    Tools::set_proto_pos(s2c, pos);
+    tools::set_proto_pos(s2c, pos);
     auto packet = make_packet(*s2c);
     for (auto& s : sessions) {
         s->send(packet);
     }
 }
 
-bool ServerEntityManager::destory_internal(EntityID id) {
+bool ServerEntityManager::destroy_internal(EntityID id) {
     {
         acc a;
         if (m_entities.find(a, id)) {
@@ -438,15 +438,15 @@ bool ServerEntityManager::destory_internal(EntityID id) {
     return false;
 }
 
-void ServerEntityManager::handle_entity_destory(EntityID id) {
+void ServerEntityManager::handle_entity_destroy(EntityID id) {
 
-    if (!destory_internal(id)) {
+    if (!destroy_internal(id)) {
         return;
     }
 
     auto sessions = m_world.get_all_session();
     Arena arena;
-    auto* s2c = Arena::Create<S2CEntityDestory>(&arena);
+    auto* s2c = Arena::Create<protocol::S2CEntityDestroy>(&arena);
     s2c->set_id(id);
     auto packet = make_packet(*s2c);
     for (auto& s : sessions) {
@@ -454,4 +454,4 @@ void ServerEntityManager::handle_entity_destory(EntityID id) {
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

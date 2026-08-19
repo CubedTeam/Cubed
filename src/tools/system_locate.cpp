@@ -5,7 +5,7 @@
 #define NOMINMAX
 #include <Windows.h>
 
-namespace Cubed {
+namespace cubed {
 
 SystemLocale get_system_locale() {
     wchar_t locale_name[LOCALE_NAME_MAX_LENGTH]{};
@@ -30,14 +30,14 @@ SystemLocale get_system_locale() {
     return result;
 }
 
-} // namespace Cubed
+} // namespace cubed
 
 #else
 
 #include <cstdlib>
 #include <string>
 
-namespace Cubed {
+namespace cubed {
 
 SystemLocale get_system_locale() {
     SystemLocale result;
@@ -70,6 +70,6 @@ SystemLocale get_system_locale() {
     return result;
 }
 
-} // namespace Cubed
+} // namespace cubed
 
 #endif

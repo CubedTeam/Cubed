@@ -11,7 +11,7 @@ namespace {
 constexpr int SELECTED_ITEM_SIZE = 128;
 }
 
-namespace Cubed {
+namespace cubed {
 InventoryUI::InventoryUI(WorldScene& scene) : m_scene(scene) {}
 
 void InventoryUI::init() {
@@ -205,4 +205,4 @@ std::pair<ItemSlot*, size_t> InventoryUI::get_hovered_hotbar_slot() {
     }
     return {nullptr, 0};
 }
-} // namespace Cubed
+} // namespace cubed

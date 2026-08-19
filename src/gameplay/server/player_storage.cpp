@@ -7,7 +7,7 @@
 #include <rapidjson/document.h>
 #include <rocksdb/db.h>
 using namespace rapidjson;
-namespace Cubed {
+namespace cubed {
 PlayerStorage::PlayerStorage(WorldStorage& storage) : m_storage(storage) {}
 PlayerStorage::~PlayerStorage() {}
 
@@ -113,28 +113,28 @@ std::string PlayerStorage::serialize(const PlayerStorageData& player) {
                   rapidjson::Value(player.uuid.to_string().c_str(), allocator),
                   allocator);
     doc.AddMember("version", WorldStorage::VERSION, allocator);
-    auto j_pos = Tools::vec3_to_json(player.pos, allocator);
+    auto j_pos = tools::vec3_to_json(player.pos, allocator);
     doc.AddMember("position", j_pos, allocator);
-    std::string pk = Crypto::Ed25519::to_hex(player.public_key.data.data(),
+    std::string pk = crypto::Ed25519::to_hex(player.public_key.data.data(),
                                              player.public_key.data.size());
     doc.AddMember("public_key", rapidjson::Value(pk.c_str(), allocator),
                   allocator);
     doc.AddMember("yaw", player.yaw, allocator);
     doc.AddMember("pitch", player.pitch, allocator);
-    return Tools::to_json_string(doc);
+    return tools::to_json_string(doc);
 }
 
 std::optional<PlayerStorageData>
 PlayerStorage::deserialize(std::string_view data) {
 
     Document doc;
-    if (!Tools::parse_json_from_string(doc, data)) {
+    if (!tools::parse_json_from_string(doc, data)) {
         Logger::error("Can't parse Player Storage Data");
         return std::nullopt;
     }
 
     uint32_t version = 0;
-    if (Tools::get_json_value(doc, "version", version)) {
+    if (tools::get_json_value(doc, "version", version)) {
         if (version > WorldStorage::VERSION) {
             Logger::error("Unsupported player version: {}", version);
             return std::nullopt;
@@ -143,7 +143,7 @@ PlayerStorage::deserialize(std::string_view data) {
     PlayerStorageData player;
 
     std::string uuid;
-    if (Tools::get_json_value(doc, "uuid", uuid)) {
+    if (tools::get_json_value(doc, "uuid", uuid)) {
         auto u = Uuid::from_string(uuid);
         if (!u) {
             Logger::error("Parse uuid from player string fail");
@@ -154,8 +154,8 @@ PlayerStorage::deserialize(std::string_view data) {
         return std::nullopt;
     }
     std::string pk;
-    if (Tools::get_json_value(doc, "public_key", pk)) {
-        if (!Crypto::Ed25519::from_hex(pk, player.public_key.data.data(),
+    if (tools::get_json_value(doc, "public_key", pk)) {
+        if (!crypto::Ed25519::from_hex(pk, player.public_key.data.data(),
                                        player.public_key.data.size())) {
             Logger::error("Parse player public key from hex fail.");
             return std::nullopt;
@@ -164,25 +164,25 @@ PlayerStorage::deserialize(std::string_view data) {
         return std::nullopt;
     }
 
-    if (Crypto::Ed25519::uuid_from_public_key(player.public_key) !=
+    if (crypto::Ed25519::uuid_from_public_key(player.public_key) !=
         player.uuid) {
         Logger::error("Player {} pk != uuid", player.uuid.to_string());
         return std::nullopt;
     }
 
-    if (!Tools::get_json_value(doc, "position", player.pos)) {
+    if (!tools::get_json_value(doc, "position", player.pos)) {
         Logger::error("Parse player position fail");
         return std::nullopt;
     }
 
-    if (!Tools::get_json_value(doc, "yaw", player.yaw)) {
+    if (!tools::get_json_value(doc, "yaw", player.yaw)) {
         Logger::error("Parse player yaw fail");
     }
-    if (!Tools::get_json_value(doc, "pitch", player.pitch)) {
+    if (!tools::get_json_value(doc, "pitch", player.pitch)) {
         Logger::error("Parse player pitch fail");
     }
 
     return player;
 }
 
-} // namespace Cubed
+} // namespace cubed

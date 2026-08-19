@@ -9,7 +9,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class Renderer;
 class ClientWorld;
 class TextureManager;
@@ -156,4 +156,4 @@ private:
                                            float dt);
     InstanceDataMap entity_build(ClientWorld& world);
 };
-} // namespace Cubed
+} // namespace cubed

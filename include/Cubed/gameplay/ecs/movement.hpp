@@ -2,7 +2,7 @@
 #include "Cubed/constants.hpp"
 
 #include <glm/glm.hpp>
-namespace Cubed {
+namespace cubed {
 struct TickVelocity {
 
     glm::vec3 value{0.0f};
@@ -31,4 +31,4 @@ struct Gravity {
     float value = DEFAULT_G;
 };
 
-} // namespace Cubed
+} // namespace cubed

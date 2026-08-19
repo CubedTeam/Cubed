@@ -5,7 +5,7 @@
 
 #include <tbb/concurrent_hash_map.h>
 
-namespace Cubed {
+namespace cubed {
 class CaveCarver {
 
 public:
@@ -23,4 +23,4 @@ private:
     std::atomic<unsigned> m_world_seed{0};
     std::atomic<float> m_cave_probability{DEFAULT_CAVE_PROBABILITY};
 };
-} // namespace Cubed
+} // namespace cubed

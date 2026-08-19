@@ -8,7 +8,7 @@ namespace {
 constexpr float DISTANCE = 4.0f;
 
 } // namespace
-namespace Cubed {
+namespace cubed {
 
 Camera::Camera() {}
 
@@ -123,7 +123,7 @@ bool Camera::handle_event(const Event& e) {
                    [](const WindowResizeEvent&) { return false; },
                    [](const FrameBufferResizeEvent&) { return false; }
 
-        } // namespace Cubed
+        } // namespace cubed
         ,
         e);
 }
@@ -161,4 +161,4 @@ bool Camera::handle_mouse_move_event(const MouseMoveEvent& e) {
     return true;
 }
 
-} // namespace Cubed
+} // namespace cubed

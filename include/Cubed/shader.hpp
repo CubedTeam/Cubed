@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <string>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 
 class Shader {
 public:
@@ -55,4 +55,4 @@ private:
     mutable std::unordered_map<std::string, GLint> m_uniform_cache;
 };
 
-} // namespace Cubed
+} // namespace cubed

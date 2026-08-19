@@ -8,7 +8,7 @@
 #include <queue>
 #include <thread>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class ThreadPool {
 private:
     std::vector<std::jthread> m_workers;
@@ -122,4 +122,4 @@ void parallel_do(ThreadPool& pool, Iter first, Iter last, size_t max_threads,
     }
 };
 
-} // namespace Cubed
+} // namespace cubed

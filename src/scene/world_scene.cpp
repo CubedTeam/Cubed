@@ -6,7 +6,7 @@
 #include "Cubed/tools/time_tools.hpp"
 
 #include <tracy/Tracy.hpp>
-namespace Cubed {
+namespace cubed {
 WorldScene::WorldScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_dev_panel(*this),
       m_client_world(scene_manager.app().audio(), scene_manager.app().config(),
@@ -395,7 +395,7 @@ bool WorldScene::handle_key_event(const KeyEvent& e) {
         msg.system_msg = true;
         msg.color = Color::WHITE;
         msg.text = "Saved Screenshot!";
-        msg.time = Tools::get_time_ticks();
+        msg.time = tools::get_time_ticks();
         m_hud_ui.add_chat_message(msg);
         return true;
     }
@@ -488,4 +488,4 @@ void WorldScene::set_error(std::string_view error) {
     set_pause(true);
 }
 
-} // namespace Cubed
+} // namespace cubed

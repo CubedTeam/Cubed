@@ -6,7 +6,7 @@
 
 #include <cmath>
 #include <tracy/Tracy.hpp>
-namespace Cubed {
+namespace cubed {
 
 namespace {
 float swing_angle(const WalkPose& pose, float speed, float amp_deg) {
@@ -157,4 +157,4 @@ glm::mat4 ModelRender::pose_node(const ModelNode& node,
     return glm::rotate(node.transform, angle, glm::vec3(1.0f, 0.0f, 0.0f));
 }
 
-} // namespace Cubed
+} // namespace cubed

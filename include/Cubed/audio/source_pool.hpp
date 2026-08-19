@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/audio/audio_source.hpp"
 
-namespace Cubed {
+namespace cubed {
 class SourcePool {
 private:
     std::vector<std::unique_ptr<AudioSource>> m_sources;
@@ -21,4 +21,4 @@ public:
     std::vector<std::unique_ptr<AudioSource>>& sources();
 };
 
-} // namespace Cubed
+} // namespace cubed

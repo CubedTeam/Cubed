@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/client/local_player.hpp"
 #include "Cubed/gameplay/client/network_client.hpp"
 #include "Cubed/tools/sparse_vector.hpp"
-namespace Cubed {
+namespace cubed {
 class ClientWorld;
 class ClientPlayerManager {
 public:
@@ -24,8 +24,8 @@ public:
     LocalPlayer& get_local();
     const LocalPlayer& get_local() const;
 
-    void receive_remote_player(const PlayerInfoRsp& rsp);
-    void receive_player_logout(const LogoutRsp& rsp);
+    void receive_remote_player(const protocol::PlayerInfoRsp& rsp);
+    void receive_player_logout(const protocol::S2CLogoutRsp& rsp);
 
     void reload_config();
 
@@ -42,4 +42,4 @@ private:
 
     void update_players_data(float dt);
 };
-} // namespace Cubed
+} // namespace cubed

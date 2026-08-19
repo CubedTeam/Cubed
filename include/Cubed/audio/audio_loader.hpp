@@ -2,7 +2,7 @@
 #include "Cubed/audio/audio_data.hpp"
 
 #include <filesystem>
-namespace Cubed {
+namespace cubed {
 
 class AudioLoader {
 public:
@@ -14,4 +14,4 @@ private:
     static AudioData load_flac(const std::filesystem::path& path);
     static AudioData load_ogg(const std::filesystem::path& path);
 };
-} // namespace Cubed
+} // namespace cubed

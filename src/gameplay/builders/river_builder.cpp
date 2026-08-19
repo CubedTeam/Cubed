@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/builders/river_builder.hpp"
 
 #include "Cubed/gameplay/server/chunk_generator.hpp"
-namespace Cubed {
+namespace cubed {
 RiverBuilder::RiverBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}
 
@@ -59,4 +59,4 @@ ChunkGenerator& RiverBuilder::get_chunk_generator() {
     return m_chunk_generator;
 };
 
-} // namespace Cubed
+} // namespace cubed

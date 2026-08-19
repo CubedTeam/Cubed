@@ -8,7 +8,7 @@
 #include <rocksdb/write_batch.h>
 namespace fs = std::filesystem;
 using namespace google::protobuf;
-namespace Cubed {
+namespace cubed {
 ChunkStorage::ChunkStorage(WorldStorage& storage) : m_storage(storage) {}
 
 ChunkStorage::~ChunkStorage() {}
@@ -96,7 +96,7 @@ std::string ChunkStorage::make_key(ChunkPos pos) {
 
 std::string ChunkStorage::serialize(const ChunkStorageData& chunk) {
     Arena arena;
-    auto* p = Arena::Create<StoredChunk>(&arena);
+    auto* p = Arena::Create<storage::StoredChunk>(&arena);
 
     p->set_biome(std::to_underlying(chunk.biome));
 
@@ -123,7 +123,7 @@ std::optional<ChunkStorageData>
 ChunkStorage::deserialize(std::string_view data) {
 
     Arena arena;
-    auto* p = Arena::Create<StoredChunk>(&arena);
+    auto* p = Arena::Create<storage::StoredChunk>(&arena);
 
     if (!p->ParseFromArray(data.data(), static_cast<int>(data.size()))) {
         return std::nullopt;
@@ -176,4 +176,4 @@ std::size_t ChunkStorage::size() const {
     return count;
 }
 */
-} // namespace Cubed
+} // namespace cubed

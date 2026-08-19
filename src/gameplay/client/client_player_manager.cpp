@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 
 using namespace google::protobuf;
 
-namespace Cubed {
+namespace cubed {
 
 namespace {
 constexpr double ENTITY_RENDER_DELAY_MS = 100.0; // two tick time
@@ -104,7 +104,8 @@ bool ClientPlayerManager::has_player(const Hitbox& hitbox) const {
     return false;
 }
 
-void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
+void ClientPlayerManager::receive_remote_player(
+    const protocol::PlayerInfoRsp& rsp) {
     auto uuid = Uuid::from_proto_bytes(rsp.uuid());
     if (!uuid) {
         Logger::error("Can't parse proto uuid");
@@ -129,7 +130,7 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
             data.render_pos.value = pos;
             data.walk.gait = get_gait_from_id(rsp.gait());
             data.history.value.emplace_back(
-                static_cast<double>(Tools::get_time_ticks()), pos, yaw, pitch);
+                static_cast<double>(tools::get_time_ticks()), pos, yaw, pitch);
             auto handle = m_players.emplace(std::move(data));
             m_players_handle.try_emplace(*uuid, handle);
         } else {
@@ -140,7 +141,7 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
             data.angle.yaw = yaw;
             data.angle.pitch = pitch;
             data.history.value.push_back(
-                {static_cast<double>(Tools::get_time_ticks()), pos, yaw,
+                {static_cast<double>(tools::get_time_ticks()), pos, yaw,
                  pitch});
             while (data.history.value.size() > ENTITY_SNAPSHOT_MAX) {
                 data.history.value.pop_front();
@@ -150,7 +151,8 @@ void ClientPlayerManager::receive_remote_player(const PlayerInfoRsp& rsp) {
     }
 }
 
-void ClientPlayerManager::receive_player_logout(const LogoutRsp& rsp) {
+void ClientPlayerManager::receive_player_logout(
+    const protocol::S2CLogoutRsp& rsp) {
     {
         auto uuid = Uuid::from_proto_bytes(rsp.uuid());
         if (!uuid) {
@@ -176,7 +178,7 @@ void ClientPlayerManager::report_player_info(NetworkClient* client) {
         return;
     }
     Arena arena;
-    auto* info = Arena::Create<C2S_PlayerInfo>(&arena);
+    auto* info = Arena::Create<protocol::C2SPlayerInfo>(&arena);
     auto uuid = m_local.get_uuid();
     info->set_uuid(uuid.to_proto_bytes());
     glm::vec3 player_pos = m_local.get_player_pos();
@@ -196,7 +198,7 @@ void ClientPlayerManager::update_players_data(float dt) {
     auto m_rendering_distance = m_world.rendering_distance();
     auto update_renderinfo = [this, dt,
                               m_rendering_distance](ClientPlayer& player) {
-        double render_time = static_cast<double>(Tools::get_time_ticks()) -
+        double render_time = static_cast<double>(tools::get_time_ticks()) -
                              ENTITY_RENDER_DELAY_MS;
         auto snapshot = interpolate_snapshot(player.history.value, render_time);
 
@@ -221,7 +223,7 @@ void ClientPlayerManager::update_players_data(float dt) {
                 glm::mix(player.render_angle.roll, 0.0f, t);
         }
 
-        if (Math::distance2(player.render_pos.value, m_local.get_player_pos()) >
+        if (math::distance2(player.render_pos.value, m_local.get_player_pos()) >
             m_rendering_distance * CHUNK_SIZE * m_rendering_distance *
                 CHUNK_SIZE) {
             return;
@@ -311,4 +313,4 @@ const LocalPlayer& ClientPlayerManager::get_local() const { return m_local; }
 std::span<PlayerRenderData> ClientPlayerManager::render_player_data() {
     return m_render_data;
 }
-} // namespace Cubed
+} // namespace cubed

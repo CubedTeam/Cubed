@@ -17,7 +17,7 @@
 #include <stb_image_write.h>
 #include <tracy/Tracy.hpp>
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 
 Renderer::Renderer(TextureManager& texture_manager, Config& config)
     : m_texture_manager(texture_manager), m_world_renderer(*this),
@@ -225,7 +225,7 @@ void Renderer::render_image(const Image& image) {
 
     image.texture()->bind(0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    Tools::check_opengl_error();
+    tools::check_opengl_error();
 }
 
 void Renderer::update(float delta_time) { m_delta_time = delta_time; }
@@ -313,7 +313,7 @@ void Renderer::handle_screenshot() {
     fs::path path = SCREENSHOT_PATH;
     fs::create_directories(path);
     fs::path image =
-        path / std::format("screenshot {}.png", Tools::get_time_date_str());
+        path / std::format("screenshot {}.png", tools::get_time_date_str());
     if (!stbi_write_png(image.string().c_str(), width, height, 4,
                         flipped_pixels.data(), width * 4)) {
         Logger::error("Failed to write {} image", image.string());
@@ -376,4 +376,4 @@ const glm::mat4& Renderer::p_mat() const { return m_world_proj_matrix; }
 const std::vector<VertexArray>& Renderer::vao() const { return m_vao; }
 ModelRender& Renderer::model_renderer() { return m_model_renderer; }
 void Renderer::save_screenshot() { m_save_screenshot = true; }
-} // namespace Cubed
+} // namespace cubed

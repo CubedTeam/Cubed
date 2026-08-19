@@ -9,7 +9,7 @@
 #include "Cubed/ui/inventory_ui.hpp"
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/world_ui_manager.hpp"
-namespace Cubed {
+namespace cubed {
 enum class VoiceInputType { OFF, PTT, ALWAYS };
 class SceneManager;
 class WorldScene : public Scene {
@@ -73,4 +73,4 @@ private:
     bool handle_text_input_event(const TextInputEvent&) override;
     void load_config();
 };
-} // namespace Cubed
+} // namespace cubed

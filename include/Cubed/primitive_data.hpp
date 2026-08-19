@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Cubed {
+namespace cubed {
 #pragma region NORMAL_BLOCK
 constexpr float VERTICES_POS[6][6][3] = {
     // ===== front (z = +1) =====
@@ -344,4 +344,4 @@ struct Vertex2D {
     float layer = 0.0f;
 };
 
-} // namespace Cubed
+} // namespace cubed

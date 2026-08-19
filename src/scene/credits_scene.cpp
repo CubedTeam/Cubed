@@ -3,7 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 
-namespace Cubed {
+namespace cubed {
 CreditsScene::CreditsScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_ui(*this) {}
 
@@ -25,4 +25,4 @@ void CreditsScene::on_re_enter() {
 };
 SceneManager& CreditsScene::scene_manager() { return m_scene_manager; }
 
-} // namespace Cubed
+} // namespace cubed

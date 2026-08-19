@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-namespace Cubed {
+namespace cubed {
 constexpr size_t HEADER_LEN =
     sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + sizeof(uint32_t);
 constexpr size_t PACKET_COMPRESSION_THRESHOLD = 100;
@@ -54,7 +54,7 @@ enum class PacketEnum : uint16_t {
     LOGIN_CHALLENGE = 1005,
     LOGIN_PROOF = 1006,
 
-    PLAYER_INFO = 2001,
+    INVENTORY = 2001,
     C2S_PLAYER_INFO = 2002,
     PLAYER_INFO_RSP = 2003,
     PLAYER_WATER_SOUND = 2004,
@@ -66,9 +66,9 @@ enum class PacketEnum : uint16_t {
     S2C_CLEAR_ALL_CHUNKS = 3005,
     UPDATE_TIME = 3006,
     S2C_ENTITY_CREATE = 3007,
-    S2C_ENTITY_DESTORY = 3008,
-    C2S_ENTITY_CREATE_REQUEST = 3009,
-    C2S_ENTITY_DESTORY_REQUEST = 3010,
+    S2C_ENTITY_DESTROY = 3008,
+    C2S_ENTITY_CREATE_REQ = 3009,
+    C2S_ENTITY_DESTROY_REQ = 3010,
     S2C_ENTITY_UPDATE = 3011,
     S2C_ENTITY_UPDATE_BATCH = 3012,
 
@@ -87,82 +87,82 @@ template <typename T> constexpr uint16_t get_packet_id() {
     return 0;
 }
 
-template <> constexpr uint16_t get_packet_id<LoginReq>() {
+template <> constexpr uint16_t get_packet_id<protocol::C2SLoginReq>() {
     return std::to_underlying(PacketEnum::LOGIN_REQ);
 }
-template <> constexpr uint16_t get_packet_id<LoginRsp>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CLoginRsp>() {
     return std::to_underlying(PacketEnum::LOGIN_RSP);
 }
-template <> constexpr uint16_t get_packet_id<LogoutReq>() {
+template <> constexpr uint16_t get_packet_id<protocol::C2SLogoutReq>() {
     return std::to_underlying(PacketEnum::LOGOUT_REQ);
 }
-template <> constexpr uint16_t get_packet_id<LogoutRsp>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CLogoutRsp>() {
     return std::to_underlying(PacketEnum::LOGOUT_RSP);
 }
-template <> constexpr uint16_t get_packet_id<LoginChallenge>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CLoginChallenge>() {
     return std::to_underlying(PacketEnum::LOGIN_CHALLENGE);
 }
-template <> constexpr uint16_t get_packet_id<LoginProof>() {
+template <> constexpr uint16_t get_packet_id<protocol::C2SLoginProof>() {
     return std::to_underlying(PacketEnum::LOGIN_PROOF);
 }
-template <> constexpr uint16_t get_packet_id<PlayerInfo>() {
-    return std::to_underlying(PacketEnum::PLAYER_INFO);
+template <> constexpr uint16_t get_packet_id<common::Inventory>() {
+    return std::to_underlying(PacketEnum::INVENTORY);
 }
-template <> constexpr uint16_t get_packet_id<C2S_PlayerInfo>() {
+template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInfo>() {
     return std::to_underlying(PacketEnum::C2S_PLAYER_INFO);
 }
-template <> constexpr uint16_t get_packet_id<PlayerInfoRsp>() {
+template <> constexpr uint16_t get_packet_id<protocol::PlayerInfoRsp>() {
     return std::to_underlying(PacketEnum::PLAYER_INFO_RSP);
 }
-template <> constexpr uint16_t get_packet_id<ChunkDataReq>() {
+template <> constexpr uint16_t get_packet_id<protocol::C2SChunkDataReq>() {
     return std::to_underlying(PacketEnum::CHUNK_DATA_REQ);
 }
-template <> constexpr uint16_t get_packet_id<ChunkDataRsp>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CChunkDataRsp>() {
     return std::to_underlying(PacketEnum::CHUNK_DATA_RSP);
 }
-template <> constexpr uint16_t get_packet_id<BlockChangeReq>() {
+template <> constexpr uint16_t get_packet_id<protocol::C2SBlockChangeReq>() {
     return std::to_underlying(PacketEnum::BLOCK_CHANGE_REQ);
 }
-template <> constexpr uint16_t get_packet_id<BlockChangeRsp>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CBlockChangeRsp>() {
     return std::to_underlying(PacketEnum::BLOCK_CHANGE_RSP);
 }
-template <> constexpr uint16_t get_packet_id<S2C_ClearAllChunks>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CClearAllChunks>() {
     return std::to_underlying(PacketEnum::S2C_CLEAR_ALL_CHUNKS);
 }
-template <> constexpr uint16_t get_packet_id<S2CEntityCreate>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CEntityCreate>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_CREATE);
 }
-template <> constexpr uint16_t get_packet_id<S2CEntityDestory>() {
-    return std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY);
+template <> constexpr uint16_t get_packet_id<protocol::S2CEntityDestroy>() {
+    return std::to_underlying(PacketEnum::S2C_ENTITY_DESTROY);
 }
-template <> constexpr uint16_t get_packet_id<C2SEntityCreateRequest>() {
-    return std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQUEST);
+template <> constexpr uint16_t get_packet_id<protocol::C2SEntityCreateReq>() {
+    return std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQ);
 }
-template <> constexpr uint16_t get_packet_id<C2SEntityDestoryRequest>() {
-    return std::to_underlying(PacketEnum::C2S_ENTITY_DESTORY_REQUEST);
+template <> constexpr uint16_t get_packet_id<protocol::C2SEntityDestroyReq>() {
+    return std::to_underlying(PacketEnum::C2S_ENTITY_DESTROY_REQ);
 }
-template <> constexpr uint16_t get_packet_id<UpdateTime>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CUpdateTime>() {
     return std::to_underlying(PacketEnum::UPDATE_TIME);
 }
-template <> constexpr uint16_t get_packet_id<Ping>() {
+template <> constexpr uint16_t get_packet_id<protocol::Ping>() {
     return std::to_underlying(PacketEnum::PING);
 }
-template <> constexpr uint16_t get_packet_id<Pong>() {
+template <> constexpr uint16_t get_packet_id<protocol::Pong>() {
     return std::to_underlying(PacketEnum::PONG);
 }
-template <> constexpr uint16_t get_packet_id<PlayerWaterSound>() {
+template <> constexpr uint16_t get_packet_id<protocol::PlayerWaterSound>() {
     return std::to_underlying(PacketEnum::PLAYER_WATER_SOUND);
 }
-template <> constexpr uint16_t get_packet_id<ChatMsg>() {
+template <> constexpr uint16_t get_packet_id<protocol::ChatMsg>() {
     return std::to_underlying(PacketEnum::CHAT_MSG);
 }
-template <> constexpr uint16_t get_packet_id<VoiceMsg>() {
+template <> constexpr uint16_t get_packet_id<protocol::VoiceMsg>() {
     return std::to_underlying(PacketEnum::VOICE_MSG);
 }
-template <> constexpr uint16_t get_packet_id<S2CEntityUpdate>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CEntityUpdate>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE);
 }
-template <> constexpr uint16_t get_packet_id<S2CEntityUpdateBatch>() {
+template <> constexpr uint16_t get_packet_id<protocol::S2CEntityUpdateBatch>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE_BATCH);
 }
 
@@ -267,4 +267,4 @@ bool decode_packet(T& message, std::span<const uint8_t> data,
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

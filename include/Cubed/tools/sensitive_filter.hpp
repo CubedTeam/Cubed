@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 class SensitiveFilter {
 public:
     SensitiveFilter();
@@ -25,4 +25,4 @@ private:
 
     std::vector<Node> trie{1};
 };
-} // namespace Cubed
+} // namespace cubed

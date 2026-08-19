@@ -2,7 +2,7 @@
 #include "Cubed/ui/text.hpp"
 #include "Cubed/ui/ui_vertex_data.hpp"
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 class Label : public Widget {
 public:
     Label(const Label&) = delete;
@@ -47,4 +47,4 @@ private:
     float m_scale = 1.0f;
     void update_vertices();
 };
-} // namespace Cubed
+} // namespace cubed

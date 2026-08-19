@@ -6,7 +6,7 @@
 
 #include <filesystem>
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 SoundManager::SoundManager() {}
 SoundManager::~SoundManager() { clear(); }
 void SoundManager::clear() { m_buffers.clear(); }
@@ -53,4 +53,4 @@ const AudioBuffer& SoundManager::get_buffer(const std::string& name,
     }
     return it->second;
 }
-} // namespace Cubed
+} // namespace cubed

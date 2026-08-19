@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 
 struct FormatArg {
     std::string name;
@@ -46,4 +46,4 @@ template <typename T>
 FormatArg tr_arg(const std::string& name, const std::string& key) {
     return {std::string(name), tr(key)};
 }
-} // namespace Cubed
+} // namespace cubed

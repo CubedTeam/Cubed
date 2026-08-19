@@ -2,7 +2,7 @@
 #include "Cubed/ui/button.hpp"
 
 #include <span>
-namespace Cubed {
+namespace cubed {
 using ComboPair = std::pair<std::string, std::function<void()>>;
 class ComboButton : public Button {
 
@@ -30,4 +30,4 @@ private:
     int m_index = 0;
     int m_sum = 0;
 };
-} // namespace Cubed
+} // namespace cubed

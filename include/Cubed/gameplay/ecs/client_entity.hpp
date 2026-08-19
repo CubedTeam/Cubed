@@ -4,7 +4,7 @@
 #include "Cubed/gameplay/model.hpp"
 
 #include <deque>
-namespace Cubed {
+namespace cubed {
 struct BaseClientCreature {
 
     Transform transform{};
@@ -28,4 +28,4 @@ struct ClientEntityState {
     std::deque<ClientEntitySnapshot> history;
 };
 
-} // namespace Cubed
+} // namespace cubed

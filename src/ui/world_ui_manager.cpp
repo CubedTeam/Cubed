@@ -8,7 +8,7 @@
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/chat_box.hpp"
-namespace Cubed {
+namespace cubed {
 
 WorldUIManager::WorldUIManager(WorldScene& scene) : m_scene(scene) {}
 WorldUIManager::~WorldUIManager() {}
@@ -148,4 +148,4 @@ void WorldUIManager::update_hotbar() {
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

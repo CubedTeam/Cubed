@@ -7,7 +7,7 @@
 #include <glad/glad.h>
 #include <memory>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class ClientWorld;
 struct VertexData {
     std::vector<Vertex3D> m_vertices;
@@ -25,4 +25,4 @@ struct VertexData {
     void upload();
     void update_sum();
 };
-} // namespace Cubed
+} // namespace cubed

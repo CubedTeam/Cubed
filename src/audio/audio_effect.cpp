@@ -4,7 +4,7 @@
 #endif
 #include <AL/efx.h>
 
-namespace Cubed {
+namespace cubed {
 AudioEffect::AudioEffect() { alGenEffects(1, &m_effect); }
 
 AudioEffect::~AudioEffect() {
@@ -23,4 +23,4 @@ void AudioEffect::set_reverb(float decay_time, float reverb_gain, float gain_hf,
     alEffectf(m_effect, AL_REVERB_DIFFUSION, diffusion);
 }
 ALuint AudioEffect::effect() const { return m_effect; }
-} // namespace Cubed
+} // namespace cubed

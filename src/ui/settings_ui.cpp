@@ -11,7 +11,7 @@
 #include "Cubed/ui/combo_button.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/slider.hpp"
-namespace Cubed {
+namespace cubed {
 SettingsUI::SettingsUI(SettingsScene& scene) : m_scene(scene) {}
 void SettingsUI::init() {
     auto bi = std::make_unique<Image>(nullptr);
@@ -229,4 +229,4 @@ bool SettingsUI::handle_key_event(const KeyEvent& e) {
     return UIManager::handle_key_event(e);
 }
 
-} // namespace Cubed
+} // namespace cubed

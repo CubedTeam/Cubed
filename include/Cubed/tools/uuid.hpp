@@ -7,7 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
-namespace Cubed {
+namespace cubed {
 
 class Uuid final {
 public:
@@ -30,7 +30,7 @@ public:
     bool operator==(const Uuid&) const = default;
     auto operator<=>(const Uuid&) const = default;
 
-    static std::optional<Uuid> from_proto_bytes(const std::string& value);
+    static std::optional<Uuid> from_proto_bytes(std::string_view value);
 
     struct Hash {
         [[nodiscard]] std::size_t operator()(const Uuid& uuid) const noexcept;
@@ -74,10 +74,10 @@ struct TransparentStringHashCompare {
     }
 };
 
-} // namespace Cubed
+} // namespace cubed
 
-template <> struct std::hash<Cubed::Uuid> {
-    std::size_t operator()(const Cubed::Uuid& uuid) const noexcept {
-        return Cubed::Uuid::Hash{}(uuid);
+template <> struct std::hash<cubed::Uuid> {
+    std::size_t operator()(const cubed::Uuid& uuid) const noexcept {
+        return cubed::Uuid::Hash{}(uuid);
     }
 };

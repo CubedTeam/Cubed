@@ -4,7 +4,7 @@
 namespace rocksdb {
 class DB;
 }
-namespace Cubed {
+namespace cubed {
 class WorldStorage {
 public:
     static constexpr uint32_t VERSION = 1;
@@ -26,4 +26,4 @@ private:
 
     static std::string make_metadata_key();
 };
-} // namespace Cubed
+} // namespace cubed

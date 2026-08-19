@@ -3,7 +3,7 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/ui/rect.hpp"
 
-namespace Cubed {
+namespace cubed {
 Widget::Widget(Widget* parent) : m_parent(parent) {
     if (!m_parent) {
         // The root node of the window automatically fills the entire window.
@@ -339,4 +339,4 @@ bool Widget::handle_text_input_event(const TextInputEvent& e) {
 }
 void Widget::set_order(TraversalOrder order) { m_order = order; }
 bool Widget::is_visible() const { return m_visible; }
-} // namespace Cubed
+} // namespace cubed

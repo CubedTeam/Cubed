@@ -28,7 +28,7 @@
 #undef WARN
 #endif
 
-namespace Cubed {
+namespace cubed {
 
 class Logger {
 public:
@@ -181,4 +181,4 @@ private:
     std::unique_ptr<std::ofstream> m_file_stream;
 };
 
-} // namespace Cubed
+} // namespace cubed

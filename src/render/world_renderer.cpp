@@ -14,7 +14,7 @@
 #include <SDL3/SDL_timer.h>
 #include <tracy/Tracy.hpp>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 
 namespace {
 WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
@@ -25,7 +25,7 @@ WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
 
     auto& m_planes = world.planes();
 
-    Math::extract_frustum_planes(mvp_mat, m_planes);
+    math::extract_frustum_planes(mvp_mat, m_planes);
     size_t cnt = 0;
     std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
         instances_data_map;
@@ -42,7 +42,7 @@ WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
         auto& t = view.get<RenderTransform>(entity);
         auto aabb = HitboxManager::hitbox(info.name);
         aabb.box.center += t.position.value;
-        if (!Math::is_aabb_in_frustum(aabb.box.center, aabb.box.half + 1.0f,
+        if (!math::is_aabb_in_frustum(aabb.box.center, aabb.box.half + 1.0f,
                                       m_planes)) {
             continue;
         }
@@ -572,7 +572,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
 
     auto& m_planes = world.planes();
 
-    Math::extract_frustum_planes(mvp_mat, m_planes);
+    math::extract_frustum_planes(mvp_mat, m_planes);
 
     int rendered_sum = 0;
 
@@ -588,7 +588,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
         if (!snapshot) {
             continue;
         }
-        if (Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
+        if (math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                      m_planes)) {
 
             glBindVertexArray(snapshot->normal_vao);
@@ -603,7 +603,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
         if (!snapshot) {
             continue;
         }
-        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
+        if (!math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
@@ -621,7 +621,7 @@ void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
         if (!snapshot) {
             continue;
         }
-        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
+        if (!math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
@@ -680,7 +680,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
         if (!snapshot) {
             continue;
         }
-        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
+        if (!math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
@@ -729,7 +729,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
         if (!snapshot) {
             continue;
         }
-        if (!Math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
+        if (!math::is_aabb_in_frustum(snapshot->center, snapshot->half_extents,
                                       m_planes)) {
             continue;
         }
@@ -855,7 +855,7 @@ glm::vec3 WorldRenderer::get_smoothed_shadow_lightdir(
 
     if (raw_shadow_lightdir != m_blend_to_lightdir) {
         glm::vec3 current_displayed = glm::normalize(
-            Math::slerp(m_blend_from_lightdir, m_blend_to_lightdir, m_blend_t));
+            math::slerp(m_blend_from_lightdir, m_blend_to_lightdir, m_blend_t));
 
         m_blend_from_lightdir = current_displayed;
         m_blend_to_lightdir = raw_shadow_lightdir;
@@ -865,7 +865,7 @@ glm::vec3 WorldRenderer::get_smoothed_shadow_lightdir(
     m_blend_t = glm::min(m_blend_t + dt / BLEND_DURATION, 1.0f);
 
     return glm::normalize(
-        Math::slerp(m_blend_from_lightdir, m_blend_to_lightdir, m_blend_t));
+        math::slerp(m_blend_from_lightdir, m_blend_to_lightdir, m_blend_t));
 }
 
 void WorldRenderer::updata_framebuffer(int width, int height) {
@@ -975,4 +975,4 @@ float& WorldRenderer::cloud_threshold_low() { return m_cloud_threshold_low; }
 float& WorldRenderer::cloud_threshold_high() { return m_cloud_threshold_high; }
 float& WorldRenderer::refract_strength() { return m_refract_strength; }
 
-} // namespace Cubed
+} // namespace cubed

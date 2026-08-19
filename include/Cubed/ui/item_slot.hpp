@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/item.hpp"
 #include "Cubed/ui/image.hpp"
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 class TextureManager;
 class ItemSlot : public Widget {
 public:
@@ -31,4 +31,4 @@ private:
     float m_scale = 1.0f;
     bool m_hovered = false;
 };
-} // namespace Cubed
+} // namespace cubed

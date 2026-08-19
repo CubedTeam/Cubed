@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 using namespace rapidjson;
 using namespace std::string_literals;
 
-namespace Cubed {
+namespace cubed {
 
 unsigned BlockManager::sums() {
     ASSERT(is_init);
@@ -120,7 +120,7 @@ void BlockManager::init() {
     fs::path register_path = root_path / "registry.json";
 
     Document registry;
-    if (!Tools::parse_json(registry, register_path)) {
+    if (!tools::parse_json(registry, register_path)) {
         Logger::error("Can't parse registry.json");
         ASSERT(false);
         return;
@@ -144,21 +144,21 @@ void BlockManager::init() {
         }
 
         Document doc;
-        if (!Tools::parse_json(doc, entry.path())) {
+        if (!tools::parse_json(doc, entry.path())) {
             continue;
         }
 
         BlockData data;
 
         std::string path;
-        if (!Tools::get_json_value(doc, "name", path)) {
+        if (!tools::get_json_value(doc, "name", path)) {
             Logger::error("Very Serious Error, Block Name Not Find !!!, Please "
                           "Check The Block Data Integrity");
             continue;
         }
         data.name.path = path;
         data.name.ns = ResourceLocation::DEFAULT_NAMESPACE;
-        if (!Tools::get_json_value(blocks_registry, path.c_str(), data.id)) {
+        if (!tools::get_json_value(blocks_registry, path.c_str(), data.id)) {
             Logger::error("Very Serious Error, Block Id Not Find !!!, Please "
                           "Check The Block Data Integrity");
             continue;
@@ -181,23 +181,23 @@ void BlockManager::init() {
 
         auto& properties = doc["properties"];
 
-        Tools::get_json_value(properties, "is_liquid", data.is_liquid);
-        Tools::get_json_value(properties, "is_passable", data.is_passable);
-        Tools::get_json_value(properties, "is_cross_plane",
+        tools::get_json_value(properties, "is_liquid", data.is_liquid);
+        tools::get_json_value(properties, "is_passable", data.is_passable);
+        tools::get_json_value(properties, "is_cross_plane",
                               data.is_cross_plane);
-        Tools::get_json_value(properties, "is_transparent",
+        tools::get_json_value(properties, "is_transparent",
                               data.is_transparent);
-        Tools::get_json_value(properties, "is_gas", data.is_gas);
-        Tools::get_json_value(properties, "is_discard", data.is_discard);
-        Tools::get_json_value(properties, "is_blend", data.is_blend);
-        Tools::get_json_value(properties, "is_transitional",
+        tools::get_json_value(properties, "is_gas", data.is_gas);
+        tools::get_json_value(properties, "is_discard", data.is_discard);
+        tools::get_json_value(properties, "is_blend", data.is_blend);
+        tools::get_json_value(properties, "is_transitional",
                               data.is_transitional);
-        Tools::get_json_value(properties, "roughness", data.roughness);
+        tools::get_json_value(properties, "roughness", data.roughness);
 
         if (doc.HasMember("texture") && doc["texture"].IsObject()) {
             auto& texture = doc["texture"];
             std::string s;
-            if (Tools::get_json_value(texture, "type", s)) {
+            if (tools::get_json_value(texture, "type", s)) {
                 if (s == "cuboid") {
                     data.texture_type = BlockTextureType::CUBOID;
                 } else if (s == "cross") {
@@ -214,11 +214,11 @@ void BlockManager::init() {
                 continue;
             }
 
-            if (Tools::get_json_value(texture, "path", s)) {
+            if (tools::get_json_value(texture, "path", s)) {
                 data.texture_path = ResourceLocation::parse(s);
             }
 
-            if (Tools::get_json_value(texture, "normal", s)) {
+            if (tools::get_json_value(texture, "normal", s)) {
                 data.normal = ResourceLocation::parse(s);
             }
         }
@@ -226,13 +226,13 @@ void BlockManager::init() {
         if (doc.HasMember("sounds") && doc["sounds"].IsObject()) {
             auto& sound = doc["sounds"];
             std::string s;
-            if (Tools::get_json_value(sound, "break", s)) {
+            if (tools::get_json_value(sound, "break", s)) {
                 data.sound.break_s = ResourceLocation::parse(s);
             }
-            if (Tools::get_json_value(sound, "walk", s)) {
+            if (tools::get_json_value(sound, "walk", s)) {
                 data.sound.walk = ResourceLocation::parse(s);
             }
-            if (Tools::get_json_value(sound, "place", s)) {
+            if (tools::get_json_value(sound, "place", s)) {
                 data.sound.place = ResourceLocation::parse(s);
             }
         }
@@ -326,4 +326,4 @@ void BlockManager::set_up_cross_plane_map(
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

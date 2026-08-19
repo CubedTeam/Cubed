@@ -2,7 +2,7 @@
 
 #include "Cubed/tools/log.hpp"
 
-namespace Cubed {
+namespace cubed {
 SourcePool::SourcePool(size_t size) {
     m_sources.reserve(size);
     for (size_t i = 0; i < size; ++i) {
@@ -36,4 +36,4 @@ AudioSource* SourcePool::acquire() {
 std::vector<std::unique_ptr<AudioSource>>& SourcePool::sources() {
     return m_sources;
 }
-} // namespace Cubed
+} // namespace cubed

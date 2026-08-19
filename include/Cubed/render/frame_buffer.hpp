@@ -16,7 +16,7 @@ enum class FrameBufferType : GLenum {
     DRAW_FRAMEBUFFER = GL_DRAW_FRAMEBUFFER
 };
 
-namespace Cubed {
+namespace cubed {
 class FrameBuffer {
 public:
     FrameBuffer();
@@ -43,4 +43,4 @@ public:
 private:
     GLuint m_fbo = 0;
 };
-} // namespace Cubed
+} // namespace cubed

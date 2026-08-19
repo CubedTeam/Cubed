@@ -9,7 +9,7 @@
 
 using namespace google::protobuf;
 
-namespace Cubed {
+namespace cubed {
 EntityStorage::EntityStorage(WorldStorage& storage) : m_storage(storage) {}
 
 EntityStorage::~EntityStorage() {}
@@ -154,14 +154,14 @@ std::string EntityStorage::serialize(const EntityStorageData& entity) {
 
     Arena arena;
 
-    auto* msg = Arena::Create<StoredEntity>(&arena);
+    auto* msg = Arena::Create<storage::StoredEntity>(&arena);
 
     msg->set_id(entity.id);
     msg->set_name(entity.name);
     msg->set_version(WorldStorage::VERSION);
 
-    Tools::set_proto_vec3(msg->mutable_pos(), entity.pos);
-    Tools::set_proto_vec3(msg->mutable_dir(), entity.dir);
+    tools::set_proto_vec3(msg->mutable_pos(), entity.pos);
+    tools::set_proto_vec3(msg->mutable_dir(), entity.dir);
 
     uint32_t raw_size = static_cast<uint32_t>(msg->ByteSizeLong());
     std::string raw;
@@ -179,7 +179,7 @@ EntityStorage::deserialize(std::string_view data) {
 
     Arena arena;
 
-    auto* msg = Arena::Create<StoredEntity>(&arena);
+    auto* msg = Arena::Create<storage::StoredEntity>(&arena);
     if (!msg->ParseFromArray(data.data(), data.size())) {
         return std::nullopt;
     }
@@ -194,10 +194,10 @@ EntityStorage::deserialize(std::string_view data) {
     d.id = msg->id();
     d.name = msg->name();
 
-    d.pos = Tools::get_proto_vec3(msg->pos());
-    d.dir = Tools::get_proto_vec3(msg->dir());
+    d.pos = tools::get_proto_vec3(msg->pos());
+    d.dir = tools::get_proto_vec3(msg->dir());
 
     return d;
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -6,7 +6,7 @@
 #include <queue>
 #include <string>
 #include <thread>
-namespace Cubed {
+namespace cubed {
 using asio::ip::tcp;
 class ClientWorld;
 class NetworkClient : public std::enable_shared_from_this<NetworkClient> {
@@ -68,4 +68,4 @@ private:
     void do_write();
     void set_error(std::string_view error);
 };
-} // namespace Cubed
+} // namespace cubed

@@ -6,7 +6,7 @@
 #include <rapidjson/document.h>
 #include <string_view>
 #include <tbb/concurrent_hash_map.h>
-namespace Cubed {
+namespace cubed {
 class ItemManager {
 public:
     ItemManager();
@@ -38,4 +38,4 @@ private:
 
     static inline const ItemData EMPTY;
 };
-} // namespace Cubed
+} // namespace cubed

@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
-namespace Cubed {
+namespace cubed {
 
 struct Mesh {
     std::vector<Vertex3D> vertices;
@@ -76,4 +76,4 @@ struct ModelNode {
     ModelAnimConfig anim;
 };
 
-} // namespace Cubed
+} // namespace cubed

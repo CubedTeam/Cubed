@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string_view>
 
-namespace Cubed {
+namespace cubed {
 class ArgParser {
 public:
     ArgParser(int argc, char** argv) : m_args(argv, argc) {};
@@ -32,4 +32,4 @@ private:
     std::span<char*> m_args;
     size_t m_index = 1;
 };
-} // namespace Cubed
+} // namespace cubed

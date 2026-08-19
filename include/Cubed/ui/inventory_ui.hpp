@@ -3,7 +3,7 @@
 #include "Cubed/ui/item_slot.hpp"
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/ui_manager.hpp"
-namespace Cubed {
+namespace cubed {
 class WorldScene;
 class InventoryUI : public UIManager {
 public:
@@ -27,4 +27,4 @@ private:
     ItemSlot* get_hovered_slot();
     std::pair<ItemSlot*, size_t> get_hovered_hotbar_slot();
 };
-} // namespace Cubed
+} // namespace cubed

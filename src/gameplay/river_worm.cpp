@@ -3,7 +3,7 @@
 #include "Cubed/constants.hpp"
 #include "Cubed/gameplay/river.path.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
-namespace Cubed {
+namespace cubed {
 RiverWorm::RiverWorm() {}
 RiverWorm::~RiverWorm() {}
 
@@ -17,7 +17,7 @@ void RiverWorm::reload(unsigned world_seed) {
 }
 
 bool RiverWorm::has_origin_fast(const ChunkPos& pos) const {
-    unsigned h = HASH::combine_32(HASH::combine_32(pos.x, pos.z), m_world_seed);
+    unsigned h = hash::combine_32(hash::combine_32(pos.x, pos.z), m_world_seed);
 
     return (h & 0xFFFF) < static_cast<unsigned>(m_probability * 0xFFFF);
 }
@@ -29,7 +29,7 @@ PathOrigin RiverWorm::get_origin(const ChunkPos& origin_chunk) const {
     }
 
     unsigned chunk_seed =
-        HASH::chunk_seed_hash(origin_chunk.x, origin_chunk.z, m_world_seed);
+        hash::chunk_seed_hash(origin_chunk.x, origin_chunk.z, m_world_seed);
     Random random{chunk_seed};
 
     const int CHUNK_MIN_X = origin_chunk.x * CHUNK_SIZE;
@@ -52,4 +52,4 @@ int RiverWorm::search_radius() const {
 unsigned RiverWorm::world_seed() const { return m_world_seed; }
 float RiverWorm::river_probability() const { return m_probability; }
 
-} // namespace Cubed
+} // namespace cubed

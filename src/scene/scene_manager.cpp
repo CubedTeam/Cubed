@@ -11,7 +11,7 @@
 
 #include <tracy/Tracy.hpp>
 
-namespace Cubed {
+namespace cubed {
 SceneManager::SceneManager(App& app) : m_app(app) {}
 SceneManager::~SceneManager() {}
 
@@ -131,4 +131,4 @@ std::unique_ptr<Scene> SceneManager::create_scene(SceneType type) {
 
 App& SceneManager::app() { return m_app; }
 WorldSceneParam& SceneManager::world_scene_param() { return m_world_param; }
-} // namespace Cubed
+} // namespace cubed

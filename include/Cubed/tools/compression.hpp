@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vector>
 #include <zstd.h>
-namespace Cubed {
+namespace cubed {
 constexpr int DEFAULT_ZSTD_LEVEL = 3;
 inline std::vector<uint8_t> compress_data(std::span<const uint8_t> data,
                                           int zstd_level = DEFAULT_ZSTD_LEVEL) {
@@ -37,4 +37,4 @@ inline std::vector<uint8_t> decompress_data(std::span<const uint8_t> data,
     return decompressed_data;
 }
 
-} // namespace Cubed
+} // namespace cubed

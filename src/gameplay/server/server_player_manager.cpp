@@ -2,7 +2,7 @@
 
 #include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/gameplay/server/session.hpp"
-namespace Cubed {
+namespace cubed {
 ServerPlayerManager::ServerPlayerManager(ServerWorld& world)
     : m_world(world), m_players(std::make_shared<PlayerMap>()) {}
 ServerPlayerManager::~ServerPlayerManager() {}
@@ -192,4 +192,4 @@ PlayerStorageData ServerPlayerManager::build_data(const ServerPlayer& player) {
 
 PlayerStorage* ServerPlayerManager::get_storage() { return m_storage.get(); }
 
-} // namespace Cubed
+} // namespace cubed

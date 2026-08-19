@@ -2,7 +2,7 @@
 #include "Cubed/gameplay/ecs/movement.hpp"
 
 #include <entt/entt.hpp>
-namespace Cubed {
+namespace cubed {
 class ServerWorld;
 class PhysicalSystem {
 public:
@@ -13,4 +13,4 @@ public:
 
 private:
 };
-} // namespace Cubed
+} // namespace cubed

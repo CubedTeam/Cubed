@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace Cubed {
+namespace cubed {
 constexpr glm::vec3 SUN_COLOR{1.00f, 0.95f, 0.80f};
 constexpr glm::vec3 MOON_COLOR{0.75f, 0.80f, 1.00f};
 
@@ -18,4 +18,4 @@ constexpr float SUN_SIZE = 50.0f;
 constexpr float MOON_SIZE = 50.0f;
 constexpr float DEPTH_MAP_SIZE = 4096.0f;
 constexpr float ANGLE_STEP_DEG = 0.5f;
-} // namespace Cubed
+} // namespace cubed

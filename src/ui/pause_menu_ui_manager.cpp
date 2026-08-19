@@ -6,7 +6,7 @@
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/pasue_menu_ui_manager.hpp"
 #include "Cubed/ui/rect.hpp"
-namespace Cubed {
+namespace cubed {
 PauseMenuUIManager::PauseMenuUIManager(WorldScene& scene) : m_scene(scene) {}
 void PauseMenuUIManager::init() {
     auto rect = std::make_unique<Rect>(nullptr);
@@ -71,4 +71,4 @@ void PauseMenuUIManager::on_re_enter() {
         b->set_enable(true);
     }
 }
-} // namespace Cubed
+} // namespace cubed

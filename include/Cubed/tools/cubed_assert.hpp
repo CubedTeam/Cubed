@@ -1,9 +1,9 @@
 #pragma once
 #include "Cubed/tools/log.hpp"
 
-namespace Cubed {
+namespace cubed {
 
-namespace Assert {
+namespace assert {
 inline void msg(const char* condition, const char* file, int line,
                 const char* func, std::string_view message = "") {
 
@@ -14,19 +14,19 @@ inline void msg(const char* condition, const char* file, int line,
     }
     std::abort();
 }
-} // namespace Assert
+} // namespace assert
 
 #ifdef DEBUG_MODE
 #define ASSERT(cond)                                                           \
     do {                                                                       \
         if (!(cond)) {                                                         \
-            ::Cubed::Assert::msg(#cond, __FILE__, __LINE__, __func__);         \
+            ::cubed::assert::msg(#cond, __FILE__, __LINE__, __func__);         \
         }                                                                      \
     } while (0)
 #define ASSERT_MSG(cond, message)                                              \
     do {                                                                       \
         if (!(cond)) {                                                         \
-            ::Cubed::Assert::msg(#cond, __FILE__, __LINE__, __func__,          \
+            ::cubed::assert::msg(#cond, __FILE__, __LINE__, __func__,          \
                                  message);                                     \
         }                                                                      \
     } while (0)
@@ -36,4 +36,4 @@ inline void msg(const char* condition, const char* file, int line,
 #define ASSERT_MSG(cond, message) ((void)0)
 #endif
 
-} // namespace Cubed
+} // namespace cubed

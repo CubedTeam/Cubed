@@ -7,7 +7,7 @@
 #include "Cubed/ui/ui_manager.hpp"
 #include "Cubed/ui/widget.hpp"
 
-namespace Cubed {
+namespace cubed {
 class WorldScene;
 class WorldUIManager : public UIManager {
 public:
@@ -38,4 +38,4 @@ private:
 
     std::vector<ItemSlot*> m_hotbar_slot;
 };
-} // namespace Cubed
+} // namespace cubed

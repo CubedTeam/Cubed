@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 
 constexpr float BIOME_NOISE_FREQUENCY = 0.06f;
 constexpr float HEIGHTMAP_NOISE_FREQUENCY = 0.001f;
@@ -108,4 +108,4 @@ inline BiomeType get_biome_from_id(int id) {
     throw std::invalid_argument("Unknown Biome Id");
 }
 
-} // namespace Cubed
+} // namespace cubed

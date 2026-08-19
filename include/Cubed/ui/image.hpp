@@ -4,7 +4,7 @@
 #include "Cubed/ui/widget.hpp"
 #include "glm/ext/vector_float2.hpp"
 
-namespace Cubed {
+namespace cubed {
 class TextureManager;
 class Image : public Widget {
 public:
@@ -35,4 +35,4 @@ private:
     glm::vec2 m_pos{0.0f, 0.0f};
     float m_scale = 1.0f;
 };
-} // namespace Cubed
+} // namespace cubed

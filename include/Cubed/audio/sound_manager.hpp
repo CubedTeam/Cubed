@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 class SoundManager {
 public:
     SoundManager();
@@ -17,4 +17,4 @@ public:
 private:
     std::unordered_map<std::string, AudioBuffer> m_buffers;
 };
-} // namespace Cubed
+} // namespace cubed

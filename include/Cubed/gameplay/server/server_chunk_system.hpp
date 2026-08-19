@@ -15,7 +15,7 @@
 #include <tbb/concurrent_queue.h>
 #include <utility>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 
 class Config;
 class CaveCarver;
@@ -186,4 +186,4 @@ private:
 
     // void wait_all_chunk_tasks();
 };
-} // namespace Cubed
+} // namespace cubed

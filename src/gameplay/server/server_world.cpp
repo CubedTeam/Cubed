@@ -20,7 +20,7 @@ using namespace std::chrono_literals;
 using namespace google::protobuf;
 using namespace rapidjson;
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 ServerWorld::ServerWorld(Config& config)
     : m_config(config), m_entity_manager(*this), m_players_manager(*this),
       m_chunk_system(*this) {}
@@ -52,7 +52,7 @@ void ServerWorld::stop() {
 
 void ServerWorld::send_time() {
     Arena arena;
-    auto* rsp = Arena::Create<UpdateTime>(&arena);
+    auto* rsp = Arena::Create<protocol::S2CUpdateTime>(&arena);
 
     rsp->set_day_tick(m_day_ticks);
     rsp->set_game_tick(m_game_ticks);
@@ -66,15 +66,15 @@ void ServerWorld::send_time() {
 void ServerWorld::load_metadata(std::optional<uint32_t> seed) {
     auto value = m_storage->get_metadata();
     Document doc;
-    if (value && Tools::parse_json_from_string(doc, *value)) {
+    if (value && tools::parse_json_from_string(doc, *value)) {
 
-        if (Tools::get_json_value(doc, "version", m_metadata.version)) {
+        if (tools::get_json_value(doc, "version", m_metadata.version)) {
             if (m_metadata.version > WorldStorage::VERSION) {
                 throw std::runtime_error("Local MetaData Version is too low");
             }
         }
 
-        if (!Tools::get_json_value(doc, "seed", m_metadata.seed)) {
+        if (!tools::get_json_value(doc, "seed", m_metadata.seed)) {
 
             if (seed) {
                 ChunkGenerator::init(*seed);
@@ -87,15 +87,15 @@ void ServerWorld::load_metadata(std::optional<uint32_t> seed) {
             ChunkGenerator::init(m_metadata.seed);
         }
 
-        if (Tools::get_json_value(doc, "game_ticks", m_metadata.game_ticks)) {
+        if (tools::get_json_value(doc, "game_ticks", m_metadata.game_ticks)) {
             m_game_ticks = m_metadata.game_ticks;
         }
 
-        if (Tools::get_json_value(doc, "day_ticks", m_metadata.day_ticks)) {
+        if (tools::get_json_value(doc, "day_ticks", m_metadata.day_ticks)) {
             m_day_ticks = m_metadata.day_ticks % DAY_TIME;
         }
         EntityID next = 0;
-        if (Tools::get_json_value(doc, "entity_next", next)) {
+        if (tools::get_json_value(doc, "entity_next", next)) {
             m_entity_manager.set_next_value(next);
         }
 
@@ -121,13 +121,13 @@ void ServerWorld::save_metadata() {
     doc.AddMember("game_ticks", m_game_ticks.load(), allocator);
     doc.AddMember("day_ticks", m_day_ticks.load(), allocator);
     doc.AddMember("entity_next", m_entity_manager.get_next_value(), allocator);
-    std::string value = Tools::to_json_string(doc);
+    std::string value = tools::to_json_string(doc);
     m_storage->save_metadata(value);
 }
 
 void ServerWorld::init_world(RunMode mode, std::string_view world_name,
                              std::optional<uint32_t> seed) {
-    if (!Tools::is_valid_world_name(world_name)) {
+    if (!tools::is_valid_world_name(world_name)) {
         throw std::invalid_argument("Invalid world name");
     }
 
@@ -186,7 +186,7 @@ void ServerWorld::init_world(RunMode mode, std::string_view world_name,
     try {
         fs::path path = std::format("{}SensitiveLexicon.json", ASSETS_PATH);
         Document doc;
-        if (!Tools::parse_json(doc, path)) {
+        if (!tools::parse_json(doc, path)) {
             throw std::runtime_error("Can't parse SensitiveLexicon.json");
         }
         m_filter.load(doc);
@@ -217,7 +217,7 @@ void ServerWorld::start_server_thread() {
 void ServerWorld::start_thread_pool() {
 
     if (m_net_threads == 0) {
-        auto net_threads = Tools::get_server_net_pool_threads(m_runmode);
+        auto net_threads = tools::get_server_net_pool_threads(m_runmode);
         Logger::info("Server Net pool threads {}", net_threads);
         m_net_threads = change_pool_threads(m_net_thread_pool, net_threads);
     } else {
@@ -225,7 +225,7 @@ void ServerWorld::start_thread_pool() {
     }
 
     if (m_compute_threads == 0) {
-        auto compute_threads = Tools::get_server_compute_treads(m_runmode);
+        auto compute_threads = tools::get_server_compute_treads(m_runmode);
         Logger::info("Server compute pool threads {}", compute_threads);
         m_compute_threads =
             change_pool_threads(m_compute_thread_pool, compute_threads);
@@ -305,7 +305,7 @@ void ServerWorld::update() {
     }
 }
 
-void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
+void ServerWorld::sync_player_pos(const protocol::C2SPlayerInfo& prsp) {
     ZoneScopedN("ServerWorld::sync_player_pos");
     std::string name;
     auto x = prsp.pos().x();
@@ -351,7 +351,7 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     }
 
     Arena arena;
-    auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
+    auto* rsp = Arena::Create<protocol::PlayerInfoRsp>(&arena);
     rsp->set_uuid(uuid->to_proto_bytes());
     rsp->set_name(name);
     auto* pos = rsp->mutable_pos();
@@ -372,7 +372,8 @@ void ServerWorld::sync_player_pos(const C2S_PlayerInfo& prsp) {
     }
 }
 
-void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
+void ServerWorld::sync_player_water_sound(
+    const protocol::PlayerWaterSound& rsp) {
     auto x = rsp.pos().x();
     auto y = rsp.pos().y();
     auto z = rsp.pos().z();
@@ -402,7 +403,7 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
     }
 
     Arena arena;
-    auto* r = Arena::Create<PlayerWaterSound>(&arena);
+    auto* r = Arena::Create<protocol::PlayerWaterSound>(&arena);
     r->set_uuid(uuid->to_proto_bytes());
     r->set_underwater(underwater);
     auto* p = r->mutable_pos();
@@ -423,14 +424,14 @@ void ServerWorld::sync_player_water_sound(const PlayerWaterSound& rsp) {
 void ServerWorld::send_player_login_error(int32_t ec, std::string_view err_msg,
                                           std::shared_ptr<Session> session) {
     Arena arena;
-    auto msg = Arena::Create<LoginRsp>(&arena);
+    auto msg = Arena::Create<protocol::S2CLoginRsp>(&arena);
     auto err = msg->mutable_error();
-    err->set_mes(err_msg);
+    err->set_msg(err_msg);
     err->set_code(ec);
     session->send(make_packet(msg));
 }
 
-void ServerWorld::handle_player_login(LoginReq& msg,
+void ServerWorld::handle_player_login(protocol::C2SLoginReq& msg,
                                       std::shared_ptr<Session> session) {
 
     auto uuid = Uuid::from_proto_bytes(msg.uuid());
@@ -439,13 +440,13 @@ void ServerWorld::handle_player_login(LoginReq& msg,
             1, std::format("Can't parse uuid {}", msg.uuid()), session);
         return;
     }
-    std::optional<Crypto::Ed25519PublicKey> pk =
-        Crypto::Ed25519::public_key_from_proto_bytes(msg.public_key());
+    std::optional<crypto::Ed25519PublicKey> pk =
+        crypto::Ed25519::public_key_from_proto_bytes(msg.public_key());
     if (!pk) {
         send_player_login_error(1, "Can't parse public key ", session);
         return;
     }
-    auto uuid_pk = Crypto::Ed25519::uuid_from_public_key(*pk);
+    auto uuid_pk = crypto::Ed25519::uuid_from_public_key(*pk);
     if (*uuid != uuid_pk) {
         send_player_login_error(1,
                                 std::format("uuid {} from net is not equal "
@@ -472,15 +473,17 @@ void ServerWorld::handle_player_login(LoginReq& msg,
     }
 
     session->public_key() = *pk;
-    std::pair<uint64_t, Crypto::Ed25519::Challenge> challenge;
-    challenge.second = Crypto::Ed25519::generate_challenge();
-    challenge.first = Tools::get_utc_timestamp_ms();
+    std::pair<uint64_t, crypto::Ed25519::Challenge> challenge;
+    challenge.second = crypto::Ed25519::generate_challenge();
+    challenge.first = tools::get_utc_timestamp_ms();
     session->challenge() = challenge;
 
     Arena arena;
-    auto* p = Arena::Create<LoginChallenge>(&arena);
+    auto* p = Arena::Create<protocol::S2CLoginChallenge>(&arena);
 
-    p->set_challenge(challenge.second.data(), challenge.second.size());
+    p->set_challenge(
+        std::string_view{reinterpret_cast<const char*>(challenge.second.data()),
+                         challenge.second.size()});
     p->set_uuid(uuid->to_proto_bytes());
 
     session->send(make_packet(p), 0);
@@ -503,14 +506,15 @@ void ServerWorld::handle_player_login(LoginReq& msg,
      */
 }
 
-void ServerWorld::handle_ping(Ping& ping, std::shared_ptr<Session> session) {
+void ServerWorld::handle_ping(protocol::Ping& ping,
+                              std::shared_ptr<Session> session) {
     Arena arena;
-    auto* msg = Arena::Create<Pong>(&arena);
+    auto* msg = Arena::Create<protocol::Pong>(&arena);
     msg->set_timestamp(ping.timestamp());
     session->send(make_packet(msg), 0);
 }
 
-void ServerWorld::handle_login_proof(LoginProof& msg,
+void ServerWorld::handle_login_proof(protocol::C2SLoginProof& msg,
                                      std::shared_ptr<Session> session) {
 
     auto s = msg.signature();
@@ -524,30 +528,30 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
 
         return;
     }
-    if (Tools::get_utc_timestamp_ms() - session->challenge()->first >
+    if (tools::get_utc_timestamp_ms() - session->challenge()->first >
         Session::CHALLENGE_EXPIRE_MS) {
         send_player_login_error(1, "Challenge expire", session);
         session->challenge().reset();
         return;
     }
 
-    Crypto::Ed25519Signature sign;
+    crypto::Ed25519Signature sign;
     std::copy_n(reinterpret_cast<const unsigned char*>(s.data()), s.size(),
                 sign.data.begin());
 
-    auto signing_message = Crypto::Ed25519::make_login_signing_data(
+    auto signing_message = crypto::Ed25519::make_login_signing_data(
         session->challenge()->second, session->public_key());
 
     session->challenge().reset();
 
-    if (!Crypto::Ed25519::verify(signing_message, sign,
+    if (!crypto::Ed25519::verify(signing_message, sign,
                                  session->public_key())) {
         send_player_login_error(1, "Can't verify signature", session);
 
         return;
     }
 
-    auto name = msg.name();
+    std::string name{msg.name()};
 
     auto u = Uuid::from_proto_bytes(msg.uuid());
     if (!u) {
@@ -556,7 +560,7 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
         return;
     }
 
-    Uuid uuid = Crypto::Ed25519::uuid_from_public_key(session->public_key());
+    Uuid uuid = crypto::Ed25519::uuid_from_public_key(session->public_key());
 
     if (uuid != *u) {
         send_player_login_error(
@@ -584,13 +588,13 @@ void ServerWorld::handle_login_proof(LoginProof& msg,
     session->set_player_uuid(uuid);
     Arena arena;
 
-    auto* rsp = Arena::Create<LoginRsp>(&arena);
+    auto* rsp = Arena::Create<protocol::S2CLoginRsp>(&arena);
     auto err = rsp->mutable_error();
     err->set_code(0);
     rsp->set_voice_chat(m_voice_chat);
     rsp->set_pitch(player->pitch());
     rsp->set_yaw(player->yaw());
-    Tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
+    tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
 
     session->send(make_packet(*rsp), 0);
 
@@ -645,13 +649,13 @@ void ServerWorld::handle_chunk_req(int task_id, const Uuid& uuid,
     });
 }
 
-void ServerWorld::handle_chat_message(ChatMsg& msg) {
+void ServerWorld::handle_chat_message(protocol::ChatMsg& msg) {
 
     auto uuid = Uuid::from_proto_bytes(msg.uuid());
     if (!uuid) {
         return;
     }
-    std::string message = msg.msg();
+    std::string message{msg.msg()};
     auto pool = m_net_thread_pool.load();
     pool->enqueue([this, player = *uuid, m = std::move(message)]() {
         auto p = m_players_manager.find(player);
@@ -662,7 +666,7 @@ void ServerWorld::handle_chat_message(ChatMsg& msg) {
     });
 }
 
-void ServerWorld::handle_voice_message(VoiceMsg& msg) {
+void ServerWorld::handle_voice_message(protocol::VoiceMsg& msg) {
     ZoneScopedN("ServerWorld::handle_voice_message");
     if (!m_voice_chat) {
         return;
@@ -673,7 +677,7 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
         Logger::error("Can't parse uuid from proto");
         return;
     }
-    std::string data = msg.opus_data();
+    std::string data{msg.opus_data()};
     auto pos = msg.pos();
     glm::vec3 p{pos.x(), pos.y(), pos.z()};
     pool->enqueue([this, uuid = std::move(uuid), data = std::move(data), p]() {
@@ -687,14 +691,14 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
             if (key == uuid) {
                 continue;
             }
-            if (Math::distance2(p, player->get_pos()) > 48.0f * 48.0f) {
+            if (math::distance2(p, player->get_pos()) > 48.0f * 48.0f) {
                 continue;
             }
             session.emplace_back(player->get_session());
         }
 
         Arena arena;
-        auto msg = Arena::Create<VoiceMsg>(&arena);
+        auto msg = Arena::Create<protocol::VoiceMsg>(&arena);
         msg->set_uuid(uuid->to_proto_bytes());
 
         msg->set_opus_data(data);
@@ -710,7 +714,7 @@ void ServerWorld::handle_voice_message(VoiceMsg& msg) {
     });
 }
 
-void ServerWorld::handle_block_change(const BlockChangeReq& req) {
+void ServerWorld::handle_block_change(const protocol::C2SBlockChangeReq& req) {
     ZoneScopedN("ServerWorld::handle_block_change");
     float x = std::floor(req.pos().x());
     float y = std::floor(req.pos().y());
@@ -720,7 +724,8 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     }
 
     Arena arena;
-    BlockChangeRsp* rsp = Arena::Create<BlockChangeRsp>(&arena);
+    protocol::S2CBlockChangeRsp* rsp =
+        Arena::Create<protocol::S2CBlockChangeRsp>(&arena);
     auto* pos = rsp->mutable_pos();
     pos->set_x(x);
     pos->set_y(y);
@@ -751,12 +756,12 @@ void ServerWorld::handle_block_change(const BlockChangeReq& req) {
     }
 }
 
-void ServerWorld::handle_entity_create(C2SEntityCreateRequest& req) {
+void ServerWorld::handle_entity_create(protocol::C2SEntityCreateReq& req) {
 
-    m_entity_manager.add_creature(req.name(), Tools::get_proto_vec3(req.pos()));
+    m_entity_manager.add_creature(req.name(), tools::get_proto_vec3(req.pos()));
 }
-void ServerWorld::handle_entity_destory(C2SEntityDestoryRequest& req) {
-    m_entity_manager.destory(req.id());
+void ServerWorld::handle_entity_destroy(protocol::C2SEntityDestroyReq& req) {
+    m_entity_manager.destroy(req.id());
 }
 
 int ServerWorld::rendering_distance() const {
@@ -820,7 +825,7 @@ int ServerWorld::change_pool_threads(
 
 void ServerWorld::send_server_stop() {
     Arena arena;
-    auto* rsp = Arena::Create<LogoutRsp>(&arena);
+    auto* rsp = Arena::Create<protocol::S2CLogoutRsp>(&arena);
     rsp->set_server_stop(true);
     auto sessions = get_all_session();
     auto packet = make_packet(*rsp);
@@ -838,7 +843,7 @@ void ServerWorld::boardcast_message(const std::string& name,
         m_players_manager.get_all_session();
 
     Arena arena;
-    auto msg = Arena::Create<ChatMsg>(&arena);
+    auto msg = Arena::Create<protocol::ChatMsg>(&arena);
     if (m_enable_filter) {
         msg->set_msg(m_filter.filter(message));
         msg->set_name(m_filter.filter(name));
@@ -873,7 +878,7 @@ void ServerWorld::player_exit(std::shared_ptr<ServerPlayer> expected_player) {
     m_chunk_system.release_chunk(player);
 
     Arena arena;
-    auto* rsp = Arena::Create<LogoutRsp>(&arena);
+    auto* rsp = Arena::Create<protocol::S2CLogoutRsp>(&arena);
     rsp->set_uuid(UUID.to_proto_bytes());
     rsp->set_server_stop(false);
     exit_session->send(make_packet(*rsp), 0);
@@ -951,4 +956,4 @@ std::shared_ptr<ThreadPool> ServerWorld::get_compute_pool() {
 
 size_t ServerWorld::player_sum() const { return m_players_manager.sum(); }
 RunMode ServerWorld::get_runmode() const { return m_runmode; }
-} // namespace Cubed
+} // namespace cubed

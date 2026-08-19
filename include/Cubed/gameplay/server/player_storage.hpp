@@ -6,13 +6,13 @@
 #include <optional>
 #include <span>
 #include <string>
-namespace Cubed {
+namespace cubed {
 class WorldStorage;
 
 struct PlayerStorageData {
     Uuid uuid{};
     glm::vec3 pos{0.0f, 255.0f, 0.0f};
-    Crypto::Ed25519PublicKey public_key;
+    crypto::Ed25519PublicKey public_key;
     float yaw = 0.0f;
     float pitch = 0.0f;
 };
@@ -45,4 +45,4 @@ private:
 
     static std::optional<PlayerStorageData> deserialize(std::string_view data);
 };
-} // namespace Cubed
+} // namespace cubed

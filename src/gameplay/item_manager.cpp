@@ -9,7 +9,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 using namespace rapidjson;
-namespace Cubed {
+namespace cubed {
 ItemManager::ItemManager() {}
 
 ItemManager& ItemManager::instance() {
@@ -27,7 +27,7 @@ void ItemManager::init() {
     fs::path registry_path = root_path / "registry.json";
     Document registry;
 
-    if (!Tools::parse_json(registry, registry_path)) {
+    if (!tools::parse_json(registry, registry_path)) {
         throw std::runtime_error("registry.json parse error");
     }
 
@@ -47,7 +47,7 @@ void ItemManager::add(const std::filesystem::path& path,
                       const rapidjson::Value& registry) {
 
     Document doc;
-    if (!Tools::parse_json(doc, path)) {
+    if (!tools::parse_json(doc, path)) {
         return;
     }
 
@@ -58,13 +58,13 @@ void ItemManager::add(const std::filesystem::path& path,
     }
     auto& items = registry["items"];
     std::string s;
-    if (Tools::get_json_value(doc, "name", s)) {
+    if (tools::get_json_value(doc, "name", s)) {
         auto location = ResourceLocation::parse(s);
         if (!location) {
             return;
         }
         data.name = *location;
-        if (!Tools::get_json_value(items, data.name.path.c_str(), data.id)) {
+        if (!tools::get_json_value(items, data.name.path.c_str(), data.id)) {
             return;
         }
     } else {
@@ -72,17 +72,17 @@ void ItemManager::add(const std::filesystem::path& path,
         return;
     }
 
-    Tools::get_json_value(doc, "description", data.description);
+    tools::get_json_value(doc, "description", data.description);
 
-    if (Tools::get_json_value(doc, "texture", s)) {
+    if (tools::get_json_value(doc, "texture", s)) {
         data.path = ResourceLocation::parse(s);
     }
 
-    if (Tools::get_json_value(doc, "type", s)) {
+    if (tools::get_json_value(doc, "type", s)) {
         data.kind = get_item_kind(s);
         if (data.kind == ItemKind::SPAWN_EGG) {
             std::string s;
-            if (Tools::get_json_value(doc, "creature", s)) {
+            if (tools::get_json_value(doc, "creature", s)) {
                 auto location = ResourceLocation::parse(s);
                 if (location) {
                     data.property = *location;
@@ -107,7 +107,7 @@ void ItemManager::add(const std::filesystem::path& path,
         }
         if (a->second.kind == ItemKind::BLOCK) {
             std::string s;
-            if (!Tools::get_json_value(doc, "block", s)) {
+            if (!tools::get_json_value(doc, "block", s)) {
                 return;
             }
             if (s != a->second.name.to_string()) {
@@ -162,4 +162,4 @@ ItemData ItemManager::get(std::string_view key) {
 }
 ItemData ItemManager::get(ItemID id) { return instance().get_item_data(id); }
 ItemID ItemManager::size() { return instance().m_map.size(); }
-} // namespace Cubed
+} // namespace cubed

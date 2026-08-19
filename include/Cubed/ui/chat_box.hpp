@@ -6,7 +6,7 @@
 
 #include <deque>
 
-namespace Cubed {
+namespace cubed {
 class ChatBox : public Widget {
 public:
     ChatBox(Widget* parent);
@@ -53,4 +53,4 @@ private:
     bool handle_key_event(const KeyEvent& e) override;
     std::vector<std::string> wrap_message(const std::string& text) const;
 };
-} // namespace Cubed
+} // namespace cubed

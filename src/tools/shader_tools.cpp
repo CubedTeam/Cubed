@@ -8,7 +8,7 @@
 #include <stb_image.h>
 #include <unordered_set>
 
-namespace Cubed {
+namespace cubed {
 
 namespace fs = std::filesystem;
 
@@ -70,15 +70,15 @@ void load_shader(std::string& source, const fs::path& file,
 
 } // namespace
 
-namespace Tools {
+namespace tools {
 
 GLuint create_shader_program(const std::string& v_shader_path,
                              const std::string& f_shader_path) {
 
     std::string v_shader_str =
-        Tools::read_shader_source(ASSETS_PATH + v_shader_path);
+        tools::read_shader_source(ASSETS_PATH + v_shader_path);
     std::string f_shader_str =
-        Tools::read_shader_source(ASSETS_PATH + f_shader_path);
+        tools::read_shader_source(ASSETS_PATH + f_shader_path);
     const char* v_shader_source = v_shader_str.c_str();
     const char* f_shader_source = f_shader_str.c_str();
 
@@ -89,19 +89,19 @@ GLuint create_shader_program(const std::string& v_shader_path,
     glShaderSource(v_shader, 1, &v_shader_source, NULL);
     glShaderSource(f_shader, 1, &f_shader_source, NULL);
     glCompileShader(v_shader);
-    Tools::check_opengl_error();
+    tools::check_opengl_error();
     glGetShaderiv(v_shader, GL_COMPILE_STATUS, &vc);
     if (vc != 1) {
         Logger::error("vertex compilation failed");
-        Tools::print_shader_log(v_shader);
+        tools::print_shader_log(v_shader);
         ASSERT(0);
     }
     glCompileShader(f_shader);
-    Tools::check_opengl_error();
+    tools::check_opengl_error();
     glGetShaderiv(f_shader, GL_COMPILE_STATUS, &fc);
     if (fc != 1) {
         Logger::error("fragment compilation failed");
-        Tools::print_shader_log(f_shader);
+        tools::print_shader_log(f_shader);
         ASSERT(0);
     }
     GLuint vf_program = glCreateProgram();
@@ -110,11 +110,11 @@ GLuint create_shader_program(const std::string& v_shader_path,
     glLinkProgram(vf_program);
 
     GLint linked;
-    Tools::check_opengl_error();
+    tools::check_opengl_error();
     glGetProgramiv(vf_program, GL_LINK_STATUS, &linked);
     if (linked != 1) {
         Logger::error("linking failed");
-        Tools::print_program_info(vf_program);
+        tools::print_program_info(vf_program);
         ASSERT(0);
     }
     glDeleteShader(v_shader);
@@ -201,6 +201,6 @@ ImageData load_image_data(const fs::path& tex_image_path, bool check_exist,
     return {data, width, height, channels};
 }
 
-} // namespace Tools
+} // namespace tools
 
-} // namespace Cubed
+} // namespace cubed

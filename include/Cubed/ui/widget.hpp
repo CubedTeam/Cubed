@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 class Renderer;
 
 constexpr float NORMAL_BUTTON_WIDTH = 225.0f;
@@ -114,4 +114,4 @@ private:
     float m_width = 0.0f;
     float m_height = 0.0f;
 };
-} // namespace Cubed
+} // namespace cubed

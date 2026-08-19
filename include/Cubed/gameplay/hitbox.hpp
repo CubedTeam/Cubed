@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-namespace Cubed {
+namespace cubed {
 
 using HitboxID = uint32_t;
 
@@ -25,4 +25,4 @@ struct Hitbox {
     }
 };
 
-} // namespace Cubed
+} // namespace cubed

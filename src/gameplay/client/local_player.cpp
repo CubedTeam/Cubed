@@ -15,7 +15,7 @@
 #include <tracy/Tracy.hpp>
 using rapidjson::Document;
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 
 namespace {
 
@@ -676,12 +676,12 @@ void LocalPlayer::reset_input_status() {
 
 void LocalPlayer::create_identity(const std::filesystem::path& path) {
 
-    auto pair = Crypto::Ed25519::generate_key_pair();
+    auto pair = crypto::Ed25519::generate_key_pair();
     m_key_pair = pair;
-    m_uuid = Crypto::Ed25519::uuid_from_public_key(pair.public_key);
-    auto pks = Crypto::Ed25519::to_hex(pair.public_key.data.data(),
+    m_uuid = crypto::Ed25519::uuid_from_public_key(pair.public_key);
+    auto pks = crypto::Ed25519::to_hex(pair.public_key.data.data(),
                                        pair.public_key.data.size());
-    auto prs = Crypto::Ed25519::to_hex(pair.private_key.data.data(),
+    auto prs = crypto::Ed25519::to_hex(pair.private_key.data.data(),
                                        pair.private_key.data.size());
 
     Document doc;
@@ -693,7 +693,7 @@ void LocalPlayer::create_identity(const std::filesystem::path& path) {
     doc.AddMember("private_key", rapidjson::Value(prs.c_str(), allocator),
                   allocator);
 
-    Tools::save_json(doc, path);
+    tools::save_json(doc, path);
 
 #ifdef __linux__
     std::filesystem::permissions(path,
@@ -704,33 +704,33 @@ void LocalPlayer::create_identity(const std::filesystem::path& path) {
 }
 
 void LocalPlayer::init_identity() {
-    m_key_pair = Crypto::Ed25519KeyPair{};
+    m_key_pair = crypto::Ed25519KeyPair{};
     StandardPaths standard("Cubed");
     auto path = standard.ensure(StandardPaths::Location::DATA);
     auto& argument = m_world.argument();
     auto identity_path = argument.identify ? fs::path(*argument.identify)
                                            : path / "identity.json";
     Document doc;
-    if (Tools::parse_json(doc, identity_path)) {
+    if (tools::parse_json(doc, identity_path)) {
         std::string s;
-        if (!Tools::get_json_value(doc, "public_key", s)) {
+        if (!tools::get_json_value(doc, "public_key", s)) {
             return create_identity(identity_path);
         }
-        if (!Crypto::Ed25519::from_hex(s, m_key_pair->public_key.data.data(),
+        if (!crypto::Ed25519::from_hex(s, m_key_pair->public_key.data.data(),
                                        m_key_pair->public_key.data.size())) {
             return create_identity(identity_path);
         }
-        if (!Tools::get_json_value(doc, "private_key", s)) {
+        if (!tools::get_json_value(doc, "private_key", s)) {
             return create_identity(identity_path);
         }
-        if (!Crypto::Ed25519::from_hex(s, m_key_pair->private_key.data.data(),
+        if (!crypto::Ed25519::from_hex(s, m_key_pair->private_key.data.data(),
                                        m_key_pair->private_key.data.size())) {
             return create_identity(identity_path);
         }
     } else {
         return create_identity(identity_path);
     }
-    m_uuid = Crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
+    m_uuid = crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
 }
 
 void LocalPlayer::init(std::string_view name) {
@@ -882,7 +882,7 @@ void LocalPlayer::set_pitch(float pitch) { m_angle.pitch = pitch; }
 float& LocalPlayer::roll() { return m_angle.roll; }
 float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
 Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }
-std::optional<Crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
+std::optional<crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
     return m_key_pair;
 }
-} // namespace Cubed
+} // namespace cubed

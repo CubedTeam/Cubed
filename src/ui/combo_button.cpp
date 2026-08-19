@@ -2,7 +2,7 @@
 
 #include "Cubed/localization.hpp"
 
-namespace Cubed {
+namespace cubed {
 ComboButton::ComboButton(Widget* parent) : Button(parent) {}
 
 ComboButton& ComboButton::set_combo_text(const std::string& key,
@@ -61,4 +61,4 @@ void ComboButton::update_text() {
     update_text_scale();
 }
 
-} // namespace Cubed
+} // namespace cubed

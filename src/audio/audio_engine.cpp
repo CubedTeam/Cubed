@@ -12,7 +12,7 @@ using namespace google::protobuf;
 namespace {
 constexpr std::size_t OPUS_MAX_PACKET_SIZE = 400;
 }
-namespace Cubed {
+namespace cubed {
 AudioEngine::AudioEngine(Config& config)
     : m_recording(*this), m_config(config) {};
 
@@ -289,9 +289,11 @@ void AudioEngine::send_voice(
             return;
         }
         Arena arena;
-        auto msg = Arena::Create<VoiceMsg>(&arena);
+        auto msg = Arena::Create<protocol::VoiceMsg>(&arena);
         msg->set_uuid(c->world().get_player().get_uuid().to_proto_bytes());
-        msg->set_opus_data(reinterpret_cast<char*>(opus.data()), len);
+        msg->set_opus_data(
+            std::string_view{reinterpret_cast<const char*>(opus.data()),
+                             static_cast<std::size_t>(len)});
         auto* pos = msg->mutable_pos();
         auto p = c->world().get_player().get_player_pos();
         pos->set_x(p.x);
@@ -321,4 +323,4 @@ AudioRecording& AudioEngine::audio_recording() { return m_recording; }
 const AudioRecording& AudioEngine::audio_recording() const {
     return m_recording;
 }
-} // namespace Cubed
+} // namespace cubed

@@ -1,6 +1,6 @@
 #include "Cubed/scene/create_game_scene.hpp"
 
-namespace Cubed {
+namespace cubed {
 CreateGameScene::CreateGameScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_ui(*this) {}
 CreateGameScene::~CreateGameScene() {}
@@ -15,4 +15,4 @@ void CreateGameScene::on_leave() {}
 void CreateGameScene::on_re_enter() { m_ui.on_re_enter(); }
 SceneManager& CreateGameScene::scene_manager() { return m_scene_manager; }
 
-} // namespace Cubed
+} // namespace cubed

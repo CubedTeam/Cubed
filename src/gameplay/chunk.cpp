@@ -2,7 +2,7 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 
-namespace Cubed {
+namespace cubed {
 int Chunk::index(int x, int y, int z) {
     ASSERT(!(x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= WORLD_SIZE_Y ||
              z >= CHUNK_SIZE));
@@ -46,4 +46,4 @@ std::tuple<int, int, int> Chunk::block_to_world(const glm::ivec3& block_pos,
     return block_to_world(block_pos.x, block_pos.y, block_pos.z, chunk_pos.x,
                           chunk_pos.z);
 }
-} // namespace Cubed
+} // namespace cubed

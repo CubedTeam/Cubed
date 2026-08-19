@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Cubed {
+namespace cubed {
 
 enum class MouseKey {
     LEFT_BUTTON,

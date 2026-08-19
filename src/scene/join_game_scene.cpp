@@ -1,6 +1,6 @@
 #include "Cubed/scene/join_game_scene.hpp"
 
-namespace Cubed {
+namespace cubed {
 JoinGameScene::JoinGameScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_ui(*this) {}
 
@@ -13,4 +13,4 @@ void JoinGameScene::on_enter() { m_ui.init(); }
 void JoinGameScene::on_leave() {}
 void JoinGameScene::on_re_enter() { m_ui.on_re_enter(); }
 SceneManager& JoinGameScene::scene_manager() { return m_scene_manager; }
-} // namespace Cubed
+} // namespace cubed

@@ -3,7 +3,7 @@
 #include <asio/error.hpp>
 #include <string_view>
 
-namespace Cubed {
+namespace cubed {
 
 inline std::string_view net_error_message(const asio::error_code& ec) {
     if (!ec)
@@ -75,4 +75,4 @@ inline std::string_view net_error_message(const asio::error_code& ec) {
     return "Unknown network error.";
 }
 
-} // namespace Cubed
+} // namespace cubed

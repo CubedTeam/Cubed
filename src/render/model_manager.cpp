@@ -11,7 +11,7 @@
 #include <rapidjson/istreamwrapper.h>
 
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 
 ModelManager& ModelManager::instance() {
     static ModelManager inst;
@@ -111,7 +111,7 @@ void ModelManager::load_anim_config(ModelNode& node, const CreatureData& data) {
 
     rapidjson::Document doc;
 
-    if (!Tools::parse_json(doc, path)) {
+    if (!tools::parse_json(doc, path)) {
         return;
     }
 
@@ -146,4 +146,4 @@ void ModelManager::load_anim_config(ModelNode& node, const CreatureData& data) {
     node.anim = std::move(cfg);
 }
 
-} // namespace Cubed
+} // namespace cubed

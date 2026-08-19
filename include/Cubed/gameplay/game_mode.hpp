@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace Cubed {
+namespace cubed {
 
 enum class GameMode { CREATIVE = 0, SPECTATOR };
 
@@ -18,4 +18,4 @@ inline std::string to_str(GameMode mode) {
     throw std::invalid_argument{"GameMode is invaild"};
 }
 
-} // namespace Cubed
+} // namespace cubed

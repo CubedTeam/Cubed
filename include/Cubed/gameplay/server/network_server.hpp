@@ -5,7 +5,7 @@
 
 #include <asio.hpp>
 #include <thread>
-namespace Cubed {
+namespace cubed {
 
 class NetworkServer {
 public:
@@ -33,4 +33,4 @@ private:
     asio::awaitable<void> listen();
     void net_run();
 };
-} // namespace Cubed
+} // namespace cubed

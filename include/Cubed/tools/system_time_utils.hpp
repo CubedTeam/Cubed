@@ -1,7 +1,7 @@
 #pragma once
 #include <chrono>
 #include <cstdint>
-namespace Cubed::Tools {
+namespace cubed::tools {
 inline uint64_t get_utc_timestamp_ms() {
     return static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -16,4 +16,4 @@ inline uint64_t get_steady_timestamp_ms() {
             .count());
 }
 
-} // namespace Cubed::Tools
+} // namespace cubed::tools

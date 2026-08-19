@@ -6,7 +6,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 template <typename T> class SparseVector {
 private:
     std::vector<std::optional<T>> m_data;
@@ -315,4 +315,4 @@ public:
     const_iterator cend() const { return end(); }
 };
 
-} // namespace Cubed
+} // namespace cubed

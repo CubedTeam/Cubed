@@ -8,7 +8,7 @@
 #include "Cubed/ui/column_layout.hpp"
 #include "version.hpp"
 
-namespace Cubed {
+namespace cubed {
 
 MainMenuUIManager::MainMenuUIManager(MainMenuScene& scene) : m_scene(scene) {}
 MainMenuUIManager::~MainMenuUIManager() {}
@@ -129,4 +129,4 @@ void MainMenuUIManager::on_re_enter() {
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

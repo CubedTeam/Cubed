@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Cubed {
+namespace cubed {
 class ChunkGenerator;
 class BiomeBuilder {
 public:
@@ -15,4 +15,4 @@ protected:
     void build_bottom();
     void place_grass();
 };
-} // namespace Cubed
+} // namespace cubed

@@ -1,7 +1,7 @@
 #include "Cubed/gameplay/server/server_player.hpp"
 
 #include "Cubed/gameplay/server/server_world.hpp"
-namespace Cubed {
+namespace cubed {
 ServerPlayer::ServerPlayer(std::string_view name, Uuid uuid, ServerWorld& world,
                            std::shared_ptr<Session> session, TickType gametick)
     : M_NAME(name), M_UUID(std::move(uuid)), m_world(world), m_session(session),
@@ -102,4 +102,4 @@ void ServerPlayer::remove_internal(size_t position) {
     m_inventory[position] = std::nullopt;
 }
 
-} // namespace Cubed
+} // namespace cubed

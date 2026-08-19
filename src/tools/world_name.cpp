@@ -6,7 +6,7 @@
 #include <string>
 #include <utf8cpp/utf8.h>
 
-namespace Cubed::Tools {
+namespace cubed::tools {
 bool is_valid_world_name(std::string_view world_name) {
     if (world_name.empty() || world_name == "." || world_name == ".." ||
         !utf8::is_valid(world_name.begin(), world_name.end())) {
@@ -37,4 +37,4 @@ bool is_valid_world_name(std::string_view world_name) {
     };
     return std::ranges::find(RESERVED_NAMES, base) == RESERVED_NAMES.end();
 }
-} // namespace Cubed::Tools
+} // namespace cubed::tools

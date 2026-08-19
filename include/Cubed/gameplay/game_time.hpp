@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <utility>
-namespace Cubed {
+namespace cubed {
 
 using TickType = int64_t;
 using TimeType = float;
@@ -73,4 +73,4 @@ private:
     TimeType m_current = 0;
 };
 
-} // namespace Cubed
+} // namespace cubed

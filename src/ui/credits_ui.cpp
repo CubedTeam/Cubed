@@ -11,7 +11,7 @@
 #include "Cubed/ui/scroll_view.hpp"
 
 #include <algorithm>
-namespace Cubed {
+namespace cubed {
 CreditsUI::CreditsUI(CreditsScene& scene) : m_scene(scene) {}
 
 void CreditsUI::init() {
@@ -116,4 +116,4 @@ bool CreditsUI::handle_window_resize_event(const WindowResizeEvent& e) {
     return UIManager::handle_window_resize_event(e);
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
-namespace Cubed {
+namespace cubed {
 AudioFade::AudioFade(AudioSource* source, float fade_in, float fade_out)
     : m_source(source), m_in_duration(fade_in), m_out_duration(fade_out) {
     if (!m_source) {
@@ -67,4 +67,4 @@ void AudioFade::update() {
         }
     }
 }
-} // namespace Cubed
+} // namespace cubed

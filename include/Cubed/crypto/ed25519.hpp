@@ -4,7 +4,7 @@
 #include <array>
 #include <span>
 #include <vector>
-namespace Cubed::Crypto {
+namespace cubed::crypto {
 struct Ed25519PublicKey {
     std::array<unsigned char, 32> data;
     bool operator==(const Ed25519PublicKey&) const = default;
@@ -30,7 +30,7 @@ public:
     using Challenge = std::array<std::uint8_t, 32>;
 
     static std::optional<Ed25519PublicKey>
-    public_key_from_proto_bytes(const std::string& key);
+    public_key_from_proto_bytes(std::string_view key);
 
     static Challenge generate_challenge();
 
@@ -51,7 +51,7 @@ public:
 
     static std::vector<unsigned char>
     make_login_signing_data(std::span<const unsigned char> challenge,
-                            const Crypto::Ed25519PublicKey& public_key);
+                            const crypto::Ed25519PublicKey& public_key);
 };
 
-} // namespace Cubed::Crypto
+} // namespace cubed::crypto

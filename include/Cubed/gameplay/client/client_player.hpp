@@ -5,7 +5,7 @@
 #include "Cubed/gameplay/ecs/transform.hpp"
 
 #include <deque>
-namespace Cubed {
+namespace cubed {
 
 struct ClientPlayerSnapshot {
     double time_ms = 0.0f;
@@ -33,4 +33,4 @@ struct PlayerRenderData {
     Gait gait{};
 };
 
-} // namespace Cubed
+} // namespace cubed

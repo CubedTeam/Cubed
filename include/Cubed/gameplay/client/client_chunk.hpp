@@ -11,7 +11,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <mutex>
-namespace Cubed {
+namespace cubed {
 class ClientWorld;
 struct ChunkRenderSnapshot {
     GLuint normal_vao = 0;
@@ -39,7 +39,7 @@ public:
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;
     const std::vector<BlockType>& get_chunk_blocks() const;
-    void receive_chunk(const ChunkDataRsp& data);
+    void receive_chunk(const protocol::S2CChunkDataRsp& data);
     void gen_vertex_data(const OptionalBlockVectorArray& neighbor_block);
     // Can only be called on the render thread
     void upload_to_gpu();
@@ -121,4 +121,4 @@ private:
     void emit_quad(int axis, int face_dir, int layer, int i, int j, int w,
                    int h, int u_axis, int v_axis, FaceKey key);
 };
-} // namespace Cubed
+} // namespace cubed

@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-namespace Cubed {
+namespace cubed {
 
 using enum BiomeType;
 
@@ -221,4 +221,4 @@ ForestParams& forest_params() { return forest; }
 DesertParams& desert_params() { return desert; }
 MountainParams& mountain_params() { return mountain; }
 RiverParams& river_params() { return river; }
-} // namespace Cubed
+} // namespace cubed

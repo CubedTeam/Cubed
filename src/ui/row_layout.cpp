@@ -1,6 +1,6 @@
 #include "Cubed/ui/row_layout.hpp"
 
-namespace Cubed {
+namespace cubed {
 RowLayout::RowLayout(Widget* parent) : Widget(parent) {}
 RowLayout::~RowLayout() {}
 void RowLayout::on_update(float) { layout(); }
@@ -23,4 +23,4 @@ void RowLayout::layout() {
     }
     m_content_width = children.empty() ? 0 : (x - m_spacing);
 }
-} // namespace Cubed
+} // namespace cubed

@@ -4,7 +4,7 @@
 
 #include <functional>
 
-namespace Cubed {
+namespace cubed {
 
 struct ChunkPos {
     int x;
@@ -61,4 +61,4 @@ inline float distance2(const ChunkPos& a, const ChunkPos& b) {
     return dx * dx + dz * dz;
 }
 
-} // namespace Cubed
+} // namespace cubed

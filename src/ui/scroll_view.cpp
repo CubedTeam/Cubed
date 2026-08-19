@@ -6,7 +6,7 @@
 
 #include <algorithm>
 #include <glad/glad.h>
-namespace Cubed {
+namespace cubed {
 ScrollView::ScrollView(Widget* parent) : Widget(parent) {}
 ScrollView::~ScrollView() {}
 
@@ -109,4 +109,4 @@ Widget& ScrollView::set_fill_height(bool) {
     Logger::warn("You should not use this function in scroll view!");
     return *this;
 }
-} // namespace Cubed
+} // namespace cubed

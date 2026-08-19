@@ -5,7 +5,7 @@
 #include <assimp/scene.h>
 #include <filesystem>
 
-namespace Cubed {
+namespace cubed {
 
 class ModelLoader {
 public:
@@ -21,4 +21,4 @@ private:
     glm::mat4 convert_matrix(const aiMatrix4x4& matrix);
 };
 
-} // namespace Cubed
+} // namespace cubed

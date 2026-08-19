@@ -8,7 +8,7 @@
 #include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 ServerChunkSystem::ServerChunkSystem(ServerWorld& world) : m_world(world) {}
 
 ServerChunkSystem::~ServerChunkSystem() {}
@@ -17,7 +17,7 @@ void ServerChunkSystem::initialize() {
 
     m_storage = std::make_unique<ChunkStorage>(*m_world.world_storage());
 
-    auto gen_threads = Tools::get_server_gen_threads(m_world.get_runmode());
+    auto gen_threads = tools::get_server_gen_threads(m_world.get_runmode());
     Logger::info("Server Gen pool threads {}", gen_threads);
     m_generation_threads = gen_threads;
     m_generation_pool.store(std::make_shared<PriorityThreadPool>(gen_threads));
@@ -202,7 +202,8 @@ void ServerChunkSystem::send_chunk(int task_id, const Uuid& uuid,
         return;
     }
     Arena arean;
-    ChunkDataRsp* rsp = Arena::Create<ChunkDataRsp>(&arean);
+    protocol::S2CChunkDataRsp* rsp =
+        Arena::Create<protocol::S2CChunkDataRsp>(&arean);
     auto* rsq_pos = rsp->mutable_pos();
     rsq_pos->set_x(pos.x);
     rsq_pos->set_z(pos.z);
@@ -242,10 +243,10 @@ void ServerChunkSystem::send_chunk(int task_id, const Uuid& uuid,
             }
             nb->Assign(blocks->begin(), blocks->end());
         };
-        auto* nb1 = rsp->mutable_neighbor_blocks_1();
-        auto* nb2 = rsp->mutable_neighbor_blocks_2();
-        auto* nb3 = rsp->mutable_neighbor_blocks_3();
-        auto* nb4 = rsp->mutable_neighbor_blocks_4();
+        auto* nb1 = rsp->mutable_neighbor_blocks_one();
+        auto* nb2 = rsp->mutable_neighbor_blocks_two();
+        auto* nb3 = rsp->mutable_neighbor_blocks_three();
+        auto* nb4 = rsp->mutable_neighbor_blocks_four();
         assign(nb1, neighbor_blocks[0]);
         assign(nb2, neighbor_blocks[1]);
         assign(nb3, neighbor_blocks[2]);
@@ -689,4 +690,4 @@ int ServerChunkSystem::generation_threads() const {
 }
 size_t ServerChunkSystem::chunk_size() const { return m_chunks.size(); }
 ChunkStorage* ServerChunkSystem::get_storage() { return m_storage.get(); }
-} // namespace Cubed
+} // namespace cubed

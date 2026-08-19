@@ -11,7 +11,7 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_vector.h>
 #include <variant>
-namespace Cubed {
+namespace cubed {
 class ServerWorld;
 class Session;
 class ServerEntityManager {
@@ -24,7 +24,7 @@ public:
 
     void update();
     void add_creature(std::string_view name, const glm::vec3& world_pos);
-    void destory(EntityID id);
+    void destroy(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
     void save_all_entities(bool immediately);
     size_t max_creature_sum() const;
@@ -39,7 +39,7 @@ public:
     void activate_chunk(ChunkPos pos);
 
 private:
-    enum class Command { CREATE, SEND_ALL_ENTITIES, DESTORY, SAVE_ALL, UNLOAD };
+    enum class Command { CREATE, SEND_ALL_ENTITIES, DESTROY, SAVE_ALL, UNLOAD };
     struct EntityCreateElement {
         std::string name;
         glm::vec3 pos;
@@ -78,8 +78,8 @@ private:
     void create_entity(std::string_view name, const glm::vec3& pos);
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
-    void handle_entity_destory(EntityID id);
-    bool destory_internal(EntityID id);
+    void handle_entity_destroy(EntityID id);
+    bool destroy_internal(EntityID id);
     void handle_task();
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai(entt::entity e);
@@ -109,4 +109,4 @@ private:
         return id;
     }
 };
-} // namespace Cubed
+} // namespace cubed

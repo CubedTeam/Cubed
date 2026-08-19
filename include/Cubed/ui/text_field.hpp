@@ -3,7 +3,7 @@
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/rect.hpp"
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 class App;
 class TextField : public Widget {
 public:
@@ -71,4 +71,4 @@ private:
     void start_typing();
     void stop_typing(bool finished);
 };
-} // namespace Cubed
+} // namespace cubed

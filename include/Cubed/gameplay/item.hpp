@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <variant>
-namespace Cubed {
+namespace cubed {
 using ItemID = uint16_t;
 
 enum class ItemKind {
@@ -37,4 +37,4 @@ inline constexpr ItemKind get_item_kind(std::string_view kind) {
     return ItemKind::NONE;
 }
 
-} // namespace Cubed
+} // namespace cubed

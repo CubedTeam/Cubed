@@ -5,7 +5,7 @@
 #include <string>
 #include <utf8cpp/utf8.h>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 inline std::string codepoint_to_utf8(uint32_t cp) {
     std::string out;
 
@@ -66,4 +66,4 @@ inline std::vector<std::string> split_utf8(const std::string& str, int size) {
     return blocks;
 }
 
-} // namespace Cubed
+} // namespace cubed

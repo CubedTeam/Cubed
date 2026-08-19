@@ -7,7 +7,7 @@
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/default_image.hpp"
 #include "Cubed/ui/text_field.hpp"
-namespace Cubed {
+namespace cubed {
 JoinGameUI::JoinGameUI(JoinGameScene& scene) : m_scene(scene) {}
 void JoinGameUI::init() {
     auto bi = std::make_unique<Image>(nullptr);
@@ -122,4 +122,4 @@ void JoinGameUI::set_error(std::string_view error) {
 }
 void JoinGameUI::clear_error() { m_error_label->set_visible(false); }
 
-} // namespace Cubed
+} // namespace cubed

@@ -3,7 +3,7 @@
 
 #include <AL/al.h>
 #include <source_location>
-namespace Cubed {
+namespace cubed {
 inline void check_al_error(
     std::source_location loaction = std::source_location::current()) {
     ALenum error = alGetError();
@@ -13,4 +13,4 @@ inline void check_al_error(
                       loaction.function_name(), alGetString(error));
     }
 }
-} // namespace Cubed
+} // namespace cubed

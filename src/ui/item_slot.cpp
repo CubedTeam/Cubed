@@ -1,6 +1,6 @@
 #include "Cubed/ui/item_slot.hpp"
 
-namespace Cubed {
+namespace cubed {
 ItemSlot::ItemSlot(Widget* parent) : Widget(parent) {
     m_background = std::make_unique<Image>(this);
     m_background->set_fill_parent(true);
@@ -79,4 +79,4 @@ bool ItemSlot::handle_mouse_move_event(const MouseMoveEvent& e) {
 
 ItemID ItemSlot::id() const { return m_id; }
 bool ItemSlot::hovered() const { return m_hovered; }
-} // namespace Cubed
+} // namespace cubed

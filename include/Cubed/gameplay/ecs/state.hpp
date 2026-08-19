@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Cubed {
+namespace cubed {
 struct MoveState {
 
     bool forward = false;
@@ -15,4 +15,4 @@ struct MoveState {
     bool can_up = true;
 };
 
-} // namespace Cubed
+} // namespace cubed

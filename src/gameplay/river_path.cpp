@@ -3,11 +3,11 @@
 #include "Cubed/tools/math_tools.hpp"
 
 #include <algorithm>
-namespace Cubed {
+namespace cubed {
 RiverPath::RiverPath(unsigned int chunk_seed, unsigned world_seed,
                      const glm::vec3& start_pos) {
 
-    m_seed = HASH::combine_32(chunk_seed, world_seed);
+    m_seed = hash::combine_32(chunk_seed, world_seed);
     m_random.init(m_seed);
 
     m_yaw = m_random.random_float(0.0f, 360.0f);
@@ -36,7 +36,7 @@ void RiverPath::collect_path_points() {
 
         m_points[i].tangent = glm::normalize(glm::vec3{dx, dy, dz});
 
-        float t = Math::smootherstep(0, m_step - 1, i);
+        float t = math::smootherstep(0, m_step - 1, i);
 
         float drad_xz = m_start_path_point.rad_xz * t;
         float drad_y = m_start_path_point.rad_y * t;
@@ -64,4 +64,4 @@ float& RiverPath::delta_angle_max() { return m_delta_angle_max; }
 int& RiverPath::step_min() { return m_step_min; }
 int& RiverPath::step_max() { return m_step_max; }
 float RiverPath::step_len() { return m_step_len; }
-} // namespace Cubed
+} // namespace cubed

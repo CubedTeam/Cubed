@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace Cubed {
+namespace cubed {
 Texture::Texture(TextureType type) : M_TYPE(type) { glGenTextures(1, &m_id); }
 Texture::~Texture() {
     if (m_id) {
@@ -154,4 +154,4 @@ GLenum Texture::get_gl_texture_type() const {
     return std::to_underlying(M_TYPE);
 }
 
-} // namespace Cubed
+} // namespace cubed

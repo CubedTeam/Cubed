@@ -19,7 +19,7 @@
 #include <glm/glm.hpp>
 #include <optional>
 #include <shared_mutex>
-namespace Cubed {
+namespace cubed {
 
 class ClientWorld;
 class LocalPlayer {
@@ -106,7 +106,7 @@ public:
     float& walk_time();
     Gait get_gait() const;
 
-    std::optional<Crypto::Ed25519KeyPair>& key_pair();
+    std::optional<crypto::Ed25519KeyPair>& key_pair();
 
 private:
     using enum GameMode;
@@ -116,7 +116,7 @@ private:
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
 
-    std::optional<Crypto::Ed25519KeyPair> m_key_pair;
+    std::optional<crypto::Ed25519KeyPair> m_key_pair;
 
     EntityInfo m_info;
     Position m_pos;
@@ -178,4 +178,4 @@ private:
     std::tuple<bool, bool, bool> update_physical(float dt, glm::vec3& pos);
     glm::vec3 get_move_distance(float dt);
 };
-} // namespace Cubed
+} // namespace cubed

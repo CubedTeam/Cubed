@@ -2,7 +2,7 @@
 #ifdef DELETE
 #undef DELETE
 #endif
-namespace Cubed {
+namespace cubed {
 enum class Key {
     // Letter keys
     A,
@@ -126,4 +126,4 @@ enum class Key {
     NUMPAD_ENTER
 };
 enum class KeyAction { PRESS, RELEASE, REPEAT };
-} // namespace Cubed
+} // namespace cubed

@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <span>
 
-namespace Cubed {
+namespace cubed {
 class WorldStorage;
 struct ChunkStorageData {
     ChunkPos pos{0, 0};
@@ -49,4 +49,4 @@ private:
     static std::optional<ChunkStorageData> deserialize(std::string_view data);
 };
 
-} // namespace Cubed
+} // namespace cubed

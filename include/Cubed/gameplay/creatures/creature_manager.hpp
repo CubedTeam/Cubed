@@ -4,7 +4,7 @@
 #include <optional>
 #include <string_view>
 #include <tbb/concurrent_hash_map.h>
-namespace Cubed {
+namespace cubed {
 
 struct CreatureSound {
     std::optional<ResourceLocation> call;
@@ -41,4 +41,4 @@ private:
     static inline const CreatureData EMPTY;
     CreatureMap m_creature_map;
 };
-} // namespace Cubed
+} // namespace cubed

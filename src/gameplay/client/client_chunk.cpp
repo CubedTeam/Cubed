@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/block_manager.hpp"
 
 #include <tracy/Tracy.hpp>
-namespace Cubed {
+namespace cubed {
 using OptionalBlockVectorArray =
     std::array<std::optional<std::vector<BlockType>>, 4>;
 namespace {
@@ -510,7 +510,7 @@ void ClientChunk::gen_cross_plane_vertices(int world_x, int world_y,
     }
 }
 
-void ClientChunk::receive_chunk(const ChunkDataRsp& data) {
+void ClientChunk::receive_chunk(const protocol::S2CChunkDataRsp& data) {
     ZoneScopedN("ClientChunk::receive_chunk");
     OptionalBlockVectorArray neighbor;
 
@@ -545,13 +545,13 @@ void ClientChunk::receive_chunk(const ChunkDataRsp& data) {
         }
     };
 
-    load_neighbor(0, data.neighbor_blocks_1());
-    load_neighbor(1, data.neighbor_blocks_2());
-    load_neighbor(2, data.neighbor_blocks_3());
-    load_neighbor(3, data.neighbor_blocks_4());
+    load_neighbor(0, data.neighbor_blocks_one());
+    load_neighbor(1, data.neighbor_blocks_two());
+    load_neighbor(2, data.neighbor_blocks_three());
+    load_neighbor(3, data.neighbor_blocks_four());
 
     gen_vertex_data(neighbor);
     mark_dirty();
 }
 
-} // namespace Cubed
+} // namespace cubed

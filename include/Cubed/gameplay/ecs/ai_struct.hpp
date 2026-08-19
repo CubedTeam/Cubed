@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/gameplay/game_time.hpp"
-namespace Cubed {
+namespace cubed {
 struct AIBase {
     TickType interval = 1;
     TickType count = 0;
@@ -14,4 +14,4 @@ struct MoveBoost {
     TickType count = 0;
 };
 
-} // namespace Cubed
+} // namespace cubed

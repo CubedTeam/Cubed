@@ -14,7 +14,7 @@
 #include <string>
 #include <string_view>
 #include <tbb/concurrent_queue.h>
-namespace Cubed {
+namespace cubed {
 class ServerWorld;
 class Session;
 class ServerPlayer {
@@ -84,4 +84,4 @@ private:
     void add_internal(ItemStack item, size_t position);
     void remove_internal(size_t position);
 };
-} // namespace Cubed
+} // namespace cubed

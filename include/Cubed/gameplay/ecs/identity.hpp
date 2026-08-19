@@ -4,9 +4,9 @@
 
 #include <optional>
 #include <string>
-namespace Cubed {
+namespace cubed {
 struct EntityInfo {
     std::string name;
     std::optional<Uuid> uuid;
 };
-} // namespace Cubed
+} // namespace cubed

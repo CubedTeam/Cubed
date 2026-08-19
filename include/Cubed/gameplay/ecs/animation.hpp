@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/gameplay/gait.hpp"
-namespace Cubed {
+namespace cubed {
 
 struct WalkPose {
     Gait gait = Gait::STOP;
@@ -11,4 +11,4 @@ struct WalkPose {
     float moving_time = 0.0f;
 };
 
-} // namespace Cubed
+} // namespace cubed

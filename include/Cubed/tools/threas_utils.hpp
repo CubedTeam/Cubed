@@ -4,8 +4,8 @@
 
 #include <algorithm>
 #include <thread>
-namespace Cubed {
-namespace Tools {
+namespace cubed {
+namespace tools {
 
 constexpr size_t SERVER_RESERVED_THREADS = 3; // tick + netio + gen scheduler
 constexpr size_t CLIENT_RESERVED_THREADS =
@@ -126,5 +126,5 @@ inline size_t get_server_gen_threads(RunMode mode) {
     return 1;
 }
 
-} // namespace Tools
-} // namespace Cubed
+} // namespace tools
+} // namespace cubed

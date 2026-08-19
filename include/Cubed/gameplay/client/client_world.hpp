@@ -21,7 +21,7 @@
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
-namespace Cubed {
+namespace cubed {
 
 class WorldScene;
 class ClientWorld : public World {
@@ -57,18 +57,18 @@ public:
 
     // void rebuild_world();
     void report_block_change(const glm::ivec3& pos, unsigned id) const;
-    void receive_block_change(const BlockChangeRsp& rsp);
-    void receive_time(const UpdateTime& rsp);
+    void receive_block_change(const protocol::S2CBlockChangeRsp& rsp);
+    void receive_time(const protocol::S2CUpdateTime& rsp);
 
-    void receive_player_logout(const LogoutRsp& rsp);
-    void receive_player_water_sound(const PlayerWaterSound& rsp);
+    void receive_player_logout(const protocol::S2CLogoutRsp& rsp);
+    void receive_player_water_sound(const protocol::PlayerWaterSound& rsp);
     void send_player_water_sound(bool underwater, const glm::vec3& pos);
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
     int get_chunk_task_id() const;
     void start_client_thread();
-    void receive_login_rsp(LoginRsp& rsp);
-    void receive_login_challenge(LoginChallenge& msg);
+    void receive_login_rsp(protocol::S2CLoginRsp& rsp);
+    void receive_login_challenge(protocol::S2CLoginChallenge& msg);
     void stop_client_thread();
 
     void start_thread_pool();
@@ -77,7 +77,7 @@ public:
     void reload_config(bool chunk_build = true);
     void request_chunk();
     void reset_key_status();
-    void receive_pong(Pong& pong);
+    void receive_pong(protocol::Pong& pong);
     std::vector<glm::vec4>& planes();
     const std::vector<const ChunkRenderSnapshot*>& render_snapshots() const;
 
@@ -100,9 +100,9 @@ public:
 
     void send_ping();
 
-    void receive_chat_message(ChatMsg& msg);
+    void receive_chat_message(protocol::ChatMsg& msg);
     void send_chat_message(ChatMessage& message);
-    void receive_voice_message(VoiceMsg& msg);
+    void receive_voice_message(protocol::VoiceMsg& msg);
     bool enable_voice_chat() const;
     int get_per_tick_time() const override;
 
@@ -190,4 +190,4 @@ private:
 
     void handle_task();
 };
-} // namespace Cubed
+} // namespace cubed
