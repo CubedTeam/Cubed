@@ -461,9 +461,7 @@ void ClientWorld::init(std::string_view player_name,
     req.set_public_key(std::string_view{
         reinterpret_cast<const char*>(pk.data.data()), pk.data.size()});
     auto uuid = player.get_uuid();
-    req.set_uuid(
-        std::string_view{reinterpret_cast<const char*>(uuid.bytes().data()),
-                         uuid.bytes().size()});
+    req.set_uuid(uuid.to_proto_bytes());
 
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
