@@ -73,12 +73,12 @@ void InventoryUI::init() {
             auto& item = row.add_child<ItemSlot>();
             item.set_default_background(texture_manager);
             item.set_scale(5.0f);
-            if (h.item == 0) {
+            if (!h) {
                 item.set_item(0, nullptr);
             } else {
-                auto it = item_textures.find(h.item);
+                auto it = item_textures.find(h->item);
                 ASSERT(it != item_textures.end());
-                item.set_item(h.item, it->second.get());
+                item.set_item(h->item, it->second.get());
             }
             m_hotbar.emplace_back(&item);
         }
@@ -160,7 +160,7 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
                         m_selected_image->set_texture(it->second.get(), false);
                         m_hotbar[pos]->set_item(0, nullptr);
                         auto& player = m_scene.client_world().get_player();
-                        player.set_hotbar(pos, {0, 0});
+                        player.set_inventory(pos, std::nullopt);
                         m_selected_image->set_visible(true);
                         return true;
                     }
@@ -173,7 +173,7 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             auto [slot, pos] = get_hovered_hotbar_slot();
             if (slot) {
                 auto& player = m_scene.client_world().get_player();
-                player.set_hotbar(pos, {m_selected_id, 1});
+                player.set_inventory(pos, ItemStack{m_selected_id, 1});
                 if (m_selected_id != 0) {
                     auto it = item_textures.find(m_selected_id);
                     ASSERT(it != item_textures.end());
@@ -196,7 +196,7 @@ ItemSlot* InventoryUI::get_hovered_slot() {
 }
 
 std::pair<ItemSlot*, size_t> InventoryUI::get_hovered_hotbar_slot() {
-    for (size_t i = 0; i < HOTBAR_STACK_SUM; ++i) {
+    for (size_t i = 0; i < HOTBAR_SIZE; ++i) {
         auto& slot = m_hotbar[i];
         if (slot->hovered()) {
 

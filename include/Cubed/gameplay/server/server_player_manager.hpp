@@ -21,6 +21,8 @@ public:
     void stop();
     void init();
 
+    void update();
+
     bool add(PlayerPtr player);
     PlayerPtr remove(const Uuid& uuid, const PlayerPtr& expected_player);
 

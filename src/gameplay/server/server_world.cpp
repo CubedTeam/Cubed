@@ -297,6 +297,7 @@ void ServerWorld::update() {
     send_time();
 
     m_chunk_system.update();
+    m_players_manager.update();
     m_entity_manager.update();
 
     for (auto& [id, timer] : m_timers) {

@@ -13,6 +13,32 @@ void ServerPlayerManager::init() {
     m_storage = std::make_unique<PlayerStorage>(*m_world.world_storage());
 }
 
+void ServerPlayerManager::update() {
+    auto players_map = snapshot();
+    if (!players_map) {
+        return;
+    }
+    std::vector<PlayerPtr> players;
+    players.reserve(players_map->size());
+    for (const auto& [_, p] : *players_map) {
+        players.emplace_back(p);
+    }
+
+    auto pool = m_world.get_compute_pool();
+    if (pool) {
+        parallel_do(*pool, players.begin(), players.end(), pool->thread_sum(),
+                    [](PlayerPtr& player) {
+                        if (player) {
+                            player->update();
+                        }
+                    });
+    } else {
+        for (auto& player : players) {
+            player->update();
+        }
+    }
+}
+
 bool ServerPlayerManager::add(PlayerPtr player) {
     if (!player) {
         return false;

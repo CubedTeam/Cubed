@@ -6,6 +6,25 @@ ServerPlayer::ServerPlayer(std::string_view name, Uuid uuid, ServerWorld& world,
                            std::shared_ptr<Session> session, TickType gametick)
     : M_NAME(name), M_UUID(std::move(uuid)), m_world(world), m_session(session),
       m_last_gametick(gametick) {}
+
+void ServerPlayer::update() {
+    TaskPair task;
+    while (m_task.try_pop(task)) {
+        switch (task.first) {
+        case Task::ADD_ITEM: {
+            auto* v = std::get_if<ItemStackPair>(&task.second);
+            ASSERT(v);
+            add_internal(std::move(v->second), v->first);
+        } break;
+        case Task::REMOVE_ITEM: {
+            auto* v = std::get_if<size_t>(&task.second);
+            ASSERT(v);
+            remove_internal(*v);
+        } break;
+        }
+    }
+}
+
 glm::vec3 ServerPlayer::get_pos() const { return m_pos.load(); }
 const std::string& ServerPlayer::get_name() const { return M_NAME; }
 
@@ -60,6 +79,14 @@ void ServerPlayer::update_task_id_max(int new_id) {
     }
 }
 
+void ServerPlayer::add(ItemStack item, size_t position) {
+    m_task.emplace(Task::ADD_ITEM, ItemStackPair{position, std::move(item)});
+}
+
+void ServerPlayer::remove(size_t position) {
+    m_task.emplace(Task::REMOVE_ITEM, position);
+}
+
 void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
 void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
 float ServerPlayer::yaw() const { return m_yaw.load(); }
@@ -67,4 +94,12 @@ float ServerPlayer::pitch() const { return m_pitch.load(); }
 Gait ServerPlayer::gait() const { return m_gait; }
 void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 Uuid ServerPlayer::get_uuid() const { return M_UUID; }
+
+void ServerPlayer::add_internal(ItemStack item, size_t position) {
+    m_inventory[position] = std::move(item);
+}
+void ServerPlayer::remove_internal(size_t position) {
+    m_inventory[position] = std::nullopt;
+}
+
 } // namespace Cubed

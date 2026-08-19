@@ -415,8 +415,9 @@ void LocalPlayer::place_block(float dt) {
             m_world.report_block_change(m_look_block->pos, 0);
         }
     }
-    if (m_mouse_state.right) {
-        auto data = ItemManager::get(m_hotbar[m_selected_hotbar].item);
+    if (m_mouse_state.right && m_inventory[m_selected_hotbar]) {
+        // item use;
+        auto data = ItemManager::get(m_inventory[m_selected_hotbar]->item);
         if (data.kind == ItemKind::BLOCK) {
             auto* t = std::get_if<BlockType>(&data.property);
             ASSERT(t);
@@ -445,12 +446,13 @@ void LocalPlayer::place_block(float dt) {
 }
 
 int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
-void LocalPlayer::set_hotbar(int pos, const ItemStack& item) {
-    ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_STACK_SUM);
-    m_hotbar[pos] = item;
+void LocalPlayer::set_inventory(int pos, std::optional<ItemStack> item) {
+    ASSERT(pos >= 0 && static_cast<size_t>(pos) < INVENTORY_SIZE);
+    m_inventory[pos] = std::move(item);
 }
-std::span<const ItemStack, HOTBAR_STACK_SUM> LocalPlayer::get_hotbar() const {
-    return m_hotbar;
+
+std::span<const std::optional<ItemStack>> LocalPlayer::get_inventory() const {
+    return m_inventory;
 }
 
 void LocalPlayer::update_move(float dt) {
@@ -646,8 +648,8 @@ LocalPlayer::ChunkPosSet LocalPlayer::get_chunk_pos_set() {
 float& LocalPlayer::max_walk_speed() { return m_max_walk_speed; }
 float& LocalPlayer::max_run_speed() { return m_max_run_speed; }
 float& LocalPlayer::fly_y_speed() { return m_max_y_speed; }
-const ItemStack& LocalPlayer::get_current_itemstack() const {
-    return m_hotbar[m_selected_hotbar];
+std::optional<ItemStack> LocalPlayer::get_current_itemstack() const {
+    return m_inventory[m_selected_hotbar];
 };
 
 GameMode& LocalPlayer::game_mode() { return m_game_mode; }
@@ -768,8 +770,8 @@ void LocalPlayer::init(std::string_view name) {
         }
     });
 
-    for (int i = 0; i < 10; i++) {
-        m_hotbar[i].item = i;
+    for (ItemID i = 1; i < 10; i++) {
+        m_inventory[i] = ItemStack{i, 1};
     }
 }
 

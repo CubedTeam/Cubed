@@ -3,12 +3,19 @@
 #include "Cubed/gameplay/item_manager.hpp"
 namespace Cubed {
 
-constexpr size_t HOTBAR_STACK_SUM = 10;
-constexpr size_t INVENTORY_STACK_SUM = 30;
+constexpr size_t HOTBAR_SIZE = 10;
+constexpr size_t BACKPACK_SIZE = 30;
+constexpr std::size_t INVENTORY_SIZE = HOTBAR_SIZE + BACKPACK_SIZE;
+
+struct StoredItemStack {
+    ItemID item = 0;
+    size_t sum = 0;
+};
 
 struct ItemStack {
     ItemID item = 0;
     size_t sum = 0;
+
     [[nodiscard]]
     uint32_t max_stack_size() const {
         return ItemManager::get(item).max_stack_size;

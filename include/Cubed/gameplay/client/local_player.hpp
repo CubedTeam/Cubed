@@ -61,7 +61,7 @@ public:
     float& max_run_speed();
     float& fly_y_speed();
 
-    const ItemStack& get_current_itemstack() const;
+    std::optional<ItemStack> get_current_itemstack() const;
 
     GameMode& game_mode();
 
@@ -80,8 +80,18 @@ public:
     void place_block(float dt);
 
     int selected_hotbar() const;
-    void set_hotbar(int pos, const ItemStack& item);
-    std::span<const ItemStack, HOTBAR_STACK_SUM> get_hotbar() const;
+
+    void set_inventory(int pos, std::optional<ItemStack> item);
+
+    std::span<const std::optional<ItemStack>> get_inventory() const;
+
+    auto get_hotbar() const {
+        return std::span{m_inventory}.first(HOTBAR_SIZE);
+    }
+
+    auto get_backpack() const {
+        return std::span{m_inventory}.subspan(HOTBAR_SIZE);
+    }
 
     glm::vec3& max_speed();
     float& acceleration();
@@ -121,7 +131,7 @@ private:
 
     float m_place_time = PLACE_BLOCK_INTERVAL;
 
-    std::array<ItemStack, HOTBAR_STACK_SUM> m_hotbar;
+    std::array<std::optional<ItemStack>, INVENTORY_SIZE> m_inventory;
     float m_sensitivity = 0.15f;
 
     float space_on_time = 0.0f;
