@@ -12,12 +12,12 @@ public:
     Config& operator=(Config&&) = delete;
     ~Config();
 
-    ::toml::table& table();
+    toml::table& table();
 
     void load_config();
     void save_to_file();
 
-    template <toml::TomlValueType T>
+    template <toml_utils::TomlValueType T>
     T get(std::string_view key, T default_value) {
         if (!m_init) {
             load_config();
@@ -32,13 +32,14 @@ public:
         return default_value;
     }
 
-    template <toml::TomlValueType T> void set(std::string_view key, T&& value) {
+    template <toml_utils::TomlValueType T>
+    void set(std::string_view key, T&& value) {
         if (!m_init) {
             load_config();
         }
         auto pos = key.rfind('.');
 
-        ::toml::table* table;
+        toml::table* table;
         std::string_view name;
 
         if (pos == std::string_view::npos) {
@@ -66,14 +67,14 @@ public:
     }
 
 private:
-    ::toml::table m_tbl;
+    toml::table m_tbl;
     bool m_init = false;
     const std::string CONGIF_PATH;
-    const ::toml::node* find_node(const ::toml::table& root,
-                                  std::string_view path) const;
+    const toml::node* find_node(const toml::table& root,
+                                std::string_view path) const;
     // Follow the path to find the last-level toml::table, creating it if it
     // does not exist
-    ::toml::table* find_or_create_table(std::string_view path);
+    toml::table* find_or_create_table(std::string_view path);
 };
 
 template <>

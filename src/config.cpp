@@ -14,17 +14,17 @@ Config::Config(std::string_view path) : CONGIF_PATH(path) {}
 
 Config::~Config() { save_to_file(); }
 
-::toml::table& Config::table() { return m_tbl; }
+toml::table& Config::table() { return m_tbl; }
 
 void Config::load_config() {
     fs::path config_path{CONGIF_PATH};
 
     if (fs::is_regular_file(config_path)) {
         try {
-            m_tbl = ::toml::parse_file(config_path.string());
+            m_tbl = toml::parse_file(config_path.string());
             Logger::info("Load Config File Success");
             m_init = true;
-        } catch (const ::toml::parse_error& err) {
+        } catch (const toml::parse_error& err) {
             Logger::error("Load Config Error: \"{}\"", err.what());
         }
     }
@@ -36,9 +36,9 @@ void Config::save_to_file() {
     Logger::info("Save File Success");
 }
 
-const ::toml::node* Config::find_node(const ::toml::table& root,
-                                      std::string_view path) const {
-    const ::toml::table* table = &root;
+const toml::node* Config::find_node(const toml::table& root,
+                                    std::string_view path) const {
+    const toml::table* table = &root;
 
     size_t cur = 0;
     auto pos = path.find('.');
@@ -61,8 +61,8 @@ const ::toml::node* Config::find_node(const ::toml::table& root,
     return (*table)[key].node();
 }
 
-::toml::table* Config::find_or_create_table(std::string_view path) {
-    ::toml::table* table = &m_tbl;
+toml::table* Config::find_or_create_table(std::string_view path) {
+    toml::table* table = &m_tbl;
 
     while (true) {
         auto pos = path.find('.');
@@ -73,7 +73,7 @@ const ::toml::node* Config::find_node(const ::toml::table& root,
             table = next;
         } else {
             // If there is no table, create a new one
-            auto [it, _] = table->insert(part, ::toml::table{});
+            auto [it, _] = table->insert(part, toml::table{});
             table = it->second.as_table();
         }
 
