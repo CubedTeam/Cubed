@@ -54,10 +54,10 @@ enum class PacketEnum : uint16_t {
     LOGIN_CHALLENGE = 1005,
     LOGIN_PROOF = 1006,
 
-    INVENTORY = 2001,
+    C2S_PLAYER_INVENTORY = 2001,
     C2S_PLAYER_INFO = 2002,
-    PLAYER_INFO_RSP = 2003,
-    PLAYER_WATER_SOUND = 2004,
+    S2C_PLAYER_INFO_RSP = 2003,
+    S2C_PLAYER_WATER_SOUND = 2004,
 
     CHUNK_DATA_REQ = 3001,
     CHUNK_DATA_RSP = 3002,
@@ -105,14 +105,14 @@ template <> constexpr uint16_t get_packet_id<protocol::S2CLoginChallenge>() {
 template <> constexpr uint16_t get_packet_id<protocol::C2SLoginProof>() {
     return std::to_underlying(PacketEnum::LOGIN_PROOF);
 }
-template <> constexpr uint16_t get_packet_id<common::Inventory>() {
-    return std::to_underlying(PacketEnum::INVENTORY);
+template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInventory>() {
+    return std::to_underlying(PacketEnum::C2S_PLAYER_INVENTORY);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInfo>() {
     return std::to_underlying(PacketEnum::C2S_PLAYER_INFO);
 }
-template <> constexpr uint16_t get_packet_id<protocol::PlayerInfoRsp>() {
-    return std::to_underlying(PacketEnum::PLAYER_INFO_RSP);
+template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerInfoRsp>() {
+    return std::to_underlying(PacketEnum::S2C_PLAYER_INFO_RSP);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SChunkDataReq>() {
     return std::to_underlying(PacketEnum::CHUNK_DATA_REQ);
@@ -150,8 +150,8 @@ template <> constexpr uint16_t get_packet_id<protocol::Ping>() {
 template <> constexpr uint16_t get_packet_id<protocol::Pong>() {
     return std::to_underlying(PacketEnum::PONG);
 }
-template <> constexpr uint16_t get_packet_id<protocol::PlayerWaterSound>() {
-    return std::to_underlying(PacketEnum::PLAYER_WATER_SOUND);
+template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerWaterSound>() {
+    return std::to_underlying(PacketEnum::S2C_PLAYER_WATER_SOUND);
 }
 template <> constexpr uint16_t get_packet_id<protocol::ChatMsg>() {
     return std::to_underlying(PacketEnum::CHAT_MSG);

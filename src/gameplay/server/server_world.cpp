@@ -351,7 +351,7 @@ void ServerWorld::sync_player_pos(const protocol::C2SPlayerInfo& prsp) {
     }
 
     Arena arena;
-    auto* rsp = Arena::Create<protocol::PlayerInfoRsp>(&arena);
+    auto* rsp = Arena::Create<protocol::S2CPlayerInfoRsp>(&arena);
     rsp->set_uuid(uuid->to_proto_bytes());
     rsp->set_name(name);
     auto* pos = rsp->mutable_pos();
@@ -373,7 +373,7 @@ void ServerWorld::sync_player_pos(const protocol::C2SPlayerInfo& prsp) {
 }
 
 void ServerWorld::sync_player_water_sound(
-    const protocol::PlayerWaterSound& rsp) {
+    const protocol::S2CPlayerWaterSound& rsp) {
     auto x = rsp.pos().x();
     auto y = rsp.pos().y();
     auto z = rsp.pos().z();
@@ -403,7 +403,7 @@ void ServerWorld::sync_player_water_sound(
     }
 
     Arena arena;
-    auto* r = Arena::Create<protocol::PlayerWaterSound>(&arena);
+    auto* r = Arena::Create<protocol::S2CPlayerWaterSound>(&arena);
     r->set_uuid(uuid->to_proto_bytes());
     r->set_underwater(underwater);
     auto* p = r->mutable_pos();

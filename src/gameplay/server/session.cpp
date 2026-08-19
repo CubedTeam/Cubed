@@ -136,8 +136,9 @@ asio::awaitable<void> Session::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::PLAYER_WATER_SOUND): {
-                auto* req = Arena::Create<protocol::PlayerWaterSound>(&arena);
+            case std::to_underlying(PacketEnum::S2C_PLAYER_WATER_SOUND): {
+                auto* req =
+                    Arena::Create<protocol::S2CPlayerWaterSound>(&arena);
                 if (decode_packet(*req, body_data, header)) {
                     if (m_player_uuid &&
                         m_player_uuid == Uuid::from_proto_bytes(req->uuid())) {

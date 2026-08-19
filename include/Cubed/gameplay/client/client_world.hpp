@@ -61,7 +61,7 @@ public:
     void receive_time(const protocol::S2CUpdateTime& rsp);
 
     void receive_player_logout(const protocol::S2CLogoutRsp& rsp);
-    void receive_player_water_sound(const protocol::PlayerWaterSound& rsp);
+    void receive_player_water_sound(const protocol::S2CPlayerWaterSound& rsp);
     void send_player_water_sound(bool underwater, const glm::vec3& pos);
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);

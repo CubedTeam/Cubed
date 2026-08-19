@@ -24,7 +24,7 @@ public:
     LocalPlayer& get_local();
     const LocalPlayer& get_local() const;
 
-    void receive_remote_player(const protocol::PlayerInfoRsp& rsp);
+    void receive_remote_player(const protocol::S2CPlayerInfoRsp& rsp);
     void receive_player_logout(const protocol::S2CLogoutRsp& rsp);
 
     void reload_config();

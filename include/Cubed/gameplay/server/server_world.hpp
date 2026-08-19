@@ -85,7 +85,7 @@ public:
     bool set_block(const glm::ivec3& block_pos, BlockType id);
 
     void sync_player_pos(const protocol::C2SPlayerInfo& rsp);
-    void sync_player_water_sound(const protocol::PlayerWaterSound& rsp);
+    void sync_player_water_sound(const protocol::S2CPlayerWaterSound& rsp);
     void handle_player_login(protocol::C2SLoginReq& msg,
                              std::shared_ptr<Session> session);
     void handle_login_proof(protocol::C2SLoginProof& msg,

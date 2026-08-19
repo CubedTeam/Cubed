@@ -3,6 +3,7 @@ edition = "2024";
 package cubed.protocol;
 
 import "common/vector3.proto";
+import "common/inventory.proto";
 
 message C2SPlayerInfo {
     bytes uuid = 1;
@@ -12,7 +13,7 @@ message C2SPlayerInfo {
     int32 gait = 5;
 }
 
-message PlayerInfoRsp {
+message S2CPlayerInfoRsp {
     bytes uuid = 1;
     string name = 2;
     common.Vec3 pos = 3;
@@ -21,8 +22,13 @@ message PlayerInfoRsp {
     int32 gait = 6;
 }
 
-message PlayerWaterSound {
+message S2CPlayerWaterSound {
     bytes uuid = 1;
     common.Vec3 pos = 2;
     bool underwater = 3;
+}
+
+message C2SPlayerInventory {
+    bytes uuid = 1;
+    repeated common.InventoryStack inventory = 2;
 }

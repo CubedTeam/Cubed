@@ -352,7 +352,7 @@ void ClientWorld::receive_player_logout(const protocol::S2CLogoutRsp& rsp) {
 }
 
 void ClientWorld::receive_player_water_sound(
-    const protocol::PlayerWaterSound& rsp) {
+    const protocol::S2CPlayerWaterSound& rsp) {
     if (rsp.uuid() ==
         m_player_manager.get_local().get_uuid().to_proto_bytes()) {
         return;
@@ -370,7 +370,7 @@ void ClientWorld::receive_player_water_sound(
 void ClientWorld::send_player_water_sound(bool underwater,
                                           const glm::vec3& pos) {
     Arena arena;
-    auto* r = Arena::Create<protocol::PlayerWaterSound>(&arena);
+    auto* r = Arena::Create<protocol::S2CPlayerWaterSound>(&arena);
 
     r->set_underwater(underwater);
     auto* p = r->mutable_pos();

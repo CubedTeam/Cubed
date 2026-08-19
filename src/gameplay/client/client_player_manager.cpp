@@ -105,7 +105,7 @@ bool ClientPlayerManager::has_player(const Hitbox& hitbox) const {
 }
 
 void ClientPlayerManager::receive_remote_player(
-    const protocol::PlayerInfoRsp& rsp) {
+    const protocol::S2CPlayerInfoRsp& rsp) {
     auto uuid = Uuid::from_proto_bytes(rsp.uuid());
     if (!uuid) {
         Logger::error("Can't parse proto uuid");

@@ -106,8 +106,8 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_time(*rsp);
                 }
             } break;
-            case std::to_underlying(PacketEnum::PLAYER_INFO_RSP): {
-                auto* rsp = Arena::Create<protocol::PlayerInfoRsp>(&arena);
+            case std::to_underlying(PacketEnum::S2C_PLAYER_INFO_RSP): {
+                auto* rsp = Arena::Create<protocol::S2CPlayerInfoRsp>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.player_manager().receive_remote_player(*rsp);
                 }
@@ -127,8 +127,9 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::PLAYER_WATER_SOUND): {
-                auto* rsp = Arena::Create<protocol::PlayerWaterSound>(&arena);
+            case std::to_underlying(PacketEnum::S2C_PLAYER_WATER_SOUND): {
+                auto* rsp =
+                    Arena::Create<protocol::S2CPlayerWaterSound>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_player_water_sound(*rsp);
                 }
