@@ -14,6 +14,7 @@
 #include <rapidjson/document.h>
 #include <tracy/Tracy.hpp>
 using rapidjson::Document;
+using namespace google::protobuf;
 namespace fs = std::filesystem;
 namespace cubed {
 
@@ -253,12 +254,7 @@ void LocalPlayer::handle_task() {
     TaskPair pair;
     while (m_task.try_pop(pair)) {
         switch (pair.first) {
-        case Task::ADD_ITEM: {
 
-        } break;
-        case Task::REMOVE_ITEM: {
-
-        } break;
         case Task::SAVE_ALL_INVENTORY: {
             auto* v = std::get_if<std::pair<uint64_t, Inventory>>(&pair.second);
             ASSERT(v);
@@ -469,15 +465,6 @@ void LocalPlayer::place_block(float dt) {
 }
 
 int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
-void LocalPlayer::set_inventory(size_t pos, std::optional<ItemStack> item) {
-    if (pos >= INVENTORY_SIZE) {
-        ASSERT(false);
-        Logger::error("Client player inventory postion {} is out of range",
-                      pos);
-        return;
-    }
-    m_inventory[pos] = std::move(item);
-}
 
 void LocalPlayer::set_full_inventory(uint64_t revision, Inventory inventory) {
     m_task.emplace(Task::SAVE_ALL_INVENTORY,
@@ -936,6 +923,66 @@ glm::vec3 LocalPlayer::get_move_distance(float dt) {
     const auto& v = m_velocity;
     return glm::vec3{d.value.x * v.value.x * dt, v.value.y * dt,
                      d.value.z * v.value.z * dt};
+}
+
+void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error("Client player inventory postion {} is out of range",
+                      position);
+        return;
+    }
+    Arena arena;
+    auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+
+    msg->set_request_id(m_next_request++);
+    msg->set_base_revision(m_revision);
+    auto* add = msg->mutable_add();
+    add->set_count(stack.count);
+    add->set_item(stack.item);
+    add->set_to(position);
+
+    m_world.get_client()->send(make_packet(msg));
+}
+
+void LocalPlayer::remove_item(size_t position) {
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error("Client player inventory postion {} is out of range",
+                      position);
+        return;
+    }
+    Arena arena;
+    auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+
+    msg->set_base_revision(m_revision);
+    msg->set_request_id(m_next_request++);
+    auto* remove = msg->mutable_remove();
+    remove->set_count(1);
+    remove->set_from(position);
+
+    m_world.get_client()->send(make_packet(msg));
+}
+
+void LocalPlayer::move_item(size_t from, size_t to) {
+    if (from >= INVENTORY_SIZE || to >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error(
+            "Client player inventory postion from {} to {} is out of range",
+            from, to);
+        return;
+    }
+    Arena arena;
+    auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+
+    msg->set_base_revision(m_revision);
+    msg->set_request_id(m_next_request++);
+    auto* move = msg->mutable_move();
+
+    move->set_from(from);
+    move->set_to(to);
+
+    m_world.get_client()->send(make_packet(msg));
 }
 
 bool LocalPlayer::is_underwater() const { return m_underwater; }

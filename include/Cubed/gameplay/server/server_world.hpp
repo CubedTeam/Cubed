@@ -91,6 +91,8 @@ public:
     void handle_login_proof(protocol::C2SLoginProof& msg,
                             std::shared_ptr<Session> session);
     void handle_ping(protocol::Ping& ping, std::shared_ptr<Session> session);
+    void handle_inventory_action(protocol::C2SInventoryAction& msg,
+                                 const Uuid& player);
     void send_player_login_error(int32_t ec, std::string_view msg,
                                  std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const Uuid& uuid) const;

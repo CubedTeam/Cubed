@@ -27,6 +27,11 @@ void ServerPlayer::update() {
         case Task::SEND_ALL_INVENTORY: {
             send_all_inventory_internal();
         } break;
+        case Task::MOVE_ITEM: {
+            auto* v = std::get_if<MoveAction>(&task.second);
+            ASSERT(v);
+            move_internal(*v);
+        } break;
         }
     }
 }
@@ -118,6 +123,15 @@ void ServerPlayer::add(ItemStack item, size_t position) {
 void ServerPlayer::send_all_inventory() {
     m_task.emplace(Task::SEND_ALL_INVENTORY, std::monostate{});
 }
+
+void ServerPlayer::init_add(ItemStack item, size_t position) {
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        return;
+    }
+    m_inventory[position] = std::move(item);
+}
+
 void ServerPlayer::unsafe_add(ItemStack item, size_t position) {
     add_internal(std::move(item), position);
 }
@@ -125,6 +139,36 @@ void ServerPlayer::unsafe_add(ItemStack item, size_t position) {
 void ServerPlayer::remove(size_t position) {
     m_task.emplace(Task::REMOVE_ITEM, position);
 }
+void ServerPlayer::move(MoveAction action) {
+    m_task.emplace(Task::MOVE_ITEM, std::move(action));
+}
+void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
+    if (msg.base_revision() != m_revision) {
+        send_all_inventory_internal();
+        return;
+    }
+
+    if (msg.has_add()) {
+        ItemStack stack;
+        stack.count = msg.add().count();
+        stack.item = msg.add().item();
+        add(std::move(stack), msg.add().to());
+    }
+
+    if (msg.has_remove()) {
+        remove(msg.remove().from());
+    }
+
+    if (msg.has_move()) {
+        MoveAction action;
+        action.from = msg.move().from();
+        action.to = msg.move().to();
+        move(std::move(action));
+    }
+
+    ++m_revision;
+}
+
 std::span<const std::optional<ItemStack>, INVENTORY_SIZE>
 ServerPlayer::inventory() const {
     return m_inventory;
@@ -144,6 +188,7 @@ void ServerPlayer::add_internal(ItemStack item, size_t position) {
     }
 
     m_inventory[position] = std::move(item);
+    send_all_inventory_internal();
 }
 void ServerPlayer::remove_internal(size_t position) {
     if (position >= INVENTORY_SIZE) {
@@ -151,6 +196,17 @@ void ServerPlayer::remove_internal(size_t position) {
         return;
     }
     m_inventory[position] = std::nullopt;
+    send_all_inventory_internal();
+}
+
+void ServerPlayer::move_internal(const MoveAction& move_action) {
+    if (move_action.from >= INVENTORY_SIZE ||
+        move_action.to >= INVENTORY_SIZE) {
+        ASSERT(false);
+        return;
+    }
+    std::swap(m_inventory[move_action.from], m_inventory[move_action.to]);
+    send_all_inventory_internal();
 }
 
 } // namespace cubed

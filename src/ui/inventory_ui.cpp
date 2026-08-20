@@ -97,8 +97,32 @@ void InventoryUI::init() {
 }
 void InventoryUI::on_re_enter() {}
 void InventoryUI::update(float dt) {
+    refresh_hotbar();
     UIManager::update(dt);
     update_item_info();
+}
+
+void InventoryUI::refresh_hotbar() {
+    auto& texture_manager = m_scene.scene_manager().app().texture_manager();
+    const auto& item_textures = texture_manager.get_item_textures();
+    auto hotbar = m_scene.client_world().get_player().get_hotbar();
+
+    for (size_t i = 0; i < hotbar.size(); ++i) {
+        if (!hotbar[i]) {
+            if (m_hotbar[i]->id() != 0) {
+                m_hotbar[i]->set_item(0, nullptr);
+            }
+            continue;
+        }
+
+        if (m_hotbar[i]->id() == hotbar[i]->item) {
+            continue;
+        }
+
+        auto it = item_textures.find(hotbar[i]->item);
+        ASSERT(it != item_textures.end());
+        m_hotbar[i]->set_item(hotbar[i]->item, it->second.get());
+    }
 }
 
 void InventoryUI::update_item_info() {
@@ -140,9 +164,9 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             {
                 auto slot = get_hovered_slot();
                 if (slot) {
-                    m_selected_id = slot->id();
-                    if (m_selected_id != 0) {
-                        auto it = item_textures.find(m_selected_id);
+                    m_selected = ItemStack{slot->id(), 1};
+                    if (m_selected->item != 0) {
+                        auto it = item_textures.find(m_selected->item);
                         ASSERT(it != item_textures.end());
                         m_selected_image->set_texture(it->second.get(), false);
                         m_selected_image->set_visible(true);
@@ -153,14 +177,13 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             {
                 auto [slot, pos] = get_hovered_hotbar_slot();
                 if (slot) {
-                    m_selected_id = slot->id();
-                    if (m_selected_id != 0) {
-                        auto it = item_textures.find(m_selected_id);
+                    m_selected = ItemStack{slot->id(), 1};
+                    if (m_selected->item != 0) {
+                        auto it = item_textures.find(m_selected->item);
                         ASSERT(it != item_textures.end());
                         m_selected_image->set_texture(it->second.get(), false);
-                        m_hotbar[pos]->set_item(0, nullptr);
-                        auto& player = m_scene.client_world().get_player();
-                        player.set_inventory(pos, std::nullopt);
+
+                        m_from = pos;
                         m_selected_image->set_visible(true);
                         return true;
                     }
@@ -170,16 +193,21 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
         if (m_selected_image->has_texture()) {
             m_selected_image->set_texture(nullptr, false);
             m_selected_image->set_visible(false);
+
             auto [slot, pos] = get_hovered_hotbar_slot();
-            if (slot) {
+
+            if (slot && m_selected) {
                 auto& player = m_scene.client_world().get_player();
-                player.set_inventory(pos, ItemStack{m_selected_id, 1});
-                if (m_selected_id != 0) {
-                    auto it = item_textures.find(m_selected_id);
-                    ASSERT(it != item_textures.end());
-                    m_hotbar[pos]->set_item(m_selected_id, it->second.get());
+
+                if (m_from) {
+                    player.move_item(*m_from, pos);
+                } else {
+                    player.add_item(pos, *m_selected);
                 }
             }
+
+            m_selected.reset();
+            m_from.reset();
             return true;
         }
     }

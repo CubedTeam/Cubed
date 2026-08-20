@@ -514,6 +514,13 @@ void ServerWorld::handle_ping(protocol::Ping& ping,
     session->send(make_packet(msg), 0);
 }
 
+void ServerWorld::handle_inventory_action(protocol::C2SInventoryAction& msg,
+                                          const Uuid& uuid) {
+
+    auto player = m_players_manager.find(uuid);
+    player->handle_inventory_action(msg);
+}
+
 void ServerWorld::handle_login_proof(protocol::C2SLoginProof& msg,
                                      std::shared_ptr<Session> session) {
 

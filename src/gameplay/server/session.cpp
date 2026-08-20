@@ -195,6 +195,13 @@ asio::awaitable<void> Session::read_loop() {
                     m_server_world.handle_ping(*msg, shared_from_this());
                 }
             } break;
+            case std::to_underlying(PacketEnum::C2S_INVENTORY_ACTION): {
+                auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+                if (m_player_uuid && decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_inventory_action(
+                        *msg, m_player_uuid.value());
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

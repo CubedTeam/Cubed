@@ -84,10 +84,6 @@ public:
 
     int selected_hotbar() const;
 
-    void set_inventory(size_t pos, std::optional<ItemStack> item);
-
-    void set_full_inventory(uint64_t revision, Inventory inventory);
-
     void handle_inventory_update(const protocol::S2CInventoryUpdate& msg);
 
     std::span<const std::optional<ItemStack>> get_inventory() const;
@@ -115,10 +111,14 @@ public:
 
     std::optional<crypto::Ed25519KeyPair>& key_pair();
 
+    void add_item(size_t position, const ItemStack& stack);
+    void remove_item(size_t position);
+    void move_item(size_t from, size_t to);
+
 private:
     using enum GameMode;
 
-    enum class Task { ADD_ITEM, REMOVE_ITEM, SAVE_ALL_INVENTORY };
+    enum class Task { SAVE_ALL_INVENTORY };
 
     using TaskElement = std::variant<std::pair<uint64_t, Inventory>>;
     using TaskPair = std::pair<Task, TaskElement>;
@@ -195,5 +195,6 @@ private:
     glm::vec3 get_move_distance(float dt);
 
     void set_full_inventory_internal(uint64_t revision, Inventory inventory);
+    void set_full_inventory(uint64_t revision, Inventory inventory);
 };
 } // namespace cubed

@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/item_stack.hpp"
 #include "Cubed/gameplay/server/server_chunk.hpp"
 #include "Cubed/tools/uuid.hpp"
+#include "player/inventory.pb.h"
 
 #include <array>
 #include <atomic>
@@ -20,7 +21,11 @@ class Session;
 class ServerPlayer {
 
 public:
-    enum class Task { ADD_ITEM, REMOVE_ITEM, SEND_ALL_INVENTORY };
+    struct MoveAction {
+        size_t from = 0;
+        size_t to = 0;
+    };
+    enum class Task { ADD_ITEM, REMOVE_ITEM, SEND_ALL_INVENTORY, MOVE_ITEM };
     ServerPlayer(const ServerPlayer&) = delete;
     ServerPlayer(ServerPlayer&&) = delete;
     ServerPlayer& operator=(const ServerPlayer&) = delete;
@@ -56,21 +61,25 @@ public:
 
     void add(ItemStack item, size_t position);
     void send_all_inventory();
+    void init_add(ItemStack item, size_t position);
     void unsafe_add(ItemStack item, size_t position);
     void remove(size_t position);
+    void move(MoveAction action);
+    void handle_inventory_action(protocol::C2SInventoryAction& msg);
 
     std::span<const std::optional<ItemStack>, INVENTORY_SIZE> inventory() const;
 
 private:
     using ItemStackPair = std::pair<size_t, ItemStack>;
-    using TaskElement = std::variant<ItemStackPair, size_t, std::monostate>;
+    using TaskElement =
+        std::variant<ItemStackPair, size_t, std::monostate, MoveAction>;
     using TaskPair = std::pair<Task, TaskElement>;
     static constexpr TickType TIMEOUT = 200;
     const std::string M_NAME;
     const Uuid M_UUID;
 
     ServerWorld& m_world;
-    uint64_t m_revision = 1;
+    std::atomic<uint64_t> m_revision = 1;
 
     tbb::concurrent_queue<TaskPair> m_task;
     std::atomic<glm::vec3> m_pos{glm::vec3{0.0f, 255.0f, 0.0f}};
@@ -89,6 +98,7 @@ private:
 
     void add_internal(ItemStack item, size_t position);
     void remove_internal(size_t position);
+    void move_internal(const MoveAction& move_action);
     void send_all_inventory_internal();
 };
 } // namespace cubed

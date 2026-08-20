@@ -200,7 +200,7 @@ PlayerStorage::deserialize(std::string_view data) {
     if (doc.HasMember("inventory") && doc["inventory"].IsArray()) {
         const auto& inventory = doc["inventory"];
         for (const auto& stack : inventory.GetArray()) {
-            if (stack.IsObject()) {
+            if (!stack.IsObject()) {
                 continue;
             }
             StoredItemStack item_stack;
