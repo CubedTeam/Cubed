@@ -21,5 +21,6 @@ struct ItemStack {
     uint32_t max_stack_size() const {
         return ItemManager::get(item).max_stack_size;
     }
+    bool operator==(const ItemStack&) const = default;
 };
 } // namespace cubed

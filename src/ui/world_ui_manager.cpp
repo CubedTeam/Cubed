@@ -139,11 +139,11 @@ void WorldUIManager::update_hotbar() {
             m_hotbar_slot[i]->set_border_visale(false);
         }
         if (!item) {
-            m_hotbar_slot[i]->set_item(0, nullptr);
+            m_hotbar_slot[i]->set_item(std::nullopt, nullptr);
         } else {
             auto it = item_texture.find(item->item);
             ASSERT(it != item_texture.end());
-            m_hotbar_slot[i]->set_item(item->item, it->second.get());
+            m_hotbar_slot[i]->set_item(item, it->second.get());
         }
     }
 }

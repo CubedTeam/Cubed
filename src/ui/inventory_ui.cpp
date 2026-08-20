@@ -43,7 +43,7 @@ void InventoryUI::init() {
             slot.set_default_background(texture_manager);
             slot.set_scale(5.0f);
 
-            slot.set_item(id, texture.get());
+            slot.set_item(ItemStack{id, 1}, texture.get());
             m_slots.emplace_back(&slot);
             ++i;
         }
@@ -64,6 +64,7 @@ void InventoryUI::init() {
         auto& spec = column.add_child<Rect>();
         spec.set_color(Color::GRAY).set_fill_width(true).set_height(15.0f);
     }
+
     {
         auto& player = m_scene.client_world().get_player();
         auto hotbar = player.get_hotbar();
@@ -74,11 +75,11 @@ void InventoryUI::init() {
             item.set_default_background(texture_manager);
             item.set_scale(5.0f);
             if (!h) {
-                item.set_item(0, nullptr);
+                item.set_item(std::nullopt, nullptr);
             } else {
                 auto it = item_textures.find(h->item);
                 ASSERT(it != item_textures.end());
-                item.set_item(h->item, it->second.get());
+                item.set_item(h, it->second.get());
             }
             m_hotbar.emplace_back(&item);
         }
@@ -109,19 +110,19 @@ void InventoryUI::refresh_hotbar() {
 
     for (size_t i = 0; i < hotbar.size(); ++i) {
         if (!hotbar[i]) {
-            if (m_hotbar[i]->id() != 0) {
-                m_hotbar[i]->set_item(0, nullptr);
+            if (m_hotbar[i]->id()) {
+                m_hotbar[i]->set_item(std::nullopt, nullptr);
             }
             continue;
         }
 
-        if (m_hotbar[i]->id() == hotbar[i]->item) {
+        if (m_hotbar[i]->stack() == hotbar[i]) {
             continue;
         }
 
         auto it = item_textures.find(hotbar[i]->item);
         ASSERT(it != item_textures.end());
-        m_hotbar[i]->set_item(hotbar[i]->item, it->second.get());
+        m_hotbar[i]->set_item(hotbar[i], it->second.get());
     }
 }
 
@@ -131,8 +132,8 @@ void InventoryUI::update_item_info() {
 
             auto type = slot->id();
 
-            if (type != 0) {
-                auto data = ItemManager::get(type);
+            if (type && type != 0) {
+                auto data = ItemManager::get(*type);
                 m_item_info->set_text(data.local_name).set_visible(true);
                 return true;
             }
@@ -162,10 +163,13 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
         if (!m_selected_image->has_texture()) {
 
             {
+                // Creative Inventory
                 auto slot = get_hovered_slot();
                 if (slot) {
-                    m_selected = ItemStack{slot->id(), 1};
-                    if (m_selected->item != 0) {
+                    m_selected = slot->stack();
+
+                    if (m_selected && m_selected->item != 0) {
+                        m_selected->count = 64;
                         auto it = item_textures.find(m_selected->item);
                         ASSERT(it != item_textures.end());
                         m_selected_image->set_texture(it->second.get(), false);
@@ -177,8 +181,8 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
             {
                 auto [slot, pos] = get_hovered_hotbar_slot();
                 if (slot) {
-                    m_selected = ItemStack{slot->id(), 1};
-                    if (m_selected->item != 0) {
+                    m_selected = slot->stack();
+                    if (m_selected && m_selected->item != 0) {
                         auto it = item_textures.find(m_selected->item);
                         ASSERT(it != item_textures.end());
                         m_selected_image->set_texture(it->second.get(), false);
