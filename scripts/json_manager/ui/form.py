@@ -11,8 +11,10 @@ from typing import Any, Iterable
 import flet as ft
 
 from ..core import i18n
+from ..core.custom_fields import merge_known_with_extra
 from ..core.schema import FieldSpec, Schema, get_path, set_path
 from .safe import safe_update
+from .widgets.custom_fields import CustomFieldsEditor
 
 # Unified spacing tokens (MD3 style).
 SPACE = 12
@@ -125,6 +127,7 @@ class SchemaForm(ft.Column):
         self._data: dict = {}
         # key -> entry dict {control, container, spec, ...extras}
         self._entries: dict[str, dict] = {}
+        self.custom_fields = CustomFieldsEditor(schema)
         self.controls = self._build_sections()
 
     # --- build ------------------------------------------------------------
@@ -157,6 +160,7 @@ class SchemaForm(ft.Column):
                 )
             section_children.extend(non_switch)
             cols.append(section(_t_section(sec), *section_children))
+        cols.append(section(i18n.t("custom.section"), self.custom_fields))
         return cols
 
     def _make_control(self, f: FieldSpec) -> tuple[ft.Control, dict]:
@@ -206,6 +210,7 @@ class SchemaForm(ft.Column):
 
     def set_data(self, data: dict) -> None:
         self._data = data or {}
+        self.custom_fields.set_data(self._data)
         for f in self.schema.fields:
             entry = self._entries[f.key]
             ctrl = entry["control"]
@@ -250,7 +255,7 @@ class SchemaForm(ft.Column):
             if f.visible_when is not None and not f.visible_when(nested):
                 continue
             set_path(final, f.key, raw[f.key])
-        return final
+        return merge_known_with_extra(final, self.custom_fields.get_data())
 
     # --- visibility / interactivity --------------------------------------
 
@@ -280,5 +285,6 @@ class SchemaForm(ft.Column):
         after a locale switch. Currently-loaded data is reapplied.
         """
         self._entries.clear()
+        self.custom_fields.rebuild_labels()
         self.controls = self._build_sections()
         self.set_data(self._data)

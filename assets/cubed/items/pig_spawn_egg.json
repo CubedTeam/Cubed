@@ -3,5 +3,6 @@
     "type": "spawn_egg",
     "creature": "cubed:pig",
     "texture": "cubed:textures/items/spawn_egg/pig_spawn_egg.png",
-    "description": ""
+    "description": "",
+    "model": "cubed:models/items/pig_spawn_egg.glb"
 }

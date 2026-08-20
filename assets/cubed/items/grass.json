@@ -3,5 +3,6 @@
     "type": "block",
     "block": "cubed:grass",
     "texture": "cubed:textures/items/block/grass.png",
-    "description": ""
+    "description": "",
+    "model": "cubed:models/items/grass.glb"
 }
