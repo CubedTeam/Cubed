@@ -256,9 +256,12 @@ void LocalPlayer::handle_task() {
         switch (pair.first) {
 
         case Task::SAVE_ALL_INVENTORY: {
-            auto* v = std::get_if<std::pair<uint64_t, Inventory>>(&pair.second);
+            auto* v = std::get_if<InventoryUpdateData>(&pair.second);
             ASSERT(v);
-            set_full_inventory_internal(v->first, std::move(v->second));
+            set_full_inventory_internal(std::move(*v));
+        } break;
+        case Task::CLEAR_PENDING: {
+            m_pending_request.reset();
         } break;
         }
     }
@@ -466,19 +469,20 @@ void LocalPlayer::place_block(float dt) {
 
 int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
 
-void LocalPlayer::set_full_inventory(uint64_t revision, Inventory inventory) {
-    m_task.emplace(Task::SAVE_ALL_INVENTORY,
-                   std::pair{revision, std::move(inventory)});
+void LocalPlayer::set_full_inventory(InventoryUpdateData data) {
+    m_task.emplace(Task::SAVE_ALL_INVENTORY, std::move(data));
 }
 
 void LocalPlayer::handle_inventory_update(
     const protocol::S2CInventoryUpdate& msg) {
+
     if (!msg.accepted()) {
         if (msg.has_error()) {
             if (msg.error().has_msg()) {
                 Logger::error("Hanle inventory update fail", msg.error().msg());
             }
         }
+        m_task.emplace(Task::CLEAR_PENDING, std::monostate{});
         return;
     }
 
@@ -502,19 +506,22 @@ void LocalPlayer::handle_inventory_update(
             }
         }
 
-        set_full_inventory(msg.revision(), std::move(inventory));
+        set_full_inventory(
+            {msg.request_id(), msg.revision(), std::move(inventory)});
     }
 }
 
-void LocalPlayer::set_full_inventory_internal(uint64_t revision,
-                                              Inventory inventory) {
+void LocalPlayer::set_full_inventory_internal(InventoryUpdateData data) {
 
-    if (revision < m_revision) {
-        return;
+    if (data.revision >= m_revision) {
+        m_revision = data.revision;
+
+        m_inventory = std::move(data.inventory);
     }
-    m_revision = revision;
 
-    m_inventory = std::move(inventory);
+    if (m_pending_request == data.request_id) {
+        m_pending_request.reset();
+    }
 }
 
 std::span<const std::optional<ItemStack>> LocalPlayer::get_inventory() const {
@@ -930,6 +937,9 @@ glm::vec3 LocalPlayer::get_move_distance(float dt) {
 }
 
 void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
+    if (m_pending_request.has_value()) {
+        return;
+    }
     if (position >= INVENTORY_SIZE) {
         ASSERT(false);
         Logger::error("Client player inventory postion {} is out of range",
@@ -939,8 +949,10 @@ void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
     Arena arena;
     auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
 
-    msg->set_request_id(m_next_request++);
     msg->set_base_revision(m_revision);
+    auto request_id = m_next_request++;
+    msg->set_request_id(request_id);
+    m_pending_request = request_id;
     auto* add = msg->mutable_add();
     add->set_count(stack.count);
     add->set_item(stack.item);
@@ -950,6 +962,9 @@ void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
 }
 
 void LocalPlayer::remove_item(size_t position) {
+    if (m_pending_request.has_value()) {
+        return;
+    }
     if (position >= INVENTORY_SIZE) {
         ASSERT(false);
         Logger::error("Client player inventory postion {} is out of range",
@@ -958,9 +973,11 @@ void LocalPlayer::remove_item(size_t position) {
     }
     Arena arena;
     auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
-
+    auto request_id = m_next_request++;
+    msg->set_request_id(request_id);
+    m_pending_request = request_id;
     msg->set_base_revision(m_revision);
-    msg->set_request_id(m_next_request++);
+
     auto* remove = msg->mutable_remove();
     remove->set_count(1);
     remove->set_from(position);
@@ -969,6 +986,9 @@ void LocalPlayer::remove_item(size_t position) {
 }
 
 void LocalPlayer::move_item(size_t from, size_t to) {
+    if (m_pending_request.has_value()) {
+        return;
+    }
     if (from >= INVENTORY_SIZE || to >= INVENTORY_SIZE) {
         ASSERT(false);
         Logger::error(
@@ -978,9 +998,11 @@ void LocalPlayer::move_item(size_t from, size_t to) {
     }
     Arena arena;
     auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
-
+    auto request_id = m_next_request++;
+    msg->set_request_id(request_id);
+    m_pending_request = request_id;
     msg->set_base_revision(m_revision);
-    msg->set_request_id(m_next_request++);
+
     auto* move = msg->mutable_move();
 
     move->set_from(from);

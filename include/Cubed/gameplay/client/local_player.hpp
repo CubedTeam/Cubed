@@ -118,9 +118,15 @@ public:
 private:
     using enum GameMode;
 
-    enum class Task { SAVE_ALL_INVENTORY };
+    enum class Task { SAVE_ALL_INVENTORY, CLEAR_PENDING };
 
-    using TaskElement = std::variant<std::pair<uint64_t, Inventory>>;
+    struct InventoryUpdateData {
+        uint64_t request_id = 0;
+        uint64_t revision = 0;
+        Inventory inventory;
+    };
+
+    using TaskElement = std::variant<InventoryUpdateData, std::monostate>;
     using TaskPair = std::pair<Task, TaskElement>;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
     float m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
@@ -131,6 +137,7 @@ private:
     tbb::concurrent_queue<TaskPair> m_task;
     uint64_t m_revision = 0;
     std::atomic<uint64_t> m_next_request = 1;
+    std::optional<uint64_t> m_pending_request;
     std::optional<crypto::Ed25519KeyPair> m_key_pair;
 
     EntityInfo m_info;
@@ -194,7 +201,7 @@ private:
     std::tuple<bool, bool, bool> update_physical(float dt, glm::vec3& pos);
     glm::vec3 get_move_distance(float dt);
 
-    void set_full_inventory_internal(uint64_t revision, Inventory inventory);
-    void set_full_inventory(uint64_t revision, Inventory inventory);
+    void set_full_inventory_internal(InventoryUpdateData data);
+    void set_full_inventory(InventoryUpdateData data);
 };
 } // namespace cubed

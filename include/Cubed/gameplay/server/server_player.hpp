@@ -24,16 +24,19 @@ class ServerPlayer {
 public:
     struct MoveAction {
         uint64_t revision = 0;
+        uint64_t request_id = 0;
         size_t from = 0;
         size_t to = 0;
     };
     struct AddAction {
         uint64_t revision = 0;
+        uint64_t request_id = 0;
         size_t position = 0;
         ItemStack stack;
     };
     struct RemoveAction {
         uint64_t revision = 0;
+        uint64_t request_id = 0;
         size_t position = 0;
     };
     using Inventory = std::array<std::optional<ItemStack>, INVENTORY_SIZE>;
@@ -111,6 +114,6 @@ private:
     void add_internal(const AddAction& action);
     void remove_internal(const RemoveAction& action);
     void move_internal(const MoveAction& action);
-    void send_all_inventory_internal();
+    void send_all_inventory_internal(uint64_t request_id = 0);
 };
 } // namespace cubed

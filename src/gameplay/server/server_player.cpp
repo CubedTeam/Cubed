@@ -91,13 +91,13 @@ void ServerPlayer::update_task_id_max(int new_id) {
     }
 }
 
-void ServerPlayer::send_all_inventory_internal() {
+void ServerPlayer::send_all_inventory_internal(uint64_t request_id) {
     Arena arena;
     auto* msg = Arena::Create<protocol::S2CInventoryUpdate>(&arena);
 
     msg->set_accepted(true);
     msg->set_full_snapshot(true);
-    msg->set_request_id(0);
+    msg->set_request_id(request_id);
     msg->set_revision(m_revision);
     auto* slots = msg->mutable_slots();
 
@@ -151,6 +151,7 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         action.revision = msg.base_revision();
         action.stack.count = msg.add().count();
         action.stack.item = msg.add().item();
+        action.request_id = msg.request_id();
         if (msg.add().to() >= INVENTORY_SIZE) {
             return;
         }
@@ -165,6 +166,7 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         RemoveAction action;
         action.position = msg.remove().from();
         action.revision = msg.base_revision();
+        action.request_id = msg.request_id();
         remove(std::move(action));
     }
 
@@ -174,6 +176,8 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         action.from = msg.move().from();
         action.to = msg.move().to();
         action.revision = msg.base_revision();
+        action.request_id = msg.request_id();
+
         if (action.from >= INVENTORY_SIZE || action.to >= INVENTORY_SIZE) {
             return;
         }
@@ -196,7 +200,7 @@ Uuid ServerPlayer::get_uuid() const { return M_UUID; }
 
 void ServerPlayer::add_internal(const AddAction& action) {
     if (action.revision != m_revision) {
-        send_all_inventory_internal();
+        send_all_inventory_internal(action.request_id);
         return;
     }
     if (action.position >= INVENTORY_SIZE) {
@@ -206,11 +210,11 @@ void ServerPlayer::add_internal(const AddAction& action) {
 
     m_inventory[action.position] = std::move(action.stack);
     ++m_revision;
-    send_all_inventory_internal();
+    send_all_inventory_internal(action.request_id);
 }
 void ServerPlayer::remove_internal(const RemoveAction& action) {
     if (action.revision != m_revision) {
-        send_all_inventory_internal();
+        send_all_inventory_internal(action.request_id);
         return;
     }
     if (action.position >= INVENTORY_SIZE) {
@@ -219,12 +223,12 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
     }
     m_inventory[action.position] = std::nullopt;
     ++m_revision;
-    send_all_inventory_internal();
+    send_all_inventory_internal(action.request_id);
 }
 
 void ServerPlayer::move_internal(const MoveAction& action) {
     if (action.revision != m_revision) {
-        send_all_inventory_internal();
+        send_all_inventory_internal(action.request_id);
         return;
     }
     if (action.from >= INVENTORY_SIZE || action.to >= INVENTORY_SIZE) {
@@ -233,7 +237,7 @@ void ServerPlayer::move_internal(const MoveAction& action) {
     }
     std::swap(m_inventory[action.from], m_inventory[action.to]);
     ++m_revision;
-    send_all_inventory_internal();
+    send_all_inventory_internal(action.request_id);
 }
 
 } // namespace cubed
