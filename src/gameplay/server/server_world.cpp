@@ -594,17 +594,6 @@ void ServerWorld::handle_login_proof(protocol::C2SLoginProof& msg,
     rsp->set_voice_chat(m_voice_chat);
     rsp->set_pitch(player->pitch());
     rsp->set_yaw(player->yaw());
-    auto inventory = rsp->mutable_inventory();
-    auto player_inventory = player->inventory();
-    for (size_t i = 0; i < player_inventory.size(); ++i) {
-        if (!player_inventory[i]) {
-            continue;
-        }
-        auto* inventory_stack = inventory->Add();
-        inventory_stack->set_count(player_inventory[i]->count);
-        inventory_stack->set_item(player_inventory[i]->item);
-        inventory_stack->set_position(i);
-    }
 
     tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
 
@@ -615,6 +604,8 @@ void ServerWorld::handle_login_proof(protocol::C2SLoginProof& msg,
 
     request_generation(uuid);
     m_entity_manager.handle_player_login(session);
+
+    player->send_all_inventory();
 
     return;
 }

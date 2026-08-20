@@ -63,7 +63,7 @@ bool ServerPlayerManager::add(PlayerPtr player) {
                 ItemStack s;
                 s.item = stack.item_id;
                 s.count = stack.count;
-                it->second->add(s, stack.position);
+                it->second->unsafe_add(s, stack.position);
             }
 
         } else {

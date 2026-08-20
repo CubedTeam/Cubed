@@ -3,7 +3,7 @@ edition = "2024";
 package cubed.protocol;
 
 import "common/vector3.proto";
-import "common/inventory.proto";
+
 
 message C2SPlayerInfo {
     bytes uuid = 1;
@@ -28,7 +28,3 @@ message S2CPlayerWaterSound {
     bool underwater = 3;
 }
 
-message C2SPlayerInventory {
-    bytes uuid = 1;
-    repeated common.InventoryStack inventory = 3;
-}

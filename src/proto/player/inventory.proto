@@ -1,0 +1,54 @@
+edition = "2024";
+
+package cubed.protocol;
+
+import "common/inventory_data.proto";
+import "common/error.proto";
+
+message InventoryMove {
+    uint32 from = 1;
+    uint32 to = 2;
+    uint32 count = 3;
+}
+
+message InventoryRemove {
+    uint32 from = 1;
+    uint32 count = 2;
+}
+
+message InventoryCreativeAdd {
+    uint32 item = 1;
+    uint32 to = 2;
+    uint32 count = 3;
+}
+
+message InventorySlotState {
+    uint32 position = 1;
+
+    oneof content {
+        common.InventoryStack stack = 2;
+        bool empty = 3;
+    }
+}
+
+message C2SInventoryAction {
+    uint64 request_id = 1;
+    uint64 base_revision = 2;
+
+    oneof action {
+        InventoryMove move = 3;
+        InventoryRemove remove = 4;
+        InventoryCreativeAdd add = 5;
+    }
+}
+
+message S2CInventoryUpdate {
+    uint64 request_id = 1;
+    uint64 revision = 2;
+    bool accepted = 3;
+    common.Error error = 4;
+
+    bool full_snapshot = 5;
+    repeated InventorySlotState slots = 6;
+}
+

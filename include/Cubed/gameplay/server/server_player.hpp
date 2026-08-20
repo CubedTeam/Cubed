@@ -20,7 +20,7 @@ class Session;
 class ServerPlayer {
 
 public:
-    enum class Task { ADD_ITEM, REMOVE_ITEM };
+    enum class Task { ADD_ITEM, REMOVE_ITEM, SEND_ALL_INVENTORY };
     ServerPlayer(const ServerPlayer&) = delete;
     ServerPlayer(ServerPlayer&&) = delete;
     ServerPlayer& operator=(const ServerPlayer&) = delete;
@@ -55,19 +55,23 @@ public:
     Uuid get_uuid() const;
 
     void add(ItemStack item, size_t position);
+    void send_all_inventory();
+    void unsafe_add(ItemStack item, size_t position);
     void remove(size_t position);
 
     std::span<const std::optional<ItemStack>, INVENTORY_SIZE> inventory() const;
 
 private:
     using ItemStackPair = std::pair<size_t, ItemStack>;
-    using TaskElement = std::variant<ItemStackPair, size_t>;
+    using TaskElement = std::variant<ItemStackPair, size_t, std::monostate>;
     using TaskPair = std::pair<Task, TaskElement>;
     static constexpr TickType TIMEOUT = 200;
     const std::string M_NAME;
     const Uuid M_UUID;
 
     ServerWorld& m_world;
+    uint64_t m_revision = 1;
+
     tbb::concurrent_queue<TaskPair> m_task;
     std::atomic<glm::vec3> m_pos{glm::vec3{0.0f, 255.0f, 0.0f}};
     ChunkPos m_last_chunk_pos{0, 0};
@@ -85,5 +89,6 @@ private:
 
     void add_internal(ItemStack item, size_t position);
     void remove_internal(size_t position);
+    void send_all_inventory_internal();
 };
 } // namespace cubed

@@ -54,10 +54,11 @@ enum class PacketEnum : uint16_t {
     S2C_LOGIN_CHALLENGE = 1005,
     C2S_LOGIN_PROOF = 1006,
 
-    C2S_PLAYER_INVENTORY = 2001,
-    C2S_PLAYER_INFO = 2002,
-    S2C_PLAYER_INFO_RSP = 2003,
-    S2C_PLAYER_WATER_SOUND = 2004,
+    C2S_PLAYER_INFO = 2001,
+    S2C_PLAYER_INFO_RSP = 2002,
+    S2C_PLAYER_WATER_SOUND = 2003,
+    C2S_INVENTORY_ACTION = 2004,
+    S2C_INVENTORY_UPDATE = 2005,
 
     C2S_CHUNK_DATA_REQ = 3001,
     S2C_CHUNK_DATA_RSP = 3002,
@@ -105,8 +106,11 @@ template <> constexpr uint16_t get_packet_id<protocol::S2CLoginChallenge>() {
 template <> constexpr uint16_t get_packet_id<protocol::C2SLoginProof>() {
     return std::to_underlying(PacketEnum::C2S_LOGIN_PROOF);
 }
-template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInventory>() {
-    return std::to_underlying(PacketEnum::C2S_PLAYER_INVENTORY);
+template <> constexpr uint16_t get_packet_id<protocol::C2SInventoryAction>() {
+    return std::to_underlying(PacketEnum::C2S_INVENTORY_ACTION);
+}
+template <> constexpr uint16_t get_packet_id<protocol::S2CInventoryUpdate>() {
+    return std::to_underlying(PacketEnum::S2C_INVENTORY_UPDATE);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInfo>() {
     return std::to_underlying(PacketEnum::C2S_PLAYER_INFO);

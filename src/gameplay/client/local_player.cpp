@@ -233,6 +233,9 @@ void LocalPlayer::set_player_pos(const glm::vec3& pos) {
 
 void LocalPlayer::update(float delta_time) {
     ZoneScopedN("LocalPlayer::update");
+
+    handle_task();
+
     WalkPose pos = m_walk_pose;
     pos.gait = compute_gait();
     m_walk_pose = pos;
@@ -245,6 +248,26 @@ void LocalPlayer::update(float delta_time) {
     d_rep("speed", "Speed(x, y, z): {:.2} m/s {:.2} m/s {:.2} m/s",
           m_velocity.value.x, m_velocity.value.y, m_velocity.value.z);
 }
+
+void LocalPlayer::handle_task() {
+    TaskPair pair;
+    while (m_task.try_pop(pair)) {
+        switch (pair.first) {
+        case Task::ADD_ITEM: {
+
+        } break;
+        case Task::REMOVE_ITEM: {
+
+        } break;
+        case Task::SAVE_ALL_INVENTORY: {
+            auto* v = std::get_if<Inventory>(&pair.second);
+            ASSERT(v);
+            set_full_inventory_internal(std::move(*v));
+        } break;
+        }
+    }
+}
+
 bool LocalPlayer::update_player_move_state(Key key, KeyAction action) {
     if (key == Key::W) {
         if (action == KeyAction::PRESS) {
@@ -454,6 +477,53 @@ void LocalPlayer::set_inventory(size_t pos, std::optional<ItemStack> item) {
         return;
     }
     m_inventory[pos] = std::move(item);
+}
+
+void LocalPlayer::set_full_inventory(Inventory inventory) {
+    m_task.emplace(Task::SAVE_ALL_INVENTORY, std::move(inventory));
+}
+
+void LocalPlayer::handle_inventory_update(
+    const protocol::S2CInventoryUpdate& msg) {
+    if (!msg.accepted()) {
+        if (msg.has_error()) {
+            if (msg.error().has_msg()) {
+                Logger::error("Hanle inventory update fail", msg.error().msg());
+            }
+        }
+        return;
+    }
+    auto revision = m_revision.load();
+    if (revision > msg.revision()) {
+        return;
+    }
+
+    if (!m_revision.compare_exchange_weak(revision, msg.revision())) {
+        return;
+    }
+
+    if (msg.full_snapshot()) {
+        LocalPlayer::Inventory inventory;
+
+        for (auto& slot : msg.slots()) {
+            size_t pos = slot.position();
+            if (slot.has_empty()) {
+                inventory[pos] = std::nullopt;
+            }
+            if (slot.has_stack()) {
+                ItemStack s;
+                s.item = slot.stack().item();
+                s.count = slot.stack().count();
+                inventory[pos] = std::move(s);
+            }
+        }
+
+        set_full_inventory(std::move(inventory));
+    }
+}
+
+void LocalPlayer::set_full_inventory_internal(Inventory inventory) {
+    m_inventory = std::move(inventory);
 }
 
 std::span<const std::optional<ItemStack>> LocalPlayer::get_inventory() const {
@@ -774,10 +844,6 @@ void LocalPlayer::init(std::string_view name) {
             Logger::debug("Player block {} walk sound", path.string());
         }
     });
-
-    for (ItemID i = 1; i < 10; i++) {
-        m_inventory[i] = ItemStack{i, 1};
-    }
 }
 
 void LocalPlayer::update_speed(float dt) {

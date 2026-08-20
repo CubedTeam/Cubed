@@ -16,7 +16,6 @@
 #include "Cubed/tools/cubed_random.hpp"
 #include "Cubed/tools/priority_thread_pool.hpp"
 
-#include <absl/container/flat_hash_set.h>
 #include <deque>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
@@ -62,6 +61,7 @@ public:
 
     void receive_player_logout(const protocol::S2CLogoutRsp& rsp);
     void receive_player_water_sound(const protocol::S2CPlayerWaterSound& rsp);
+    void receive_player_inventory(const protocol::S2CInventoryUpdate& msg);
     void send_player_water_sound(bool underwater, const glm::vec3& pos);
     int rendering_distance() const;
     void rendering_distance(int rendering_distance);
@@ -131,7 +131,7 @@ private:
     using ChunkHashMap =
         tbb::concurrent_hash_map<ChunkPos, std::shared_ptr<ClientChunk>,
                                  ChunkPos::TBBHash>;
-    using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
+    using ChunkPosSet = LocalPlayer::ChunkPosSet;
     using ChunkPosVector = std::vector<ChunkPos>;
     using chunk_acc = ChunkHashMap::accessor;
     using chunk_cacc = ChunkHashMap::const_accessor;

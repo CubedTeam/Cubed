@@ -5,5 +5,4 @@ package cubed.common;
 message InventoryStack {
     uint32 item = 1;
     uint32 count = 2;
-    uint32 position = 3;
 }

@@ -1,6 +1,9 @@
 #include "Cubed/gameplay/server/server_player.hpp"
 
+#include "Cubed/gameplay/packet.hpp"
 #include "Cubed/gameplay/server/server_world.hpp"
+#include "Cubed/gameplay/server/session.hpp"
+using namespace google::protobuf;
 namespace cubed {
 ServerPlayer::ServerPlayer(std::string_view name, Uuid uuid, ServerWorld& world,
                            std::shared_ptr<Session> session, TickType gametick)
@@ -20,6 +23,9 @@ void ServerPlayer::update() {
             auto* v = std::get_if<size_t>(&task.second);
             ASSERT(v);
             remove_internal(*v);
+        } break;
+        case Task::SEND_ALL_INVENTORY: {
+            send_all_inventory_internal();
         } break;
         }
     }
@@ -79,8 +85,41 @@ void ServerPlayer::update_task_id_max(int new_id) {
     }
 }
 
+void ServerPlayer::send_all_inventory_internal() {
+    Arena arena;
+    auto* msg = Arena::Create<protocol::S2CInventoryUpdate>(&arena);
+
+    msg->set_accepted(true);
+    msg->set_full_snapshot(true);
+    msg->set_request_id(0);
+    msg->set_revision(m_revision);
+    auto* slots = msg->mutable_slots();
+
+    for (size_t i = 0; i < m_inventory.size(); ++i) {
+        auto* slot = slots->Add();
+        slot->set_position(i);
+        auto& stack = m_inventory[i];
+        if (stack) {
+            auto* s = slot->mutable_stack();
+            s->set_count(stack->count);
+            s->set_item(stack->item);
+
+        } else {
+            slot->set_empty(true);
+        }
+    }
+
+    get_session()->send(make_packet(msg));
+}
+
 void ServerPlayer::add(ItemStack item, size_t position) {
     m_task.emplace(Task::ADD_ITEM, ItemStackPair{position, std::move(item)});
+}
+void ServerPlayer::send_all_inventory() {
+    m_task.emplace(Task::SEND_ALL_INVENTORY, std::monostate{});
+}
+void ServerPlayer::unsafe_add(ItemStack item, size_t position) {
+    add_internal(std::move(item), position);
 }
 
 void ServerPlayer::remove(size_t position) {

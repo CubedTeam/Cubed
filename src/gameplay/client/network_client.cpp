@@ -184,6 +184,12 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_pong(*msg);
                 }
             } break;
+            case std::to_underlying(PacketEnum::S2C_INVENTORY_UPDATE): {
+                auto* msg = Arena::Create<protocol::S2CInventoryUpdate>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_player_inventory(*msg);
+                }
+            } break;
             }
         }
     } catch (const asio::system_error& e) {

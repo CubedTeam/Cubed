@@ -4,7 +4,6 @@ package cubed.protocol;
 
 import "common/vector3.proto";
 import "common/error.proto";
-import "common/inventory.proto";
 
 message C2SLoginReq {
     bytes public_key = 1;
@@ -28,7 +27,6 @@ message S2CLoginRsp {
     common.Vec3 pos = 3;
     float yaw = 4;
     float pitch = 5;
-    repeated common.InventoryStack inventory = 6;
 
 }
 
