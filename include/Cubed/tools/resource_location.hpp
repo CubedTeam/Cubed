@@ -7,7 +7,7 @@
 #include <regex>
 #include <string>
 #include <string_view>
-namespace Cubed {
+namespace cubed {
 struct ResourceLocation {
     static constexpr std::string_view DEFAULT_NAMESPACE = "cubed";
     std::string ns = std::string(DEFAULT_NAMESPACE);
@@ -79,4 +79,4 @@ struct ResourceLocation {
     }
 };
 
-} // namespace Cubed
+} // namespace cubed

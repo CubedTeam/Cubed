@@ -7,7 +7,7 @@
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/texture_manager.hpp"
 #include "Cubed/window.hpp"
-namespace Cubed {
+namespace cubed {
 
 class App {
 public:
@@ -79,4 +79,4 @@ private:
     void dispatch_event(const Event& e);
 };
 
-} // namespace Cubed
+} // namespace cubed

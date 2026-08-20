@@ -1,6 +1,6 @@
 #include "Cubed/scene/screenshot_scene.hpp"
 
-namespace Cubed {
+namespace cubed {
 ScreenshotScene::ScreenshotScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_ui(*this) {}
 
@@ -17,4 +17,4 @@ void ScreenshotScene::on_re_enter() {}
 
 SceneManager& ScreenshotScene::scene_manager() { return m_scene_manager; }
 
-} // namespace Cubed
+} // namespace cubed

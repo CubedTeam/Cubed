@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <string>
-namespace Cubed {
+namespace cubed {
 struct ChatMessage {
     std::string player;
     std::string text;
@@ -12,4 +12,4 @@ struct ChatMessage {
     bool system_msg = false;
     uint64_t time = 0;
 };
-} // namespace Cubed
+} // namespace cubed

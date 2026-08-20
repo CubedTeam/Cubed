@@ -1,6 +1,6 @@
 #pragma once
 #include "Cubed/input/event.hpp"
-namespace Cubed {
+namespace cubed {
 class Renderer;
 
 enum class SceneType {
@@ -49,4 +49,4 @@ protected:
         return false;
     }
 };
-} // namespace Cubed
+} // namespace cubed

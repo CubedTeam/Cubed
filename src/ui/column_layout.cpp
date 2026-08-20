@@ -1,6 +1,6 @@
 #include "Cubed/ui/column_layout.hpp"
 
-namespace Cubed {
+namespace cubed {
 ColumnLayout::ColumnLayout(Widget* parent) : Widget(parent) {
     Widget::set_order(TraversalOrder::FRONT_TO_BACK);
 }
@@ -43,4 +43,4 @@ void ColumnLayout::layout() {
     m_content_height = children.empty() ? 0 : (y - m_spacing);
 }
 
-} // namespace Cubed
+} // namespace cubed

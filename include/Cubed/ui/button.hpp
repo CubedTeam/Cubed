@@ -6,7 +6,7 @@
 
 #include <functional>
 
-namespace Cubed {
+namespace cubed {
 class Button : public Widget {
 public:
     Button(Widget* parent);
@@ -62,4 +62,4 @@ private:
     void on_render(Renderer& renderer) override;
     void on_update(float dt) override;
 };
-} // namespace Cubed
+} // namespace cubed

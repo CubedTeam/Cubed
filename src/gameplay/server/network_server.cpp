@@ -5,7 +5,7 @@
 
 #include <tracy/Tracy.hpp>
 using asio::ip::tcp;
-namespace Cubed {
+namespace cubed {
 
 NetworkServer::NetworkServer()
     : m_config(ASSETS_PATH "server-config.toml"), m_world(m_config) {
@@ -107,4 +107,4 @@ void NetworkServer::start_server(int port, RunMode mode,
 
 int NetworkServer::port() const { return m_port; }
 ServerWorld& NetworkServer::server_world() { return m_world; }
-} // namespace Cubed
+} // namespace cubed

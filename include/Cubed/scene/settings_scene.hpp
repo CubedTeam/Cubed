@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/settings_ui.hpp"
-namespace Cubed {
+namespace cubed {
 
 struct SliderVariable {
     float fov = 70.0f;
@@ -39,4 +39,4 @@ private:
     SettingsUI m_settings_ui;
     bool m_need_texture_reload = false;
 };
-} // namespace Cubed
+} // namespace cubed

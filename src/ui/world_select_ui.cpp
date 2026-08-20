@@ -18,7 +18,7 @@
 
 namespace fs = std::filesystem;
 
-namespace Cubed {
+namespace cubed {
 WorldSelectUI::WorldSelectUI(WorldSelectScene& scene) : m_scene(scene) {}
 
 WorldSelectUI::~WorldSelectUI() {}
@@ -202,4 +202,4 @@ bool WorldSelectUI::handle_window_resize_event(const WindowResizeEvent& e) {
     return UIManager::handle_window_resize_event(e);
 }
 
-} // namespace Cubed
+} // namespace cubed

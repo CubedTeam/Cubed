@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/hitbox.hpp"
 
 #include <glm/glm.hpp>
-namespace Cubed {
+namespace cubed {
 class World {
 public:
     World() = default;
@@ -29,4 +29,4 @@ public:
 
 enum class RunMode { CLIENT_ONLY, SERVER_ONLY, HYBRID };
 
-} // namespace Cubed
+} // namespace cubed

@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-namespace Cubed {
+namespace cubed {
 
 enum class Color {
     BLACK = 0,
@@ -99,4 +99,4 @@ inline glm::vec4 rgb255_to_float(int r, int g, int b, int a) {
     return glm::vec4{nr, ng, nb, na};
 }
 
-} // namespace Cubed
+} // namespace cubed

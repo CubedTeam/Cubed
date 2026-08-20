@@ -16,7 +16,7 @@ bool rocksdb_supports_zstd() {
                      rocksdb::kZSTD) != COMPRESSIONS.end();
 }
 } // namespace
-namespace Cubed {
+namespace cubed {
 WorldStorage::WorldStorage(const fs::path& db_path) {
 
     rocksdb::Options options;
@@ -82,4 +82,4 @@ std::optional<std::string> WorldStorage::get_metadata() {
 
 std::string WorldStorage::make_metadata_key() { return "metadata:world"; }
 
-} // namespace Cubed
+} // namespace cubed

@@ -10,7 +10,7 @@
 #include <span>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 class AudioStreamSource {
 public:
     static constexpr int NUM_BUFFERS = 4;
@@ -43,4 +43,4 @@ private:
 
     void unqueue_processed();
 };
-} // namespace Cubed
+} // namespace cubed

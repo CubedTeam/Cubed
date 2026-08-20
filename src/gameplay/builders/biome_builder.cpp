@@ -2,7 +2,7 @@
 
 #include "Cubed/gameplay/server/chunk_generator.hpp"
 #include "Cubed/gameplay/server/server_chunk.hpp"
-namespace Cubed {
+namespace cubed {
 void BiomeBuilder::build_bottom() {
     ChunkGenerator& chunk_generator = get_chunk_generator();
     ServerChunk& chunk = chunk_generator.chunk();
@@ -58,4 +58,4 @@ void BiomeBuilder::ocean_water_build() {
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -5,9 +5,9 @@
 #include <string>
 #include <utility>
 
-namespace Cubed {
+namespace cubed {
 
-namespace Tools {
+namespace tools {
 void delete_image_data(unsigned char* data);
 }
 
@@ -26,7 +26,7 @@ struct ImageData {
             return *this;
         }
         if (data) {
-            Tools::delete_image_data(data);
+            tools::delete_image_data(data);
         }
         data = std::exchange(o.data, nullptr);
         width = o.width;
@@ -37,10 +37,10 @@ struct ImageData {
     ImageData(unsigned char* d, int w, int h, int c)
         : data(d), width(w), height(h), channels(c) {}
     ImageData() = default;
-    ~ImageData() { Tools::delete_image_data(data); }
+    ~ImageData() { tools::delete_image_data(data); }
 };
 
-namespace Tools {
+namespace tools {
 GLuint create_shader_program(const std::string& v_shader_path,
                              const std::string& f_shader_path);
 void print_shader_log(GLuint shader);
@@ -51,6 +51,6 @@ std::string read_shader_source(const std::string& file_path);
 ImageData load_image_data(const std::filesystem::path& tex_image_path,
                           bool check_exist = true, bool full_path = true);
 
-} // namespace Tools
+} // namespace tools
 
-} // namespace Cubed
+} // namespace cubed

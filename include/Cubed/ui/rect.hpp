@@ -2,7 +2,7 @@
 
 #include "Cubed/ui/color.hpp"
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 class Rect : public Widget {
 public:
     Rect(const Rect&) = delete;
@@ -31,4 +31,4 @@ private:
     float m_scale = 1.0f;
     float m_alpha = 1.0f;
 };
-} // namespace Cubed
+} // namespace cubed

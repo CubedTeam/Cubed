@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace Cubed {
+namespace cubed {
 
 class ServerChunk;
 
@@ -13,4 +13,4 @@ struct TreeStructNode {
 
 bool build_tree(ServerChunk& chunk, const glm::ivec3& pos);
 
-} // namespace Cubed
+} // namespace cubed

@@ -13,7 +13,7 @@
 #include <cstdlib>
 #endif
 
-namespace Cubed::Tools {
+namespace cubed::tools {
 
 inline void open_file_manager(const std::filesystem::path& path) {
 #ifdef _WIN32
@@ -81,4 +81,4 @@ inline void atomic_replace(const std::filesystem::path& temp_path,
 #endif
 }
 
-} // namespace Cubed::Tools
+} // namespace cubed::tools

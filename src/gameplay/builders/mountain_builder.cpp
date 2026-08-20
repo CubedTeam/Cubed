@@ -2,7 +2,7 @@
 
 #include "Cubed/gameplay/server/chunk_generator.hpp"
 #include "Cubed/gameplay/server/server_chunk.hpp"
-namespace Cubed {
+namespace cubed {
 MountainBuilder::MountainBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}
 
@@ -31,4 +31,4 @@ ChunkGenerator& MountainBuilder::get_chunk_generator() {
     return m_chunk_generator;
 };
 
-} // namespace Cubed
+} // namespace cubed

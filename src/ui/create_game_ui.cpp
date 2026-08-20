@@ -14,7 +14,7 @@
 
 #include <filesystem>
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 CreateGameUI::CreateGameUI(CreateGameScene& scene) : m_scene(scene) {}
 void CreateGameUI::init() {
     auto bi = std::make_unique<Image>(nullptr);
@@ -65,7 +65,7 @@ void CreateGameUI::init() {
             if (name.empty()) {
                 m_scene.scene_manager().world_scene_param().world_name =
                     "new_world";
-            } else if (Tools::is_valid_world_name(name)) {
+            } else if (tools::is_valid_world_name(name)) {
                 m_scene.scene_manager().world_scene_param().world_name = name;
             }
         });
@@ -130,7 +130,7 @@ void CreateGameUI::init() {
         button.set_text(tr("hostgame.create_world"));
         button.set_clicked([this, &button]() {
             const auto& input = m_world_name_field->input_text();
-            if (!input.empty() && !Tools::is_valid_world_name(input)) {
+            if (!input.empty() && !tools::is_valid_world_name(input)) {
                 set_error(tr("hostgame.invalid_world_name"));
                 return;
             }
@@ -177,4 +177,4 @@ void CreateGameUI::set_error(std::string_view error) {
     m_error_label->set_visible(true);
 }
 void CreateGameUI::clear_error() { m_error_label->set_visible(false); }
-} // namespace Cubed
+} // namespace cubed

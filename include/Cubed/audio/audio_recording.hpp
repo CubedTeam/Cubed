@@ -3,7 +3,7 @@
 #include <alc.h>
 #include <array>
 #include <cstdint>
-namespace Cubed {
+namespace cubed {
 class AudioEngine;
 class AudioRecording {
 public:
@@ -30,4 +30,4 @@ private:
     bool m_recording = false;
     void send_voice(const std::array<int16_t, FRAME_SAMPLES>& pcm);
 };
-} // namespace Cubed
+} // namespace cubed

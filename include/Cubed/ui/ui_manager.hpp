@@ -3,7 +3,7 @@
 #include "Cubed/ui/widget.hpp"
 
 #include <memory>
-namespace Cubed {
+namespace cubed {
 class UIManager {
 public:
     UIManager() = default;
@@ -32,4 +32,4 @@ protected:
     std::unique_ptr<Widget> m_root_widget;
     std::unordered_map<std::string, Widget*> m_widgets;
 };
-} // namespace Cubed
+} // namespace cubed

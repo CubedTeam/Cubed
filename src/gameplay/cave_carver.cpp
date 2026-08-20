@@ -4,7 +4,7 @@
 #include "Cubed/gameplay/cave_path.hpp"
 #include "Cubed/tools/cubed_hash.hpp"
 #include "Cubed/tools/cubed_random.hpp"
-namespace Cubed {
+namespace cubed {
 CaveCarver::CaveCarver() {}
 
 void CaveCarver::init(unsigned world_seed) { m_world_seed = world_seed; }
@@ -17,7 +17,7 @@ void CaveCarver::reload(unsigned world_seed) {
 }
 
 bool CaveCarver::has_origin_fast(const ChunkPos& pos) const {
-    unsigned h = HASH::combine_32(HASH::combine_32(pos.x, pos.z), m_world_seed);
+    unsigned h = hash::combine_32(hash::combine_32(pos.x, pos.z), m_world_seed);
 
     return (h & 0xFFFF) < static_cast<unsigned>(m_cave_probability * 0xFFFF);
 }
@@ -28,7 +28,7 @@ PathOrigin CaveCarver::get_origin(const ChunkPos& origin_chunk) const {
         return {false, {}, 0};
     }
     unsigned chunk_seed =
-        HASH::chunk_seed_hash(origin_chunk.x, origin_chunk.z, m_world_seed);
+        hash::chunk_seed_hash(origin_chunk.x, origin_chunk.z, m_world_seed);
     Random random{chunk_seed};
     const int CHUNK_MIN_X = origin_chunk.x * CHUNK_SIZE;
     const int CHUNK_MIN_Z = origin_chunk.z * CHUNK_SIZE;
@@ -52,4 +52,4 @@ int CaveCarver::search_radius() const {
 }
 unsigned CaveCarver::world_seed() const { return m_world_seed; }
 float CaveCarver::cave_probability() const { return m_cave_probability; }
-} // namespace Cubed
+} // namespace cubed

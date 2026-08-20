@@ -5,7 +5,7 @@
 
 #include <cfloat>
 #include <efx.h>
-namespace Cubed {
+namespace cubed {
 AudioStreamSource::AudioStreamSource() {
     alGenBuffers(NUM_BUFFERS, m_buffers.data());
     alGenSources(1, &m_source);
@@ -139,4 +139,4 @@ void AudioStreamSource::clear_effect_slot() {
                AL_FILTER_NULL);
 }
 
-} // namespace Cubed
+} // namespace cubed

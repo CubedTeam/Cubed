@@ -10,7 +10,7 @@
 #include <rapidjson/writer.h>
 #include <string>
 #include <unordered_map>
-namespace Cubed::Tools {
+namespace cubed::tools {
 
 using rapidjson::Document;
 using rapidjson::IStreamWrapper;
@@ -149,4 +149,4 @@ std::string to_json_string(const rapidjson::Value& value) {
     return {buffer.GetString(), buffer.GetSize()};
 }
 
-} // namespace Cubed::Tools
+} // namespace cubed::tools

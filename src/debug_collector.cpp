@@ -8,7 +8,7 @@
 #include <SDL3/SDL_video.h>
 #include <memory>
 
-namespace Cubed {
+namespace cubed {
 
 DebugCollector::DebugCollector() : m_widget(nullptr) {}
 
@@ -18,7 +18,7 @@ std::unique_ptr<DebugCollector>& DebugCollector::get_ptr() {
         std::make_unique<DebugCollector>();
     return instance;
 }
-void DebugCollector::destory() { get_ptr().reset(); }
+void DebugCollector::destroy() { get_ptr().reset(); }
 void DebugCollector::init(int, int) {
     constexpr float SCALE = 0.7f;
     constexpr Color COLOR = Color::GRAY;
@@ -56,7 +56,7 @@ void DebugCollector::init(int, int) {
 
     add_label(version);
 
-    add_label(Tools::get_compiler_info());
+    add_label(tools::get_compiler_info());
 
     // fps
 
@@ -80,7 +80,7 @@ void DebugCollector::init(int, int) {
     // os
     std::string os;
     std::string os_text;
-    if (Tools::get_os_version(os)) {
+    if (tools::get_os_version(os)) {
         os_text = "OS: " + os;
         Logger::info("OS System: {}", os);
     } else {
@@ -89,11 +89,11 @@ void DebugCollector::init(int, int) {
     add_label(os_text);
     {
         std::string wm{"WM: "};
-        wm.append(Tools::detect_wm());
+        wm.append(tools::detect_wm());
         add_label(wm);
     }
     // cpu
-    add_label("CPU: " + Tools::get_cpu_info());
+    add_label("CPU: " + tools::get_cpu_info());
 
     // gpu
     add_label(std::string{"GPU: "} +
@@ -163,4 +163,4 @@ void DebugCollector::report(const std::string& name, std::string_view content) {
     t->second->set_text(content);
 }
 
-} // namespace Cubed
+} // namespace cubed

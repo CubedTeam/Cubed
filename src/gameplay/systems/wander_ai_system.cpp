@@ -9,7 +9,7 @@ constexpr double DIRECTION_PROBABILITY = 0.01;
 constexpr double MOVE_PROBABILITY = 0.01;
 } // namespace
 
-namespace Cubed {
+namespace cubed {
 void WanderAISystem::update(entt::registry& registry, entt::entity e) {
     if (!registry.all_of<AIBase, WanderAITag, BaseServerCreature, MoveBoost>(
             e)) {
@@ -38,4 +38,4 @@ void WanderAISystem::do_ai(BaseServerCreature& creature,
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

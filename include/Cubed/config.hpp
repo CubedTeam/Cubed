@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/tools/toml.utils.hpp"
 
-namespace Cubed {
+namespace cubed {
 
 class Config {
 public:
@@ -17,7 +17,7 @@ public:
     void load_config();
     void save_to_file();
 
-    template <TOML::TomlValueType T>
+    template <toml_utils::TomlValueType T>
     T get(std::string_view key, T default_value) {
         if (!m_init) {
             load_config();
@@ -32,7 +32,8 @@ public:
         return default_value;
     }
 
-    template <TOML::TomlValueType T> void set(std::string_view key, T&& value) {
+    template <toml_utils::TomlValueType T>
+    void set(std::string_view key, T&& value) {
         if (!m_init) {
             load_config();
         }
@@ -86,4 +87,4 @@ template <> inline void Config::set(std::string_view key, float&& value) {
     Config::set<double>(key, static_cast<double>(value));
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -7,7 +7,7 @@
 
 namespace fs = std::filesystem;
 
-namespace Cubed {
+namespace cubed {
 
 Font::Font() {
     if (FT_Init_FreeType(&m_ft)) {
@@ -180,4 +180,4 @@ const Texture* Font::text_texture() { return m_text_texture.get(); }
 
 const std::string& Font::font_path() { return m_font_path; }
 
-} // namespace Cubed
+} // namespace cubed

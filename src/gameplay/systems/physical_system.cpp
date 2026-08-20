@@ -5,7 +5,7 @@
 #include "Cubed/gameplay/server/server_world.hpp"
 
 #include <tracy/Tracy.hpp>
-namespace Cubed {
+namespace cubed {
 
 namespace {
 
@@ -168,4 +168,4 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
 glm::vec3 PhysicalSystem::get_move_distance(const TickVelocity& v) {
     return v.value; // Per-tick forward distance equals the velocity magnitud
 }
-} // namespace Cubed
+} // namespace cubed

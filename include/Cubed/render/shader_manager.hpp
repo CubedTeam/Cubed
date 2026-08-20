@@ -4,7 +4,7 @@
 
 #include <string>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 class ShaderManager {
 public:
     ShaderManager();
@@ -25,4 +25,4 @@ private:
                          const std::string& f_shader);
 };
 
-} // namespace Cubed
+} // namespace cubed

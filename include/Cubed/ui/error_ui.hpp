@@ -2,7 +2,7 @@
 
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/ui_manager.hpp"
-namespace Cubed {
+namespace cubed {
 class WorldScene;
 class ErrorUI : public UIManager {
 public:
@@ -21,4 +21,4 @@ private:
     std::string m_error_str;
     Label* m_error_label = nullptr;
 };
-} // namespace Cubed
+} // namespace cubed

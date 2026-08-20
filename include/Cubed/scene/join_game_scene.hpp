@@ -2,7 +2,7 @@
 
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/join_game_ui.hpp"
-namespace Cubed {
+namespace cubed {
 class SceneManager;
 class JoinGameScene : public Scene {
 public:
@@ -25,4 +25,4 @@ private:
     SceneManager& m_scene_manager;
     JoinGameUI m_ui;
 };
-} // namespace Cubed
+} // namespace cubed

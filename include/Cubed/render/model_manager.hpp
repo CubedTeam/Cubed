@@ -4,7 +4,7 @@
 #include "Cubed/tools/model_loader.hpp"
 
 #include <tbb/concurrent_hash_map.h>
-namespace Cubed {
+namespace cubed {
 class CreatureData;
 class ModelManager {
 public:
@@ -44,4 +44,4 @@ private:
     Handle load_model(std::string_view model_name);
     void load_anim_config(ModelNode& node, const CreatureData& data);
 };
-} // namespace Cubed
+} // namespace cubed

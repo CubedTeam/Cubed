@@ -11,7 +11,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 
-namespace Cubed {
+namespace cubed {
 
 static int windowed_xpos = 0, windowed_ypos = 0;
 static int windowed_width = 1280, windowed_height = 720;
@@ -177,9 +177,9 @@ void Window::init(const Argument& argument) {
         video_driver = *argument.video_driver;
     }
     if (video_driver == "wayland") {
-        Tools::set_env("SDL_VIDEO_DRIVER", "wayland");
+        tools::set_env("SDL_VIDEO_DRIVER", "wayland");
     } else if (video_driver == "x11") {
-        Tools::set_env("SDL_VIDEO_DRIVER", "x11");
+        tools::set_env("SDL_VIDEO_DRIVER", "x11");
     } else if (video_driver == "auto") {
 
     } else {
@@ -387,4 +387,4 @@ void Window::imgui_init() {
     m_imgui_init = true;
 }
 
-} // namespace Cubed
+} // namespace cubed

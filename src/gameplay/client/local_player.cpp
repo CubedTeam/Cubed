@@ -14,8 +14,9 @@
 #include <rapidjson/document.h>
 #include <tracy/Tracy.hpp>
 using rapidjson::Document;
+using namespace google::protobuf;
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 
 namespace {
 
@@ -233,6 +234,9 @@ void LocalPlayer::set_player_pos(const glm::vec3& pos) {
 
 void LocalPlayer::update(float delta_time) {
     ZoneScopedN("LocalPlayer::update");
+
+    handle_task();
+
     WalkPose pos = m_walk_pose;
     pos.gait = compute_gait();
     m_walk_pose = pos;
@@ -245,6 +249,24 @@ void LocalPlayer::update(float delta_time) {
     d_rep("speed", "Speed(x, y, z): {:.2} m/s {:.2} m/s {:.2} m/s",
           m_velocity.value.x, m_velocity.value.y, m_velocity.value.z);
 }
+
+void LocalPlayer::handle_task() {
+    TaskPair pair;
+    while (m_task.try_pop(pair)) {
+        switch (pair.first) {
+
+        case Task::SAVE_ALL_INVENTORY: {
+            auto* v = std::get_if<InventoryUpdateData>(&pair.second);
+            ASSERT(v);
+            set_full_inventory_internal(std::move(*v));
+        } break;
+        case Task::CLEAR_PENDING: {
+            m_pending_request.reset();
+        } break;
+        }
+    }
+}
+
 bool LocalPlayer::update_player_move_state(Key key, KeyAction action) {
     if (key == Key::W) {
         if (action == KeyAction::PRESS) {
@@ -415,8 +437,9 @@ void LocalPlayer::place_block(float dt) {
             m_world.report_block_change(m_look_block->pos, 0);
         }
     }
-    if (m_mouse_state.right) {
-        auto data = ItemManager::get(m_hotbar[m_selected_hotbar].id);
+    if (m_mouse_state.right && m_inventory[m_selected_hotbar]) {
+        // item use;
+        auto data = ItemManager::get(m_inventory[m_selected_hotbar]->item);
         if (data.kind == ItemKind::BLOCK) {
             auto* t = std::get_if<BlockType>(&data.property);
             ASSERT(t);
@@ -445,13 +468,64 @@ void LocalPlayer::place_block(float dt) {
 }
 
 int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
-void LocalPlayer::set_hotbar(int pos, const ItemStack& item) {
-    ASSERT(pos >= 0 && static_cast<size_t>(pos) < HOTBAR_SUM);
-    m_hotbar[pos] = item;
+
+void LocalPlayer::set_full_inventory(InventoryUpdateData data) {
+    m_task.emplace(Task::SAVE_ALL_INVENTORY, std::move(data));
 }
-std::span<const ItemStack, LocalPlayer::HOTBAR_SUM>
-LocalPlayer::get_hotbar() const {
-    return m_hotbar;
+
+void LocalPlayer::handle_inventory_update(
+    const protocol::S2CInventoryUpdate& msg) {
+
+    if (!msg.accepted()) {
+        if (msg.has_error()) {
+            if (msg.error().has_msg()) {
+                Logger::error("Hanle inventory update fail", msg.error().msg());
+            }
+        }
+        m_task.emplace(Task::CLEAR_PENDING, std::monostate{});
+        return;
+    }
+
+    if (msg.full_snapshot()) {
+        LocalPlayer::Inventory inventory;
+
+        for (auto& slot : msg.slots()) {
+            size_t pos = slot.position();
+            if (pos >= INVENTORY_SIZE) {
+                Logger::error("Inventory slot {} is out of range", pos);
+                continue;
+            }
+            if (slot.has_empty()) {
+                inventory[pos] = std::nullopt;
+            }
+            if (slot.has_stack()) {
+                ItemStack s;
+                s.item = slot.stack().item();
+                s.count = slot.stack().count();
+                inventory[pos] = std::move(s);
+            }
+        }
+
+        set_full_inventory(
+            {msg.request_id(), msg.revision(), std::move(inventory)});
+    }
+}
+
+void LocalPlayer::set_full_inventory_internal(InventoryUpdateData data) {
+
+    if (data.revision >= m_revision) {
+        m_revision = data.revision;
+
+        m_inventory = std::move(data.inventory);
+    }
+
+    if (m_pending_request == data.request_id) {
+        m_pending_request.reset();
+    }
+}
+
+std::span<const std::optional<ItemStack>> LocalPlayer::get_inventory() const {
+    return m_inventory;
 }
 
 void LocalPlayer::update_move(float dt) {
@@ -647,8 +721,8 @@ LocalPlayer::ChunkPosSet LocalPlayer::get_chunk_pos_set() {
 float& LocalPlayer::max_walk_speed() { return m_max_walk_speed; }
 float& LocalPlayer::max_run_speed() { return m_max_run_speed; }
 float& LocalPlayer::fly_y_speed() { return m_max_y_speed; }
-const ItemStack& LocalPlayer::get_current_itemstack() const {
-    return m_hotbar[m_selected_hotbar];
+std::optional<ItemStack> LocalPlayer::get_current_itemstack() const {
+    return m_inventory[m_selected_hotbar];
 };
 
 GameMode& LocalPlayer::game_mode() { return m_game_mode; }
@@ -675,12 +749,12 @@ void LocalPlayer::reset_input_status() {
 
 void LocalPlayer::create_identity(const std::filesystem::path& path) {
 
-    auto pair = Crypto::Ed25519::generate_key_pair();
+    auto pair = crypto::Ed25519::generate_key_pair();
     m_key_pair = pair;
-    m_uuid = Crypto::Ed25519::uuid_from_public_key(pair.public_key);
-    auto pks = Crypto::Ed25519::to_hex(pair.public_key.data.data(),
+    m_uuid = crypto::Ed25519::uuid_from_public_key(pair.public_key);
+    auto pks = crypto::Ed25519::to_hex(pair.public_key.data.data(),
                                        pair.public_key.data.size());
-    auto prs = Crypto::Ed25519::to_hex(pair.private_key.data.data(),
+    auto prs = crypto::Ed25519::to_hex(pair.private_key.data.data(),
                                        pair.private_key.data.size());
 
     Document doc;
@@ -692,7 +766,7 @@ void LocalPlayer::create_identity(const std::filesystem::path& path) {
     doc.AddMember("private_key", rapidjson::Value(prs.c_str(), allocator),
                   allocator);
 
-    Tools::save_json(doc, path);
+    tools::save_json(doc, path);
 
 #ifdef __linux__
     std::filesystem::permissions(path,
@@ -703,33 +777,33 @@ void LocalPlayer::create_identity(const std::filesystem::path& path) {
 }
 
 void LocalPlayer::init_identity() {
-    m_key_pair = Crypto::Ed25519KeyPair{};
+    m_key_pair = crypto::Ed25519KeyPair{};
     StandardPaths standard("Cubed");
     auto path = standard.ensure(StandardPaths::Location::DATA);
     auto& argument = m_world.argument();
     auto identity_path = argument.identify ? fs::path(*argument.identify)
                                            : path / "identity.json";
     Document doc;
-    if (Tools::parse_json(doc, identity_path)) {
+    if (tools::parse_json(doc, identity_path)) {
         std::string s;
-        if (!Tools::get_json_value(doc, "public_key", s)) {
+        if (!tools::get_json_value(doc, "public_key", s)) {
             return create_identity(identity_path);
         }
-        if (!Crypto::Ed25519::from_hex(s, m_key_pair->public_key.data.data(),
+        if (!crypto::Ed25519::from_hex(s, m_key_pair->public_key.data.data(),
                                        m_key_pair->public_key.data.size())) {
             return create_identity(identity_path);
         }
-        if (!Tools::get_json_value(doc, "private_key", s)) {
+        if (!tools::get_json_value(doc, "private_key", s)) {
             return create_identity(identity_path);
         }
-        if (!Crypto::Ed25519::from_hex(s, m_key_pair->private_key.data.data(),
+        if (!crypto::Ed25519::from_hex(s, m_key_pair->private_key.data.data(),
                                        m_key_pair->private_key.data.size())) {
             return create_identity(identity_path);
         }
     } else {
         return create_identity(identity_path);
     }
-    m_uuid = Crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
+    m_uuid = crypto::Ed25519::uuid_from_public_key(m_key_pair->public_key);
 }
 
 void LocalPlayer::init(std::string_view name) {
@@ -768,10 +842,6 @@ void LocalPlayer::init(std::string_view name) {
             Logger::debug("Player block {} walk sound", path.string());
         }
     });
-
-    for (int i = 0; i < 10; i++) {
-        m_hotbar[i].id = i;
-    }
 }
 
 void LocalPlayer::update_speed(float dt) {
@@ -866,6 +936,81 @@ glm::vec3 LocalPlayer::get_move_distance(float dt) {
                      d.value.z * v.value.z * dt};
 }
 
+void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
+    if (m_pending_request.has_value()) {
+        return;
+    }
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error("Client player inventory postion {} is out of range",
+                      position);
+        return;
+    }
+    Arena arena;
+    auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+
+    msg->set_base_revision(m_revision);
+    auto request_id = m_next_request++;
+    msg->set_request_id(request_id);
+    m_pending_request = request_id;
+    auto* add = msg->mutable_add();
+    add->set_count(stack.count);
+    add->set_item(stack.item);
+    add->set_to(position);
+
+    m_world.get_client()->send(make_packet(msg));
+}
+
+void LocalPlayer::remove_item(size_t position) {
+    if (m_pending_request.has_value()) {
+        return;
+    }
+    if (position >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error("Client player inventory postion {} is out of range",
+                      position);
+        return;
+    }
+    Arena arena;
+    auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+    auto request_id = m_next_request++;
+    msg->set_request_id(request_id);
+    m_pending_request = request_id;
+    msg->set_base_revision(m_revision);
+
+    auto* remove = msg->mutable_remove();
+    remove->set_count(1);
+    remove->set_from(position);
+
+    m_world.get_client()->send(make_packet(msg));
+}
+
+void LocalPlayer::move_item(size_t from, size_t to) {
+    if (m_pending_request.has_value()) {
+        return;
+    }
+    if (from >= INVENTORY_SIZE || to >= INVENTORY_SIZE) {
+        ASSERT(false);
+        Logger::error(
+            "Client player inventory postion from {} to {} is out of range",
+            from, to);
+        return;
+    }
+    Arena arena;
+    auto* msg = Arena::Create<protocol::C2SInventoryAction>(&arena);
+    auto request_id = m_next_request++;
+    msg->set_request_id(request_id);
+    m_pending_request = request_id;
+    msg->set_base_revision(m_revision);
+
+    auto* move = msg->mutable_move();
+
+    move->set_from(from);
+    move->set_to(to);
+
+    m_world.get_client()->send(make_packet(msg));
+}
+
 bool LocalPlayer::is_underwater() const { return m_underwater; }
 void LocalPlayer::set_underwater(bool u) { m_underwater = u; }
 
@@ -881,7 +1026,7 @@ void LocalPlayer::set_pitch(float pitch) { m_angle.pitch = pitch; }
 float& LocalPlayer::roll() { return m_angle.roll; }
 float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
 Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }
-std::optional<Crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
+std::optional<crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
     return m_key_pair;
 }
-} // namespace Cubed
+} // namespace cubed

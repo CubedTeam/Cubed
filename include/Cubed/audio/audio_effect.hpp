@@ -1,6 +1,6 @@
 #pragma once
 #include <AL/al.h>
-namespace Cubed {
+namespace cubed {
 class AudioEffect {
 public:
     AudioEffect();
@@ -16,4 +16,4 @@ public:
 private:
     ALuint m_effect = 0;
 };
-} // namespace Cubed
+} // namespace cubed

@@ -8,7 +8,7 @@
 #include <stb_image.h>
 
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 ModelLoader::ModelLoader() {}
 
 ModelNode ModelLoader::load(const fs::path& path) {
@@ -108,7 +108,7 @@ bool ModelLoader::process_texture(Mesh& mesh, aiMaterial* material,
         }
     } else {
         auto image_data =
-            Tools::load_image_data(texture_path.C_Str(), true, true);
+            tools::load_image_data(texture_path.C_Str(), true, true);
 
         mesh.texture->tex_image_2d(RGBA, RGBA, GL_UNSIGNED_BYTE,
                                    image_data.data, image_data.width,
@@ -123,4 +123,4 @@ glm::mat4 ModelLoader::convert_matrix(const aiMatrix4x4& m) {
                      m.c3, m.d3, m.a4, m.b4, m.c4, m.d4);
 }
 
-} // namespace Cubed
+} // namespace cubed

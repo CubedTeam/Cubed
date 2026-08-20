@@ -4,7 +4,7 @@
 #include "Cubed/tools/cubed_assert.hpp"
 
 #include <tracy/Tracy.hpp>
-namespace Cubed {
+namespace cubed {
 ServerChunk::ServerChunk(ServerWorld& world, ChunkPos chunk_pos,
                          bool temp_chunk)
     : m_temp_chunk(temp_chunk), m_chunk_pos(chunk_pos), m_world(world) {}
@@ -281,4 +281,4 @@ unsigned ServerChunk::seed() const {
 
 BiomeConditions& ServerChunk::conditions() { return m_conditions; }
 
-} // namespace Cubed
+} // namespace cubed

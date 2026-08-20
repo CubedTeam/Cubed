@@ -2,7 +2,7 @@
 #include "Cubed/audio/audio_data.hpp"
 
 #include <AL/al.h>
-namespace Cubed {
+namespace cubed {
 class AudioBuffer {
 public:
     AudioBuffer(const AudioData& data);
@@ -21,4 +21,4 @@ private:
     uint32_t m_channels = 0;
     void set_data(const AudioData& data);
 };
-} // namespace Cubed
+} // namespace cubed

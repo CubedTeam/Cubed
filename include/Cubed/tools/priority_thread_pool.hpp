@@ -8,7 +8,7 @@
 #include <queue>
 #include <thread>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class PriorityThreadPool {
 private:
     struct Task {
@@ -148,4 +148,4 @@ void parallel_do(PriorityThreadPool& pool, Iter first, Iter last,
     }
 };
 
-} // namespace Cubed
+} // namespace cubed

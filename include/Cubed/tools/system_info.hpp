@@ -21,9 +21,9 @@ typedef LONG(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 #include <unistd.h>
 #endif
 
-namespace Cubed {
+namespace cubed {
 
-namespace Tools {
+namespace tools {
 
 inline bool get_os_version(std::string& str) {
 #ifdef _WIN32
@@ -197,6 +197,6 @@ inline std::string get_compiler_info() {
     return result;
 }
 
-} // namespace Tools
+} // namespace tools
 
-} // namespace Cubed
+} // namespace cubed

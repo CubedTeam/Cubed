@@ -12,7 +12,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 
-namespace Cubed {
+namespace cubed {
 
 static constexpr const char* THEMES[] = {"Dark", "Light"};
 static constexpr const char* GAITS[] = {"Walk", "Run"};
@@ -677,4 +677,4 @@ void DevPanel::update_player_profile() {
     m_player_profile.game_mode = std::to_underlying(m_player->game_mode());
 }
 
-} // namespace Cubed
+} // namespace cubed

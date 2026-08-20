@@ -1,6 +1,6 @@
 #pragma once
 #include "Cubed/audio/audio_effect.hpp"
-namespace Cubed {
+namespace cubed {
 class AudioEffectSlot {
 public:
     AudioEffectSlot();
@@ -15,4 +15,4 @@ public:
 private:
     ALuint m_slot = 0;
 };
-} // namespace Cubed
+} // namespace cubed

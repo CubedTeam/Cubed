@@ -7,7 +7,7 @@
 #include <tracy/Tracy.hpp>
 #include <utility>
 using namespace google::protobuf;
-namespace Cubed {
+namespace cubed {
 NetworkClient::NetworkClient(ClientWorld& world)
     : m_socket(m_io), m_strand(asio::make_strand(m_io)), m_world(world) {}
 
@@ -81,45 +81,45 @@ asio::awaitable<void> NetworkClient::read_loop() {
             using std::to_underlying;
             Arena arena;
             switch (header.cmd) {
-            case std::to_underlying(PacketEnum::LOGIN_RSP): {
-                auto* rsp = Arena::Create<LoginRsp>(&arena);
+            case std::to_underlying(PacketEnum::S2C_LOGIN_RSP): {
+                auto* rsp = Arena::Create<protocol::S2CLoginRsp>(&arena);
                 Logger::info("Client: Receive Login rsp");
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_login_rsp(*rsp);
                 }
             } break;
-            case std::to_underlying(PacketEnum::CHUNK_DATA_RSP): {
+            case std::to_underlying(PacketEnum::S2C_CHUNK_DATA_RSP): {
                 // Logger::info("Client: Receive Chunk Data rsp, size {}mb",
                 //              body_data.size() / 1024.0f / 1024);
                 m_world.receive_chunk(std::move(body_data), header);
             } break;
-            case std::to_underlying(PacketEnum::BLOCK_CHANGE_RSP): {
-                auto* rsp = Arena::Create<BlockChangeRsp>(&arena);
+            case std::to_underlying(PacketEnum::S2C_BLOCK_CHANGE_RSP): {
+                auto* rsp = Arena::Create<protocol::S2CBlockChangeRsp>(&arena);
 
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_block_change(*rsp);
                 }
             } break;
-            case std::to_underlying(PacketEnum::UPDATE_TIME): {
-                auto* rsp = Arena::Create<UpdateTime>(&arena);
+            case std::to_underlying(PacketEnum::S2C_UPDATE_TIME): {
+                auto* rsp = Arena::Create<protocol::S2CUpdateTime>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_time(*rsp);
                 }
             } break;
-            case std::to_underlying(PacketEnum::PLAYER_INFO_RSP): {
-                auto* rsp = Arena::Create<PlayerInfoRsp>(&arena);
+            case std::to_underlying(PacketEnum::S2C_PLAYER_INFO_RSP): {
+                auto* rsp = Arena::Create<protocol::S2CPlayerInfoRsp>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.player_manager().receive_remote_player(*rsp);
                 }
             } break;
-            case std::to_underlying(PacketEnum::LOGOUT_RSP): {
-                auto* rsp = Arena::Create<LogoutRsp>(&arena);
+            case std::to_underlying(PacketEnum::S2C_LOGOUT_RSP): {
+                auto* rsp = Arena::Create<protocol::S2CLogoutRsp>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_player_logout(*rsp);
                 }
             } break;
             case std::to_underlying(PacketEnum::S2C_CLEAR_ALL_CHUNKS): {
-                auto* rsp = Arena::Create<S2C_ClearAllChunks>(&arena);
+                auto* rsp = Arena::Create<protocol::S2CClearAllChunks>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     if (rsp->clear()) {
                         Logger::info("Client Clear All Chunk");
@@ -127,59 +127,67 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::PLAYER_WATER_SOUND): {
-                auto* rsp = Arena::Create<PlayerWaterSound>(&arena);
+            case std::to_underlying(PacketEnum::S2C_PLAYER_WATER_SOUND): {
+                auto* rsp =
+                    Arena::Create<protocol::S2CPlayerWaterSound>(&arena);
                 if (decode_packet(*rsp, body_data, header)) {
                     m_world.receive_player_water_sound(*rsp);
                 }
             } break;
             case std::to_underlying(PacketEnum::CHAT_MSG): {
-                auto* msg = Arena::Create<ChatMsg>(&arena);
+                auto* msg = Arena::Create<protocol::ChatMsg>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.receive_chat_message(*msg);
                 }
             } break;
             case std::to_underlying(PacketEnum::VOICE_MSG): {
-                auto* msg = Arena::Create<VoiceMsg>(&arena);
+                auto* msg = Arena::Create<protocol::VoiceMsg>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.receive_voice_message(*msg);
                 }
             } break;
             case std::to_underlying(PacketEnum::S2C_ENTITY_CREATE): {
-                auto* msg = Arena::Create<S2CEntityCreate>(&arena);
+                auto* msg = Arena::Create<protocol::S2CEntityCreate>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.entity_manager().receive_entity_create(*msg);
                 }
 
             } break;
-            case std::to_underlying(PacketEnum::S2C_ENTITY_DESTORY): {
-                auto* msg = Arena::Create<S2CEntityDestory>(&arena);
+            case std::to_underlying(PacketEnum::S2C_ENTITY_DESTROY): {
+                auto* msg = Arena::Create<protocol::S2CEntityDestroy>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
-                    m_world.entity_manager().receive_entity_destory(msg->id());
+                    m_world.entity_manager().receive_entity_destroy(msg->id());
                 }
             } break;
             case std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE): {
-                auto* msg = Arena::Create<S2CEntityUpdate>(&arena);
+                auto* msg = Arena::Create<protocol::S2CEntityUpdate>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.entity_manager().receive_entity_update(*msg);
                 }
             } break;
             case std::to_underlying(PacketEnum::S2C_ENTITY_UPDATE_BATCH): {
-                auto* msg = Arena::Create<S2CEntityUpdateBatch>(&arena);
+                auto* msg =
+                    Arena::Create<protocol::S2CEntityUpdateBatch>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.entity_manager().receive_entity_update(*msg);
                 }
             } break;
-            case std::to_underlying(PacketEnum::LOGIN_CHALLENGE): {
-                auto* msg = Arena::Create<LoginChallenge>(&arena);
+            case std::to_underlying(PacketEnum::S2C_LOGIN_CHALLENGE): {
+                auto* msg = Arena::Create<protocol::S2CLoginChallenge>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.receive_login_challenge(*msg);
                 }
             } break;
             case std::to_underlying(PacketEnum::PONG): {
-                auto* msg = Arena::Create<Pong>(&arena);
+                auto* msg = Arena::Create<protocol::Pong>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
                     m_world.receive_pong(*msg);
+                }
+            } break;
+            case std::to_underlying(PacketEnum::S2C_INVENTORY_UPDATE): {
+                auto* msg = Arena::Create<protocol::S2CInventoryUpdate>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.receive_player_inventory(*msg);
                 }
             } break;
             }
@@ -270,4 +278,4 @@ void NetworkClient::set_error(std::string_view error) {
     m_connect_error = true;
 }
 ClientWorld& NetworkClient::world() { return m_world; }
-} // namespace Cubed
+} // namespace cubed

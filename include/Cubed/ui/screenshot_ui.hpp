@@ -4,7 +4,7 @@
 #include "Cubed/ui/ui_manager.hpp"
 
 #include <chrono>
-namespace Cubed {
+namespace cubed {
 class Texture;
 class ScreenshotScene;
 class ScreenshotUI : public UIManager {
@@ -46,4 +46,4 @@ private:
     bool handle_mouse_move_event(const MouseMoveEvent& e) override;
     bool handle_mouse_wheel_event(const MouseWheelEvent& e) override;
 };
-} // namespace Cubed
+} // namespace cubed

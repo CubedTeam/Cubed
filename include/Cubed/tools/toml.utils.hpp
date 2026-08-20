@@ -3,8 +3,8 @@
 #include "Cubed/tools/log.hpp"
 
 #include <toml++/toml.hpp>
-namespace Cubed {
-namespace TOML {
+namespace cubed {
+namespace toml_utils {
 
 template <typename T>
 concept TomlValueType =
@@ -35,6 +35,6 @@ safe_get_value(const toml::table& table, std::string_view key,
     return safe_get_value(table, key, std::string(default_value));
 }
 
-} // namespace TOML
+} // namespace toml_utils
 
-} // namespace Cubed
+} // namespace cubed

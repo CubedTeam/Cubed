@@ -17,7 +17,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class TextureManager;
 class ClientWorld;
 class ModelManager;
@@ -136,4 +136,4 @@ private:
     void handle_screenshot();
 };
 
-} // namespace Cubed
+} // namespace cubed

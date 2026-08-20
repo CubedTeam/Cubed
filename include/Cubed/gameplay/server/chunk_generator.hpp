@@ -9,7 +9,7 @@
 #include <atomic>
 #include <memory>
 #include <optional>
-namespace Cubed {
+namespace cubed {
 
 class ServerChunk;
 
@@ -71,4 +71,4 @@ private:
     void make_biome_builder();
 };
 
-} // namespace Cubed
+} // namespace cubed

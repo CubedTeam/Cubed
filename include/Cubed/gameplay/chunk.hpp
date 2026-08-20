@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <tuple>
-namespace Cubed {
+namespace cubed {
 class Chunk {
 public:
     Chunk() = default;
@@ -24,4 +24,4 @@ public:
     static std::tuple<int, int, int> block_to_world(const glm::ivec3& block_pos,
                                                     ChunkPos chunk_pos);
 };
-} // namespace Cubed
+} // namespace cubed

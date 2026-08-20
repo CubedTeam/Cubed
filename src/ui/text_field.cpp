@@ -9,7 +9,7 @@ namespace {
 constexpr float DELTA_CUROUR_HEIGHT = 10.0f;
 }
 
-namespace Cubed {
+namespace cubed {
 TextField::TextField(Widget* parent) : Widget(parent) {
     Widget::set_width(NORMAL_TEXTFIELD_WIDTH);
     Widget::set_height(NORMAL_TEXTFIELD_HEIGHT);
@@ -280,4 +280,4 @@ bool TextField::handle_window_resize_event(const WindowResizeEvent& e) {
     return false;
 }
 
-} // namespace Cubed
+} // namespace cubed

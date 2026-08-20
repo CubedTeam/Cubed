@@ -1,7 +1,7 @@
 #include "Cubed/audio/audio_buffer.hpp"
 
 #include "Cubed/audio/audio_error.hpp"
-namespace Cubed {
+namespace cubed {
 AudioBuffer::AudioBuffer(const AudioData& data) {
     alGenBuffers(1, &m_buffer);
     set_data(data);
@@ -38,4 +38,4 @@ void AudioBuffer::set_data(const AudioData& data) {
                  (data.channels * data.sample_rate);
 }
 
-} // namespace Cubed
+} // namespace cubed

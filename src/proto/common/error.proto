@@ -1,6 +1,8 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.common;
 
 message Error {
     int32 code = 1;
-    string mes = 2;
+    string msg = 2;
 }

@@ -6,7 +6,7 @@
 #include <string>
 #include <variant>
 
-namespace Cubed {
+namespace cubed {
 
 struct MouseMoveEvent {
     float xpos;
@@ -60,4 +60,4 @@ template <class... T> struct Overloaded : T... {
 };
 template <class... T> Overloaded(T...) -> Overloaded<T...>;
 
-} // namespace Cubed
+} // namespace cubed

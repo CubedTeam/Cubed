@@ -2,7 +2,7 @@
 
 #include "Cubed/render/renderer.hpp"
 
-namespace Cubed {
+namespace cubed {
 
 UIManager::~UIManager() {}
 
@@ -114,4 +114,4 @@ bool UIManager::handle_text_input_event(const TextInputEvent& e) {
     return false;
 }
 
-} // namespace Cubed
+} // namespace cubed

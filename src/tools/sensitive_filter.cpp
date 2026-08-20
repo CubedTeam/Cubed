@@ -3,7 +3,7 @@
 #include <queue>
 #include <utf8cpp/utf8.h>
 using namespace rapidjson;
-namespace Cubed {
+namespace cubed {
 SensitiveFilter::SensitiveFilter() {
 
 };
@@ -122,4 +122,4 @@ void SensitiveFilter::build() {
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -2,7 +2,7 @@
 
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/credits_ui.hpp"
-namespace Cubed {
+namespace cubed {
 class SceneManager;
 class CreditsScene : public Scene {
 public:
@@ -18,4 +18,4 @@ private:
     SceneManager& m_scene_manager;
     CreditsUI m_ui;
 };
-} // namespace Cubed
+} // namespace cubed

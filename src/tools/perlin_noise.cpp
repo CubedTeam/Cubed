@@ -6,7 +6,7 @@
 #include <numeric>
 #include <random>
 
-namespace Cubed {
+namespace cubed {
 
 void PerlinNoise3D::init(unsigned seed) {
     p.resize(256);
@@ -134,4 +134,4 @@ void PerlinNoise2D::reload(unsigned seed) {
     p.insert(p.end(), p.begin(), p.end());
     is_init = true;
 }
-} // namespace Cubed
+} // namespace cubed

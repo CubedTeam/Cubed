@@ -14,20 +14,22 @@
 #include "Cubed/gameplay/item_stack.hpp"
 #include "Cubed/input/event.hpp"
 #include "Cubed/input/input.hpp"
+#include "player/inventory.pb.h"
 
-#include <absl/container/flat_hash_set.h>
 #include <glm/glm.hpp>
 #include <optional>
 #include <shared_mutex>
-namespace Cubed {
+#include <tbb/concurrent_queue.h>
+#include <unordered_set>
+namespace cubed {
 
 class ClientWorld;
 class LocalPlayer {
 public:
-    static constexpr size_t HOTBAR_SUM = 10;
+    using Inventory = std::array<std::optional<ItemStack>, INVENTORY_SIZE>;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
     static constexpr float RUN_SOUND_INTERVAL = 0.3f;
-    using ChunkPosSet = absl::flat_hash_set<ChunkPos, ChunkPos::Hash>;
+    using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
     LocalPlayer(ClientWorld& world);
     ~LocalPlayer();
 
@@ -62,7 +64,7 @@ public:
     float& max_run_speed();
     float& fly_y_speed();
 
-    const ItemStack& get_current_itemstack() const;
+    std::optional<ItemStack> get_current_itemstack() const;
 
     GameMode& game_mode();
 
@@ -81,8 +83,18 @@ public:
     void place_block(float dt);
 
     int selected_hotbar() const;
-    void set_hotbar(int pos, const ItemStack& item);
-    std::span<const ItemStack, HOTBAR_SUM> get_hotbar() const;
+
+    void handle_inventory_update(const protocol::S2CInventoryUpdate& msg);
+
+    std::span<const std::optional<ItemStack>> get_inventory() const;
+
+    auto get_hotbar() const {
+        return std::span{m_inventory}.first(HOTBAR_SIZE);
+    }
+
+    auto get_backpack() const {
+        return std::span{m_inventory}.subspan(HOTBAR_SIZE);
+    }
 
     glm::vec3& max_speed();
     float& acceleration();
@@ -97,17 +109,36 @@ public:
     float& walk_time();
     Gait get_gait() const;
 
-    std::optional<Crypto::Ed25519KeyPair>& key_pair();
+    std::optional<crypto::Ed25519KeyPair>& key_pair();
+
+    void add_item(size_t position, const ItemStack& stack);
+    void remove_item(size_t position);
+    void move_item(size_t from, size_t to);
 
 private:
     using enum GameMode;
+
+    enum class Task { SAVE_ALL_INVENTORY, CLEAR_PENDING };
+
+    struct InventoryUpdateData {
+        uint64_t request_id = 0;
+        uint64_t revision = 0;
+        Inventory inventory;
+    };
+
+    using TaskElement = std::variant<InventoryUpdateData, std::monostate>;
+    using TaskPair = std::pair<Task, TaskElement>;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
     float m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
     float m_max_y_speed = 7.5f;
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
 
-    std::optional<Crypto::Ed25519KeyPair> m_key_pair;
+    tbb::concurrent_queue<TaskPair> m_task;
+    uint64_t m_revision = 0;
+    std::atomic<uint64_t> m_next_request = 1;
+    std::optional<uint64_t> m_pending_request;
+    std::optional<crypto::Ed25519KeyPair> m_key_pair;
 
     EntityInfo m_info;
     Position m_pos;
@@ -122,7 +153,7 @@ private:
 
     float m_place_time = PLACE_BLOCK_INTERVAL;
 
-    std::array<ItemStack, HOTBAR_SUM> m_hotbar;
+    Inventory m_inventory;
     float m_sensitivity = 0.15f;
 
     float space_on_time = 0.0f;
@@ -157,6 +188,7 @@ private:
     void init_identity();
     void create_identity(const std::filesystem::path& path);
 
+    void handle_task();
     void update_direction();
     void update_lookup_block();
     void update_move(float dt);
@@ -168,5 +200,8 @@ private:
     void update_speed(float dt);
     std::tuple<bool, bool, bool> update_physical(float dt, glm::vec3& pos);
     glm::vec3 get_move_distance(float dt);
+
+    void set_full_inventory_internal(InventoryUpdateData data);
+    void set_full_inventory(InventoryUpdateData data);
 };
-} // namespace Cubed
+} // namespace cubed

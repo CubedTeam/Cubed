@@ -8,7 +8,7 @@
 #include "Cubed/scene/scene_manager.hpp"
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/chat_box.hpp"
-namespace Cubed {
+namespace cubed {
 
 WorldUIManager::WorldUIManager(WorldScene& scene) : m_scene(scene) {}
 WorldUIManager::~WorldUIManager() {}
@@ -30,7 +30,7 @@ void WorldUIManager::init() {
         auto& hotbar = m_root_widget->add_child<RowLayout>();
         hotbar.set_anchor(Anchor::BOTTOM_CENTER);
         m_hotbar = &hotbar;
-        for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
+        for (size_t i = 0; i < HOTBAR_SIZE; ++i) {
             auto& slot = hotbar.add_child<ItemSlot>();
             slot.set_default_background(texture_manager);
             slot.set_scale(5.0f);
@@ -131,21 +131,21 @@ void WorldUIManager::update_hotbar() {
     auto& player = m_scene.client_world().get_player();
     auto hotbar = player.get_hotbar();
     size_t selected = player.selected_hotbar();
-    for (size_t i = 0; i < LocalPlayer::HOTBAR_SUM; ++i) {
-        auto type = hotbar[i].id;
+    for (size_t i = 0; i < HOTBAR_SIZE; ++i) {
+        auto& item = hotbar[i];
         if (selected == i) {
             m_hotbar_slot[i]->set_border_visale(true);
         } else {
             m_hotbar_slot[i]->set_border_visale(false);
         }
-        if (type == 0) {
-            m_hotbar_slot[i]->set_item(0, nullptr);
+        if (!item) {
+            m_hotbar_slot[i]->set_item(std::nullopt, nullptr);
         } else {
-            auto it = item_texture.find(type);
+            auto it = item_texture.find(item->item);
             ASSERT(it != item_texture.end());
-            m_hotbar_slot[i]->set_item(type, it->second.get());
+            m_hotbar_slot[i]->set_item(item, it->second.get());
         }
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

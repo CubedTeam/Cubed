@@ -1,7 +1,7 @@
 #pragma once
 #include <list>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 template <typename T> class RecentQueue {
 private:
     std::list<T> m_list;
@@ -52,4 +52,4 @@ public:
         return m_map.find(key) != m_map.end();
     }
 };
-} // namespace Cubed
+} // namespace cubed

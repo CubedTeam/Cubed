@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 using namespace std::chrono;
 using namespace std::chrono_literals;
 using namespace google::protobuf;
-namespace Cubed {
+namespace cubed {
 
 namespace {
 struct ChunkRenderData {
@@ -318,7 +318,7 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
     }
 
     Arena arena;
-    auto* req = Arena::Create<BlockChangeReq>(&arena);
+    auto* req = Arena::Create<protocol::C2SBlockChangeReq>(&arena);
     req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     req->set_block(id);
     auto* p = req->mutable_pos();
@@ -328,17 +328,17 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
     m_client->send(make_packet(*req), 0);
 }
 
-void ClientWorld::receive_block_change(const BlockChangeRsp& rsp) {
+void ClientWorld::receive_block_change(const protocol::S2CBlockChangeRsp& rsp) {
     glm::vec3 pos{rsp.pos().x(), rsp.pos().y(), rsp.pos().z()};
     set_block(pos, rsp.block());
 }
 
-void ClientWorld::receive_time(const UpdateTime& rsp) {
+void ClientWorld::receive_time(const protocol::S2CUpdateTime& rsp) {
     m_game_ticks = rsp.game_tick();
     m_day_tick = rsp.day_tick();
 }
 
-void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
+void ClientWorld::receive_player_logout(const protocol::S2CLogoutRsp& rsp) {
     if (rsp.server_stop()) {
         m_receive_exit = true;
         return;
@@ -351,7 +351,8 @@ void ClientWorld::receive_player_logout(const LogoutRsp& rsp) {
     m_player_manager.receive_player_logout(rsp);
 }
 
-void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
+void ClientWorld::receive_player_water_sound(
+    const protocol::S2CPlayerWaterSound& rsp) {
     if (rsp.uuid() ==
         m_player_manager.get_local().get_uuid().to_proto_bytes()) {
         return;
@@ -366,10 +367,16 @@ void ClientWorld::receive_player_water_sound(const PlayerWaterSound& rsp) {
         pos);
 }
 
+void ClientWorld::receive_player_inventory(
+    const protocol::S2CInventoryUpdate& msg) {
+
+    m_player_manager.get_local().handle_inventory_update(msg);
+}
+
 void ClientWorld::send_player_water_sound(bool underwater,
                                           const glm::vec3& pos) {
     Arena arena;
-    auto* r = Arena::Create<PlayerWaterSound>(&arena);
+    auto* r = Arena::Create<protocol::S2CPlayerWaterSound>(&arena);
 
     r->set_underwater(underwater);
     auto* p = r->mutable_pos();
@@ -454,12 +461,13 @@ void ClientWorld::init(std::string_view player_name,
 
     register_timer("ping", 1.0f, [this]() { send_ping(); });
 
-    LoginReq req;
+    protocol::C2SLoginReq req;
     auto& player = m_player_manager.get_local();
     auto& pk = player.key_pair()->public_key;
-    req.set_public_key(pk.data.data(), pk.data.size());
+    req.set_public_key(std::string_view{
+        reinterpret_cast<const char*>(pk.data.data()), pk.data.size()});
     auto uuid = player.get_uuid();
-    req.set_uuid(uuid.bytes().data(), uuid.bytes().size());
+    req.set_uuid(uuid.to_proto_bytes());
 
     while (!client->is_connected()) {
         if (client->is_connect_error()) {
@@ -474,36 +482,38 @@ void ClientWorld::init(std::string_view player_name,
     m_audio.play_bgm();
 }
 
-void ClientWorld::receive_login_challenge(LoginChallenge& msg) {
+void ClientWorld::receive_login_challenge(protocol::S2CLoginChallenge& msg) {
 
     if (msg.challenge().size() != 32) {
         Logger::error("Invailed challenge");
         return;
     }
 
-    Crypto::Ed25519::Challenge challenge;
+    crypto::Ed25519::Challenge challenge;
     std::copy_n(msg.challenge().data(), msg.challenge().size(),
                 challenge.begin());
 
     auto& player = m_player_manager.get_local();
-    auto message = Crypto::Ed25519::make_login_signing_data(
+    auto message = crypto::Ed25519::make_login_signing_data(
         challenge, player.key_pair()->public_key);
     auto signature =
-        Crypto::Ed25519::sign(message, player.key_pair()->private_key);
+        crypto::Ed25519::sign(message, player.key_pair()->private_key);
 
     Arena arena;
-    auto p = Arena::Create<LoginProof>(&arena);
+    auto p = Arena::Create<protocol::C2SLoginProof>(&arena);
     p->set_name(player.get_name());
     auto uuid = player.get_uuid();
     p->set_uuid(uuid.to_proto_bytes());
-    p->set_signature(signature.data.data(), signature.data.size());
+    p->set_signature(
+        std::string_view{reinterpret_cast<const char*>(signature.data.data()),
+                         signature.data.size()});
 
     m_client->send(make_packet(p), 0);
 }
 
-void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
+void ClientWorld::receive_login_rsp(protocol::S2CLoginRsp& rsp) {
     if (rsp.error().code()) {
-        m_task_queue.emplace(TaskType::ERR, rsp.error().mes());
+        m_task_queue.emplace(TaskType::ERR, std::string{rsp.error().msg()});
         m_login_success = false;
         return;
     }
@@ -514,7 +524,7 @@ void ClientWorld::receive_login_rsp(LoginRsp& rsp) {
     player.reset_speed();
     player.reset_input_status();
 
-    auto pos = Tools::get_proto_vec3(rsp.pos());
+    auto pos = tools::get_proto_vec3(rsp.pos());
     player.set_yaw(rsp.yaw());
     player.set_pitch(rsp.pitch());
     player.set_player_pos(pos);
@@ -549,7 +559,7 @@ void ClientWorld::stop_client_thread() {
     m_game_running = false;
 }
 void ClientWorld::start_thread_pool() {
-    auto threads = Tools::get_client_threads(m_runmode);
+    auto threads = tools::get_client_threads(m_runmode);
     Logger::info("Client pool threads {}", threads);
     change_pool_threads(threads);
 }
@@ -689,7 +699,7 @@ void ClientWorld::request_chunk() {
     auto uuid = m_player_manager.get_local().get_uuid();
     Arena arena;
     ++m_chunk_task_id;
-    auto* req = Arena::Create<ChunkDataReq>(&arena);
+    auto* req = Arena::Create<protocol::C2SChunkDataReq>(&arena);
     for (const auto& pos : need_send_pos) {
         req->set_task_id(m_chunk_task_id.load());
         req->set_uuid(uuid.to_proto_bytes());
@@ -705,13 +715,13 @@ void ClientWorld::reset_key_status() {
     m_player_manager.get_local().reset_input_status();
 }
 
-void ClientWorld::receive_pong(Pong& pong) {
+void ClientWorld::receive_pong(protocol::Pong& pong) {
 
     auto ping_time = m_ping_time.load();
     if (ping_time == 0 || pong.timestamp() != ping_time) {
         return;
     }
-    uint64_t latency = Tools::get_steady_timestamp_ms() - ping_time;
+    uint64_t latency = tools::get_steady_timestamp_ms() - ping_time;
     m_task_queue.emplace(TaskType::PONG, latency);
     if (m_ping_time.compare_exchange_strong(ping_time, 0)) {
         m_timeout_count = 0;
@@ -730,7 +740,7 @@ void ClientWorld::receive_chunk(std::vector<uint8_t> raw_data,
     pool->enqueue(
         [this, raw_data = std::move(raw_data), header = std::move(header)]() {
             Arena arena;
-            auto* data = Arena::Create<ChunkDataRsp>(&arena);
+            auto* data = Arena::Create<protocol::S2CChunkDataRsp>(&arena);
             if (!decode_packet(*data, raw_data, header)) {
                 return;
             }
@@ -777,7 +787,7 @@ void ClientWorld::set_direct_exit() { m_exit_direct = true; }
 
 void ClientWorld::send_ping() {
     if (m_ping_time != 0) {
-        if (Tools::get_steady_timestamp_ms() - m_ping_time > PING_TIMEOUT) {
+        if (tools::get_steady_timestamp_ms() - m_ping_time > PING_TIMEOUT) {
             ++m_timeout_count;
 
             m_ping_time = 0;
@@ -786,8 +796,8 @@ void ClientWorld::send_ping() {
         }
     }
     Arena arena;
-    auto msg = Arena::Create<Ping>(&arena);
-    m_ping_time = Tools::get_steady_timestamp_ms();
+    auto msg = Arena::Create<protocol::Ping>(&arena);
+    m_ping_time = tools::get_steady_timestamp_ms();
     msg->set_timestamp(m_ping_time);
     m_client->send(make_packet(msg));
 }
@@ -797,7 +807,7 @@ void ClientWorld::request_exit() {
         return;
     }
     Arena arena;
-    auto* req = Arena::Create<LogoutReq>(&arena);
+    auto* req = Arena::Create<protocol::C2SLogoutReq>(&arena);
     req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     m_client->send(make_packet(*req));
     int cnt = 0;
@@ -814,19 +824,19 @@ void ClientWorld::request_exit() {
     }
 }
 
-void ClientWorld::receive_chat_message(ChatMsg& msg) {
+void ClientWorld::receive_chat_message(protocol::ChatMsg& msg) {
     Color color = color_from_int(msg.color());
 
-    m_message_queue.emplace(msg.name(), msg.msg(), color, msg.system_msg(),
-                            Tools::get_time_ticks());
+    m_message_queue.emplace(std::string{msg.name()}, std::string{msg.msg()},
+                            color, msg.system_msg(), tools::get_time_ticks());
 }
 
-void ClientWorld::receive_voice_message(VoiceMsg& msg) {
+void ClientWorld::receive_voice_message(protocol::VoiceMsg& msg) {
     if (!m_voice_chat) {
         return;
     }
     glm::vec3 pos{msg.pos().x(), msg.pos().y(), msg.pos().z()};
-    m_voice_queue.emplace(msg.opus_data(), pos);
+    m_voice_queue.emplace(std::string{msg.opus_data()}, pos);
 }
 bool ClientWorld::enable_voice_chat() const { return m_voice_chat.load(); }
 int ClientWorld::get_per_tick_time() const { return m_per_tick_time; }
@@ -839,7 +849,7 @@ bool ClientWorld::is_render(const glm::vec3& pos) const {
 
 void ClientWorld::send_chat_message(ChatMessage& message) {
     Arena arena;
-    auto msg = Arena::Create<ChatMsg>(&arena);
+    auto msg = Arena::Create<protocol::ChatMsg>(&arena);
     msg->set_name(message.player);
     msg->set_msg(message.text);
     msg->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
@@ -1071,4 +1081,4 @@ ClientWorld::render_snapshots() const {
 };
 
 std::vector<glm::vec4>& ClientWorld::planes() { return m_planes; }
-} // namespace Cubed
+} // namespace cubed

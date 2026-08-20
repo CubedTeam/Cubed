@@ -2,7 +2,7 @@
 #include <atomic>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 
 class PerlinNoise3D {
 public:
@@ -33,4 +33,4 @@ private:
     static float grad(int hash, float x, float y);
 };
 
-} // namespace Cubed
+} // namespace cubed

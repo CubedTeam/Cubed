@@ -19,7 +19,7 @@
 #include <sodium.h>
 #include <tracy/Tracy.hpp>
 
-namespace Cubed {
+namespace cubed {
 
 App::App()
 
@@ -31,7 +31,7 @@ App::~App() {
     stop_text_input();
     if (m_opengl_init) {
         Font::destroy();
-        DebugCollector::destory();
+        DebugCollector::destroy();
     }
 }
 
@@ -712,7 +712,7 @@ void App::update() {
         frame_count = 0;
         fps_time_count = 0.0f;
         d_rep("fps", "FPS: {}", fps);
-        d_rep("rss", "RSS: {}mb", Tools::get_current_rss() / (1024 * 1024));
+        d_rep("rss", "RSS: {}mb", tools::get_current_rss() / (1024 * 1024));
     }
     m_texture_manager.update();
 
@@ -886,4 +886,4 @@ void App::update_text_input_area(const glm::vec4& textbox,
     SDL_SetTextInputArea(m_window.get_window(), &area, cursor_x);
 }
 
-} // namespace Cubed
+} // namespace cubed

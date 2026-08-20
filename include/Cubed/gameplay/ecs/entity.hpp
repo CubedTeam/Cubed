@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-namespace Cubed {
+namespace cubed {
 using EntityID = uint64_t;
 
 enum class EntityType { CREATURE, ITEM };
@@ -11,4 +11,4 @@ struct Entity {
     Entity(EntityID id, EntityType type) : id(id), type(type) {}
 };
 
-} // namespace Cubed
+} // namespace cubed

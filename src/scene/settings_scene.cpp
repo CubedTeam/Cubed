@@ -3,7 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/config.hpp"
 #include "Cubed/scene/scene_manager.hpp"
-namespace Cubed {
+namespace cubed {
 SettingsScene::SettingsScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_settings_ui(*this) {}
 SettingsScene::~SettingsScene() {}
@@ -68,4 +68,4 @@ SliderVariable& SettingsScene::slider_variable() { return m_slider_variable; }
 void SettingsScene::set_texture_reload(bool reload) {
     m_need_texture_reload = reload;
 }
-} // namespace Cubed
+} // namespace cubed

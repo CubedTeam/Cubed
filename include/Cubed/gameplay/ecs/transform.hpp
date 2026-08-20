@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-namespace Cubed {
+namespace cubed {
 struct Position {
     glm::vec3 value{0.0f};
 };
@@ -27,4 +27,4 @@ struct RenderTransform {
     Direction direction{};
 };
 
-} // namespace Cubed
+} // namespace cubed

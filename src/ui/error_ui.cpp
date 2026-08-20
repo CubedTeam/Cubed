@@ -5,7 +5,7 @@
 #include "Cubed/scene/world_scene.hpp"
 #include "Cubed/ui/column_layout.hpp"
 #include "Cubed/ui/image.hpp"
-namespace Cubed {
+namespace cubed {
 ErrorUI::ErrorUI(WorldScene& scene) : m_scene(scene) {}
 
 void ErrorUI::init() {
@@ -66,4 +66,4 @@ bool ErrorUI::handle_key_event(const KeyEvent& e) {
     return UIManager::handle_key_event(e);
 }
 
-} // namespace Cubed
+} // namespace cubed

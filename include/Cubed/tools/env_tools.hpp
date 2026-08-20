@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdlib> // IWYU pragma: keep
-namespace Cubed {
-namespace Tools {
+namespace cubed {
+namespace tools {
 
 inline void set_env(const char* name, const char* value) {
 #ifdef _WIN32
@@ -10,5 +10,5 @@ inline void set_env(const char* name, const char* value) {
     setenv(name, value, 1);
 #endif
 }
-} // namespace Tools
-} // namespace Cubed
+} // namespace tools
+} // namespace cubed

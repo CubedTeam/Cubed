@@ -8,12 +8,12 @@
 #include <memory>
 #include <unordered_map>
 
-namespace Cubed {
+namespace cubed {
 
 class DebugCollector {
 public:
     static DebugCollector& get();
-    static void destory();
+    static void destroy();
     DebugCollector();
 
     void report(const std::string& name, std::string_view content);
@@ -34,4 +34,4 @@ void d_rep(const std::string& key, std::format_string<Args...> fmt,
     DebugCollector::get().report(key, msg);
 }
 
-} // namespace Cubed
+} // namespace cubed

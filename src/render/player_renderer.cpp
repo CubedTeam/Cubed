@@ -98,7 +98,7 @@ constexpr FaceUV RIGHT_LEG_UV = {{
 }};
 
 constexpr std::array<std::array<UVRect, 6>,
-                     Cubed::PlayerRenderer::BODY_PART_NUM>
+                     cubed::PlayerRenderer::BODY_PART_NUM>
     PLAYER_TEX = {{{HEAD_UV},
                    {BODY_UV},
                    {LEFT_ARM_UV},
@@ -113,7 +113,7 @@ constexpr glm::vec3 LEFT_LEG_PIVOT{0.375, 0.75, 0.50};
 constexpr glm::vec3 RIGHT_LEG_PIVOT{0.625, 0.75, 0.50};
 
 } // namespace
-namespace Cubed {
+namespace cubed {
 PlayerRenderer::PlayerRenderer(Renderer& renderer) : m_renderer(renderer) {}
 
 PlayerRenderer::~PlayerRenderer() {
@@ -295,4 +295,4 @@ void PlayerRenderer::render(const Shader& shader, ClientWorld& world,
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

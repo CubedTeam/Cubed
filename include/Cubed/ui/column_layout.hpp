@@ -1,6 +1,6 @@
 #pragma once
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 
 enum class ColumnLayoutAnchor { LEFT, CENTER, RIGHT };
 
@@ -29,4 +29,4 @@ private:
 
     void on_update(float dt) override;
 };
-} // namespace Cubed
+} // namespace cubed

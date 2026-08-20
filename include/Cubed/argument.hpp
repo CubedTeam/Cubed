@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include <string>
-namespace Cubed {
+namespace cubed {
 struct Argument {
     std::optional<int> port;
     std::optional<std::string> ip;
@@ -17,4 +17,4 @@ struct Argument {
     std::optional<bool> direct_enter;
     std::optional<std::string> identify;
 };
-} // namespace Cubed
+} // namespace cubed

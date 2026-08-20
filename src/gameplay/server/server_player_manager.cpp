@@ -2,7 +2,7 @@
 
 #include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/gameplay/server/session.hpp"
-namespace Cubed {
+namespace cubed {
 ServerPlayerManager::ServerPlayerManager(ServerWorld& world)
     : m_world(world), m_players(std::make_shared<PlayerMap>()) {}
 ServerPlayerManager::~ServerPlayerManager() {}
@@ -11,6 +11,32 @@ void ServerPlayerManager::stop() { save_all(); }
 
 void ServerPlayerManager::init() {
     m_storage = std::make_unique<PlayerStorage>(*m_world.world_storage());
+}
+
+void ServerPlayerManager::update() {
+    auto players_map = snapshot();
+    if (!players_map) {
+        return;
+    }
+    std::vector<PlayerPtr> players;
+    players.reserve(players_map->size());
+    for (const auto& [_, p] : *players_map) {
+        players.emplace_back(p);
+    }
+
+    auto pool = m_world.get_compute_pool();
+    if (pool) {
+        parallel_do(*pool, players.begin(), players.end(), pool->thread_sum(),
+                    [](PlayerPtr& player) {
+                        if (player) {
+                            player->update();
+                        }
+                    });
+    } else {
+        for (auto& player : players) {
+            player->update();
+        }
+    }
 }
 
 bool ServerPlayerManager::add(PlayerPtr player) {
@@ -32,6 +58,14 @@ bool ServerPlayerManager::add(PlayerPtr player) {
             it->second->update_pos(data->pos.x, data->pos.y, data->pos.z);
             it->second->set_yaw(data->yaw);
             it->second->set_pitch(data->pitch);
+
+            for (const auto& stack : data->inventory) {
+                ItemStack s;
+                s.item = stack.item_id;
+                s.count = stack.count;
+                it->second->init_add(s, stack.position);
+            }
+
         } else {
             data = PlayerStorageData{};
             data->pos = it->second->get_pos();
@@ -40,6 +74,7 @@ bool ServerPlayerManager::add(PlayerPtr player) {
         }
         data->public_key = it->second->get_session()->public_key();
         data->uuid = it->second->get_uuid();
+
         m_storage->save(*data);
     }
 
@@ -161,9 +196,21 @@ PlayerStorageData ServerPlayerManager::build_data(const ServerPlayer& player) {
     data.uuid = player.get_uuid();
     data.yaw = player.yaw();
     data.pitch = player.pitch();
+    auto inventory = player.inventory_snapshot();
+
+    for (size_t i = 0; i < inventory.size(); ++i) {
+        if (inventory[i]) {
+            StoredItemStack stack;
+            stack.item_id = inventory[i]->item;
+            stack.position = i;
+            stack.count = inventory[i]->count;
+            data.inventory.push_back(std::move(stack));
+        }
+    }
+
     return data;
 }
 
 PlayerStorage* ServerPlayerManager::get_storage() { return m_storage.get(); }
 
-} // namespace Cubed
+} // namespace cubed

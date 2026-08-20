@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace Cubed {
+namespace cubed {
 
 class LocalPlayer;
 
@@ -50,4 +50,4 @@ public:
     LocalPlayer* player();
 };
 
-} // namespace Cubed
+} // namespace cubed

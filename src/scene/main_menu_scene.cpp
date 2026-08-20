@@ -3,7 +3,7 @@
 #include "Cubed/app.hpp"
 #include "Cubed/scene/scene_manager.hpp"
 
-namespace Cubed {
+namespace cubed {
 MainMenuScene::MainMenuScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_ui_manager(*this) {}
 MainMenuScene::~MainMenuScene() {}
@@ -29,4 +29,4 @@ void MainMenuScene::on_re_enter() {
         WindowResizeEvent{static_cast<int>(width), static_cast<int>(height)});
 }
 SceneManager& MainMenuScene::scene_manager() { return m_scene_manager; }
-} // namespace Cubed
+} // namespace cubed

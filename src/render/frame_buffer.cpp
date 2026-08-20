@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace Cubed {
+namespace cubed {
 FrameBuffer::FrameBuffer() { glGenFramebuffers(1, &m_fbo); }
 FrameBuffer::~FrameBuffer() {
     if (m_fbo) {
@@ -76,4 +76,4 @@ void FrameBuffer::draw_buffer(std::span<const GLenum> bufs) const {
     glDrawBuffers(bufs.size(), bufs.data());
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <numbers>
-namespace Cubed {
+namespace cubed {
 
 Random::Random() {}
 
@@ -55,4 +55,4 @@ glm::vec3 Random::random_direction_horizontal() {
     return glm::vec3{x, 0.0f, z};
 }
 
-} // namespace Cubed
+} // namespace cubed

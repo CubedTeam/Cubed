@@ -13,7 +13,7 @@
 #include <shared_mutex>
 #include <tuple>
 #include <unordered_set>
-namespace Cubed {
+namespace cubed {
 
 enum class ChunkLoadStyle { RANDOM, CENTER };
 using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
@@ -110,4 +110,4 @@ private:
     void gen_phase_five();
 };
 
-} // namespace Cubed
+} // namespace cubed

@@ -9,7 +9,7 @@
 #include <rapidjson/istreamwrapper.h>
 namespace fs = std::filesystem;
 using namespace rapidjson;
-namespace Cubed {
+namespace cubed {
 Localization::Localization() {}
 Localization& Localization::instance() {
     static Localization s_instance;
@@ -38,7 +38,7 @@ void Localization::load_language(std::string_view language) {
                             static_cast<int>(code)));
         }
         m_translations.clear();
-        m_translations = Tools::doc_to_map(doc);
+        m_translations = tools::doc_to_map(doc);
     } catch (const std::exception& e) {
         Logger::error("JSON syntax error: {}", e.what());
     }
@@ -69,4 +69,4 @@ void Localization::replace_all(std::string& str, std::string_view from,
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 #include <tbb/concurrent_hash_map.h>
-namespace Cubed {
+namespace cubed {
 
 class RiverWorm {
 
@@ -27,4 +27,4 @@ private:
     std::atomic<float> m_probability{0.01f};
 };
 
-}; // namespace Cubed
+}; // namespace cubed

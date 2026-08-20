@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace Cubed {
+namespace cubed {
 AudioSource::AudioSource(float volume) {
     alGenSources(1, &m_source);
     set_target_volume(volume);
@@ -191,4 +191,4 @@ void AudioSource::clear_effect_slot() {
                AL_FILTER_NULL);
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -1,7 +1,7 @@
 #pragma once
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/screenshot_ui.hpp"
-namespace Cubed {
+namespace cubed {
 class SceneManager;
 class ScreenshotScene : public Scene {
 public:
@@ -26,4 +26,4 @@ private:
     SceneManager& m_scene_manager;
     ScreenshotUI m_ui;
 };
-} // namespace Cubed
+} // namespace cubed

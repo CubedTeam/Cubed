@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace Cubed {
+namespace cubed {
 VertexArray::VertexArray() { glGenVertexArrays(1, &m_vao); }
 VertexArray::~VertexArray() {
     if (m_vao) {
@@ -39,4 +39,4 @@ void VertexArray::divisor(GLuint index, GLuint divisor) {
     bind();
     glVertexAttribDivisor(index, divisor);
 }
-} // namespace Cubed
+} // namespace cubed

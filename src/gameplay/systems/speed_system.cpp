@@ -3,7 +3,7 @@
 #include "Cubed/gameplay/ecs/ai_struct.hpp"
 #include "Cubed/gameplay/ecs/server_entity.hpp"
 
-namespace Cubed {
+namespace cubed {
 
 void SpeedSystem::update(float dt, entt::registry& registry, entt::entity e) {
     if (!registry.all_of<BaseServerCreature, MoveBoost>(e)) {
@@ -39,4 +39,4 @@ void SpeedSystem::update(float dt, entt::registry& registry, entt::entity e) {
     v_clamp(v.z, creature.velocity.max.z);
 }
 
-} // namespace Cubed
+} // namespace cubed

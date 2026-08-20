@@ -3,7 +3,7 @@
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/ui_manager.hpp"
 
-namespace Cubed {
+namespace cubed {
 class Renderer;
 class MainMenuScene;
 class MainMenuUIManager : public UIManager {
@@ -22,4 +22,4 @@ private:
     MainMenuScene& m_scene;
     std::vector<Button*> m_pending_enable;
 };
-} // namespace Cubed
+} // namespace cubed

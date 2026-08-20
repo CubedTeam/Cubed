@@ -4,7 +4,7 @@
 #include "Cubed/tools/time_tools.hpp"
 
 #include <utf8cpp/utf8.h>
-namespace Cubed {
+namespace cubed {
 ChatBox::ChatBox(Widget* parent) : Widget(parent) {}
 
 void ChatBox::add_message(ChatMessage& message) {
@@ -112,7 +112,7 @@ void ChatBox::layout() {
 }
 void ChatBox::on_update(float dt) {
     Widget::on_update(dt);
-    auto tick = Tools::get_time_ticks();
+    auto tick = tools::get_time_ticks();
     for (auto& m : m_messages) {
         m.label->update(dt);
         if (!m.render) {
@@ -197,4 +197,4 @@ std::vector<std::string> ChatBox::wrap_message(const std::string& text) const {
 
     return lines;
 }
-} // namespace Cubed
+} // namespace cubed

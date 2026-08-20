@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <glad/glad.h>
-namespace Cubed {
+namespace cubed {
 
 enum TextureType : GLenum {
     TEXTURE_2D = GL_TEXTURE_2D,
@@ -97,4 +97,4 @@ private:
     const TextureType M_TYPE;
     GLenum get_gl_texture_type() const;
 };
-} // namespace Cubed
+} // namespace cubed

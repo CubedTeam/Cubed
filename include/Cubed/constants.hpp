@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-namespace Cubed {
+namespace cubed {
 
 constexpr int WORLD_SIZE_Y = 256;
 constexpr int CHUNK_SIZE = 16;
@@ -32,4 +32,4 @@ constexpr float DEFAULT_CAVE_PROBABILITY = 0.035f;
 
 using HeightMapArray = std::array<std::array<int, CHUNK_SIZE>, CHUNK_SIZE>;
 
-} // namespace Cubed
+} // namespace cubed

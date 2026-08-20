@@ -6,7 +6,7 @@
 #include <AL/al.h>
 #include <glm/glm.hpp>
 #include <memory>
-namespace Cubed {
+namespace cubed {
 
 enum class AudioState { INITIAL, PLAYING, PAUSED, STOPPED };
 
@@ -51,4 +51,4 @@ private:
     float m_duration = 0.0f;
     bool m_using = false;
 };
-} // namespace Cubed
+} // namespace cubed

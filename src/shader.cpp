@@ -5,15 +5,15 @@
 #include "Cubed/tools/log.hpp"
 #include "Cubed/tools/shader_tools.hpp"
 
-namespace Cubed {
+namespace cubed {
 
 Shader::Shader() {}
 
 Shader::Shader(const std::string& name, const std::string& v_shader_path,
                const std::string& f_shader_path) {
-    m_program = Tools::create_shader_program(v_shader_path, f_shader_path);
+    m_program = tools::create_shader_program(v_shader_path, f_shader_path);
     m_name = name;
-    m_hash = HASH::str(name);
+    m_hash = hash::str(name);
 }
 
 Shader::Shader(Shader&& shader) noexcept
@@ -46,9 +46,9 @@ void Shader::create(const std::string& name, const std::string& v_shader_path,
         Logger::warn("Shader has already created !");
         return;
     }
-    m_program = Tools::create_shader_program(v_shader_path, f_shader_path);
+    m_program = tools::create_shader_program(v_shader_path, f_shader_path);
     m_name = name;
-    m_hash = HASH::str(name);
+    m_hash = hash::str(name);
 }
 
 std::size_t Shader::hash() const {
@@ -88,4 +88,4 @@ void Shader::use() const {
     glUseProgram(m_program);
 }
 
-} // namespace Cubed
+} // namespace cubed

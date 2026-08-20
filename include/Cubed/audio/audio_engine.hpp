@@ -15,7 +15,7 @@
 #include <opus/opus.h>
 #include <string>
 #include <unordered_map>
-namespace Cubed {
+namespace cubed {
 
 class NetworkClient;
 
@@ -79,4 +79,4 @@ private:
     std::unique_ptr<AudioEffect> m_underwater_effect;
     std::unique_ptr<AudioEffectSlot> m_underwater_slot;
 };
-} // namespace Cubed
+} // namespace cubed

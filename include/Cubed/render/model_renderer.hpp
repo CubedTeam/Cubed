@@ -8,7 +8,7 @@
 #include <span>
 #include <unordered_map>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 class Renderer;
 class Camera;
 class ModelRender {
@@ -52,4 +52,4 @@ private:
     ModelBatch& get_batch(ModelID id, const ModelNode& root);
     size_t flatten_nodes(const ModelNode& node, size_t slot, ModelBatch& batch);
 };
-} // namespace Cubed
+} // namespace cubed

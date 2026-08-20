@@ -4,7 +4,7 @@
 #include "Cubed/ui/label.hpp"
 #include "Cubed/ui/widget.hpp"
 
-namespace Cubed {
+namespace cubed {
 
 enum class ValueType {
     FLOAT,
@@ -69,4 +69,4 @@ private:
     void on_render(Renderer& renderer) override;
     void update_text_scale();
 };
-} // namespace Cubed
+} // namespace cubed

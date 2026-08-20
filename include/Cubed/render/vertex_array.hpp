@@ -1,7 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 
-namespace Cubed {
+namespace cubed {
 class VertexArray {
 public:
     VertexArray();
@@ -24,4 +24,4 @@ public:
 private:
     GLuint m_vao = 0;
 };
-} // namespace Cubed
+} // namespace cubed

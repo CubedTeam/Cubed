@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace Cubed {
+namespace cubed {
 Button::Button(Widget* parent) : Widget(parent) {
     m_background = std::make_unique<Image>(this);
     m_background->set_fill_parent(true);
@@ -162,4 +162,4 @@ void Button::update_text_scale() {
     m_foreground->set_scale(scale);
 }
 
-} // namespace Cubed
+} // namespace cubed

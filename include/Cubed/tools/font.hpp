@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Cubed {
+namespace cubed {
 
 struct Character {
     glm::vec2 uv_min;
@@ -76,4 +76,4 @@ private:
     static std::unique_ptr<Font>& get_ptr();
 };
 
-} // namespace Cubed
+} // namespace cubed

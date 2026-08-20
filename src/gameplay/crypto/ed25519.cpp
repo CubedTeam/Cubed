@@ -2,10 +2,10 @@
 
 #include <algorithm>
 #include <sodium.h>
-namespace Cubed::Crypto {
+namespace cubed::crypto {
 
 std::optional<Ed25519PublicKey>
-Ed25519::public_key_from_proto_bytes(const std::string& key) {
+Ed25519::public_key_from_proto_bytes(std::string_view key) {
     if (key.size() != 32) {
         return std::nullopt;
     }
@@ -80,7 +80,7 @@ bool Ed25519::from_hex(const std::string& hex, unsigned char* output,
 
 std::vector<unsigned char>
 Ed25519::make_login_signing_data(std::span<const unsigned char> challenge,
-                                 const Crypto::Ed25519PublicKey& public_key) {
+                                 const crypto::Ed25519PublicKey& public_key) {
 
     constexpr std::string_view LOGIN_CONTEXT = "Cubed login v1";
 
@@ -95,4 +95,4 @@ Ed25519::make_login_signing_data(std::span<const unsigned char> challenge,
     return data;
 }
 
-} // namespace Cubed::Crypto
+} // namespace cubed::crypto

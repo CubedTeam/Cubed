@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace Cubed {
+namespace cubed {
 VertexBuffer::VertexBuffer(BufferType type) : m_type(type) {
     glGenBuffers(1, &m_vbo);
 }
@@ -54,4 +54,4 @@ void VertexBuffer::buffer_sub_data(const void* data, GLsizeiptr size,
     glBufferSubData(get_buffer_target(), offset, size, data);
 }
 
-} // namespace Cubed
+} // namespace cubed

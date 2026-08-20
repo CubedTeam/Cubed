@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <variant>
-namespace Cubed {
+namespace cubed {
 using ItemID = uint16_t;
 
 enum class ItemKind {
@@ -24,6 +24,7 @@ struct ItemData {
     std::optional<ResourceLocation> path;
     ItemKind kind = ItemKind::NONE;
     ItemProperty property;
+    uint32_t max_stack_size = 64;
 };
 
 inline constexpr ItemKind get_item_kind(std::string_view kind) {
@@ -36,4 +37,4 @@ inline constexpr ItemKind get_item_kind(std::string_view kind) {
     return ItemKind::NONE;
 }
 
-} // namespace Cubed
+} // namespace cubed

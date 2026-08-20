@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <tbb/concurrent_hash_map.h>
 
-namespace Cubed {
+namespace cubed {
 class RiverPath {
 
 public:
@@ -45,4 +45,4 @@ private:
     std::vector<PathPoint> m_points;
     void collect_path_points();
 };
-} // namespace Cubed
+} // namespace cubed

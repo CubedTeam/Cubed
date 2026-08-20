@@ -5,11 +5,11 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <string>
-namespace Cubed {
+namespace cubed {
 
 struct TextStyle {
     std::string text;
     Color color = Color::WHITE;
 };
 
-} // namespace Cubed
+} // namespace cubed

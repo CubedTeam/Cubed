@@ -2,7 +2,7 @@
 
 #include "Cubed/ui/button.hpp"
 #include "Cubed/ui/ui_manager.hpp"
-namespace Cubed {
+namespace cubed {
 class WorldScene;
 class PauseMenuUIManager : public UIManager {
 public:
@@ -18,4 +18,4 @@ private:
     WorldScene& m_scene;
     std::vector<Button*> m_pending_enable;
 };
-} // namespace Cubed
+} // namespace cubed

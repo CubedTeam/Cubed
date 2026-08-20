@@ -4,7 +4,7 @@
 
 #include <toml++/toml.hpp>
 
-namespace Cubed {
+namespace cubed {
 
 class WorldScene;
 class LocalPlayer;
@@ -70,4 +70,4 @@ private:
     void update_player_profile();
 };
 
-} // namespace Cubed
+} // namespace cubed

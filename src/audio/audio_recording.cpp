@@ -5,7 +5,7 @@
 
 #include <al.h>
 
-namespace Cubed {
+namespace cubed {
 AudioRecording::AudioRecording(AudioEngine& engine)
     : m_engine(engine) {
 
@@ -74,4 +74,4 @@ void AudioRecording::send_voice(const std::array<int16_t, FRAME_SAMPLES>& pcm) {
 
     m_engine.send_voice(pcm);
 }
-} // namespace Cubed
+} // namespace cubed

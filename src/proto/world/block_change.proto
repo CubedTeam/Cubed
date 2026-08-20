@@ -1,14 +1,16 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
 
 import "common/vector3.proto";
 
-message BlockChangeReq {
+message C2SBlockChangeReq {
     bytes uuid = 1;
-    Vec3 pos = 2;
+    common.Vec3 pos = 2;
     uint32 block = 3;
 }
 
-message BlockChangeRsp {
-    Vec3 pos = 1;
+message S2CBlockChangeRsp {
+    common.Vec3 pos = 1;
     uint32 block = 2;
 }

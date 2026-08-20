@@ -8,7 +8,7 @@
 #include <glad/glad.h>
 #include <memory>
 
-namespace Cubed {
+namespace cubed {
 
 class TextureManager {
 public:
@@ -65,4 +65,4 @@ private:
     bool handle_key_event(const KeyEvent& e);
 };
 
-} // namespace Cubed
+} // namespace cubed

@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-namespace Cubed {
+namespace cubed {
 
-namespace Math {
+namespace math {
 
 inline void extract_frustum_planes(const glm::mat4& mvp_matrix,
                                    std::vector<glm::vec4>& planes) {
@@ -106,6 +106,6 @@ inline float distance2(const glm::vec3& a, const glm::vec3& b) {
 
 inline float lerp(float a, float b, float t) { return a + t * (b - a); }
 
-} // namespace Math
+} // namespace math
 
-} // namespace Cubed
+} // namespace cubed

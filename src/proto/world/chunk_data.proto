@@ -1,25 +1,27 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
 
 import "common/chunk_pos.proto";
 
-message ChunkDataReq {
+message C2SChunkDataReq {
     int32 task_id = 1;
     bytes uuid = 2;
-    ChunkPosNet pos = 3;
+    common.ChunkPos pos = 3;
 }
 
-message ChunkDataRsp {
+message S2CChunkDataRsp {
     int32 task_id = 1;
-    ChunkPosNet pos = 2;
+    common.ChunkPos pos = 2;
     uint32 chunk_seed = 3;
     int32 biome_type = 4;
-    repeated uint32 chunk_blocks = 5 [packed=true];
-    repeated uint32 neighbor_blocks_1 = 6 [packed=true];
-    repeated uint32 neighbor_blocks_2 = 7 [packed=true];
-    repeated uint32 neighbor_blocks_3 = 8 [packed=true];
-    repeated uint32 neighbor_blocks_4 = 9 [packed=true];
+    repeated uint32 chunk_blocks = 5;
+    repeated uint32 neighbor_blocks_one = 6;
+    repeated uint32 neighbor_blocks_two = 7;
+    repeated uint32 neighbor_blocks_three = 8;
+    repeated uint32 neighbor_blocks_four = 9;
 }
 
-message S2C_ClearAllChunks {
+message S2CClearAllChunks {
     bool clear = 1;
 }

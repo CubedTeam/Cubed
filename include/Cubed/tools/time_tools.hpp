@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <format>
 #include <string>
-namespace Cubed {
-namespace Tools {
+namespace cubed {
+namespace tools {
 // return ms
 inline uint64_t get_time_ticks() { return SDL_GetTicks(); }
 
@@ -18,6 +18,6 @@ inline std::string get_time_date_str() {
     return std::format("{:%Y-%m-%d_%H-%M-%S}", local);
 }
 
-} // namespace Tools
+} // namespace tools
 
-} // namespace Cubed
+} // namespace cubed

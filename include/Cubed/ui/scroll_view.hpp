@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cubed/ui/widget.hpp"
-namespace Cubed {
+namespace cubed {
 class ColumnLayout;
 class ScrollView : public Widget {
 public:
@@ -32,4 +32,4 @@ private:
     bool m_hovered = false;
     float m_scroll_speed = 50.0f;
 };
-} // namespace Cubed
+} // namespace cubed

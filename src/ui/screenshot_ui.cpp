@@ -20,7 +20,7 @@ namespace {
 constexpr std::array<std::string_view, 8> IMAGE_EXT{
     ".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"};
 }
-namespace Cubed {
+namespace cubed {
 ScreenshotUI::ScreenshotUI(ScreenshotScene& scene) : m_scene(scene) {}
 ScreenshotUI::~ScreenshotUI() {}
 void ScreenshotUI::init() {
@@ -180,7 +180,7 @@ void ScreenshotUI::update_layout(int width, int height) {
     open_file.set_default_image(texture_manager)
         .set_text(tr("button.show_in_file_manager"))
         .set_clicked(
-            []() { Tools::open_file_manager(Renderer::SCREENSHOT_PATH); });
+            []() { tools::open_file_manager(Renderer::SCREENSHOT_PATH); });
 
     auto& return_button = bottom_row.add_child<Button>();
     return_button.set_default_image(texture_manager);
@@ -278,4 +278,4 @@ bool ScreenshotUI::handle_mouse_wheel_event(const MouseWheelEvent& e) {
     return UIManager::handle_mouse_wheel_event(e);
 }
 
-} // namespace Cubed
+} // namespace cubed

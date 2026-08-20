@@ -4,7 +4,7 @@
 #include <array>
 #include <glad/glad.h>
 
-namespace Cubed {
+namespace cubed {
 class ClientWorld;
 class Renderer;
 class PlayerRenderer {
@@ -29,4 +29,4 @@ private:
     bool m_inited{false};
     std::array<std::vector<PlayerVertex>, BODY_PART_NUM> m_vertices;
 };
-} // namespace Cubed
+} // namespace cubed

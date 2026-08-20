@@ -1,9 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <string_view>
-namespace Cubed {
+namespace cubed {
 
-namespace HASH {
+namespace hash {
 inline std::size_t str(std::string_view value) {
     return std::hash<std::string_view>{}(value);
 }
@@ -39,6 +39,6 @@ inline uint32_t chunk_seed_hash(int32_t a, int32_t b, uint32_t fixed_seed) {
 }
     */
 
-} // namespace HASH
+} // namespace hash
 
-} // namespace Cubed
+} // namespace cubed

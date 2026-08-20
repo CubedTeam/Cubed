@@ -1,0 +1,8 @@
+edition = "2024";
+
+package cubed.common;
+
+message InventoryStack {
+    uint32 item = 1;
+    uint32 count = 2;
+}

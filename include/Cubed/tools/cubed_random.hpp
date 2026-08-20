@@ -2,7 +2,7 @@
 #include "glm/ext/vector_float3.hpp"
 
 #include <random>
-namespace Cubed {
+namespace cubed {
 
 class Random {
 public:
@@ -23,4 +23,4 @@ private:
     std::mt19937 m_engine;
 };
 
-} // namespace Cubed
+} // namespace cubed

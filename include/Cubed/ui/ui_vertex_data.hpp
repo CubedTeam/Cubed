@@ -6,7 +6,7 @@
 #include <atomic>
 #include <memory>
 #include <vector>
-namespace Cubed {
+namespace cubed {
 struct UIVertexData {
     std::vector<Vertex2D> m_vertices;
     std::unique_ptr<VertexBuffer> m_vbo;
@@ -22,4 +22,4 @@ struct UIVertexData {
     void upload();
     void update_sum();
 };
-} // namespace Cubed
+} // namespace cubed

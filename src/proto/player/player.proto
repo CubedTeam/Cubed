@@ -1,26 +1,30 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
 
 import "common/vector3.proto";
 
-message C2S_PlayerInfo {
+
+message C2SPlayerInfo {
     bytes uuid = 1;
-    Vec3 pos = 2;
+    common.Vec3 pos = 2;
     float yaw = 3;
     float pitch = 4;
     int32 gait = 5;
 }
 
-message PlayerInfoRsp {
+message S2CPlayerInfoRsp {
     bytes uuid = 1;
     string name = 2;
-    Vec3 pos = 3;
+    common.Vec3 pos = 3;
     float yaw = 4;
     float pitch = 5;
     int32 gait = 6;
 }
 
-message PlayerWaterSound {
+message S2CPlayerWaterSound {
     bytes uuid = 1;
-    Vec3 pos = 2;
+    common.Vec3 pos = 2;
     bool underwater = 3;
 }
+

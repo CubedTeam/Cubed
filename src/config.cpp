@@ -8,7 +8,7 @@ namespace fs = std::filesystem;
 
 using namespace std::string_view_literals;
 
-namespace Cubed {
+namespace cubed {
 
 Config::Config(std::string_view path) : CONGIF_PATH(path) {}
 
@@ -86,4 +86,4 @@ toml::table* Config::find_or_create_table(std::string_view path) {
     return table;
 }
 
-} // namespace Cubed
+} // namespace cubed

@@ -1,10 +1,10 @@
 #pragma once
 
-namespace Cubed {
+namespace cubed {
 
 struct MouseState {
     bool left = false;
     bool right = false;
 };
 
-} // namespace Cubed
+} // namespace cubed

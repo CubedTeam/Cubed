@@ -8,7 +8,7 @@
 #include <stb_vorbis.h>
 
 namespace fs = std::filesystem;
-namespace Cubed {
+namespace cubed {
 AudioData AudioLoader::load(const std::filesystem::path& path) {
     if (!fs::is_regular_file(path)) {
         std::string err = std::format("Path {} is not a file", path.string());
@@ -138,4 +138,4 @@ AudioData AudioLoader::load_ogg(const std::filesystem::path& path) {
     return data;
 }
 
-} // namespace Cubed
+} // namespace cubed

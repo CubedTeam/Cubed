@@ -2,6 +2,6 @@
 
 #include <string_view>
 
-namespace Cubed::Tools {
+namespace cubed::tools {
 [[nodiscard]] bool is_valid_world_name(std::string_view world_name);
 }

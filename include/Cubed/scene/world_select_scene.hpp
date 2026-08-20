@@ -2,7 +2,7 @@
 
 #include "Cubed/scene/scene.hpp"
 #include "Cubed/ui/world_select_ui.hpp"
-namespace Cubed {
+namespace cubed {
 class SceneManager;
 class WorldSelectScene : public Scene {
 public:
@@ -20,4 +20,4 @@ private:
     SceneManager& m_scene_manager;
     WorldSelectUI m_ui;
 };
-} // namespace Cubed
+} // namespace cubed

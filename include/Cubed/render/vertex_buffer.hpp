@@ -1,6 +1,6 @@
 #pragma once
 #include <glad/glad.h>
-namespace Cubed {
+namespace cubed {
 
 enum class BufferType : GLenum {
     ARRAY_BUFFER = GL_ARRAY_BUFFER,
@@ -35,4 +35,4 @@ private:
 
     GLenum get_buffer_target() const;
 };
-} // namespace Cubed
+} // namespace cubed

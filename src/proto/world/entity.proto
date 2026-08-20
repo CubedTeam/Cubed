@@ -1,32 +1,34 @@
-syntax = "proto3";
+edition = "2024";
+
+package cubed.protocol;
 
 import "common/vector3.proto";
 
 message S2CEntityCreate {
     uint64 id = 1;
     string name = 2;
-    Vec3 pos = 3;
+    common.Vec3 pos = 3;
 }
 
-message S2CEntityDestory {
+message S2CEntityDestroy {
     uint64 id = 1;
 }
 
-message C2SEntityDestoryRequest {
+message C2SEntityDestroyReq {
     bytes uuid = 1;
     uint64 id = 2;
 }
 
-message C2SEntityCreateRequest {
+message C2SEntityCreateReq {
     bytes uuid = 1;
     string name = 2;
-    Vec3 pos = 3;
+    common.Vec3 pos = 3;
 }
 
 message S2CEntityUpdate {
     uint64 id = 1;
-    Vec3 pos = 2;
-    Vec3 direction = 3;
+    common.Vec3 pos = 2;
+    common.Vec3 direction = 3;
     int32 gait = 4;
 }
 

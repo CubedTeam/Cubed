@@ -36,7 +36,7 @@
 #error "StandardPaths currently supports only Windows and Linux"
 #endif
 
-namespace Cubed {
+namespace cubed {
 
 class StandardPaths final {
 public:
@@ -549,4 +549,4 @@ private:
 #endif
 };
 
-} // namespace Cubed
+} // namespace cubed

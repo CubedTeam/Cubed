@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-namespace Cubed {
+namespace cubed {
 Rect::Rect(Widget* parent)
     : Widget(parent) {
 
@@ -48,4 +48,4 @@ Rect& Rect::set_alpha(float alpha) {
 }
 Color Rect::color() const { return m_color; }
 bool Rect::supports_border() const { return false; }
-} // namespace Cubed
+} // namespace cubed

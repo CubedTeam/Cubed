@@ -1,6 +1,6 @@
 #pragma once
 #include <AL/al.h>
-namespace Cubed {
+namespace cubed {
 class AudioFilter {
 public:
     AudioFilter();
@@ -16,4 +16,4 @@ public:
 private:
     ALuint m_filter = 0;
 };
-} // namespace Cubed
+} // namespace cubed

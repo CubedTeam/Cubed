@@ -5,7 +5,7 @@
 #include "Cubed/tools/log.hpp"
 
 #include <algorithm>
-namespace Cubed {
+namespace cubed {
 
 Slider::Slider(Widget* parent) : Widget(parent) {
     init_thumb();
@@ -258,4 +258,4 @@ void Slider::update_text_scale() {
     m_label->set_scale(scale);
 }
 
-} // namespace Cubed
+} // namespace cubed

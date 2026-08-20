@@ -8,21 +8,21 @@
 #include <entt/entt.hpp>
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_queue.h>
-namespace Cubed {
+namespace cubed {
 class ClientWorld;
 class ClientEntityManager {
 public:
-    enum class Command { CREATE, DESTORY, UPDATE };
+    enum class Command { CREATE, DESTROY, UPDATE };
 
     ClientEntityManager(ClientWorld& world);
     void update(float dt);
     void init();
 
-    void receive_entity_create(S2CEntityCreate& msg);
-    void receive_entity_destory(EntityID id);
-    void receive_entity_update(const S2CEntityUpdate& msg);
-    void receive_entity_update(S2CEntityUpdateBatch& msg);
-    void destory(EntityID id);
+    void receive_entity_create(protocol::S2CEntityCreate& msg);
+    void receive_entity_destroy(EntityID id);
+    void receive_entity_update(const protocol::S2CEntityUpdate& msg);
+    void receive_entity_update(protocol::S2CEntityUpdateBatch& msg);
+    void destroy(EntityID id);
     void create(std::string_view name, const glm::vec3& pos);
 
     const entt::registry& get_registry() const;
@@ -57,7 +57,7 @@ private:
     tbb::concurrent_queue<TaskPair> m_tasks;
     Random m_random;
     void handle_task(float dt);
-    void handle_entity_destory(EntityID id);
+    void handle_entity_destroy(EntityID id);
     // not thread safe
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
@@ -79,4 +79,4 @@ private:
         return;
     }
 };
-} // namespace Cubed
+} // namespace cubed

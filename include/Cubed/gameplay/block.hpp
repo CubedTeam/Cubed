@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 
 using BlockType = uint8_t;
 using OptionalBlockVectorArray =
@@ -81,4 +81,4 @@ struct BlockData {
     BlockData() = default;
 };
 
-} // namespace Cubed
+} // namespace cubed

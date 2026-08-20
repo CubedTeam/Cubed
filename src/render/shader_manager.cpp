@@ -2,7 +2,7 @@
 
 #include "Cubed/tools/cubed_assert.hpp"
 
-namespace Cubed {
+namespace cubed {
 ShaderManager::ShaderManager() {}
 ShaderManager::~ShaderManager() {}
 
@@ -65,4 +65,4 @@ const Shader& ShaderManager::get_shader(const std::string& name) const {
     return it->second;
 }
 
-} // namespace Cubed
+} // namespace cubed

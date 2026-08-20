@@ -2,7 +2,7 @@
 
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/tools/font.hpp"
-namespace Cubed {
+namespace cubed {
 Label::Label(Widget* parent) : Widget(parent) {}
 Label& Label::set_text(std::string_view text) {
     m_text.text = text;
@@ -78,4 +78,4 @@ float Label::offset_x() const { return m_offset_x; }
 float Label::offset_y() const { return m_offset_y; }
 float Label::scale() const { return m_scale; }
 const std::string& Label::text() const { return m_text.text; }
-} // namespace Cubed
+} // namespace cubed

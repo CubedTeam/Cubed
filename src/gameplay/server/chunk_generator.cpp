@@ -21,7 +21,7 @@
 
 #include <algorithm>
 #include <tracy/Tracy.hpp>
-namespace Cubed {
+namespace cubed {
 
 namespace {
 template <typename F>
@@ -107,7 +107,7 @@ constexpr int BLEND_RADIUS = 8;
 ChunkGenerator::ChunkGenerator(ServerChunk& chunk) : m_chunk(chunk) {
     ASSERT_MSG(is_init, "ChunksGenerator is not init");
     ChunkPos pos = m_chunk.get_chunk_pos();
-    unsigned seed = HASH::chunk_seed_hash(pos.x, pos.z, m_generator_seed);
+    unsigned seed = hash::chunk_seed_hash(pos.x, pos.z, m_generator_seed);
     m_random.init(seed);
     m_chunk_seed = seed;
     m_neighbor_biome.fill(NONE);
@@ -255,46 +255,46 @@ void ChunkGenerator::generate_heightmap() {
                 PerlinNoise2D::noise(world_x * MOUNTAINOUS_NOISE_FREQUENCY,
                                      world_z * MOUNTAINOUS_NOISE_FREQUENCY);
             /*
-            float t = Math::smootherstep(0.6, 0.7, mountainous);
+            float t = math::smootherstep(0.6, 0.7, mountainous);
             base_y = std::lerp(64, 85, t);
             amplitude = std::lerp(10, 40, t);
             */
             float t;
             if (mountainous >= 0.95f) {
-                t = Math::smootherstep(0.95f, 1.0f, mountainous);
+                t = math::smootherstep(0.95f, 1.0f, mountainous);
                 base_y = std::lerp(130, 140, t);
                 amplitude = std::lerp(38, 48, t);
             } else if (mountainous >= 0.85f) {
-                t = Math::smootherstep(0.85f, 0.95f, mountainous);
+                t = math::smootherstep(0.85f, 0.95f, mountainous);
                 base_y = std::lerp(100, 130, t);
                 amplitude = std::lerp(28, 38, t);
             } else if (mountainous >= 0.8) {
-                t = Math::smootherstep(0.8f, 0.85f, mountainous);
+                t = math::smootherstep(0.8f, 0.85f, mountainous);
                 base_y = std::lerp(85, 100, t);
                 amplitude = std::lerp(18, 28, t);
             } else if (mountainous >= 0.75f) {
-                t = Math::smootherstep(0.75f, 0.8f, mountainous);
+                t = math::smootherstep(0.75f, 0.8f, mountainous);
                 base_y = std::lerp(70, 85, t);
                 amplitude = std::lerp(6, 18, t);
             } else if (mountainous >= 0.7) {
-                t = Math::smootherstep(0.7f, 0.75f, mountainous);
+                t = math::smootherstep(0.7f, 0.75f, mountainous);
                 base_y = std::lerp(66, 70, t);
                 amplitude = std::lerp(6, 6, t);
 
             } else if (mountainous >= 0.45f) {
-                t = Math::smootherstep(0.45f, 0.7f, mountainous);
+                t = math::smootherstep(0.45f, 0.7f, mountainous);
                 base_y = std::lerp(64, 66, t);
                 amplitude = std::lerp(6, 6, t);
             } else if (mountainous >= 0.3f) {
-                t = Math::smootherstep(0.3f, 0.45f, mountainous);
+                t = math::smootherstep(0.3f, 0.45f, mountainous);
                 base_y = std::lerp(60, 64, t);
                 amplitude = std::lerp(6, 6, t);
             } else if (mountainous >= 0.25f) {
-                t = Math::smootherstep(0.25f, 0.3f, mountainous);
+                t = math::smootherstep(0.25f, 0.3f, mountainous);
                 base_y = std::lerp(44, 60, t);
                 amplitude = std::lerp(6, 6, t);
             } else {
-                t = Math::smootherstep(0.0f, 0.25f, mountainous);
+                t = math::smootherstep(0.0f, 0.25f, mountainous);
                 base_y = std::lerp(35, 44, t);
                 amplitude = std::lerp(3, 6, t);
             }
@@ -830,11 +830,11 @@ void ChunkGenerator::spawn_creature() {
     const auto& blocks = m_chunk.blocks();
     const auto& heightmap = m_heightmap;
     const auto& chunk_pos = m_chunk.chunk_pos();
-    if (std::ranges::contains(SpawnDefaults::PIG.biomes, biome)) {
+    if (std::ranges::contains(spawn_defaults::PIG.biomes, biome)) {
 
-        if (m_random.random_bool(SpawnDefaults::PIG.probability)) {
+        if (m_random.random_bool(spawn_defaults::PIG.probability)) {
             int want =
-                m_random.random_int(0, SpawnDefaults::PIG.max_spawn_count);
+                m_random.random_int(0, spawn_defaults::PIG.max_spawn_count);
             for (int i = 0; i < want; ++i) {
                 int x = m_random.random_int(0, CHUNK_SIZE - 1);
                 int z = m_random.random_int(0, CHUNK_SIZE - 1);
@@ -847,7 +847,7 @@ void ChunkGenerator::spawn_creature() {
                 auto [world_x, world_y, world_z] = Chunk::block_to_world(
                     x, y + 1, z, chunk_pos.x, chunk_pos.z);
                 m_chunk.world().entity_manager().add_creature(
-                    SpawnDefaults::PIG.name,
+                    spawn_defaults::PIG.name,
                     glm::vec3{world_x, world_y, world_z});
             }
         }
@@ -865,4 +865,4 @@ const HeightMapArray& ChunkGenerator::get_heightmap() const {
     return m_heightmap;
 }
 
-} // namespace Cubed
+} // namespace cubed

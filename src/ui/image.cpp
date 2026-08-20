@@ -3,7 +3,7 @@
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/texture_manager.hpp"
 
-namespace Cubed {
+namespace cubed {
 Image::Image(Widget* parent) : Widget(parent) {}
 
 void Image::on_render(Renderer& renderer) {
@@ -75,4 +75,4 @@ float Image::width() const {
 
 const Texture* Image::texture() const { return m_texture; }
 
-} // namespace Cubed
+} // namespace cubed

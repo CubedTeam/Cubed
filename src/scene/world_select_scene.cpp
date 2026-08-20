@@ -1,6 +1,6 @@
 #include "Cubed/scene/world_select_scene.hpp"
 
-namespace Cubed {
+namespace cubed {
 WorldSelectScene::WorldSelectScene(SceneManager& scene_manager)
     : m_scene_manager(scene_manager), m_ui(*this) {}
 
@@ -15,4 +15,4 @@ void WorldSelectScene::on_enter() { m_ui.init(); }
 void WorldSelectScene::on_leave() {}
 SceneManager& WorldSelectScene::scene_manager() { return m_scene_manager; }
 
-} // namespace Cubed
+} // namespace cubed

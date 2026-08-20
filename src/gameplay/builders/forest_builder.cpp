@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <numeric>
 
-namespace Cubed {
+namespace cubed {
 ForestBuilder::ForestBuilder(ChunkGenerator& chunk_generator)
     : m_chunk_generator(chunk_generator) {}
 
@@ -60,4 +60,4 @@ ChunkGenerator& ForestBuilder::get_chunk_generator() {
     return m_chunk_generator;
 };
 
-} // namespace Cubed
+} // namespace cubed

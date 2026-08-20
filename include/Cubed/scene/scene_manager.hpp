@@ -6,7 +6,7 @@
 #include <stack>
 #include <vector>
 
-namespace Cubed {
+namespace cubed {
 class App;
 
 struct WorldSceneParam {
@@ -59,4 +59,4 @@ private:
 
     std::unique_ptr<Scene> create_scene(SceneType);
 };
-} // namespace Cubed
+} // namespace cubed

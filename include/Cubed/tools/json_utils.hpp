@@ -8,7 +8,7 @@
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
-namespace Cubed::Tools {
+namespace cubed::tools {
 
 namespace detail {
 template <typename T> inline constexpr bool always_false_v = false; // NOLINT
@@ -92,4 +92,4 @@ bool get_json_value(const rapidjson::Value& value, const char* key, T& out) {
     }
     return true;
 }
-} // namespace Cubed::Tools
+} // namespace cubed::tools

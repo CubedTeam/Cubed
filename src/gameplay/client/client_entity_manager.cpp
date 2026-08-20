@@ -15,7 +15,7 @@
 #include <tracy/Tracy.hpp>
 using namespace google::protobuf;
 
-namespace Cubed {
+namespace cubed {
 
 namespace {
 constexpr double ENTITY_RENDER_DELAY_MS = 100.0; // two tick time
@@ -71,7 +71,7 @@ void ClientEntityManager::update(float dt) {
     handle_task(dt);
     {
         auto view = m_registry.view<ClientEntityState, RenderTransform>();
-        double render_time = static_cast<double>(Tools::get_time_ticks()) -
+        double render_time = static_cast<double>(tools::get_time_ticks()) -
                              ENTITY_RENDER_DELAY_MS;
         for (auto e : view) {
             auto& state = view.get<ClientEntityState>(e);
@@ -124,7 +124,7 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     r->position.value = pos;
     auto* s = m_registry.try_get<ClientEntityState>(a->second);
     ASSERT(s);
-    s->history.emplace_back(static_cast<double>(Tools::get_time_ticks()), pos,
+    s->history.emplace_back(static_cast<double>(tools::get_time_ticks()), pos,
                             glm::vec3{0, 0, 0});
 }
 
@@ -146,14 +146,15 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info, float) {
 
     auto state = m_registry.try_get<ClientEntityState>(e);
     ASSERT(state);
-    state->history.push_back({static_cast<double>(Tools::get_time_ticks()),
+    state->history.push_back({static_cast<double>(tools::get_time_ticks()),
                               info.pos, info.direction});
     while (state->history.size() > ENTITY_SNAPSHOT_MAX) {
         state->history.pop_front();
     }
 }
 
-void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
+void ClientEntityManager::receive_entity_create(
+    protocol::S2CEntityCreate& s2c) {
     EntityCreateElement c{};
     c.id = s2c.id();
     c.name = s2c.name();
@@ -161,29 +162,31 @@ void ClientEntityManager::receive_entity_create(S2CEntityCreate& s2c) {
     m_tasks.emplace(Command::CREATE, std::move(c));
 }
 
-void ClientEntityManager::receive_entity_destory(EntityID id) {
-    m_tasks.emplace(Command::DESTORY, id);
+void ClientEntityManager::receive_entity_destroy(EntityID id) {
+    m_tasks.emplace(Command::DESTROY, id);
 }
 
-void ClientEntityManager::receive_entity_update(const S2CEntityUpdate& msg) {
+void ClientEntityManager::receive_entity_update(
+    const protocol::S2CEntityUpdate& msg) {
     UpdateInfo e;
     e.id = msg.id();
-    e.pos = Tools::get_proto_vec3(msg.pos());
-    e.direction = Tools::get_proto_vec3(msg.direction());
+    e.pos = tools::get_proto_vec3(msg.pos());
+    e.direction = tools::get_proto_vec3(msg.direction());
     e.gait = get_gait_from_id(msg.gait());
     m_tasks.emplace(Command::UPDATE, std::move(e));
 }
 
-void ClientEntityManager::receive_entity_update(S2CEntityUpdateBatch& msg) {
+void ClientEntityManager::receive_entity_update(
+    protocol::S2CEntityUpdateBatch& msg) {
     for (auto& u : msg.updates()) {
         receive_entity_update(u);
     }
 }
 
-void ClientEntityManager::destory(EntityID id) {
+void ClientEntityManager::destroy(EntityID id) {
     auto client = m_world.get_client();
     Arena arena;
-    auto* msg = Arena::Create<C2SEntityDestoryRequest>(&arena);
+    auto* msg = Arena::Create<protocol::C2SEntityDestroyReq>(&arena);
     msg->set_id(id);
     msg->set_uuid(m_world.get_player().get_uuid().to_proto_bytes());
     client->send(make_packet(*msg));
@@ -191,10 +194,10 @@ void ClientEntityManager::destory(EntityID id) {
 void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
     auto client = m_world.get_client();
     Arena arena;
-    auto* msg = Arena::Create<C2SEntityCreateRequest>(&arena);
+    auto* msg = Arena::Create<protocol::C2SEntityCreateReq>(&arena);
     msg->set_name(name);
     msg->set_uuid(m_world.get_player().get_uuid().to_proto_bytes());
-    Tools::set_proto_pos(msg, pos);
+    tools::set_proto_pos(msg, pos);
     client->send(make_packet(msg));
 }
 
@@ -208,10 +211,10 @@ void ClientEntityManager::handle_task(float dt) {
             handle_entity_create(p->id, p->name, p->pos);
 
         } break;
-        case Command::DESTORY: {
+        case Command::DESTROY: {
             auto* p = std::get_if<EntityID>(&pair.second);
             ASSERT(p);
-            handle_entity_destory(*p);
+            handle_entity_destroy(*p);
         } break;
         case Command::UPDATE: {
             auto* p = std::get_if<UpdateInfo>(&pair.second);
@@ -222,7 +225,7 @@ void ClientEntityManager::handle_task(float dt) {
     }
 }
 
-void ClientEntityManager::handle_entity_destory(EntityID id) {
+void ClientEntityManager::handle_entity_destroy(EntityID id) {
     acc a;
     if (!m_entities.find(a, id)) {
         return;
@@ -243,7 +246,7 @@ void ClientEntityManager::player_sound(float dt) {
     for (auto e : view) {
         const auto [info, creature] =
             view.get<EntityInfo, BaseClientCreature>(e);
-        if (Math::distance2(player_pos, creature.transform.position.value) >
+        if (math::distance2(player_pos, creature.transform.position.value) >
             10 * 10) {
             continue;
         }
@@ -261,4 +264,4 @@ void ClientEntityManager::player_sound(float dt) {
     }
 }
 
-} // namespace Cubed
+} // namespace cubed

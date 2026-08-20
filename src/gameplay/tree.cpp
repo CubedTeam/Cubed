@@ -4,7 +4,7 @@
 
 #include <array>
 
-namespace Cubed {
+namespace cubed {
 
 using glm::ivec3;
 
@@ -53,4 +53,4 @@ bool build_tree(ServerChunk& chunk, const glm::ivec3& pos) {
     return true;
 }
 
-} // namespace Cubed
+} // namespace cubed

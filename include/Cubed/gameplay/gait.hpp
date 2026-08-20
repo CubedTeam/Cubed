@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace Cubed {
+namespace cubed {
 enum class Gait { STOP = 0, WALK = 1, RUN = 2 };
 constexpr int get_gait_id(Gait gait) { return std::to_underlying(gait); }
 
@@ -18,4 +18,4 @@ inline Gait get_gait_from_id(int id) {
         throw std::runtime_error("Unknown Gait");
     }
 }
-} // namespace Cubed
+} // namespace cubed

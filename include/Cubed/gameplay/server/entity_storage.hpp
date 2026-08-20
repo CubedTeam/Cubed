@@ -10,7 +10,7 @@ namespace rocksdb {
 class DB;
 }
 
-namespace Cubed {
+namespace cubed {
 class ServerEntityManager;
 class WorldStorage;
 struct EntityStorageData {
@@ -54,4 +54,4 @@ private:
 
     static std::optional<EntityStorageData> deserialize(std::string_view data);
 };
-} // namespace Cubed
+} // namespace cubed

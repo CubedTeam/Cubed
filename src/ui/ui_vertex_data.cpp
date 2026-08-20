@@ -1,6 +1,6 @@
 #include "Cubed/ui/ui_vertex_data.hpp"
 
-namespace Cubed {
+namespace cubed {
 UIVertexData::UIVertexData() {}
 UIVertexData::~UIVertexData() {
     m_vao.reset();
@@ -39,4 +39,4 @@ void UIVertexData::upload() {
 
 void UIVertexData::update_sum() { m_sum = m_vertices.size(); }
 
-} // namespace Cubed
+} // namespace cubed

@@ -1,5 +1,0 @@
-syntax = "proto3";
-
-message PlayerInfo {
-    string name = 1;
-}
