@@ -35,6 +35,12 @@ ItemSlot& ItemSlot::set_item(std::optional<ItemStack> stack,
     }
     return *this;
 }
+
+ItemSlot& ItemSlot::set_enable(bool enable) {
+    m_enable = enable;
+    return *this;
+}
+
 float ItemSlot::width() const {
     if (m_fill_width || m_fill_parent) {
         return Widget::width();
@@ -94,6 +100,17 @@ bool ItemSlot::handle_mouse_move_event(const MouseMoveEvent& e) {
     return Widget::handle_mouse_move_event(e);
 }
 
+bool ItemSlot::handle_mouse_button_event(const MouseButtonEvent& e) {
+    if (e.action == KeyAction::PRESS && e.key == MouseKey::LEFT_BUTTON) {
+        if (m_hovered && m_clicked && m_enable) {
+            m_clicked();
+
+            return true;
+        }
+    }
+    return Widget::handle_mouse_button_event(e);
+}
+
 std::optional<ItemID> ItemSlot::id() const {
     if (m_item) {
         return m_item->item;
@@ -103,4 +120,5 @@ std::optional<ItemID> ItemSlot::id() const {
 }
 std::optional<ItemStack> ItemSlot::stack() const { return m_item; }
 bool ItemSlot::hovered() const { return m_hovered; }
+
 } // namespace cubed
