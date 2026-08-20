@@ -196,7 +196,7 @@ PlayerStorageData ServerPlayerManager::build_data(const ServerPlayer& player) {
     data.uuid = player.get_uuid();
     data.yaw = player.yaw();
     data.pitch = player.pitch();
-    auto inventory = player.inventory();
+    auto inventory = player.inventory_snapshot();
 
     for (size_t i = 0; i < inventory.size(); ++i) {
         if (inventory[i]) {

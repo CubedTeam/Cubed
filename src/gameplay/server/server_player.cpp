@@ -11,16 +11,17 @@ ServerPlayer::ServerPlayer(std::string_view name, Uuid uuid, ServerWorld& world,
       m_last_gametick(gametick) {}
 
 void ServerPlayer::update() {
+    std::lock_guard lock(m_inventory_mutex);
     TaskPair task;
     while (m_task.try_pop(task)) {
         switch (task.first) {
         case Task::ADD_ITEM: {
-            auto* v = std::get_if<ItemStackPair>(&task.second);
+            auto* v = std::get_if<AddAction>(&task.second);
             ASSERT(v);
-            add_internal(std::move(v->second), v->first);
+            add_internal(*v);
         } break;
         case Task::REMOVE_ITEM: {
-            auto* v = std::get_if<size_t>(&task.second);
+            auto* v = std::get_if<RemoveAction>(&task.second);
             ASSERT(v);
             remove_internal(*v);
         } break;
@@ -117,8 +118,8 @@ void ServerPlayer::send_all_inventory_internal() {
     get_session()->send(make_packet(msg));
 }
 
-void ServerPlayer::add(ItemStack item, size_t position) {
-    m_task.emplace(Task::ADD_ITEM, ItemStackPair{position, std::move(item)});
+void ServerPlayer::add(AddAction action) {
+    m_task.emplace(Task::ADD_ITEM, std::move(action));
 }
 void ServerPlayer::send_all_inventory() {
     m_task.emplace(Task::SEND_ALL_INVENTORY, std::monostate{});
@@ -132,45 +133,57 @@ void ServerPlayer::init_add(ItemStack item, size_t position) {
     m_inventory[position] = std::move(item);
 }
 
-void ServerPlayer::unsafe_add(ItemStack item, size_t position) {
-    add_internal(std::move(item), position);
-}
+void ServerPlayer::unsafe_add(AddAction action) { add_internal(action); }
 
-void ServerPlayer::remove(size_t position) {
-    m_task.emplace(Task::REMOVE_ITEM, position);
+void ServerPlayer::remove(RemoveAction action) {
+    m_task.emplace(Task::REMOVE_ITEM, std::move(action));
 }
 void ServerPlayer::move(MoveAction action) {
     m_task.emplace(Task::MOVE_ITEM, std::move(action));
 }
 void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
-    if (msg.base_revision() != m_revision) {
-        send_all_inventory_internal();
-        return;
-    }
 
     if (msg.has_add()) {
-        ItemStack stack;
-        stack.count = msg.add().count();
-        stack.item = msg.add().item();
-        add(std::move(stack), msg.add().to());
+        if (m_mode != GameMode::CREATIVE) {
+            return;
+        }
+        AddAction action;
+        action.revision = msg.base_revision();
+        action.stack.count = msg.add().count();
+        action.stack.item = msg.add().item();
+        if (msg.add().to() >= INVENTORY_SIZE) {
+            return;
+        }
+        action.position = msg.add().to();
+        add(std::move(action));
     }
 
     if (msg.has_remove()) {
-        remove(msg.remove().from());
+        if (msg.remove().from() >= INVENTORY_SIZE) {
+            return;
+        }
+        RemoveAction action;
+        action.position = msg.remove().from();
+        action.revision = msg.base_revision();
+        remove(std::move(action));
     }
 
     if (msg.has_move()) {
         MoveAction action;
+
         action.from = msg.move().from();
         action.to = msg.move().to();
+        action.revision = msg.base_revision();
+        if (action.from >= INVENTORY_SIZE || action.to >= INVENTORY_SIZE) {
+            return;
+        }
+
         move(std::move(action));
     }
-
-    ++m_revision;
 }
 
-std::span<const std::optional<ItemStack>, INVENTORY_SIZE>
-ServerPlayer::inventory() const {
+ServerPlayer::Inventory ServerPlayer::inventory_snapshot() const {
+    std::shared_lock lock(m_inventory_mutex);
     return m_inventory;
 }
 void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
@@ -181,31 +194,45 @@ Gait ServerPlayer::gait() const { return m_gait; }
 void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 Uuid ServerPlayer::get_uuid() const { return M_UUID; }
 
-void ServerPlayer::add_internal(ItemStack item, size_t position) {
-    if (position >= INVENTORY_SIZE) {
+void ServerPlayer::add_internal(const AddAction& action) {
+    if (action.revision != m_revision) {
+        send_all_inventory_internal();
+        return;
+    }
+    if (action.position >= INVENTORY_SIZE) {
         ASSERT(false);
         return;
     }
 
-    m_inventory[position] = std::move(item);
+    m_inventory[action.position] = std::move(action.stack);
+    ++m_revision;
     send_all_inventory_internal();
 }
-void ServerPlayer::remove_internal(size_t position) {
-    if (position >= INVENTORY_SIZE) {
+void ServerPlayer::remove_internal(const RemoveAction& action) {
+    if (action.revision != m_revision) {
+        send_all_inventory_internal();
+        return;
+    }
+    if (action.position >= INVENTORY_SIZE) {
         ASSERT(false);
         return;
     }
-    m_inventory[position] = std::nullopt;
+    m_inventory[action.position] = std::nullopt;
+    ++m_revision;
     send_all_inventory_internal();
 }
 
-void ServerPlayer::move_internal(const MoveAction& move_action) {
-    if (move_action.from >= INVENTORY_SIZE ||
-        move_action.to >= INVENTORY_SIZE) {
+void ServerPlayer::move_internal(const MoveAction& action) {
+    if (action.revision != m_revision) {
+        send_all_inventory_internal();
+        return;
+    }
+    if (action.from >= INVENTORY_SIZE || action.to >= INVENTORY_SIZE) {
         ASSERT(false);
         return;
     }
-    std::swap(m_inventory[move_action.from], m_inventory[move_action.to]);
+    std::swap(m_inventory[action.from], m_inventory[action.to]);
+    ++m_revision;
     send_all_inventory_internal();
 }
 

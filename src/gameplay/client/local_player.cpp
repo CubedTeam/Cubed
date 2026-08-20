@@ -487,6 +487,10 @@ void LocalPlayer::handle_inventory_update(
 
         for (auto& slot : msg.slots()) {
             size_t pos = slot.position();
+            if (pos >= INVENTORY_SIZE) {
+                Logger::error("Inventory slot {} is out of range", pos);
+                continue;
+            }
             if (slot.has_empty()) {
                 inventory[pos] = std::nullopt;
             }

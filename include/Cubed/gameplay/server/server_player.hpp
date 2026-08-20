@@ -1,6 +1,7 @@
 #pragma once
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/gait.hpp"
+#include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/game_time.hpp"
 #include "Cubed/gameplay/item_stack.hpp"
 #include "Cubed/gameplay/server/server_chunk.hpp"
@@ -22,9 +23,20 @@ class ServerPlayer {
 
 public:
     struct MoveAction {
+        uint64_t revision = 0;
         size_t from = 0;
         size_t to = 0;
     };
+    struct AddAction {
+        uint64_t revision = 0;
+        size_t position = 0;
+        ItemStack stack;
+    };
+    struct RemoveAction {
+        uint64_t revision = 0;
+        size_t position = 0;
+    };
+    using Inventory = std::array<std::optional<ItemStack>, INVENTORY_SIZE>;
     enum class Task { ADD_ITEM, REMOVE_ITEM, SEND_ALL_INVENTORY, MOVE_ITEM };
     ServerPlayer(const ServerPlayer&) = delete;
     ServerPlayer(ServerPlayer&&) = delete;
@@ -59,33 +71,33 @@ public:
     void update_pos(float x, float y, float z);
     Uuid get_uuid() const;
 
-    void add(ItemStack item, size_t position);
+    void add(AddAction action);
     void send_all_inventory();
     void init_add(ItemStack item, size_t position);
-    void unsafe_add(ItemStack item, size_t position);
-    void remove(size_t position);
+    void unsafe_add(AddAction action);
+    void remove(RemoveAction action);
     void move(MoveAction action);
     void handle_inventory_action(protocol::C2SInventoryAction& msg);
 
-    std::span<const std::optional<ItemStack>, INVENTORY_SIZE> inventory() const;
+    Inventory inventory_snapshot() const;
 
 private:
-    using ItemStackPair = std::pair<size_t, ItemStack>;
     using TaskElement =
-        std::variant<ItemStackPair, size_t, std::monostate, MoveAction>;
+        std::variant<AddAction, RemoveAction, MoveAction, std::monostate>;
     using TaskPair = std::pair<Task, TaskElement>;
     static constexpr TickType TIMEOUT = 200;
     const std::string M_NAME;
     const Uuid M_UUID;
-
+    std::atomic<GameMode> m_mode{GameMode::CREATIVE};
     ServerWorld& m_world;
-    std::atomic<uint64_t> m_revision = 1;
+
+    mutable std::shared_mutex m_inventory_mutex;
+    Inventory m_inventory;
+    uint64_t m_revision = 1;
 
     tbb::concurrent_queue<TaskPair> m_task;
     std::atomic<glm::vec3> m_pos{glm::vec3{0.0f, 255.0f, 0.0f}};
     ChunkPos m_last_chunk_pos{0, 0};
-
-    std::array<std::optional<ItemStack>, INVENTORY_SIZE> m_inventory;
 
     std::atomic<std::shared_ptr<Session>> m_session;
     std::atomic<TickType> m_last_gametick{0};
@@ -96,9 +108,9 @@ private:
     mutable std::shared_mutex m_chunk_pos_mutex;
     ChunkPosSet m_player_chunk_pos_set;
 
-    void add_internal(ItemStack item, size_t position);
-    void remove_internal(size_t position);
-    void move_internal(const MoveAction& move_action);
+    void add_internal(const AddAction& action);
+    void remove_internal(const RemoveAction& action);
+    void move_internal(const MoveAction& action);
     void send_all_inventory_internal();
 };
 } // namespace cubed
