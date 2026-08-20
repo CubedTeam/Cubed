@@ -260,9 +260,9 @@ void LocalPlayer::handle_task() {
 
         } break;
         case Task::SAVE_ALL_INVENTORY: {
-            auto* v = std::get_if<Inventory>(&pair.second);
+            auto* v = std::get_if<std::pair<uint64_t, Inventory>>(&pair.second);
             ASSERT(v);
-            set_full_inventory_internal(std::move(*v));
+            set_full_inventory_internal(v->first, std::move(v->second));
         } break;
         }
     }
@@ -479,8 +479,9 @@ void LocalPlayer::set_inventory(size_t pos, std::optional<ItemStack> item) {
     m_inventory[pos] = std::move(item);
 }
 
-void LocalPlayer::set_full_inventory(Inventory inventory) {
-    m_task.emplace(Task::SAVE_ALL_INVENTORY, std::move(inventory));
+void LocalPlayer::set_full_inventory(uint64_t revision, Inventory inventory) {
+    m_task.emplace(Task::SAVE_ALL_INVENTORY,
+                   std::pair{revision, std::move(inventory)});
 }
 
 void LocalPlayer::handle_inventory_update(
@@ -491,14 +492,6 @@ void LocalPlayer::handle_inventory_update(
                 Logger::error("Hanle inventory update fail", msg.error().msg());
             }
         }
-        return;
-    }
-    auto revision = m_revision.load();
-    if (revision > msg.revision()) {
-        return;
-    }
-
-    if (!m_revision.compare_exchange_weak(revision, msg.revision())) {
         return;
     }
 
@@ -518,11 +511,18 @@ void LocalPlayer::handle_inventory_update(
             }
         }
 
-        set_full_inventory(std::move(inventory));
+        set_full_inventory(msg.revision(), std::move(inventory));
     }
 }
 
-void LocalPlayer::set_full_inventory_internal(Inventory inventory) {
+void LocalPlayer::set_full_inventory_internal(uint64_t revision,
+                                              Inventory inventory) {
+
+    if (revision < m_revision) {
+        return;
+    }
+    m_revision = revision;
+
     m_inventory = std::move(inventory);
 }
 

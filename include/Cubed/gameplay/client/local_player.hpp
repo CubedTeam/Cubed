@@ -86,7 +86,7 @@ public:
 
     void set_inventory(size_t pos, std::optional<ItemStack> item);
 
-    void set_full_inventory(Inventory inventory);
+    void set_full_inventory(uint64_t revision, Inventory inventory);
 
     void handle_inventory_update(const protocol::S2CInventoryUpdate& msg);
 
@@ -120,7 +120,7 @@ private:
 
     enum class Task { ADD_ITEM, REMOVE_ITEM, SAVE_ALL_INVENTORY };
 
-    using TaskElement = std::variant<Inventory>;
+    using TaskElement = std::variant<std::pair<uint64_t, Inventory>>;
     using TaskPair = std::pair<Task, TaskElement>;
     float m_max_walk_speed = DEFAULT_MAX_WALK_SPEED;
     float m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
@@ -129,7 +129,7 @@ private:
     static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
 
     tbb::concurrent_queue<TaskPair> m_task;
-    std::atomic<uint64_t> m_revision = 0;
+    uint64_t m_revision = 0;
     std::atomic<uint64_t> m_next_request = 1;
     std::optional<crypto::Ed25519KeyPair> m_key_pair;
 
@@ -194,6 +194,6 @@ private:
     std::tuple<bool, bool, bool> update_physical(float dt, glm::vec3& pos);
     glm::vec3 get_move_distance(float dt);
 
-    void set_full_inventory_internal(Inventory inventory);
+    void set_full_inventory_internal(uint64_t revision, Inventory inventory);
 };
 } // namespace cubed
