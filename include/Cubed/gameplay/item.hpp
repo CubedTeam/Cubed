@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/gameplay/block.hpp"
+#include "Cubed/gameplay/model.hpp"
 
 #include <cstdint>
 #include <string>
@@ -21,7 +22,8 @@ struct ItemData {
     ResourceLocation name;
     std::string local_name;
     std::string description;
-    std::optional<ResourceLocation> path;
+    std::optional<ResourceLocation> texture_path;
+    std::optional<ModelID> model_id;
     ItemKind kind = ItemKind::NONE;
     ItemProperty property;
     uint32_t max_stack_size = 64;

@@ -2,6 +2,7 @@
 
 #include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/localization.hpp"
+#include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
@@ -75,7 +76,15 @@ void ItemManager::add(const std::filesystem::path& path,
     tools::get_json_value(doc, "description", data.description);
 
     if (tools::get_json_value(doc, "texture", s)) {
-        data.path = ResourceLocation::parse(s);
+        data.texture_path = ResourceLocation::parse(s);
+    }
+
+    if (tools::get_json_value(doc, "model", s)) {
+        auto location = ResourceLocation::parse(s);
+        if (location) {
+            auto model = ModelManager::model(location->full_path().string());
+            data.model_id = model.id;
+        }
     }
 
     if (tools::get_json_value(doc, "type", s)) {

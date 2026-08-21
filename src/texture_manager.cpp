@@ -125,11 +125,11 @@ void TextureManager::load_block_texture(unsigned id) {
 void TextureManager::init_item_texture() {
     for (ItemID i = 0; i < ItemManager::size(); ++i) {
         auto item = ItemManager::get(i);
-        if (!item.path) {
+        if (!item.texture_path) {
             m_item_textures.try_emplace(item.id, nullptr);
             continue;
         }
-        fs::path path = item.path->full_path();
+        fs::path path = item.texture_path->full_path();
         auto data = tools::load_image_data(path);
         std::unique_ptr<Texture> texture =
             std::make_unique<Texture>(TextureType::TEXTURE_2D);
