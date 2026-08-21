@@ -119,6 +119,24 @@ void WorldUIManager::add_chat_message(ChatMessage& message) {
 
 bool WorldUIManager::handle_key_event(const KeyEvent& e) {
 
+    if (e.key == Key::LEFT_CTRL) {
+        if (e.action == KeyAction::PRESS) {
+            m_ctrl_press = true;
+        } else if (e.action == KeyAction::RELEASE) {
+            m_ctrl_press = false;
+        }
+    }
+
+    if (e.key == Key::Q && e.action == KeyAction::PRESS) {
+        if (m_ctrl_press) {
+            m_scene.client_world().get_player().drop_held_item(true);
+        } else {
+            m_scene.client_world().get_player().drop_held_item(false);
+        }
+
+        return true;
+    }
+
     return UIManager::handle_key_event(e);
 }
 

@@ -149,8 +149,8 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         }
         AddAction action;
         action.revision = msg.base_revision();
-        action.stack.count = msg.add().count();
-        action.stack.item = msg.add().item();
+        action.count = msg.add().count();
+        action.item = msg.add().item();
         action.request_id = msg.request_id();
         if (msg.add().to() >= INVENTORY_SIZE) {
             return;
@@ -167,6 +167,7 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         action.position = msg.remove().from();
         action.revision = msg.base_revision();
         action.request_id = msg.request_id();
+        action.count = msg.remove().count();
         remove(std::move(action));
     }
 
@@ -207,8 +208,30 @@ void ServerPlayer::add_internal(const AddAction& action) {
         ASSERT(false);
         return;
     }
+    if (action.count == 0) {
+        send_all_inventory_internal(action.request_id);
+        return;
+    }
+    if (!m_inventory[action.position]) {
+        auto stack = ItemStack{action.item, action.count};
+        if (stack.count > stack.max_stack_size()) {
+            send_all_inventory_internal(action.request_id);
+            return;
+        }
+        m_inventory[action.position] = std::move(stack);
+    } else {
+        auto& stack = m_inventory[action.position];
+        if (stack->count + action.count > stack->max_stack_size()) {
+            send_all_inventory_internal(action.request_id);
+            return;
+        }
+        if (stack->item != action.item) {
+            send_all_inventory_internal(action.request_id);
+            return;
+        }
+        stack->count += action.count;
+    }
 
-    m_inventory[action.position] = std::move(action.stack);
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }
@@ -221,7 +244,19 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
         ASSERT(false);
         return;
     }
-    m_inventory[action.position] = std::nullopt;
+    auto& stack = m_inventory[action.position];
+    if (!stack) {
+        send_all_inventory_internal(action.request_id);
+        return;
+    }
+    if (stack->count < action.count) {
+        send_all_inventory_internal(action.request_id);
+        return;
+    }
+    stack->count -= action.count;
+    if (stack->count == 0) {
+        stack = std::nullopt;
+    }
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }

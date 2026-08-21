@@ -43,6 +43,8 @@ public:
     bool update_player_move_state(Key key, KeyAction action);
     bool update_scroll(float yoffset);
 
+    void drop_held_item(bool full = false);
+
     void update_chunk_set(const ChunkPosSet& set);
 
     const ChunkPosSet& get_chunk_pos_set() const;
@@ -111,8 +113,8 @@ public:
 
     std::optional<crypto::Ed25519KeyPair>& key_pair();
 
-    void add_item(size_t position, const ItemStack& stack);
-    void remove_item(size_t position);
+    void add_item(size_t position, ItemID item, size_t count);
+    void remove_item(size_t position, size_t count);
     void move_item(size_t from, size_t to);
 
 private:
@@ -159,7 +161,7 @@ private:
     float space_on_time = 0.0f;
     bool space_on = false;
 
-    int m_selected_hotbar = 0;
+    int m_held_hotbar = 0;
 
     bool m_moving = false;
     bool m_sprinting = false;

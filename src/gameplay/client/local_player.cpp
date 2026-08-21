@@ -339,25 +339,25 @@ bool LocalPlayer::update_player_move_state(Key key, KeyAction action) {
             }
         }
     } else if (key == Key::NUMPAD_1 || key == Key::DIGIT_1) {
-        m_selected_hotbar = 0;
+        m_held_hotbar = 0;
     } else if (key == Key::NUMPAD_2 || key == Key::DIGIT_2) {
-        m_selected_hotbar = 1;
+        m_held_hotbar = 1;
     } else if (key == Key::NUMPAD_3 || key == Key::DIGIT_3) {
-        m_selected_hotbar = 2;
+        m_held_hotbar = 2;
     } else if (key == Key::NUMPAD_4 || key == Key::DIGIT_4) {
-        m_selected_hotbar = 3;
+        m_held_hotbar = 3;
     } else if (key == Key::NUMPAD_5 || key == Key::DIGIT_5) {
-        m_selected_hotbar = 4;
+        m_held_hotbar = 4;
     } else if (key == Key::NUMPAD_6 || key == Key::DIGIT_6) {
-        m_selected_hotbar = 5;
+        m_held_hotbar = 5;
     } else if (key == Key::NUMPAD_7 || key == Key::DIGIT_7) {
-        m_selected_hotbar = 6;
+        m_held_hotbar = 6;
     } else if (key == Key::NUMPAD_8 || key == Key::DIGIT_8) {
-        m_selected_hotbar = 7;
+        m_held_hotbar = 7;
     } else if (key == Key::NUMPAD_9 || key == Key::DIGIT_9) {
-        m_selected_hotbar = 8;
+        m_held_hotbar = 8;
     } else if (key == Key::NUMPAD_0 || key == Key::DIGIT_0) {
-        m_selected_hotbar = 9;
+        m_held_hotbar = 9;
     } else {
         return false;
     }
@@ -437,9 +437,9 @@ void LocalPlayer::place_block(float dt) {
             m_world.report_block_change(m_look_block->pos, 0);
         }
     }
-    if (m_mouse_state.right && m_inventory[m_selected_hotbar]) {
+    if (m_mouse_state.right && m_inventory[m_held_hotbar]) {
         // item use;
-        auto data = ItemManager::get(m_inventory[m_selected_hotbar]->item);
+        auto data = ItemManager::get(m_inventory[m_held_hotbar]->item);
         if (data.kind == ItemKind::BLOCK) {
             auto* t = std::get_if<BlockType>(&data.property);
             ASSERT(t);
@@ -467,7 +467,7 @@ void LocalPlayer::place_block(float dt) {
     }
 }
 
-int LocalPlayer::selected_hotbar() const { return m_selected_hotbar; }
+int LocalPlayer::selected_hotbar() const { return m_held_hotbar; }
 
 void LocalPlayer::set_full_inventory(InventoryUpdateData data) {
     m_task.emplace(Task::SAVE_ALL_INVENTORY, std::move(data));
@@ -642,18 +642,31 @@ bool LocalPlayer::update_scroll(float yoffset) {
     }
     if (m_game_mode == CREATIVE) {
         if (yoffset < 0) {
-            m_selected_hotbar += 1;
-            if (m_selected_hotbar >= 10) {
-                m_selected_hotbar = 0;
+            m_held_hotbar += 1;
+            if (m_held_hotbar >= 10) {
+                m_held_hotbar = 0;
             }
         } else {
-            m_selected_hotbar -= 1;
-            if (m_selected_hotbar < 0) {
-                m_selected_hotbar = 0;
+            m_held_hotbar -= 1;
+            if (m_held_hotbar < 0) {
+                m_held_hotbar = 0;
             }
         }
     }
     return true;
+}
+
+void LocalPlayer::drop_held_item(bool full) {
+
+    auto& stack = m_inventory[m_held_hotbar];
+    if (!stack) {
+        return;
+    }
+    if (full) {
+        remove_item(m_held_hotbar, stack->count);
+    } else {
+        remove_item(m_held_hotbar, 1);
+    }
 }
 
 void LocalPlayer::clear_key() { m_key_pair.reset(); }
@@ -722,7 +735,7 @@ float& LocalPlayer::max_walk_speed() { return m_max_walk_speed; }
 float& LocalPlayer::max_run_speed() { return m_max_run_speed; }
 float& LocalPlayer::fly_y_speed() { return m_max_y_speed; }
 std::optional<ItemStack> LocalPlayer::get_current_itemstack() const {
-    return m_inventory[m_selected_hotbar];
+    return m_inventory[m_held_hotbar];
 };
 
 GameMode& LocalPlayer::game_mode() { return m_game_mode; }
@@ -936,7 +949,7 @@ glm::vec3 LocalPlayer::get_move_distance(float dt) {
                      d.value.z * v.value.z * dt};
 }
 
-void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
+void LocalPlayer::add_item(size_t position, ItemID item, size_t count) {
     if (m_pending_request.has_value()) {
         return;
     }
@@ -954,14 +967,14 @@ void LocalPlayer::add_item(size_t position, const ItemStack& stack) {
     msg->set_request_id(request_id);
     m_pending_request = request_id;
     auto* add = msg->mutable_add();
-    add->set_count(stack.count);
-    add->set_item(stack.item);
+    add->set_count(count);
+    add->set_item(item);
     add->set_to(position);
 
     m_world.get_client()->send(make_packet(msg));
 }
 
-void LocalPlayer::remove_item(size_t position) {
+void LocalPlayer::remove_item(size_t position, size_t count) {
     if (m_pending_request.has_value()) {
         return;
     }
@@ -979,7 +992,7 @@ void LocalPlayer::remove_item(size_t position) {
     msg->set_base_revision(m_revision);
 
     auto* remove = msg->mutable_remove();
-    remove->set_count(1);
+    remove->set_count(count);
     remove->set_from(position);
 
     m_world.get_client()->send(make_packet(msg));

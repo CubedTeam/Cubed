@@ -32,12 +32,14 @@ public:
         uint64_t revision = 0;
         uint64_t request_id = 0;
         size_t position = 0;
-        ItemStack stack;
+        ItemID item = 0;
+        size_t count = 0;
     };
     struct RemoveAction {
         uint64_t revision = 0;
         uint64_t request_id = 0;
         size_t position = 0;
+        size_t count = 0;
     };
     using Inventory = std::array<std::optional<ItemStack>, INVENTORY_SIZE>;
     enum class Task { ADD_ITEM, REMOVE_ITEM, SEND_ALL_INVENTORY, MOVE_ITEM };
