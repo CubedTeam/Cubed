@@ -98,9 +98,22 @@ void ClientEntityManager::update(float dt) {
 
 void ClientEntityManager::init() {
     m_random.init(std::random_device()());
+    {
+        auto pig = CreatureManager::data("cubed:pig");
+        if (pig.model) {
+            ModelManager::instance().load_model(*pig.model, true, &pig);
+        }
+    }
+
     m_factories.emplace("cubed:pig", [this](EntityID id) {
-        Renderable renderable{
-            ModelManager::instance().get_model_id("cubed:pig")};
+        auto pig = CreatureManager::data("cubed:pig");
+        ASSERT(pig.model);
+        auto model = ModelManager::instance().get_model_id(*pig.model);
+        if (!model) {
+            Logger::error("Can't Load pig model");
+            return;
+        }
+        Renderable renderable{*model};
         float next_call_time = m_random.random_float(8.0f, 25.0f);
         create_entity_in_registry(id, Entity{id, EntityType::CREATURE},
                                   EntityInfo{"cubed:pig", std::nullopt},
@@ -117,7 +130,11 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     m_factories[name](id);
     acc a;
     bool found = m_entities.find(a, id);
-    ASSERT(found);
+    if (!found) {
+        Logger::error("Can't create entity {}", name);
+        ASSERT(found);
+        return;
+    }
     auto* transform = m_registry.try_get<Transform>(a->second);
     ASSERT(transform);
     transform->position.value = pos;

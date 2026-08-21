@@ -82,7 +82,7 @@ void ItemManager::add(const std::filesystem::path& path,
     if (tools::get_json_value(doc, "model", s)) {
         auto location = ResourceLocation::parse(s);
         if (location) {
-            auto model = ModelManager::model(location->full_path().string());
+            auto model = ModelManager::instance().load_model(*location, false);
             data.model_id = model.id;
         }
     }

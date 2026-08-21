@@ -18,13 +18,23 @@ ModelManager& ModelManager::instance() {
     return inst;
 }
 
-[[nodiscard]]
-ModelManager::Handle ModelManager::model(const std::string& model_name) {
-    return instance().get_model(model_name);
+std::optional<ModelManager::Handle>
+ModelManager::model(const ResourceLocation& location) {
+    return instance().get_model(location);
 }
-[[nodiscard]]
-ModelManager::Handle ModelManager::model(ModelID id) {
+
+std::optional<ModelManager::Handle> ModelManager::model(ModelID id) {
     return instance().get_model(id);
+}
+
+ModelManager::Handle ModelManager::load_model(const ResourceLocation& path,
+                                              bool load_anim,
+                                              CreatureData* creature_data) {
+    auto mhandle = load_model_internal(path);
+    if (load_anim && creature_data) {
+        load_anim_config(mhandle.node, *creature_data);
+    }
+    return {mhandle.node, mhandle.id};
 }
 
 ModelManager::ModelManager() { init(); }
@@ -35,69 +45,72 @@ void ModelManager::init() {
 
 };
 
-ModelManager::Handle ModelManager::get_model(const std::string& model_name) {
-    return get_model(get_model_id(model_name));
+std::optional<ModelManager::Handle>
+ModelManager::get_model(const ResourceLocation& location) {
+    auto id = get_model_id(location);
+    if (id) {
+        return get_model(*id);
+    } else {
+        return std::nullopt;
+    }
 }
 
-ModelManager::Handle ModelManager::get_model(ModelID id) {
+std::optional<ModelManager::Handle> ModelManager::get_model(ModelID id) {
 
     ModelMap::const_accessor cacc;
     if (m_models.find(cacc, id)) {
-        return {cacc->second, cacc->first};
+        return Handle{cacc->second, cacc->first};
     }
-    return load_model(get_model_name(id));
+
+    return std::nullopt;
 }
 
-const ModelNode& get_model(const std::string& model_name);
-const ModelNode& get_model(ModelID id);
-ModelID ModelManager::get_model_id(const std::string& name) {
+std::optional<ModelID>
+ModelManager::get_model_id(const ResourceLocation& name) {
     IDMap::const_accessor cacc;
     if (m_id_map.find(cacc, name)) {
         return cacc->second;
     }
-    return load_model(name).id;
+    return std::nullopt;
 }
 
-const std::string& ModelManager::get_model_name(ModelID id) {
-    NameMap::const_accessor cacc;
-    if (m_name_map.find(cacc, id)) {
-        return cacc->second;
+ModelManager::MutableHandle
+ModelManager::load_model_internal(const ResourceLocation& location) {
+    {
+        auto model_id = get_model_id(location);
+        if (model_id) {
+            ModelMap::accessor acc;
+            if (m_models.find(acc, *model_id)) {
+                return {acc->second, acc->first};
+            }
+        }
     }
-    ASSERT_MSG(false, std::format("ModelManager: Can't find {}", id));
-    static std::string n = "";
-    return n;
-}
-
-ModelManager::Handle ModelManager::load_model(std::string_view model_name) {
-
-    auto location = CreatureManager::data(model_name);
-    if (!location.model) {
-        Logger::error("Can't find {} model key", model_name);
-        ASSERT(false);
-        throw std::runtime_error("Can't find model key");
-    }
-
-    fs::path path = location.model->assets_path_prefix() / location.model->path;
+    fs::path path = location.full_path();
 
     auto model = m_loader.load(path);
-
-    load_anim_config(model, location);
 
     ModelMap::accessor acc;
 
     if (m_models.insert(acc, m_next++)) {
         acc->second = std::move(model);
     } else {
-        Logger::error("Can't Insert Model {}", model_name);
+        Logger::error("Can't Insert Model {}", location.to_string());
         --m_next;
-        ModelMap::const_accessor cacc;
-        if (m_models.find(cacc, get_model_id(std::string(model_name)))) {
-            return {cacc->second, cacc->first};
+        auto id = get_model_id(location);
+        if (!id) {
+            auto err = std::format("Can't get model {} from models map",
+                                   location.to_string());
+            ASSERT_MSG(false, err);
+            throw std::runtime_error(err);
+        }
+        ModelMap::accessor acc;
+        if (m_models.find(acc, *id)) {
+            return {acc->second, acc->first};
         }
     }
 
-    m_id_map.emplace(model_name, acc->first);
-    m_name_map.emplace(acc->first, model_name);
+    m_id_map.emplace(location, acc->first);
+    m_location_map.emplace(acc->first, location);
 
     return {acc->second, acc->first};
 }
