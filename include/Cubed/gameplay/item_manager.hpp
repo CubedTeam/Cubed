@@ -20,6 +20,8 @@ public:
 
     ItemData get_item_data(std::string_view key) const;
     ItemData get_item_data(ItemID id) const;
+    bool contains(std::string_view key) const;
+    std::vector<ItemID> all_keys() const;
 
 private:
     using ItemMap = tbb::concurrent_hash_map<ItemID, ItemData>;

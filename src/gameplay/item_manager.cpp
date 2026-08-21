@@ -165,6 +165,22 @@ ItemData ItemManager::get_item_data(ItemID id) const {
     }
     return c->second;
 }
+bool ItemManager::contains(std::string_view key) const {
+    IDMap::const_accessor acc;
+    auto loaction = ResourceLocation::parse(key);
+    if (!loaction) {
+        return false;
+    }
+    return m_id_map.find(acc, loaction->to_string());
+}
+
+std::vector<ItemID> ItemManager::all_keys() const {
+    std::vector<ItemID> items;
+    for (auto& [key, _] : m_map) {
+        items.emplace_back(key);
+    }
+    return items;
+}
 
 ItemData ItemManager::get(std::string_view key) {
     return instance().get_item_data(key);

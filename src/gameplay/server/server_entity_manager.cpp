@@ -20,7 +20,30 @@ using namespace google::protobuf;
 namespace cubed {
 ServerEntityManager::ServerEntityManager(ServerWorld& world) : m_world(world) {}
 
+void ServerEntityManager::create_item_entity(EntityID id,
+                                             const std::string& name) {
+
+    Collider hitbox{HitboxManager::instance().get_hitbox_id(name)};
+    Gravity gravity{pig_defaults::GRAVITY};
+    TickVelocity velocity;
+    return create_entity_in_factory(id, Entity{id, EntityType::ITEM},
+                                    EntityInfo{name, std::nullopt}, Transform{},
+                                    std::move(hitbox), std::move(gravity),
+                                    std::move(velocity));
+}
+
 void ServerEntityManager::init() {
+
+    auto key = ItemManager::instance().all_keys();
+
+    for (ItemID id : key) {
+        auto data = ItemManager::get(id);
+        m_factories.try_emplace(
+            data.name.to_string(),
+            [this, name = data.name.to_string()](EntityID id) {
+                create_item_entity(id, name);
+            });
+    }
 
     m_factories.try_emplace("cubed:pig", [this](EntityID id) {
         Collider hitbox{HitboxManager::instance().get_hitbox_id("cubed:pig")};
@@ -76,11 +99,11 @@ void ServerEntityManager::activate_chunk(ChunkPos pos) {
             continue;
         }
 
-        EntityID id = factory->second(data.id);
+        factory->second(data.id);
 
         acc a;
-        if (!m_entities.find(a, id)) {
-            Logger::error("Entity {} created but not found", id);
+        if (!m_entities.find(a, data.id)) {
+            Logger::error("Entity {} created but not found", data.id);
             add_dormant(std::move(data));
             continue;
         }
@@ -162,21 +185,25 @@ void ServerEntityManager::update_move(entt::entity e) {
 void ServerEntityManager::update_send(
     entt::entity e, tbb::concurrent_vector<EntitySendData>& send_data) {
 
-    if (!m_registry.all_of<Entity, Transform, TickVelocity>(e)) {
+    if (!m_registry.all_of<Entity, Transform>(e)) {
         return;
     }
 
-    const auto [entity, transform, v] =
-        m_registry.get<Entity, Transform, TickVelocity>(e);
+    const auto [entity, transform] = m_registry.get<Entity, Transform>(e);
     EntitySendData data;
     data.id = entity.id;
     data.pos = transform.position.value;
     data.dir = transform.direction.value;
-    if (v.value.x * v.value.x + v.value.z * v.value.z > 1e-4f) {
-        data.gait = Gait::WALK;
-    } else {
-        data.gait = Gait::STOP;
+
+    auto v = m_registry.try_get<TickVelocity>(e);
+    if (v) {
+        if (v->value.x * v->value.x + v->value.z * v->value.z > 1e-4f) {
+            data.gait = Gait::WALK;
+        } else {
+            data.gait = Gait::STOP;
+        }
     }
+
     send_data.emplace_back(std::move(data));
 }
 
@@ -333,6 +360,11 @@ void ServerEntityManager::add_creature(std::string_view name,
     m_tasks.emplace(Command::CREATE,
                     EntityCreateElement{std::string(name), world_pos});
 }
+void ServerEntityManager::add_item_entity(std::string_view name,
+                                          const glm::vec3& world_pos) {
+    m_tasks.emplace(Command::CREATE,
+                    EntityCreateElement{std::string(name), world_pos});
+}
 
 void ServerEntityManager::destroy(EntityID id) {
     m_tasks.emplace(Command::DESTROY, id);
@@ -365,15 +397,16 @@ void ServerEntityManager::set_next_value(EntityID id) { m_next = id; }
 void ServerEntityManager::create_entity(std::string_view name,
                                         const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
-    auto e = m_factories[name](m_next++);
+    auto id = m_next++;
+    m_factories[name](id);
     acc c;
-    if (m_entities.find(c, e)) {
+    if (m_entities.find(c, id)) {
         auto t = m_registry.try_get<Transform>(c->second);
         ASSERT(t);
         t->position.value = pos;
     }
 
-    handle_entity_create(e, name, pos);
+    handle_entity_create(id, name, pos);
 }
 
 void ServerEntityManager::unload(EntityID id) {

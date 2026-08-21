@@ -253,10 +253,14 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
         send_all_inventory_internal(action.request_id);
         return;
     }
+    ItemID item = stack->item;
     stack->count -= action.count;
     if (stack->count == 0) {
         stack = std::nullopt;
     }
+    auto data = ItemManager::get(item);
+    m_world.entity_manager().add_item_entity(
+        data.name.to_string(), m_pos.load() + glm::vec3{0.0f, 1.6f, 0.0f});
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }

@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 
 #include "Cubed/gameplay/creatures/creature_manager.hpp"
+#include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
@@ -64,14 +65,20 @@ HitboxManager::Handle HitboxManager::get_hitbox(const std::string& name) {
 }
 HitboxManager::Handle HitboxManager::load(std::string_view name) {
 
-    auto location = CreatureManager::data(name);
-    if (!location.collision) {
+    std::optional<ResourceLocation> collision;
+    if (ItemManager::instance().contains(name)) {
+        collision =
+            ResourceLocation::parse("cubed:models/items/collision.json");
+    } else {
+        auto location = CreatureManager::data(name);
+        collision = location.collision;
+    }
+    if (!collision) {
         Logger::error("Can't find {} collision.json", name);
         ASSERT(false);
         return EMPTY;
     }
-    fs::path p =
-        location.collision->assets_path_prefix() / location.collision->path;
+    fs::path p = collision->assets_path_prefix() / collision->path;
 
     try {
         glm::vec3 center{0.0f};

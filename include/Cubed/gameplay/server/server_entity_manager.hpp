@@ -24,6 +24,7 @@ public:
 
     void update();
     void add_creature(std::string_view name, const glm::vec3& world_pos);
+    void add_item_entity(std::string_view name, const glm::vec3& world_pos);
     void destroy(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
     void save_all_entities(bool immediately);
@@ -49,13 +50,13 @@ private:
         EntityID id;
         glm::vec3 pos;
         glm::vec3 dir;
-        Gait gait;
+        Gait gait = Gait::STOP;
     };
 
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;
     using acc = EntityMap::accessor;
     using cacc = EntityMap::const_accessor;
-    using CreateFunc = std::function<EntityID(EntityID id)>;
+    using CreateFunc = std::function<void(EntityID id)>;
     using TaskElement =
         std::variant<std::shared_ptr<Session>, EntityCreateElement, EntityID,
                      std::monostate>;
@@ -93,8 +94,10 @@ private:
     std::optional<EntityStorageData> build_entity_storage_data(EntityID id);
     std::optional<EntityStorageData> build_entity_storage_data(entt::entity id);
 
+    void create_item_entity(EntityID id, const std::string& name);
+
     template <typename... Args>
-    EntityID create_entity_in_factory(EntityID id, Args&&... args) {
+    void create_entity_in_factory(EntityID id, Args&&... args) {
         auto entity = m_registry.create();
 
         ((m_registry.emplace<std::remove_cvref_t<Args>>(
@@ -106,7 +109,7 @@ private:
             ++m_entity_sum;
         }
 
-        return id;
+        return;
     }
 };
 } // namespace cubed
