@@ -1,21 +1,23 @@
 #include "Cubed/gameplay/systems/speed_system.hpp"
 
 #include "Cubed/gameplay/ecs/ai_struct.hpp"
-#include "Cubed/gameplay/ecs/server_entity.hpp"
+#include "Cubed/gameplay/ecs/movement.hpp"
+#include "Cubed/gameplay/ecs/transform.hpp"
 
 namespace cubed {
 
 void SpeedSystem::update(float dt, entt::registry& registry, entt::entity e) {
-    if (!registry.all_of<BaseServerCreature, MoveBoost>(e)) {
+    if (!registry.all_of<TickVelocity, MoveBoost, Transform, Movement, Gravity>(
+            e)) {
         return;
     }
 
-    auto [creature, moveboost] = registry.get<BaseServerCreature, MoveBoost>(e);
-    auto& v = creature.velocity.value;
+    auto [velocity, moveboost, transform, movement] =
+        registry.get<TickVelocity, MoveBoost, Transform, Movement>(e);
+    auto& v = velocity.value;
     if (moveboost.count <= moveboost.duration) {
         ++moveboost.count;
-        v +=
-            creature.transform.direction.value * creature.movement.acceleration;
+        v += transform.direction.value * movement.acceleration;
     } else {
         // Decelerated by friction in all directions
         auto decay = [](float& c, float d) {
@@ -24,19 +26,20 @@ void SpeedSystem::update(float dt, entt::registry& registry, entt::entity e) {
             else if (c < 0.0f)
                 c = std::min(0.0f, c + d);
         };
-        decay(v.x, creature.movement.deceleration);
-        decay(v.z, creature.movement.deceleration);
+        decay(v.x, movement.deceleration);
+        decay(v.z, movement.deceleration);
     }
-    v.y += -creature.gravity.value * dt;
+    const auto& gravity = registry.get<Gravity>(e);
+    v.y += -gravity.value * dt;
     auto v_clamp = [](float& c, float max) {
         if (max < 0.0f) {
             return; //-1 = unlimited
         }
         c = std::clamp(c, -max, max);
     };
-    v_clamp(v.x, creature.velocity.max.x);
-    v_clamp(v.y, creature.velocity.max.y);
-    v_clamp(v.z, creature.velocity.max.z);
+    v_clamp(v.x, velocity.max.x);
+    v_clamp(v.y, velocity.max.y);
+    v_clamp(v.z, velocity.max.z);
 }
 
 } // namespace cubed

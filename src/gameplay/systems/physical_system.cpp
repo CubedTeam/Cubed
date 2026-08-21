@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/systems/physical_system.hpp"
 
-#include "Cubed/gameplay/ecs/server_entity.hpp"
+#include "Cubed/gameplay/ecs/collision.hpp"
+#include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server/server_world.hpp"
 
@@ -108,15 +109,17 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
                             entt::entity e) {
     ZoneScopedN("PhysicalSystem::update");
 
-    if (!registry.all_of<BaseServerCreature>(e)) {
+    if (!registry.all_of<TickVelocity, Collider, Transform>(e)) {
         return;
     }
 
-    auto& creature = registry.get<BaseServerCreature>(e);
-    auto distance = get_move_distance(creature.velocity);
-    auto box = HitboxManager::hitbox(creature.hitbox);
-    auto& pos = creature.transform.position.value;
-    auto& v = creature.velocity;
+    auto& velocity = registry.get<TickVelocity>(e);
+    const auto& collider = registry.get<Collider>(e);
+    auto& transform = registry.get<Transform>(e);
+    auto distance = get_move_distance(velocity);
+    auto box = HitboxManager::hitbox(collider.hitbox);
+    auto& pos = transform.position.value;
+    auto& v = velocity;
     bool ground = !update_y(pos, glm::vec3{0.0f, -0.1f, 0.0f}, world, box.box);
     bool stepped = false;
     if (update_y(pos, distance, world, box.box)) {

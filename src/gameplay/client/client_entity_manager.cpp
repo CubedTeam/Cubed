@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
+#include "Cubed/gameplay/ecs/renderable.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -82,13 +83,13 @@ void ClientEntityManager::update(float dt) {
         }
     }
 
-    auto view = m_registry.view<BaseClientCreature>();
+    auto view = m_registry.view<WalkPose>();
     for (auto e : view) {
-        auto& c = view.get<BaseClientCreature>(e);
-        if (c.pose.gait == Gait::STOP) {
-            c.pose.walk_time = 0.0f;
+        auto& pose = view.get<WalkPose>(e);
+        if (pose.gait == Gait::STOP) {
+            pose.walk_time = 0.0f;
         } else {
-            c.pose.walk_time += dt;
+            pose.walk_time += dt;
         }
     }
 
@@ -98,13 +99,14 @@ void ClientEntityManager::update(float dt) {
 void ClientEntityManager::init() {
     m_random.init(std::random_device()());
     m_factories.emplace("cubed:pig", [this](EntityID id) {
-        BaseClientCreature c;
-        c.model = ModelManager::instance().get_model_id("cubed:pig");
+        Renderable renderable{
+            ModelManager::instance().get_model_id("cubed:pig")};
         float next_call_time = m_random.random_float(8.0f, 25.0f);
-        create_entity_in_registry(
-            id, Entity{id, EntityType::CREATURE},
-            EntityInfo{"cubed:pig", std::nullopt}, std::move(c), PigTag{},
-            RenderTransform{}, SoundTime{next_call_time}, ClientEntityState{});
+        create_entity_in_registry(id, Entity{id, EntityType::CREATURE},
+                                  EntityInfo{"cubed:pig", std::nullopt},
+                                  std::move(renderable), PigTag{},
+                                  RenderTransform{}, SoundTime{next_call_time},
+                                  ClientEntityState{}, Transform{}, WalkPose{});
     });
 }
 // not thread safe
@@ -116,9 +118,9 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     acc a;
     bool found = m_entities.find(a, id);
     ASSERT(found);
-    auto* c = m_registry.try_get<BaseClientCreature>(a->second);
-    ASSERT(c);
-    c->transform.position.value = pos;
+    auto* transform = m_registry.try_get<Transform>(a->second);
+    ASSERT(transform);
+    transform->position.value = pos;
     auto* r = m_registry.try_get<RenderTransform>(a->second);
     ASSERT(r);
     r->position.value = pos;
@@ -138,11 +140,13 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info, float) {
             return;
         }
     }
-    auto creature = m_registry.try_get<BaseClientCreature>(e);
-    ASSERT(creature);
-    creature->transform.position.value = info.pos;
-    creature->transform.direction.value = info.direction;
-    creature->pose.gait = info.gait;
+    auto transform = m_registry.try_get<Transform>(e);
+    ASSERT(transform);
+    auto pose = m_registry.try_get<WalkPose>(e);
+    ASSERT(pose);
+    transform->position.value = info.pos;
+    transform->direction.value = info.direction;
+    pose->gait = info.gait;
 
     auto state = m_registry.try_get<ClientEntityState>(e);
     ASSERT(state);
@@ -241,13 +245,11 @@ const entt::registry& ClientEntityManager::get_registry() const {
 void ClientEntityManager::player_sound(float dt) {
     auto& audio = m_world.get_audio();
     auto player_pos = m_world.player_manager().get_local().get_player_pos();
-    auto view = m_registry.view<EntityInfo, BaseClientCreature, SoundTime>();
+    auto view = m_registry.view<EntityInfo, Transform, SoundTime>();
 
     for (auto e : view) {
-        const auto [info, creature] =
-            view.get<EntityInfo, BaseClientCreature>(e);
-        if (math::distance2(player_pos, creature.transform.position.value) >
-            10 * 10) {
+        const auto [info, transform] = view.get<EntityInfo, Transform>(e);
+        if (math::distance2(player_pos, transform.position.value) > 10 * 10) {
             continue;
         }
         auto& sound_time = view.get<SoundTime>(e);
@@ -257,7 +259,7 @@ void ClientEntityManager::player_sound(float dt) {
             auto data = CreatureManager::data(info.name);
             if (data.sound.call) {
                 audio.play_3d(data.sound.call->full_path().string(),
-                              creature.transform.position.value, true, false);
+                              transform.position.value, true, false);
             }
             sound_time.next_call_time = m_random.random_float(8.0f, 25.0f);
         }
