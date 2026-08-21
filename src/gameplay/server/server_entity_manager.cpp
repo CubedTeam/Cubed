@@ -29,7 +29,7 @@ void ServerEntityManager::create_item_entity(EntityID id,
     return create_entity_in_factory(id, Entity{id, EntityType::ITEM},
                                     EntityInfo{name, std::nullopt}, Transform{},
                                     std::move(hitbox), std::move(gravity),
-                                    std::move(velocity));
+                                    std::move(velocity), ItemTag{});
 }
 
 void ServerEntityManager::init() {

@@ -21,6 +21,7 @@ namespace cubed {
 namespace {
 constexpr double ENTITY_RENDER_DELAY_MS = 100.0; // two tick time
 constexpr size_t ENTITY_SNAPSHOT_MAX = 16;
+constexpr float ITEM_SPIN_SPEED = 86.0f; // d/s
 
 ClientEntitySnapshot
 interpolate_snapshot(const std::deque<ClientEntitySnapshot>& history,
@@ -83,7 +84,18 @@ void ClientEntityManager::update(float dt) {
             r.direction.value = snap.dir;
         }
     }
+    {
+        auto view = m_registry.view<ItemTag, RenderTransform>();
+        for (auto e : view) {
+            auto& rt = view.get<RenderTransform>(e);
 
+            rt.orientation.yaw += ITEM_SPIN_SPEED * dt;
+            rt.orientation.yaw = std::fmod(rt.orientation.yaw, 360);
+            rt.direction.value = {std::sin(glm::radians(rt.orientation.yaw)),
+                                  0.0f,
+                                  std::cos(glm::radians(rt.orientation.yaw))};
+        }
+    }
     auto view = m_registry.view<WalkPose>();
     for (auto e : view) {
         auto& pose = view.get<WalkPose>(e);
@@ -101,10 +113,12 @@ void ClientEntityManager::create_item_entity(EntityID id, ModelID model,
                                              std::string_view name) {
 
     Renderable renderable{model};
+    RenderTransform rt;
+    rt.orientation.yaw = m_random.random_float(0.00f, 360.0f);
     create_entity_in_registry(id, Entity{id, EntityType::ITEM},
                               EntityInfo{std::string(name), std::nullopt},
-                              std::move(renderable), RenderTransform{},
-                              ClientEntityState{}, Transform{});
+                              std::move(renderable), std::move(rt),
+                              ClientEntityState{}, Transform{}, ItemTag{});
 }
 
 void ClientEntityManager::init() {
