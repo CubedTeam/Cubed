@@ -30,8 +30,8 @@ WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
     std::unordered_map<ModelID, std::vector<ModelRender::InstanceData>>
         instances_data_map;
     auto& registry = world.entity_manager().get_registry();
-    auto view = registry.view<Transform, RenderTransform, EntityInfo, WalkPose,
-                              Renderable>();
+    auto view =
+        registry.view<Transform, RenderTransform, EntityInfo, Renderable>();
     for (auto entity : view) {
         auto& transform = view.get<Transform>(entity);
         auto pos = transform.position.value;
@@ -51,8 +51,10 @@ WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
         ModelRender::InstanceData data;
         data.pos = t.position.value;
         data.yaw = yaw;
-        auto& pose = view.get<WalkPose>(entity);
-        data.pose = pose;
+        auto pose = registry.try_get<WalkPose>(entity);
+        if (pose) {
+            data.pose = *pose;
+        }
         auto& renderable = view.get<Renderable>(entity);
         instances_data_map[renderable.model].emplace_back(std::move(data));
         ++cnt;

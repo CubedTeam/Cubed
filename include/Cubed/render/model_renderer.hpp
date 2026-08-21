@@ -16,7 +16,7 @@ public:
     struct InstanceData {
         glm::vec3 pos{0.0f};
         float yaw = 0.0f;
-        WalkPose pose;
+        WalkPose pose{};
     };
 
     struct DrawEntry {

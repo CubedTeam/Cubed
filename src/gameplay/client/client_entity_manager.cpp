@@ -71,6 +71,7 @@ void ClientEntityManager::update(float dt) {
     ZoneScopedN("ClientEntityManager::update");
     handle_task(dt);
     {
+
         auto view = m_registry.view<ClientEntityState, RenderTransform>();
         double render_time = static_cast<double>(tools::get_time_ticks()) -
                              ENTITY_RENDER_DELAY_MS;
@@ -96,6 +97,16 @@ void ClientEntityManager::update(float dt) {
     player_sound(dt);
 }
 
+void ClientEntityManager::create_item_entity(EntityID id, ModelID model,
+                                             std::string_view name) {
+
+    Renderable renderable{model};
+    create_entity_in_registry(id, Entity{id, EntityType::ITEM},
+                              EntityInfo{std::string(name), std::nullopt},
+                              std::move(renderable), RenderTransform{},
+                              ClientEntityState{}, Transform{});
+}
+
 void ClientEntityManager::init() {
     m_random.init(std::random_device()());
     {
@@ -103,6 +114,22 @@ void ClientEntityManager::init() {
         if (pig.model) {
             ModelManager::instance().load_model(*pig.model, true, &pig);
         }
+    }
+
+    auto items = ItemManager::instance().all_keys();
+
+    for (auto& id : items) {
+        auto data = ItemManager::get(id);
+        auto name = data.name;
+        m_factories.emplace(name.to_string(), [this, model_id = data.model_id,
+                                               name](EntityID id) {
+            if (!model_id) {
+                Logger::error("Can't Load item {} model", name.to_string());
+                return;
+            }
+
+            create_item_entity(id, *model_id, name.to_string());
+        });
     }
 
     m_factories.emplace("cubed:pig", [this](EntityID id) {
@@ -124,7 +151,7 @@ void ClientEntityManager::init() {
 }
 // not thread safe
 void ClientEntityManager::handle_entity_create(EntityID id,
-                                               std::string_view name,
+                                               const std::string& name,
                                                const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
     m_factories[name](id);
@@ -132,7 +159,6 @@ void ClientEntityManager::handle_entity_create(EntityID id,
     bool found = m_entities.find(a, id);
     if (!found) {
         Logger::error("Can't create entity {}", name);
-        ASSERT(found);
         return;
     }
     auto* transform = m_registry.try_get<Transform>(a->second);
@@ -159,11 +185,12 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info, float) {
     }
     auto transform = m_registry.try_get<Transform>(e);
     ASSERT(transform);
-    auto pose = m_registry.try_get<WalkPose>(e);
-    ASSERT(pose);
     transform->position.value = info.pos;
     transform->direction.value = info.direction;
-    pose->gait = info.gait;
+    auto pose = m_registry.try_get<WalkPose>(e);
+    if (pose) {
+        pose->gait = info.gait;
+    }
 
     auto state = m_registry.try_get<ClientEntityState>(e);
     ASSERT(state);

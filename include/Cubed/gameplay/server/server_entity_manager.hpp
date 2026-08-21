@@ -75,8 +75,8 @@ private:
     entt::registry m_registry;
     EntityID m_next = 0;
     EntityMap m_entities;
-    std::unordered_map<std::string_view, CreateFunc> m_factories;
-    void create_entity(std::string_view name, const glm::vec3& pos);
+    std::unordered_map<std::string, CreateFunc> m_factories;
+    void create_entity(const std::string& name, const glm::vec3& pos);
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
     void handle_entity_destroy(EntityID id);

@@ -394,7 +394,7 @@ size_t ServerEntityManager::entity_sum() const { return m_entity_sum.load(); }
 
 EntityID ServerEntityManager::get_next_value() const { return m_next; }
 void ServerEntityManager::set_next_value(EntityID id) { m_next = id; }
-void ServerEntityManager::create_entity(std::string_view name,
+void ServerEntityManager::create_entity(const std::string& name,
                                         const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
     auto id = m_next++;
