@@ -316,9 +316,11 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
     }
 
     const glm::vec3 SPAWN_POSITION = EYE_POSITION + spawn_direction * 0.4f;
+    for (size_t i = 0; i < action.count; ++i) {
+        m_world.entity_manager().add_item_entity(
+            data.name.to_string(), SPAWN_POSITION, initial_velocity);
+    }
 
-    m_world.entity_manager().add_item_entity(data.name.to_string(),
-                                             SPAWN_POSITION, initial_velocity);
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }
