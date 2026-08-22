@@ -11,6 +11,4 @@ struct Entity {
     Entity(EntityID id, EntityType type) : id(id), type(type) {}
 };
 
-struct ItemTag {};
-
 } // namespace cubed

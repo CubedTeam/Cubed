@@ -3,10 +3,12 @@
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/collision.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
+#include "Cubed/gameplay/ecs/item_ecs.hpp"
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/gameplay/server/session.hpp"
+#include "Cubed/gameplay/systems/item_pickup_system.hpp"
 #include "Cubed/gameplay/systems/physical_system.hpp"
 #include "Cubed/gameplay/systems/speed_system.hpp"
 #include "Cubed/gameplay/systems/wander_ai_system.hpp"
@@ -21,7 +23,8 @@ namespace cubed {
 ServerEntityManager::ServerEntityManager(ServerWorld& world) : m_world(world) {}
 
 void ServerEntityManager::create_item_entity(EntityID id,
-                                             const std::string& name) {
+                                             const std::string& name,
+                                             ItemID item_id) {
 
     Collider hitbox{HitboxManager::instance().get_hitbox_id(name)};
     Gravity gravity{pig_defaults::GRAVITY};
@@ -32,20 +35,19 @@ void ServerEntityManager::create_item_entity(EntityID id,
     return create_entity_in_factory(
         id, Entity{id, EntityType::ITEM}, EntityInfo{name, std::nullopt},
         Transform{}, std::move(hitbox), std::move(gravity), std::move(velocity),
-        ItemTag{}, std::move(movement), MoveBoost{});
+        ItemTag{item_id}, std::move(movement), MoveBoost{}, PickupDelay{});
 }
 
 void ServerEntityManager::init() {
 
     auto key = ItemManager::instance().all_keys();
 
-    for (ItemID id : key) {
-        auto data = ItemManager::get(id);
-        m_factories.try_emplace(
-            data.name.to_string(),
-            [this, name = data.name.to_string()](EntityID id) {
-                create_item_entity(id, name);
-            });
+    for (ItemID item_id : key) {
+        auto data = ItemManager::get(item_id);
+        auto name = data.name.to_string();
+        m_factories.try_emplace(name, [this, name, item_id](EntityID id) {
+            create_item_entity(id, name, item_id);
+        });
     }
 
     m_factories.try_emplace("cubed:pig", [this](EntityID id) {
@@ -137,11 +139,21 @@ void ServerEntityManager::update() {
     for (auto e : m_registry.view<entt::entity>()) {
         entities.push_back(e);
     }
+
+    auto players = m_world.player_manager().snapshot();
+
+    std::vector<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
+        players_data;
+
+    for (auto& player : *players) {
+        players_data.emplace_back(player.second->get_pos(), player.second);
+    }
+
     tbb::concurrent_vector<EntitySendData> send_data;
     // parallel block touches disjoint entities only;
     // structural registry changes stay on the server thread via m_tasks.
     parallel_do(*pool, entities.begin(), entities.end(), pool->thread_sum(),
-                [this, &send_data](entt::entity e) {
+                [this, &send_data, &players_data](entt::entity e) {
                     if (!m_registry.all_of<Entity>(e)) {
                         Logger::error("Entity don't have Entity component");
                         return;
@@ -156,6 +168,7 @@ void ServerEntityManager::update() {
                     }
                     update_ai(e);
                     update_move(e);
+                    update_item(e, players_data);
                     update_send(e, send_data);
                 });
     if (!send_data.empty()) {
@@ -184,6 +197,13 @@ void ServerEntityManager::update_move(entt::entity e) {
                             1000.0f,
                         m_registry, e);
     PhysicalSystem::update(m_world, m_registry, e);
+}
+
+void ServerEntityManager::update_item(
+    entt::entity e,
+    std::span<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
+        players) {
+    ItemPickupSystem::update(players, *this, m_registry, e);
 }
 
 void ServerEntityManager::update_send(
@@ -353,7 +373,7 @@ void ServerEntityManager::handle_task() {
         case Command::ITEM_CREATE: {
             auto* c = std::get_if<ItemEntityCreateElement>(&pair.second);
             ASSERT(c);
-            create_item_entity(c->name, c->pos, c->initial_velocity);
+            create_item_entity(*c);
         } break;
         }
     }
@@ -420,24 +440,24 @@ void ServerEntityManager::create_entity(const std::string& name,
     handle_entity_create(id, name, pos);
 }
 
-void ServerEntityManager::create_item_entity(const std::string& name,
-                                             const glm::vec3& pos,
-                                             const glm::vec3& velocity) {
-    ASSERT(m_factories.contains(name));
+void ServerEntityManager::create_item_entity(
+    const ItemEntityCreateElement& item) {
+
+    ASSERT(m_factories.contains(item.name));
     auto id = m_next++;
-    m_factories[name](id);
+    m_factories[item.name](id);
     acc c;
     if (m_entities.find(c, id)) {
         auto t = m_registry.try_get<Transform>(c->second);
         ASSERT(t);
-        t->position.value = pos;
+        t->position.value = item.pos;
 
         auto v = m_registry.try_get<TickVelocity>(c->second);
         ASSERT(v);
-        v->value = velocity;
+        v->value = item.initial_velocity;
     }
 
-    handle_entity_create(id, name, pos);
+    handle_entity_create(id, item.name, item.pos);
 }
 
 void ServerEntityManager::unload(EntityID id) {

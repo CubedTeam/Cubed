@@ -80,6 +80,7 @@ public:
     void send_all_inventory();
     void init_add(ItemStack item, size_t position);
     void unsafe_add(AddAction action);
+    bool atomic_add_item(ItemID id);
     void remove(RemoveAction action);
     void move(MoveAction action);
     void handle_inventory_action(protocol::C2SInventoryAction& msg);

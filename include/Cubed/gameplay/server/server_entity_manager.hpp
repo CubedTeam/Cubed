@@ -2,6 +2,7 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/ecs/entity.hpp"
 #include "Cubed/gameplay/gait.hpp"
+#include "Cubed/gameplay/item.hpp"
 #include "Cubed/gameplay/server/entity_storage.hpp"
 #include "Cubed/tools/log.hpp"
 #include "glm/ext/vector_float3.hpp"
@@ -14,6 +15,7 @@
 namespace cubed {
 class ServerWorld;
 class Session;
+class ServerPlayer;
 class ServerEntityManager {
 public:
     static constexpr size_t PER_CREATURE_LIMITS = 100;
@@ -51,13 +53,13 @@ private:
     };
     struct EntityCreateElement {
         std::string name;
-        glm::vec3 pos;
+        glm::vec3 pos{0.0f};
     };
 
     struct ItemEntityCreateElement {
         std::string name;
-        glm::vec3 pos;
-        glm::vec3 initial_velocity;
+        glm::vec3 pos{0.0f};
+        glm::vec3 initial_velocity{0.0f};
     };
 
     struct EntitySendData {
@@ -91,8 +93,7 @@ private:
     EntityMap m_entities;
     std::unordered_map<std::string, CreateFunc> m_factories;
     void create_entity(const std::string& name, const glm::vec3& pos);
-    void create_item_entity(const std::string& name, const glm::vec3& pos,
-                            const glm::vec3& velocity);
+    void create_item_entity(const ItemEntityCreateElement& item);
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
     void handle_entity_destroy(EntityID id);
@@ -101,6 +102,10 @@ private:
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai(entt::entity e);
     void update_move(entt::entity e);
+    void update_item(
+        entt::entity e,
+        std::span<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
+            players);
     void update_send(entt::entity e,
                      tbb::concurrent_vector<EntitySendData>& sessions);
     void save_all();
@@ -110,7 +115,8 @@ private:
     std::optional<EntityStorageData> build_entity_storage_data(EntityID id);
     std::optional<EntityStorageData> build_entity_storage_data(entt::entity id);
 
-    void create_item_entity(EntityID id, const std::string& name);
+    void create_item_entity(EntityID id, const std::string& name,
+                            ItemID item_id);
 
     template <typename... Args>
     void create_entity_in_factory(EntityID id, Args&&... args) {

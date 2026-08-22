@@ -121,4 +121,5 @@ target_sources(${PROJECT_NAME}
         gameplay/server/player_storage.cpp
         scene/world_select_scene.cpp
         ui/world_select_ui.cpp
+        gameplay/systems/item_pickup_system.cpp
 )

@@ -135,6 +135,38 @@ void ServerPlayer::init_add(ItemStack item, size_t position) {
 
 void ServerPlayer::unsafe_add(AddAction action) { add_internal(action); }
 
+bool ServerPlayer::atomic_add_item(ItemID id) {
+    if (!id) {
+        return false;
+    }
+    std::lock_guard lock(m_inventory_mutex);
+    std::optional<size_t> position;
+    for (size_t i = 0; i < m_inventory.size(); ++i) {
+        auto& stack = m_inventory[i];
+        if (!stack) {
+            position = i;
+            break;
+        }
+        if (stack->item == id) {
+            if (stack->count + 1 <= stack->max_stack_size()) {
+                position = i;
+                break;
+            }
+        }
+    }
+    if (!position) {
+        return false;
+    }
+    ServerPlayer::AddAction add;
+    add.count = 1;
+    add.item = id;
+    add.position = *position;
+    add.request_id = 0;
+    add.revision = 0;
+    add_internal(add);
+    return true;
+}
+
 void ServerPlayer::remove(RemoveAction action) {
     m_task.emplace(Task::REMOVE_ITEM, std::move(action));
 }
@@ -149,6 +181,9 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         }
         AddAction action;
         action.revision = msg.base_revision();
+        if (action.revision == 0) {
+            return;
+        }
         action.count = msg.add().count();
         action.item = msg.add().item();
         action.request_id = msg.request_id();
@@ -200,7 +235,7 @@ void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 Uuid ServerPlayer::get_uuid() const { return M_UUID; }
 
 void ServerPlayer::add_internal(const AddAction& action) {
-    if (action.revision != m_revision) {
+    if (action.revision && action.revision != m_revision) {
         send_all_inventory_internal(action.request_id);
         return;
     }

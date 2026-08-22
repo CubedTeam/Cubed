@@ -5,6 +5,7 @@
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
+#include "Cubed/gameplay/ecs/item_ecs.hpp"
 #include "Cubed/gameplay/ecs/renderable.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/render/model_manager.hpp"
