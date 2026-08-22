@@ -24,7 +24,8 @@ public:
 
     void update();
     void add_creature(std::string_view name, const glm::vec3& world_pos);
-    void add_item_entity(std::string_view name, const glm::vec3& world_pos);
+    void add_item_entity(std::string_view name, const glm::vec3& world_pos,
+                         const glm::vec3& initial_velocity);
     void destroy(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
     void save_all_entities(bool immediately);
@@ -40,10 +41,23 @@ public:
     void activate_chunk(ChunkPos pos);
 
 private:
-    enum class Command { CREATE, SEND_ALL_ENTITIES, DESTROY, SAVE_ALL, UNLOAD };
+    enum class Command {
+        CREATURE_CREATE,
+        SEND_ALL_ENTITIES,
+        DESTROY,
+        SAVE_ALL,
+        UNLOAD,
+        ITEM_CREATE
+    };
     struct EntityCreateElement {
         std::string name;
         glm::vec3 pos;
+    };
+
+    struct ItemEntityCreateElement {
+        std::string name;
+        glm::vec3 pos;
+        glm::vec3 initial_velocity;
     };
 
     struct EntitySendData {
@@ -58,8 +72,8 @@ private:
     using cacc = EntityMap::const_accessor;
     using CreateFunc = std::function<void(EntityID id)>;
     using TaskElement =
-        std::variant<std::shared_ptr<Session>, EntityCreateElement, EntityID,
-                     std::monostate>;
+        std::variant<std::shared_ptr<Session>, EntityCreateElement,
+                     ItemEntityCreateElement, EntityID, std::monostate>;
     using TaskPair = std::pair<Command, TaskElement>;
     using DormantEntityMap =
         std::unordered_map<ChunkPos, std::vector<EntityStorageData>,
@@ -77,6 +91,8 @@ private:
     EntityMap m_entities;
     std::unordered_map<std::string, CreateFunc> m_factories;
     void create_entity(const std::string& name, const glm::vec3& pos);
+    void create_item_entity(const std::string& name, const glm::vec3& pos,
+                            const glm::vec3& velocity);
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
     void handle_entity_destroy(EntityID id);

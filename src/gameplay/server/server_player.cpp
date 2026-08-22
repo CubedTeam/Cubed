@@ -259,8 +259,31 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
         stack = std::nullopt;
     }
     auto data = ItemManager::get(item);
-    m_world.entity_manager().add_item_entity(
-        data.name.to_string(), m_pos.load() + glm::vec3{0.0f, 1.6f, 0.0f});
+    const float YAW_RAD = glm::radians(yaw());
+    const float PITCH_RAD = glm::radians(pitch());
+    glm::vec3 direction{
+        std::sin(YAW_RAD) * std::cos(PITCH_RAD),
+        std::sin(PITCH_RAD),
+        -std::cos(YAW_RAD) * std::cos(PITCH_RAD),
+    };
+    constexpr float THROW_SPEED = 0.18f; // blocks/tick
+    constexpr float THROW_LIFT = 0.03f;
+
+    glm::vec3 initial_velocity =
+        direction * THROW_SPEED + glm::vec3{0.0f, THROW_LIFT, 0.0f};
+
+    const glm::vec3 EYE_POSITION = m_pos.load() + glm::vec3{0.0f, 1.6f, 0.0f};
+
+    glm::vec3 spawn_direction{direction.x, 0.0f, direction.z};
+
+    if (glm::length(spawn_direction) > 0.0f) {
+        spawn_direction = glm::normalize(spawn_direction);
+    }
+
+    const glm::vec3 SPAWN_POSITION = EYE_POSITION + spawn_direction * 0.4f;
+
+    m_world.entity_manager().add_item_entity(data.name.to_string(),
+                                             SPAWN_POSITION, initial_velocity);
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }

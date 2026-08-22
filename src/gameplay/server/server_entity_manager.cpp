@@ -26,10 +26,13 @@ void ServerEntityManager::create_item_entity(EntityID id,
     Collider hitbox{HitboxManager::instance().get_hitbox_id(name)};
     Gravity gravity{pig_defaults::GRAVITY};
     TickVelocity velocity;
-    return create_entity_in_factory(id, Entity{id, EntityType::ITEM},
-                                    EntityInfo{name, std::nullopt}, Transform{},
-                                    std::move(hitbox), std::move(gravity),
-                                    std::move(velocity), ItemTag{});
+    Movement movement;
+    movement.acceleration = 0.0f;
+    movement.deceleration = 0.007f;
+    return create_entity_in_factory(
+        id, Entity{id, EntityType::ITEM}, EntityInfo{name, std::nullopt},
+        Transform{}, std::move(hitbox), std::move(gravity), std::move(velocity),
+        ItemTag{}, std::move(movement), MoveBoost{});
 }
 
 void ServerEntityManager::init() {
@@ -61,7 +64,8 @@ void ServerEntityManager::init() {
             id, Entity{id, EntityType::CREATURE},
             EntityInfo{"cubed:pig", std::nullopt}, Transform{}, PigTag{},
             AIBase{}, WanderAITag{}, MoveBoost{}, std::move(hitbox),
-            std::move(gravity), std::move(move), std::move(velocity));
+            std::move(gravity), std::move(move), std::move(velocity),
+            StepUp{1.0f});
     });
 
     m_storage = std::make_unique<EntityStorage>(*m_world.world_storage());
@@ -323,7 +327,7 @@ void ServerEntityManager::handle_task() {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {
         switch (pair.first) {
-        case Command::CREATE: {
+        case Command::CREATURE_CREATE: {
             auto* c = std::get_if<EntityCreateElement>(&pair.second);
             ASSERT(c);
             create_entity(c->name, c->pos);
@@ -346,6 +350,11 @@ void ServerEntityManager::handle_task() {
             ASSERT(c);
             unload_internal(*c);
         }; break;
+        case Command::ITEM_CREATE: {
+            auto* c = std::get_if<ItemEntityCreateElement>(&pair.second);
+            ASSERT(c);
+            create_item_entity(c->name, c->pos, c->initial_velocity);
+        } break;
         }
     }
 }
@@ -357,13 +366,15 @@ void ServerEntityManager::add_creature(std::string_view name,
         return;
     }
 
-    m_tasks.emplace(Command::CREATE,
+    m_tasks.emplace(Command::CREATURE_CREATE,
                     EntityCreateElement{std::string(name), world_pos});
 }
 void ServerEntityManager::add_item_entity(std::string_view name,
-                                          const glm::vec3& world_pos) {
-    m_tasks.emplace(Command::CREATE,
-                    EntityCreateElement{std::string(name), world_pos});
+                                          const glm::vec3& world_pos,
+                                          const glm::vec3& initial_velocity) {
+    m_tasks.emplace(Command::ITEM_CREATE,
+                    ItemEntityCreateElement{std::string(name), world_pos,
+                                            initial_velocity});
 }
 
 void ServerEntityManager::destroy(EntityID id) {
@@ -404,6 +415,26 @@ void ServerEntityManager::create_entity(const std::string& name,
         auto t = m_registry.try_get<Transform>(c->second);
         ASSERT(t);
         t->position.value = pos;
+    }
+
+    handle_entity_create(id, name, pos);
+}
+
+void ServerEntityManager::create_item_entity(const std::string& name,
+                                             const glm::vec3& pos,
+                                             const glm::vec3& velocity) {
+    ASSERT(m_factories.contains(name));
+    auto id = m_next++;
+    m_factories[name](id);
+    acc c;
+    if (m_entities.find(c, id)) {
+        auto t = m_registry.try_get<Transform>(c->second);
+        ASSERT(t);
+        t->position.value = pos;
+
+        auto v = m_registry.try_get<TickVelocity>(c->second);
+        ASSERT(v);
+        v->value = velocity;
     }
 
     handle_entity_create(id, name, pos);
