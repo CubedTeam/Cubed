@@ -159,7 +159,9 @@ std::string EntityStorage::serialize(const EntityStorageData& entity) {
     msg->set_id(entity.id);
     msg->set_name(entity.name);
     msg->set_version(WorldStorage::VERSION);
-
+    if (entity.item_count) {
+        msg->set_item_count(*entity.item_count);
+    }
     tools::set_proto_vec3(msg->mutable_pos(), entity.pos);
     tools::set_proto_vec3(msg->mutable_dir(), entity.dir);
 
@@ -196,7 +198,9 @@ EntityStorage::deserialize(std::string_view data) {
 
     d.pos = tools::get_proto_vec3(msg->pos());
     d.dir = tools::get_proto_vec3(msg->dir());
-
+    if (msg->has_item_count()) {
+        d.item_count = msg->item_count();
+    }
     return d;
 }
 

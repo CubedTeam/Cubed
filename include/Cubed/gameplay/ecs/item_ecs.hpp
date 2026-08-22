@@ -4,6 +4,7 @@
 namespace cubed {
 struct ItemTag {
     ItemID id = 0;
+    uint32_t count = 1;
 };
 
 struct PickupDelay {

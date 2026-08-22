@@ -135,36 +135,76 @@ void ServerPlayer::init_add(ItemStack item, size_t position) {
 
 void ServerPlayer::unsafe_add(AddAction action) { add_internal(action); }
 
-bool ServerPlayer::atomic_add_item(ItemID id) {
+uint32_t ServerPlayer::atomic_add_item(ItemID id, uint32_t total_count) {
     if (!id) {
         return false;
     }
+    uint32_t remain = total_count;
+    const uint32_t STACK_MAX_COUNT = ItemStack{id, 1}.max_stack_size();
+    std::vector<std::pair<size_t, uint32_t>> can_add_vector;
     std::lock_guard lock(m_inventory_mutex);
-    std::optional<size_t> position;
     for (size_t i = 0; i < m_inventory.size(); ++i) {
         auto& stack = m_inventory[i];
         if (!stack) {
-            position = i;
-            break;
+            can_add_vector.emplace_back(i, STACK_MAX_COUNT);
+            continue;
         }
         if (stack->item == id) {
-            if (stack->count + 1 <= stack->max_stack_size()) {
-                position = i;
-                break;
+            if (stack->max_stack_size() < stack->count) {
+                Logger::error("Max Stack Size {} less then stack size {}",
+                              stack->max_stack_size(), stack->count);
+                continue;
+            }
+            const uint32_t REMAINING = stack->max_stack_size() - stack->count;
+            if (REMAINING) {
+                can_add_vector.emplace_back(i, REMAINING);
+                continue;
             }
         }
     }
-    if (!position) {
-        return false;
+    if (can_add_vector.empty()) {
+        return total_count - remain;
     }
-    ServerPlayer::AddAction add;
-    add.count = 1;
-    add.item = id;
-    add.position = *position;
-    add.request_id = 0;
-    add.revision = 0;
-    add_internal(add);
-    return true;
+
+    std::ranges::sort(
+        can_add_vector,
+        [STACK_MAX_COUNT](const std::pair<size_t, uint32_t>& a,
+                          const std::pair<size_t, uint32_t>& b) {
+            if (a.second != STACK_MAX_COUNT && b.second == STACK_MAX_COUNT) {
+                return true;
+            }
+            if (b.second != STACK_MAX_COUNT && a.second == STACK_MAX_COUNT) {
+                return false;
+            }
+
+            return a.first < b.first;
+        });
+
+    for (const auto& [pos, count] : can_add_vector) {
+
+        if (!remain) {
+            break;
+        }
+        uint32_t c = 1;
+        if (remain >= count) {
+            remain -= count;
+            c = count;
+        } else {
+            c = remain;
+            remain = 0;
+        }
+        auto& stack = m_inventory[pos];
+        if (!stack) {
+            stack = ItemStack{id, c};
+        } else {
+            stack->count += c;
+        }
+    }
+
+    ++m_revision;
+    send_all_inventory_internal(0);
+
+    return total_count - remain;
 }
 
 void ServerPlayer::remove(RemoveAction action) {
@@ -316,10 +356,9 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
     }
 
     const glm::vec3 SPAWN_POSITION = EYE_POSITION + spawn_direction * 0.4f;
-    for (size_t i = 0; i < action.count; ++i) {
-        m_world.entity_manager().add_item_entity(
-            data.name.to_string(), SPAWN_POSITION, initial_velocity);
-    }
+
+    m_world.entity_manager().add_item_entity(
+        data.name.to_string(), SPAWN_POSITION, initial_velocity, action.count);
 
     ++m_revision;
     send_all_inventory_internal(action.request_id);

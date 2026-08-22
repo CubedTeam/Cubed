@@ -39,7 +39,7 @@ void ItemPickupSystem::update(
                       });
 
     const auto& item_tag = registry.get<ItemTag>(e);
-    bool added = false;
+    uint32_t count = item_tag.count;
     for (auto& [distance2, player] : sort_player) {
         if (!player) {
             continue;
@@ -47,15 +47,18 @@ void ItemPickupSystem::update(
         if (distance2 > 2.25f) {
             continue;
         }
-        if (player->atomic_add_item(item_tag.id)) {
-            added = true;
+        auto added = player->atomic_add_item(item_tag.id, count);
+        count -= added;
+        if (!count) {
             break;
         }
     }
     const auto& entity = registry.get<Entity>(e);
 
-    if (added) {
+    if (!count) {
         manager.destroy(entity.id);
+    } else {
+        manager.push_item_count(e, count);
     }
 }
 } // namespace cubed

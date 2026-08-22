@@ -27,7 +27,7 @@ public:
     void update();
     void add_creature(std::string_view name, const glm::vec3& world_pos);
     void add_item_entity(std::string_view name, const glm::vec3& world_pos,
-                         const glm::vec3& initial_velocity);
+                         const glm::vec3& initial_velocity, size_t count);
     void destroy(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
     void save_all_entities(bool immediately);
@@ -35,6 +35,7 @@ public:
     size_t creature_sum() const;
     size_t entity_sum() const;
     EntityID get_next_value() const;
+    void push_item_count(entt::entity e, uint32_t count);
     void set_next_value(EntityID id);
     void unload(EntityID id);
     void stop();
@@ -60,6 +61,7 @@ private:
         std::string name;
         glm::vec3 pos{0.0f};
         glm::vec3 initial_velocity{0.0f};
+        uint32_t count;
     };
 
     struct EntitySendData {
@@ -82,7 +84,7 @@ private:
                            ChunkPos::Hash>;
     ServerWorld& m_world;
     std::unique_ptr<EntityStorage> m_storage;
-
+    tbb::concurrent_queue<std::pair<entt::entity, uint32_t>> m_item_count;
     DormantEntityMap m_dormant_entities;
 
     std::atomic<size_t> m_creature_sum{0};
@@ -106,6 +108,7 @@ private:
         entt::entity e,
         std::span<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
             players);
+    void update_item_count();
     void update_send(entt::entity e,
                      tbb::concurrent_vector<EntitySendData>& sessions);
     void save_all();

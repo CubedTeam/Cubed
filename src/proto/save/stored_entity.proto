@@ -11,5 +11,6 @@ message StoredEntity {
     string name = 3;
     common.Vec3 pos = 4;
     common.Vec3 dir = 5;
-    
+    uint32 item_count = 6;
+
 }

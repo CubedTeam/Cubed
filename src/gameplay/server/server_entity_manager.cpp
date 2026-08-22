@@ -113,6 +113,9 @@ void ServerEntityManager::activate_chunk(ChunkPos pos) {
             add_dormant(std::move(data));
             continue;
         }
+        if (auto* item = m_registry.try_get<ItemTag>(a->second)) {
+            item->count = data.item_count.value_or(1);
+        }
         auto* transform = m_registry.try_get<Transform>(a->second);
         auto* entity = m_registry.try_get<Entity>(a->second);
         if (transform) {
@@ -169,8 +172,10 @@ void ServerEntityManager::update() {
                     update_ai(e);
                     update_move(e);
                     update_item(e, players_data);
+
                     update_send(e, send_data);
                 });
+    update_item_count();
     if (!send_data.empty()) {
         Arena arena;
         auto* msg = Arena::Create<protocol::S2CEntityUpdateBatch>(&arena);
@@ -205,7 +210,17 @@ void ServerEntityManager::update_item(
         players) {
     ItemPickupSystem::update(players, *this, m_registry, e);
 }
-
+void ServerEntityManager::update_item_count() {
+    std::pair<entt::entity, uint32_t> pair;
+    while (m_item_count.try_pop(pair)) {
+        if (!pair.second) {
+            continue;
+        }
+        if (auto item = m_registry.try_get<ItemTag>(pair.first)) {
+            item->count = pair.second;
+        }
+    }
+}
 void ServerEntityManager::update_send(
     entt::entity e, tbb::concurrent_vector<EntitySendData>& send_data) {
 
@@ -340,6 +355,10 @@ ServerEntityManager::build_entity_storage_data(entt::entity e) {
     ASSERT(info);
     data.name = info->name;
 
+    if (auto* item = m_registry.try_get<ItemTag>(e)) {
+        data.item_count = item->count;
+    }
+
     return data;
 }
 
@@ -391,10 +410,12 @@ void ServerEntityManager::add_creature(std::string_view name,
 }
 void ServerEntityManager::add_item_entity(std::string_view name,
                                           const glm::vec3& world_pos,
-                                          const glm::vec3& initial_velocity) {
+                                          const glm::vec3& initial_velocity,
+                                          size_t count) {
     m_tasks.emplace(Command::ITEM_CREATE,
                     ItemEntityCreateElement{std::string(name), world_pos,
-                                            initial_velocity});
+                                            initial_velocity,
+                                            static_cast<uint32_t>(count)});
 }
 
 void ServerEntityManager::destroy(EntityID id) {
@@ -424,6 +445,9 @@ size_t ServerEntityManager::creature_sum() const {
 size_t ServerEntityManager::entity_sum() const { return m_entity_sum.load(); }
 
 EntityID ServerEntityManager::get_next_value() const { return m_next; }
+void ServerEntityManager::push_item_count(entt::entity e, uint32_t count) {
+    m_item_count.emplace(e, count);
+}
 void ServerEntityManager::set_next_value(EntityID id) { m_next = id; }
 void ServerEntityManager::create_entity(const std::string& name,
                                         const glm::vec3& pos) {
@@ -455,6 +479,10 @@ void ServerEntityManager::create_item_entity(
         auto v = m_registry.try_get<TickVelocity>(c->second);
         ASSERT(v);
         v->value = item.initial_velocity;
+
+        auto* tag = m_registry.try_get<ItemTag>(c->second);
+        ASSERT(tag);
+        tag->count = item.count;
     }
 
     handle_entity_create(id, item.name, item.pos);
