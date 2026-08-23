@@ -20,10 +20,10 @@ void ServerPlayer::update() {
             ASSERT(v);
             add_internal(*v);
         } break;
-        case Task::REMOVE_ITEM: {
-            auto* v = std::get_if<RemoveAction>(&task.second);
+        case Task::DROP_ITEM: {
+            auto* v = std::get_if<DropAction>(&task.second);
             ASSERT(v);
-            remove_internal(*v);
+            drop_internal(*v);
         } break;
         case Task::SEND_ALL_INVENTORY: {
             send_all_inventory_internal();
@@ -207,8 +207,8 @@ uint32_t ServerPlayer::atomic_add_item(ItemID id, uint32_t total_count) {
     return total_count - remain;
 }
 
-void ServerPlayer::remove(RemoveAction action) {
-    m_task.emplace(Task::REMOVE_ITEM, std::move(action));
+void ServerPlayer::drop(DropAction action) {
+    m_task.emplace(Task::DROP_ITEM, std::move(action));
 }
 void ServerPlayer::move(MoveAction action) {
     m_task.emplace(Task::MOVE_ITEM, std::move(action));
@@ -234,16 +234,16 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         add(std::move(action));
     }
 
-    if (msg.has_remove()) {
-        if (msg.remove().from() >= INVENTORY_SIZE) {
+    if (msg.has_drop()) {
+        if (msg.drop().from() >= INVENTORY_SIZE) {
             return;
         }
-        RemoveAction action;
-        action.position = msg.remove().from();
+        DropAction action;
+        action.position = msg.drop().from();
         action.revision = msg.base_revision();
         action.request_id = msg.request_id();
-        action.count = msg.remove().count();
-        remove(std::move(action));
+        action.count = msg.drop().count();
+        drop(std::move(action));
     }
 
     if (msg.has_move()) {
@@ -310,7 +310,7 @@ void ServerPlayer::add_internal(const AddAction& action) {
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }
-void ServerPlayer::remove_internal(const RemoveAction& action) {
+void ServerPlayer::drop_internal(const DropAction& action) {
     if (action.revision != m_revision) {
         send_all_inventory_internal(action.request_id);
         return;

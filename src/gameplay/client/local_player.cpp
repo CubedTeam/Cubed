@@ -663,9 +663,9 @@ void LocalPlayer::drop_held_item(bool full) {
         return;
     }
     if (full) {
-        remove_item(m_held_hotbar, stack->count);
+        drop_item(m_held_hotbar, stack->count);
     } else {
-        remove_item(m_held_hotbar, 1);
+        drop_item(m_held_hotbar, 1);
     }
 }
 
@@ -974,7 +974,7 @@ void LocalPlayer::add_item(size_t position, ItemID item, size_t count) {
     m_world.get_client()->send(make_packet(msg));
 }
 
-void LocalPlayer::remove_item(size_t position, size_t count) {
+void LocalPlayer::drop_item(size_t position, size_t count) {
     if (m_pending_request.has_value()) {
         return;
     }
@@ -991,9 +991,9 @@ void LocalPlayer::remove_item(size_t position, size_t count) {
     m_pending_request = request_id;
     msg->set_base_revision(m_revision);
 
-    auto* remove = msg->mutable_remove();
-    remove->set_count(count);
-    remove->set_from(position);
+    auto* drop = msg->mutable_drop();
+    drop->set_count(count);
+    drop->set_from(position);
 
     m_world.get_client()->send(make_packet(msg));
 }

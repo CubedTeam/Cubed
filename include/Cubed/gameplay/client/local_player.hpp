@@ -114,7 +114,7 @@ public:
     std::optional<crypto::Ed25519KeyPair>& key_pair();
 
     void add_item(size_t position, ItemID item, size_t count);
-    void remove_item(size_t position, size_t count);
+    void drop_item(size_t position, size_t count);
     void move_item(size_t from, size_t to);
 
 private:
