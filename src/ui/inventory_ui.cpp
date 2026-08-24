@@ -321,7 +321,8 @@ bool InventoryUI::handle_mouse_button_event(const MouseButtonEvent& e) {
                     if (m_from) {
                         player.move_item(*m_from, pos);
                     } else {
-                        player.add_item(pos, *m_selected);
+                        player.add_item(pos, m_selected->item,
+                                        m_selected->count);
                     }
                 }
             };

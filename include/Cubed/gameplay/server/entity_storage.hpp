@@ -18,6 +18,7 @@ struct EntityStorageData {
     std::string name;
     glm::vec3 pos{0.0f};
     glm::vec3 dir{0.0f};
+    std::optional<uint32_t> item_count;
 };
 
 class EntityStorage {

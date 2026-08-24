@@ -3,7 +3,7 @@
 #include "Cubed/camera.hpp"
 #include "Cubed/debug_collector.hpp"
 #include "Cubed/gameplay/client/client_world.hpp"
-#include "Cubed/gameplay/ecs/client_entity.hpp"
+#include "Cubed/gameplay/ecs/renderable.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/render/renderer.hpp"
 #include "Cubed/render/renderer_constants.hpp"
@@ -31,10 +31,10 @@ WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
         instances_data_map;
     auto& registry = world.entity_manager().get_registry();
     auto view =
-        registry.view<BaseClientCreature, RenderTransform, EntityInfo>();
+        registry.view<Transform, RenderTransform, EntityInfo, Renderable>();
     for (auto entity : view) {
-        auto& creature = view.get<BaseClientCreature>(entity);
-        auto pos = creature.transform.position.value;
+        auto& transform = view.get<Transform>(entity);
+        auto pos = transform.position.value;
         if (!world.is_render(pos)) {
             continue;
         }
@@ -51,8 +51,12 @@ WorldRenderer::InstanceDataMap get_instances_data_map(ClientWorld& world,
         ModelRender::InstanceData data;
         data.pos = t.position.value;
         data.yaw = yaw;
-        data.pose = creature.pose;
-        instances_data_map[creature.model].emplace_back(std::move(data));
+        auto pose = registry.try_get<WalkPose>(entity);
+        if (pose) {
+            data.pose = *pose;
+        }
+        auto& renderable = view.get<Renderable>(entity);
+        instances_data_map[renderable.model].emplace_back(std::move(data));
         ++cnt;
         // m_renderer.model_renderer().shadow_pass(
         //     creature.model, t.position.value, yaw,

@@ -14,8 +14,10 @@ from typing import Any
 import flet as ft
 
 from ...core import i18n, loader, validation
+from ...core.custom_fields import CustomFieldError
 from ...core.paths import list_json_files
 from ..dialogs import confirm, snack
+from ..safe import safe_update
 from ..widgets.file_list import FileList
 from ..widgets.raw_editor import RawEditor
 
@@ -130,14 +132,51 @@ class BaseResourceView(ft.Column):
 
     def _on_mode_change(self, e: ft.ControlEvent) -> None:
         mode = (self.mode_toggle.selected or ["form"])[0]
-        if mode == "form":
-            import json as _json
-
+        if mode == "raw":
             try:
-                self.current_data = _json.loads(self.raw_editor.get_value())
-            except _json.JSONDecodeError:
-                pass
+                data = self.form_to_data()
+            except CustomFieldError as ex:
+                self._reject_mode_change("form", self._custom_error_message(ex))
+                return
+            if data is None:
+                self._reject_mode_change("form")
+                return
+            self.current_data = data
+        else:
+            data = self._read_raw_payload()
+            if data is None:
+                self._reject_mode_change("raw")
+                return
+            self.current_data = data
         self._render(mode)
+
+    def _reject_mode_change(self, mode: str, message: str | None = None) -> None:
+        self.mode_toggle.selected = [mode]
+        safe_update(self.mode_toggle)
+        if message:
+            snack(self.page_ctx, message, "error")
+
+    def _read_raw_payload(self) -> dict[str, Any] | None:
+        import json
+
+        def reject_constant(value: str) -> None:
+            raise ValueError(f"invalid JSON constant: {value}")
+
+        try:
+            data = json.loads(
+                self.raw_editor.get_value(), parse_constant=reject_constant
+            )
+        except (json.JSONDecodeError, ValueError) as ex:
+            snack(
+                self.page_ctx,
+                i18n.t("view.base.json_parse_failed", err=str(ex)),
+                "error",
+            )
+            return None
+        if not isinstance(data, dict):
+            snack(self.page_ctx, i18n.t("view.base.json_root_object"), "error")
+            return None
+        return data
 
     # --- actions ----------------------------------------------------------
 
@@ -165,6 +204,7 @@ class BaseResourceView(ft.Column):
             i += 1
         self.current_data["name"] = candidate
         self.selected_name = None
+        self.mode_toggle.selected = ["form"]
         self._render("form")
 
     def _mode(self) -> str:
@@ -204,18 +244,19 @@ class BaseResourceView(ft.Column):
 
     def _current_payload(self) -> dict[str, Any] | None:
         if self._mode() == "raw":
-            import json
+            return self._read_raw_payload()
+        try:
+            return self.form_to_data()
+        except CustomFieldError as ex:
+            snack(self.page_ctx, self._custom_error_message(ex), "error")
+            return None
 
-            try:
-                return json.loads(self.raw_editor.get_value())
-            except json.JSONDecodeError as e:
-                snack(
-                    self.page_ctx,
-                    i18n.t("view.base.json_parse_failed", err=str(e)),
-                    "error",
-                )
-                return None
-        return self.form_to_data()
+    def _custom_error_message(self, error: CustomFieldError) -> str:
+        return i18n.t(
+            f"custom.error.{error.code}",
+            default=error.code,
+            path=error.path,
+        )
 
     def _on_save(self, _e: ft.ControlEvent) -> None:
         data = self._current_payload()
@@ -252,6 +293,7 @@ class BaseResourceView(ft.Column):
             )
             self.selected_name = None
             self.current_data = self.blank_form_data() or {}
+            self.mode_toggle.selected = ["form"]
             self.refresh_list()
             self._render("form")
 
@@ -284,10 +326,3 @@ def _pretty(data: dict[str, Any]) -> str:
     import json
 
     return json.dumps(data, indent=4, ensure_ascii=False)
-
-
-def safe_update(c: ft.Control) -> None:
-    try:
-        c.update()
-    except Exception:
-        pass

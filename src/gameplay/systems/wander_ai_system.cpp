@@ -1,7 +1,6 @@
 #include "Cubed/gameplay/systems/wander_ai_system.hpp"
 
 #include "Cubed/gameplay/ecs/ai_struct.hpp"
-#include "Cubed/gameplay/ecs/server_entity.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 
 namespace {
@@ -11,25 +10,23 @@ constexpr double MOVE_PROBABILITY = 0.01;
 
 namespace cubed {
 void WanderAISystem::update(entt::registry& registry, entt::entity e) {
-    if (!registry.all_of<AIBase, WanderAITag, BaseServerCreature, MoveBoost>(
-            e)) {
+    if (!registry.all_of<AIBase, WanderAITag, Transform, MoveBoost>(e)) {
         return;
     }
 
-    auto [ai, creature, move_boost] =
-        registry.get<AIBase, BaseServerCreature, MoveBoost>(e);
+    auto [ai, transform, move_boost] =
+        registry.get<AIBase, Transform, MoveBoost>(e);
     ++ai.count;
     if (ai.count >= ai.interval) {
         ai.count = 0;
-        do_ai(creature, move_boost);
+        do_ai(transform, move_boost);
     }
 }
 
-void WanderAISystem::do_ai(BaseServerCreature& creature,
-                           MoveBoost& move_boost) {
+void WanderAISystem::do_ai(Transform& transform, MoveBoost& move_boost) {
     thread_local Random r{std::random_device()()};
     if (r.random_bool(DIRECTION_PROBABILITY)) {
-        creature.transform.direction.value = r.random_direction_horizontal();
+        transform.direction.value = r.random_direction_horizontal();
     }
     if (r.random_bool(MOVE_PROBABILITY)) {
 

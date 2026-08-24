@@ -2,6 +2,7 @@
 
 #include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/localization.hpp"
+#include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
 #include "Cubed/tools/json_utils.hpp"
 #include "Cubed/tools/log.hpp"
@@ -75,7 +76,15 @@ void ItemManager::add(const std::filesystem::path& path,
     tools::get_json_value(doc, "description", data.description);
 
     if (tools::get_json_value(doc, "texture", s)) {
-        data.path = ResourceLocation::parse(s);
+        data.texture_path = ResourceLocation::parse(s);
+    }
+
+    if (tools::get_json_value(doc, "model", s)) {
+        auto location = ResourceLocation::parse(s);
+        if (location) {
+            auto model = ModelManager::instance().load_model(*location, false);
+            data.model_id = model.id;
+        }
     }
 
     if (tools::get_json_value(doc, "type", s)) {
@@ -155,6 +164,22 @@ ItemData ItemManager::get_item_data(ItemID id) const {
         return EMPTY;
     }
     return c->second;
+}
+bool ItemManager::contains(std::string_view key) const {
+    IDMap::const_accessor acc;
+    auto loaction = ResourceLocation::parse(key);
+    if (!loaction) {
+        return false;
+    }
+    return m_id_map.find(acc, loaction->to_string());
+}
+
+std::vector<ItemID> ItemManager::all_keys() const {
+    std::vector<ItemID> items;
+    for (auto& [key, _] : m_map) {
+        items.emplace_back(key);
+    }
+    return items;
 }
 
 ItemData ItemManager::get(std::string_view key) {

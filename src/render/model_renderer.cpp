@@ -24,7 +24,11 @@ void ModelRender::build_vertices(ModelID id,
     if (instances.empty()) {
         return;
     }
-    auto& root = ModelManager::model(id).node;
+    auto model = ModelManager::model(id);
+    if (!model) {
+        return;
+    }
+    auto& root = model->node;
     auto& batch = get_batch(id, root);
     const size_t PER_INSTANCE_SIZE = batch.node_count * sizeof(glm::mat4);
     if (instances.size() > batch.capacity) {
@@ -72,8 +76,11 @@ void ModelRender::build_vertices(ModelID id,
 void ModelRender::render_instance(ModelID id, size_t sum, const Camera& camera,
                                   bool shadow) {
     ZoneScopedN("ModelRender::render_instance");
-
-    auto& root = ModelManager::model(id).node;
+    auto model = ModelManager::model(id);
+    if (!model) {
+        return;
+    }
+    auto& root = model->node;
     auto& batch = get_batch(id, root);
 
     auto& shader = shadow ? m_renderer.get_shader("depth_model_instance")

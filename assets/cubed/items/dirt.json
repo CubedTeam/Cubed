@@ -3,5 +3,6 @@
     "type": "block",
     "block": "cubed:dirt",
     "texture": "cubed:textures/items/block/dirt.png",
-    "description": ""
+    "description": "",
+    "model": "cubed:models/items/dirt.glb"
 }

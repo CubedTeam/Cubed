@@ -20,10 +20,10 @@ void ServerPlayer::update() {
             ASSERT(v);
             add_internal(*v);
         } break;
-        case Task::REMOVE_ITEM: {
-            auto* v = std::get_if<RemoveAction>(&task.second);
+        case Task::DROP_ITEM: {
+            auto* v = std::get_if<DropAction>(&task.second);
             ASSERT(v);
-            remove_internal(*v);
+            drop_internal(*v);
         } break;
         case Task::SEND_ALL_INVENTORY: {
             send_all_inventory_internal();
@@ -135,8 +135,80 @@ void ServerPlayer::init_add(ItemStack item, size_t position) {
 
 void ServerPlayer::unsafe_add(AddAction action) { add_internal(action); }
 
-void ServerPlayer::remove(RemoveAction action) {
-    m_task.emplace(Task::REMOVE_ITEM, std::move(action));
+uint32_t ServerPlayer::atomic_add_item(ItemID id, uint32_t total_count) {
+    if (!id) {
+        return false;
+    }
+    uint32_t remain = total_count;
+    const uint32_t STACK_MAX_COUNT = ItemStack{id, 1}.max_stack_size();
+    std::vector<std::pair<size_t, uint32_t>> can_add_vector;
+    std::lock_guard lock(m_inventory_mutex);
+    for (size_t i = 0; i < m_inventory.size(); ++i) {
+        auto& stack = m_inventory[i];
+        if (!stack) {
+            can_add_vector.emplace_back(i, STACK_MAX_COUNT);
+            continue;
+        }
+        if (stack->item == id) {
+            if (stack->max_stack_size() < stack->count) {
+                Logger::error("Max Stack Size {} less then stack size {}",
+                              stack->max_stack_size(), stack->count);
+                continue;
+            }
+            const uint32_t REMAINING = stack->max_stack_size() - stack->count;
+            if (REMAINING) {
+                can_add_vector.emplace_back(i, REMAINING);
+                continue;
+            }
+        }
+    }
+    if (can_add_vector.empty()) {
+        return total_count - remain;
+    }
+
+    std::ranges::sort(
+        can_add_vector,
+        [STACK_MAX_COUNT](const std::pair<size_t, uint32_t>& a,
+                          const std::pair<size_t, uint32_t>& b) {
+            if (a.second != STACK_MAX_COUNT && b.second == STACK_MAX_COUNT) {
+                return true;
+            }
+            if (b.second != STACK_MAX_COUNT && a.second == STACK_MAX_COUNT) {
+                return false;
+            }
+
+            return a.first < b.first;
+        });
+
+    for (const auto& [pos, count] : can_add_vector) {
+
+        if (!remain) {
+            break;
+        }
+        uint32_t c = 1;
+        if (remain >= count) {
+            remain -= count;
+            c = count;
+        } else {
+            c = remain;
+            remain = 0;
+        }
+        auto& stack = m_inventory[pos];
+        if (!stack) {
+            stack = ItemStack{id, c};
+        } else {
+            stack->count += c;
+        }
+    }
+
+    ++m_revision;
+    send_all_inventory_internal(0);
+
+    return total_count - remain;
+}
+
+void ServerPlayer::drop(DropAction action) {
+    m_task.emplace(Task::DROP_ITEM, std::move(action));
 }
 void ServerPlayer::move(MoveAction action) {
     m_task.emplace(Task::MOVE_ITEM, std::move(action));
@@ -149,8 +221,11 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         }
         AddAction action;
         action.revision = msg.base_revision();
-        action.stack.count = msg.add().count();
-        action.stack.item = msg.add().item();
+        if (action.revision == 0) {
+            return;
+        }
+        action.count = msg.add().count();
+        action.item = msg.add().item();
         action.request_id = msg.request_id();
         if (msg.add().to() >= INVENTORY_SIZE) {
             return;
@@ -159,15 +234,16 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
         add(std::move(action));
     }
 
-    if (msg.has_remove()) {
-        if (msg.remove().from() >= INVENTORY_SIZE) {
+    if (msg.has_drop()) {
+        if (msg.drop().from() >= INVENTORY_SIZE) {
             return;
         }
-        RemoveAction action;
-        action.position = msg.remove().from();
+        DropAction action;
+        action.position = msg.drop().from();
         action.revision = msg.base_revision();
         action.request_id = msg.request_id();
-        remove(std::move(action));
+        action.count = msg.drop().count();
+        drop(std::move(action));
     }
 
     if (msg.has_move()) {
@@ -199,7 +275,7 @@ void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 Uuid ServerPlayer::get_uuid() const { return M_UUID; }
 
 void ServerPlayer::add_internal(const AddAction& action) {
-    if (action.revision != m_revision) {
+    if (action.revision && action.revision != m_revision) {
         send_all_inventory_internal(action.request_id);
         return;
     }
@@ -207,12 +283,34 @@ void ServerPlayer::add_internal(const AddAction& action) {
         ASSERT(false);
         return;
     }
+    if (action.count == 0) {
+        send_all_inventory_internal(action.request_id);
+        return;
+    }
+    if (!m_inventory[action.position]) {
+        auto stack = ItemStack{action.item, action.count};
+        if (stack.count > stack.max_stack_size()) {
+            send_all_inventory_internal(action.request_id);
+            return;
+        }
+        m_inventory[action.position] = std::move(stack);
+    } else {
+        auto& stack = m_inventory[action.position];
+        if (stack->count + action.count > stack->max_stack_size()) {
+            send_all_inventory_internal(action.request_id);
+            return;
+        }
+        if (stack->item != action.item) {
+            send_all_inventory_internal(action.request_id);
+            return;
+        }
+        stack->count += action.count;
+    }
 
-    m_inventory[action.position] = std::move(action.stack);
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }
-void ServerPlayer::remove_internal(const RemoveAction& action) {
+void ServerPlayer::drop_internal(const DropAction& action) {
     if (action.revision != m_revision) {
         send_all_inventory_internal(action.request_id);
         return;
@@ -221,7 +319,47 @@ void ServerPlayer::remove_internal(const RemoveAction& action) {
         ASSERT(false);
         return;
     }
-    m_inventory[action.position] = std::nullopt;
+    auto& stack = m_inventory[action.position];
+    if (!stack) {
+        send_all_inventory_internal(action.request_id);
+        return;
+    }
+    if (stack->count < action.count) {
+        send_all_inventory_internal(action.request_id);
+        return;
+    }
+    ItemID item = stack->item;
+    stack->count -= action.count;
+    if (stack->count == 0) {
+        stack = std::nullopt;
+    }
+    auto data = ItemManager::get(item);
+    const float YAW_RAD = glm::radians(yaw());
+    const float PITCH_RAD = glm::radians(pitch());
+    glm::vec3 direction{
+        std::sin(YAW_RAD) * std::cos(PITCH_RAD),
+        std::sin(PITCH_RAD),
+        -std::cos(YAW_RAD) * std::cos(PITCH_RAD),
+    };
+    constexpr float THROW_SPEED = 0.18f; // blocks/tick
+    constexpr float THROW_LIFT = 0.03f;
+
+    glm::vec3 initial_velocity =
+        direction * THROW_SPEED + glm::vec3{0.0f, THROW_LIFT, 0.0f};
+
+    const glm::vec3 EYE_POSITION = m_pos.load() + glm::vec3{0.0f, 1.6f, 0.0f};
+
+    glm::vec3 spawn_direction{direction.x, 0.0f, direction.z};
+
+    if (glm::length(spawn_direction) > 0.0f) {
+        spawn_direction = glm::normalize(spawn_direction);
+    }
+
+    const glm::vec3 SPAWN_POSITION = EYE_POSITION + spawn_direction * 0.4f;
+
+    m_world.entity_manager().add_item_entity(
+        data.name.to_string(), SPAWN_POSITION, initial_velocity, action.count);
+
     ++m_revision;
     send_all_inventory_internal(action.request_id);
 }

@@ -5,6 +5,8 @@
 #include "Cubed/gameplay/creatures/pig.hpp"
 #include "Cubed/gameplay/ecs/client_entity.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
+#include "Cubed/gameplay/ecs/item_ecs.hpp"
+#include "Cubed/gameplay/ecs/renderable.hpp"
 #include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/render/model_manager.hpp"
 #include "Cubed/tools/cubed_assert.hpp"
@@ -20,6 +22,7 @@ namespace cubed {
 namespace {
 constexpr double ENTITY_RENDER_DELAY_MS = 100.0; // two tick time
 constexpr size_t ENTITY_SNAPSHOT_MAX = 16;
+constexpr float ITEM_SPIN_SPEED = 86.0f; // d/s
 
 ClientEntitySnapshot
 interpolate_snapshot(const std::deque<ClientEntitySnapshot>& history,
@@ -70,6 +73,7 @@ void ClientEntityManager::update(float dt) {
     ZoneScopedN("ClientEntityManager::update");
     handle_task(dt);
     {
+
         auto view = m_registry.view<ClientEntityState, RenderTransform>();
         double render_time = static_cast<double>(tools::get_time_ticks()) -
                              ENTITY_RENDER_DELAY_MS;
@@ -81,44 +85,100 @@ void ClientEntityManager::update(float dt) {
             r.direction.value = snap.dir;
         }
     }
+    {
+        auto view = m_registry.view<ItemTag, RenderTransform>();
+        for (auto e : view) {
+            auto& rt = view.get<RenderTransform>(e);
 
-    auto view = m_registry.view<BaseClientCreature>();
+            rt.orientation.yaw += ITEM_SPIN_SPEED * dt;
+            rt.orientation.yaw = std::fmod(rt.orientation.yaw, 360);
+            rt.direction.value = {std::sin(glm::radians(rt.orientation.yaw)),
+                                  0.0f,
+                                  std::cos(glm::radians(rt.orientation.yaw))};
+        }
+    }
+    auto view = m_registry.view<WalkPose>();
     for (auto e : view) {
-        auto& c = view.get<BaseClientCreature>(e);
-        if (c.pose.gait == Gait::STOP) {
-            c.pose.walk_time = 0.0f;
+        auto& pose = view.get<WalkPose>(e);
+        if (pose.gait == Gait::STOP) {
+            pose.walk_time = 0.0f;
         } else {
-            c.pose.walk_time += dt;
+            pose.walk_time += dt;
         }
     }
 
     player_sound(dt);
 }
 
+void ClientEntityManager::create_item_entity(EntityID id, ModelID model,
+                                             std::string_view name) {
+
+    Renderable renderable{model};
+    RenderTransform rt;
+    rt.orientation.yaw = m_random.random_float(0.00f, 360.0f);
+    create_entity_in_registry(id, Entity{id, EntityType::ITEM},
+                              EntityInfo{std::string(name), std::nullopt},
+                              std::move(renderable), std::move(rt),
+                              ClientEntityState{}, Transform{}, ItemTag{});
+}
+
 void ClientEntityManager::init() {
     m_random.init(std::random_device()());
+    {
+        auto pig = CreatureManager::data("cubed:pig");
+        if (pig.model) {
+            ModelManager::instance().load_model(*pig.model, true, &pig);
+        }
+    }
+
+    auto items = ItemManager::instance().all_keys();
+
+    for (auto& id : items) {
+        auto data = ItemManager::get(id);
+        auto name = data.name;
+        m_factories.emplace(name.to_string(), [this, model_id = data.model_id,
+                                               name](EntityID id) {
+            if (!model_id) {
+                Logger::error("Can't Load item {} model", name.to_string());
+                return;
+            }
+
+            create_item_entity(id, *model_id, name.to_string());
+        });
+    }
+
     m_factories.emplace("cubed:pig", [this](EntityID id) {
-        BaseClientCreature c;
-        c.model = ModelManager::instance().get_model_id("cubed:pig");
+        auto pig = CreatureManager::data("cubed:pig");
+        ASSERT(pig.model);
+        auto model = ModelManager::instance().get_model_id(*pig.model);
+        if (!model) {
+            Logger::error("Can't Load pig model");
+            return;
+        }
+        Renderable renderable{*model};
         float next_call_time = m_random.random_float(8.0f, 25.0f);
-        create_entity_in_registry(
-            id, Entity{id, EntityType::CREATURE},
-            EntityInfo{"cubed:pig", std::nullopt}, std::move(c), PigTag{},
-            RenderTransform{}, SoundTime{next_call_time}, ClientEntityState{});
+        create_entity_in_registry(id, Entity{id, EntityType::CREATURE},
+                                  EntityInfo{"cubed:pig", std::nullopt},
+                                  std::move(renderable), PigTag{},
+                                  RenderTransform{}, SoundTime{next_call_time},
+                                  ClientEntityState{}, Transform{}, WalkPose{});
     });
 }
 // not thread safe
 void ClientEntityManager::handle_entity_create(EntityID id,
-                                               std::string_view name,
+                                               const std::string& name,
                                                const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
     m_factories[name](id);
     acc a;
     bool found = m_entities.find(a, id);
-    ASSERT(found);
-    auto* c = m_registry.try_get<BaseClientCreature>(a->second);
-    ASSERT(c);
-    c->transform.position.value = pos;
+    if (!found) {
+        Logger::error("Can't create entity {}", name);
+        return;
+    }
+    auto* transform = m_registry.try_get<Transform>(a->second);
+    ASSERT(transform);
+    transform->position.value = pos;
     auto* r = m_registry.try_get<RenderTransform>(a->second);
     ASSERT(r);
     r->position.value = pos;
@@ -138,11 +198,14 @@ void ClientEntityManager::handle_entity_update(UpdateInfo& info, float) {
             return;
         }
     }
-    auto creature = m_registry.try_get<BaseClientCreature>(e);
-    ASSERT(creature);
-    creature->transform.position.value = info.pos;
-    creature->transform.direction.value = info.direction;
-    creature->pose.gait = info.gait;
+    auto transform = m_registry.try_get<Transform>(e);
+    ASSERT(transform);
+    transform->position.value = info.pos;
+    transform->direction.value = info.direction;
+    auto pose = m_registry.try_get<WalkPose>(e);
+    if (pose) {
+        pose->gait = info.gait;
+    }
 
     auto state = m_registry.try_get<ClientEntityState>(e);
     ASSERT(state);
@@ -241,13 +304,11 @@ const entt::registry& ClientEntityManager::get_registry() const {
 void ClientEntityManager::player_sound(float dt) {
     auto& audio = m_world.get_audio();
     auto player_pos = m_world.player_manager().get_local().get_player_pos();
-    auto view = m_registry.view<EntityInfo, BaseClientCreature, SoundTime>();
+    auto view = m_registry.view<EntityInfo, Transform, SoundTime>();
 
     for (auto e : view) {
-        const auto [info, creature] =
-            view.get<EntityInfo, BaseClientCreature>(e);
-        if (math::distance2(player_pos, creature.transform.position.value) >
-            10 * 10) {
+        const auto [info, transform] = view.get<EntityInfo, Transform>(e);
+        if (math::distance2(player_pos, transform.position.value) > 10 * 10) {
             continue;
         }
         auto& sound_time = view.get<SoundTime>(e);
@@ -257,7 +318,7 @@ void ClientEntityManager::player_sound(float dt) {
             auto data = CreatureManager::data(info.name);
             if (data.sound.call) {
                 audio.play_3d(data.sound.call->full_path().string(),
-                              creature.transform.position.value, true, false);
+                              transform.position.value, true, false);
             }
             sound_time.next_call_time = m_random.random_float(8.0f, 25.0f);
         }

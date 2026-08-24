@@ -11,7 +11,7 @@ message InventoryMove {
     uint32 count = 3;
 }
 
-message InventoryRemove {
+message InventoryDrop {
     uint32 from = 1;
     uint32 count = 2;
 }
@@ -37,7 +37,7 @@ message C2SInventoryAction {
 
     oneof action {
         InventoryMove move = 3;
-        InventoryRemove remove = 4;
+        InventoryDrop drop = 4;
         InventoryCreativeAdd add = 5;
     }
 }

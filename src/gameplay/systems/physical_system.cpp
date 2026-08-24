@@ -1,6 +1,7 @@
 #include "Cubed/gameplay/systems/physical_system.hpp"
 
-#include "Cubed/gameplay/ecs/server_entity.hpp"
+#include "Cubed/gameplay/ecs/collision.hpp"
+#include "Cubed/gameplay/ecs/transform.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server/server_world.hpp"
 
@@ -108,15 +109,17 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
                             entt::entity e) {
     ZoneScopedN("PhysicalSystem::update");
 
-    if (!registry.all_of<BaseServerCreature>(e)) {
+    if (!registry.all_of<TickVelocity, Collider, Transform>(e)) {
         return;
     }
-
-    auto& creature = registry.get<BaseServerCreature>(e);
-    auto distance = get_move_distance(creature.velocity);
-    auto box = HitboxManager::hitbox(creature.hitbox);
-    auto& pos = creature.transform.position.value;
-    auto& v = creature.velocity;
+    const auto* step_up = registry.try_get<StepUp>(e);
+    auto& velocity = registry.get<TickVelocity>(e);
+    const auto& collider = registry.get<Collider>(e);
+    auto& transform = registry.get<Transform>(e);
+    auto distance = get_move_distance(velocity);
+    auto box = HitboxManager::hitbox(collider.hitbox);
+    auto& pos = transform.position.value;
+    auto& v = velocity;
     bool ground = !update_y(pos, glm::vec3{0.0f, -0.1f, 0.0f}, world, box.box);
     bool stepped = false;
     if (update_y(pos, distance, world, box.box)) {
@@ -129,9 +132,9 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
         pos.x += distance.x;
 
     } else {
-        if (ground && !stepped) {
+        if (step_up && ground && !stepped) {
 
-            glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
+            glm::vec3 step_pos = pos + glm::vec3{0.0f, step_up->height, 0.0f};
             if (update_x(step_pos, distance, world, box.box)) {
                 pos.x += distance.x;
                 pos.y += 1.0f;
@@ -148,9 +151,9 @@ void PhysicalSystem::update(ServerWorld& world, entt::registry& registry,
         pos.z += distance.z;
 
     } else {
-        if (ground && !stepped) {
+        if (step_up && ground && !stepped) {
 
-            glm::vec3 step_pos = pos + glm::vec3{0.0f, 1.0f, 0.0f};
+            glm::vec3 step_pos = pos + glm::vec3{0.0f, step_up->height, 0.0f};
             if (update_z(step_pos, distance, world, box.box)) {
                 pos.z += distance.z;
                 pos.y += 1.0f;

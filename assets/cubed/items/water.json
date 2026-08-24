@@ -3,5 +3,6 @@
     "type": "block",
     "block": "cubed:water",
     "texture": "cubed:textures/items/block/water.png",
-    "description": ""
+    "description": "",
+    "model": "cubed:models/items/water.glb"
 }

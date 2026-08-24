@@ -86,7 +86,7 @@ void App::init(int argc, char** argv) {
     CreatureManager::instance().init();
 
     BlockManager::init();
-    ItemManager::instance().init();
+
     m_window.init(m_argument);
     m_window.imgui_init();
     m_opengl_init = true;
@@ -96,6 +96,9 @@ void App::init(int argc, char** argv) {
 
     m_renderer.init();
     Logger::info("Renderer Init Success");
+
+    ItemManager::instance().init();
+    Logger::info("Item Init Success");
     // MapTable::init_map();
     m_texture_manager.init_texture();
     Logger::info("Texture Load Success");

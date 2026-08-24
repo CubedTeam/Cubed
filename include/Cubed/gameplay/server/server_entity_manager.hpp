@@ -2,6 +2,7 @@
 #include "Cubed/gameplay/chunk_pos.hpp"
 #include "Cubed/gameplay/ecs/entity.hpp"
 #include "Cubed/gameplay/gait.hpp"
+#include "Cubed/gameplay/item.hpp"
 #include "Cubed/gameplay/server/entity_storage.hpp"
 #include "Cubed/tools/log.hpp"
 #include "glm/ext/vector_float3.hpp"
@@ -14,6 +15,7 @@
 namespace cubed {
 class ServerWorld;
 class Session;
+class ServerPlayer;
 class ServerEntityManager {
 public:
     static constexpr size_t PER_CREATURE_LIMITS = 100;
@@ -24,6 +26,8 @@ public:
 
     void update();
     void add_creature(std::string_view name, const glm::vec3& world_pos);
+    void add_item_entity(std::string_view name, const glm::vec3& world_pos,
+                         const glm::vec3& initial_velocity, size_t count);
     void destroy(EntityID id);
     void handle_player_login(std::shared_ptr<Session> session);
     void save_all_entities(bool immediately);
@@ -31,6 +35,7 @@ public:
     size_t creature_sum() const;
     size_t entity_sum() const;
     EntityID get_next_value() const;
+    void push_item_count(entt::entity e, uint32_t count);
     void set_next_value(EntityID id);
     void unload(EntityID id);
     void stop();
@@ -39,33 +44,47 @@ public:
     void activate_chunk(ChunkPos pos);
 
 private:
-    enum class Command { CREATE, SEND_ALL_ENTITIES, DESTROY, SAVE_ALL, UNLOAD };
+    enum class Command {
+        CREATURE_CREATE,
+        SEND_ALL_ENTITIES,
+        DESTROY,
+        SAVE_ALL,
+        UNLOAD,
+        ITEM_CREATE
+    };
     struct EntityCreateElement {
         std::string name;
-        glm::vec3 pos;
+        glm::vec3 pos{0.0f};
+    };
+
+    struct ItemEntityCreateElement {
+        std::string name;
+        glm::vec3 pos{0.0f};
+        glm::vec3 initial_velocity{0.0f};
+        uint32_t count;
     };
 
     struct EntitySendData {
         EntityID id;
         glm::vec3 pos;
         glm::vec3 dir;
-        Gait gait;
+        Gait gait = Gait::STOP;
     };
 
     using EntityMap = tbb::concurrent_hash_map<EntityID, entt::entity>;
     using acc = EntityMap::accessor;
     using cacc = EntityMap::const_accessor;
-    using CreateFunc = std::function<EntityID(EntityID id)>;
+    using CreateFunc = std::function<void(EntityID id)>;
     using TaskElement =
-        std::variant<std::shared_ptr<Session>, EntityCreateElement, EntityID,
-                     std::monostate>;
+        std::variant<std::shared_ptr<Session>, EntityCreateElement,
+                     ItemEntityCreateElement, EntityID, std::monostate>;
     using TaskPair = std::pair<Command, TaskElement>;
     using DormantEntityMap =
         std::unordered_map<ChunkPos, std::vector<EntityStorageData>,
                            ChunkPos::Hash>;
     ServerWorld& m_world;
     std::unique_ptr<EntityStorage> m_storage;
-
+    tbb::concurrent_queue<std::pair<entt::entity, uint32_t>> m_item_count;
     DormantEntityMap m_dormant_entities;
 
     std::atomic<size_t> m_creature_sum{0};
@@ -74,8 +93,9 @@ private:
     entt::registry m_registry;
     EntityID m_next = 0;
     EntityMap m_entities;
-    std::unordered_map<std::string_view, CreateFunc> m_factories;
-    void create_entity(std::string_view name, const glm::vec3& pos);
+    std::unordered_map<std::string, CreateFunc> m_factories;
+    void create_entity(const std::string& name, const glm::vec3& pos);
+    void create_item_entity(const ItemEntityCreateElement& item);
     void handle_entity_create(EntityID id, std::string_view name,
                               const glm::vec3& pos);
     void handle_entity_destroy(EntityID id);
@@ -84,6 +104,11 @@ private:
     void send_all_entities(std::shared_ptr<Session>& session);
     void update_ai(entt::entity e);
     void update_move(entt::entity e);
+    void update_item(
+        entt::entity e,
+        std::span<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
+            players);
+    void update_item_count();
     void update_send(entt::entity e,
                      tbb::concurrent_vector<EntitySendData>& sessions);
     void save_all();
@@ -93,8 +118,11 @@ private:
     std::optional<EntityStorageData> build_entity_storage_data(EntityID id);
     std::optional<EntityStorageData> build_entity_storage_data(entt::entity id);
 
+    void create_item_entity(EntityID id, const std::string& name,
+                            ItemID item_id);
+
     template <typename... Args>
-    EntityID create_entity_in_factory(EntityID id, Args&&... args) {
+    void create_entity_in_factory(EntityID id, Args&&... args) {
         auto entity = m_registry.create();
 
         ((m_registry.emplace<std::remove_cvref_t<Args>>(
@@ -106,7 +134,7 @@ private:
             ++m_entity_sum;
         }
 
-        return id;
+        return;
     }
 };
 } // namespace cubed

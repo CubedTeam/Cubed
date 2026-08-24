@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .custom_fields import extract_extra_fields, merge_known_with_extra
 from .schema import (
     BLOCK_SCHEMA,
     CREATURE_SCHEMA,
@@ -19,6 +20,8 @@ from .schema import (
 )
 
 # --- Block ----------------------------------------------------------------
+
+# AI-generated: root models retain fields outside their static schemas.
 
 
 @dataclass
@@ -54,6 +57,7 @@ class Block:
     properties: BlockProperties = field(default_factory=BlockProperties)
     texture: Texture = field(default_factory=Texture)
     sounds: Sounds = field(default_factory=Sounds)
+    extra_fields: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Block:
@@ -68,11 +72,14 @@ class Block:
                 place=snd.get("place", ""),
                 walk=snd.get("walk"),
             ),
+            extra_fields=extract_extra_fields(BLOCK_SCHEMA, data),
         )
         return obj
 
     def to_dict(self) -> dict[str, Any]:
-        return schema_to_dict(BLOCK_SCHEMA, self)
+        return merge_known_with_extra(
+            schema_to_dict(BLOCK_SCHEMA, self), self.extra_fields
+        )
 
 
 # --- Item -----------------------------------------------------------------
@@ -86,13 +93,19 @@ class Item:
     creature: str | None = None
     texture: str = ""
     description: str = ""
+    extra_fields: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Item:
-        return cls(**schema_from_dict(ITEM_SCHEMA, data))
+        return cls(
+            **schema_from_dict(ITEM_SCHEMA, data),
+            extra_fields=extract_extra_fields(ITEM_SCHEMA, data),
+        )
 
     def to_dict(self) -> dict[str, Any]:
-        return schema_to_dict(ITEM_SCHEMA, self)
+        return merge_known_with_extra(
+            schema_to_dict(ITEM_SCHEMA, self), self.extra_fields
+        )
 
 
 # --- Creature -------------------------------------------------------------
@@ -104,14 +117,20 @@ class Creature:
     model: str = ""
     animation: str | None = None
     collision: str | None = None
+    extra_fields: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Creature:
         norm = schema_from_dict(CREATURE_SCHEMA, data)
-        return cls(**norm)
+        return cls(
+            **norm,
+            extra_fields=extract_extra_fields(CREATURE_SCHEMA, data),
+        )
 
     def to_dict(self) -> dict[str, Any]:
-        return schema_to_dict(CREATURE_SCHEMA, self)
+        return merge_known_with_extra(
+            schema_to_dict(CREATURE_SCHEMA, self), self.extra_fields
+        )
 
 
 # --- Registry -------------------------------------------------------------

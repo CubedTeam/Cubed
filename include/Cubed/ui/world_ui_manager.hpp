@@ -30,7 +30,7 @@ private:
     bool handle_key_event(const KeyEvent& e) override;
     void update_hotbar();
     WorldScene& m_scene;
-
+    bool m_ctrl_press = false;
     ChatBox* m_chat_box = nullptr;
     Image* m_mircophone = nullptr;
     Label* m_disbable_voice = nullptr;

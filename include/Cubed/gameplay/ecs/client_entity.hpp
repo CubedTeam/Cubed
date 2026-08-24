@@ -1,10 +1,10 @@
 #pragma once
-#include "Cubed/gameplay/ecs/animation.hpp"
-#include "Cubed/gameplay/ecs/transform.hpp"
-#include "Cubed/gameplay/model.hpp"
+
+#include "glm/ext/vector_float3.hpp"
 
 #include <deque>
 namespace cubed {
+/*
 struct BaseClientCreature {
 
     Transform transform{};
@@ -13,7 +13,7 @@ struct BaseClientCreature {
 
     ModelID model = 0;
 };
-
+*/
 struct SoundTime {
     float next_call_time = 0.0f;
 };

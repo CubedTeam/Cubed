@@ -1,6 +1,7 @@
 #pragma once
 #include "Cubed/gameplay/ecs/entity.hpp"
 #include "Cubed/gameplay/gait.hpp"
+#include "Cubed/gameplay/model.hpp"
 #include "Cubed/tools/cubed_random.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "world/entity.pb.h"
@@ -53,15 +54,16 @@ private:
     ClientWorld& m_world;
     entt::registry m_registry;
     EntityMap m_entities;
-    std::unordered_map<std::string_view, CreateFunc> m_factories;
+    std::unordered_map<std::string, CreateFunc> m_factories;
     tbb::concurrent_queue<TaskPair> m_tasks;
     Random m_random;
     void handle_task(float dt);
     void handle_entity_destroy(EntityID id);
     // not thread safe
-    void handle_entity_create(EntityID id, std::string_view name,
+    void handle_entity_create(EntityID id, const std::string& name,
                               const glm::vec3& pos);
     void handle_entity_update(UpdateInfo& info, float dt);
+    void create_item_entity(EntityID id, ModelID model, std::string_view name);
     template <typename... Args>
     void create_entity_in_registry(EntityID id, Args&&... args) {
         {

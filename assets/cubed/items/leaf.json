@@ -3,5 +3,6 @@
     "type": "block",
     "block": "cubed:leaf",
     "texture": "cubed:textures/items/block/leaf.png",
-    "description": ""
+    "description": "",
+    "model": "cubed:models/items/leaf.glb"
 }

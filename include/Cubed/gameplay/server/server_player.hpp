@@ -32,15 +32,17 @@ public:
         uint64_t revision = 0;
         uint64_t request_id = 0;
         size_t position = 0;
-        ItemStack stack;
+        ItemID item = 0;
+        size_t count = 0;
     };
-    struct RemoveAction {
+    struct DropAction {
         uint64_t revision = 0;
         uint64_t request_id = 0;
         size_t position = 0;
+        size_t count = 0;
     };
     using Inventory = std::array<std::optional<ItemStack>, INVENTORY_SIZE>;
-    enum class Task { ADD_ITEM, REMOVE_ITEM, SEND_ALL_INVENTORY, MOVE_ITEM };
+    enum class Task { ADD_ITEM, DROP_ITEM, SEND_ALL_INVENTORY, MOVE_ITEM };
     ServerPlayer(const ServerPlayer&) = delete;
     ServerPlayer(ServerPlayer&&) = delete;
     ServerPlayer& operator=(const ServerPlayer&) = delete;
@@ -78,7 +80,9 @@ public:
     void send_all_inventory();
     void init_add(ItemStack item, size_t position);
     void unsafe_add(AddAction action);
-    void remove(RemoveAction action);
+    // Return the number of successfully added items
+    uint32_t atomic_add_item(ItemID id, uint32_t count);
+    void drop(DropAction action);
     void move(MoveAction action);
     void handle_inventory_action(protocol::C2SInventoryAction& msg);
 
@@ -86,7 +90,7 @@ public:
 
 private:
     using TaskElement =
-        std::variant<AddAction, RemoveAction, MoveAction, std::monostate>;
+        std::variant<AddAction, DropAction, MoveAction, std::monostate>;
     using TaskPair = std::pair<Task, TaskElement>;
     static constexpr TickType TIMEOUT = 200;
     const std::string M_NAME;
@@ -112,7 +116,7 @@ private:
     ChunkPosSet m_player_chunk_pos_set;
 
     void add_internal(const AddAction& action);
-    void remove_internal(const RemoveAction& action);
+    void drop_internal(const DropAction& action);
     void move_internal(const MoveAction& action);
     void send_all_inventory_internal(uint64_t request_id = 0);
 };

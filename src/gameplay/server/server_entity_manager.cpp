@@ -1,12 +1,14 @@
 #include "Cubed/gameplay/server/server_entity_manager.hpp"
 
 #include "Cubed/gameplay/creatures/pig.hpp"
+#include "Cubed/gameplay/ecs/collision.hpp"
 #include "Cubed/gameplay/ecs/identity.hpp"
-#include "Cubed/gameplay/ecs/server_entity.hpp"
+#include "Cubed/gameplay/ecs/item_ecs.hpp"
 #include "Cubed/gameplay/gait.hpp"
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/server/server_world.hpp"
 #include "Cubed/gameplay/server/session.hpp"
+#include "Cubed/gameplay/systems/item_pickup_system.hpp"
 #include "Cubed/gameplay/systems/physical_system.hpp"
 #include "Cubed/gameplay/systems/speed_system.hpp"
 #include "Cubed/gameplay/systems/wander_ai_system.hpp"
@@ -20,19 +22,52 @@ using namespace google::protobuf;
 namespace cubed {
 ServerEntityManager::ServerEntityManager(ServerWorld& world) : m_world(world) {}
 
+void ServerEntityManager::create_item_entity(EntityID id,
+                                             const std::string& name,
+                                             ItemID item_id) {
+
+    Collider hitbox{HitboxManager::instance().get_hitbox_id(name)};
+    Gravity gravity{pig_defaults::GRAVITY};
+    TickVelocity velocity;
+    Movement movement;
+    movement.acceleration = 0.0f;
+    movement.deceleration = 0.007f;
+    return create_entity_in_factory(
+        id, Entity{id, EntityType::ITEM}, EntityInfo{name, std::nullopt},
+        Transform{}, std::move(hitbox), std::move(gravity), std::move(velocity),
+        ItemTag{item_id}, std::move(movement), MoveBoost{}, PickupDelay{});
+}
+
 void ServerEntityManager::init() {
 
+    auto key = ItemManager::instance().all_keys();
+
+    for (ItemID item_id : key) {
+        auto data = ItemManager::get(item_id);
+        auto name = data.name.to_string();
+        m_factories.try_emplace(name, [this, name, item_id](EntityID id) {
+            create_item_entity(id, name, item_id);
+        });
+    }
+
     m_factories.try_emplace("cubed:pig", [this](EntityID id) {
-        BaseServerCreature c;
-        c.hitbox = HitboxManager::instance().get_hitbox_id("cubed:pig");
-        c.gravity.value = pig_defaults::GRAVITY;
-        c.movement.acceleration = pig_defaults::ACCELERATION;
-        c.movement.deceleration = pig_defaults::DECELERATION;
-        c.velocity.max.x = c.velocity.max.z = pig_defaults::MAX_SPEED;
-        return create_entity_in_factory(id, Entity{id, EntityType::CREATURE},
-                                        EntityInfo{"cubed:pig", std::nullopt},
-                                        std::move(c), PigTag{}, AIBase{},
-                                        WanderAITag{}, MoveBoost{});
+        Collider hitbox{HitboxManager::instance().get_hitbox_id("cubed:pig")};
+
+        Gravity gravity{pig_defaults::GRAVITY};
+        Movement move;
+        move.acceleration = pig_defaults::ACCELERATION;
+        move.deceleration = pig_defaults::DECELERATION;
+
+        TickVelocity velocity;
+
+        velocity.max.x = velocity.max.z = pig_defaults::MAX_SPEED;
+
+        return create_entity_in_factory(
+            id, Entity{id, EntityType::CREATURE},
+            EntityInfo{"cubed:pig", std::nullopt}, Transform{}, PigTag{},
+            AIBase{}, WanderAITag{}, MoveBoost{}, std::move(hitbox),
+            std::move(gravity), std::move(move), std::move(velocity),
+            StepUp{1.0f});
     });
 
     m_storage = std::make_unique<EntityStorage>(*m_world.world_storage());
@@ -70,20 +105,25 @@ void ServerEntityManager::activate_chunk(ChunkPos pos) {
             continue;
         }
 
-        EntityID id = factory->second(data.id);
+        factory->second(data.id);
 
         acc a;
-        if (!m_entities.find(a, id)) {
-            Logger::error("Entity {} created but not found", id);
+        if (!m_entities.find(a, data.id)) {
+            Logger::error("Entity {} created but not found", data.id);
             add_dormant(std::move(data));
             continue;
         }
-        auto* creature = m_registry.try_get<BaseServerCreature>(a->second);
-
-        if (creature) {
-            creature->transform.position.value = data.pos;
-            creature->transform.direction.value = data.dir;
-            ++m_creature_sum;
+        if (auto* item = m_registry.try_get<ItemTag>(a->second)) {
+            item->count = data.item_count.value_or(1);
+        }
+        auto* transform = m_registry.try_get<Transform>(a->second);
+        auto* entity = m_registry.try_get<Entity>(a->second);
+        if (transform) {
+            transform->position.value = data.pos;
+            transform->direction.value = data.dir;
+            if (entity && entity->type == EntityType::CREATURE) {
+                ++m_creature_sum;
+            }
         }
         handle_entity_create(data.id, data.name, data.pos);
     }
@@ -93,32 +133,49 @@ void ServerEntityManager::update() {
     ZoneScopedN("Server Entity update");
     handle_task();
 
-    auto view = m_registry.view<BaseServerCreature>();
-
     auto pool = m_world.get_compute_pool();
     if (!pool) {
         return;
     }
     auto sessions = m_world.get_all_session();
     std::vector<entt::entity> entities;
-    for (auto e : view) {
+    for (auto e : m_registry.view<entt::entity>()) {
         entities.push_back(e);
     }
+
+    auto players = m_world.player_manager().snapshot();
+
+    std::vector<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
+        players_data;
+
+    for (auto& player : *players) {
+        players_data.emplace_back(player.second->get_pos(), player.second);
+    }
+
     tbb::concurrent_vector<EntitySendData> send_data;
     // parallel block touches disjoint entities only;
     // structural registry changes stay on the server thread via m_tasks.
     parallel_do(*pool, entities.begin(), entities.end(), pool->thread_sum(),
-                [this, &send_data](entt::entity e) {
-                    const auto& c = m_registry.get<BaseServerCreature>(e);
-                    const auto& entity = m_registry.get<Entity>(e);
-                    if (!m_world.is_chunk_active(c.transform.position.value)) {
-                        unload(entity.id);
+                [this, &send_data, &players_data](entt::entity e) {
+                    if (!m_registry.all_of<Entity>(e)) {
+                        Logger::error("Entity don't have Entity component");
+                        return;
+                    }
+                    auto c = m_registry.try_get<Transform>(e);
+                    ASSERT(c);
+                    auto entity = m_registry.try_get<Entity>(e);
+                    ASSERT(entity);
+                    if (!m_world.is_chunk_active(c->position.value)) {
+                        unload(entity->id);
                         return;
                     }
                     update_ai(e);
                     update_move(e);
+                    update_item(e, players_data);
+
                     update_send(e, send_data);
                 });
+    update_item_count();
     if (!send_data.empty()) {
         Arena arena;
         auto* msg = Arena::Create<protocol::S2CEntityUpdateBatch>(&arena);
@@ -147,25 +204,45 @@ void ServerEntityManager::update_move(entt::entity e) {
     PhysicalSystem::update(m_world, m_registry, e);
 }
 
+void ServerEntityManager::update_item(
+    entt::entity e,
+    std::span<std::pair<const glm::vec3, std::shared_ptr<ServerPlayer>>>
+        players) {
+    ItemPickupSystem::update(players, *this, m_registry, e);
+}
+void ServerEntityManager::update_item_count() {
+    std::pair<entt::entity, uint32_t> pair;
+    while (m_item_count.try_pop(pair)) {
+        if (!pair.second) {
+            continue;
+        }
+        if (auto item = m_registry.try_get<ItemTag>(pair.first)) {
+            item->count = pair.second;
+        }
+    }
+}
 void ServerEntityManager::update_send(
     entt::entity e, tbb::concurrent_vector<EntitySendData>& send_data) {
 
-    if (!m_registry.all_of<Entity, BaseServerCreature>(e)) {
+    if (!m_registry.all_of<Entity, Transform>(e)) {
         return;
     }
 
-    const auto [entity, creature] =
-        m_registry.get<Entity, BaseServerCreature>(e);
+    const auto [entity, transform] = m_registry.get<Entity, Transform>(e);
     EntitySendData data;
     data.id = entity.id;
-    data.pos = creature.transform.position.value;
-    data.dir = creature.transform.direction.value;
-    const auto& v = creature.velocity.value;
-    if (v.x * v.x + v.z * v.z > 1e-4f) {
-        data.gait = Gait::WALK;
-    } else {
-        data.gait = Gait::STOP;
+    data.pos = transform.position.value;
+    data.dir = transform.direction.value;
+
+    auto v = m_registry.try_get<TickVelocity>(e);
+    if (v) {
+        if (v->value.x * v->value.x + v->value.z * v->value.z > 1e-4f) {
+            data.gait = Gait::WALK;
+        } else {
+            data.gait = Gait::STOP;
+        }
     }
+
     send_data.emplace_back(std::move(data));
 }
 
@@ -260,18 +337,27 @@ ServerEntityManager::build_entity_storage_data(EntityID id) {
 
 std::optional<EntityStorageData>
 ServerEntityManager::build_entity_storage_data(entt::entity e) {
+
+    if (!m_registry.all_of<Entity, Transform, EntityInfo>(e)) {
+        return std::nullopt;
+    }
+
     EntityStorageData data;
     auto entity = m_registry.try_get<Entity>(e);
     ASSERT(entity);
     data.id = entity->id;
-    auto base = m_registry.try_get<BaseServerCreature>(e);
-    if (base) {
-        data.dir = base->transform.direction.value;
-        data.pos = base->transform.position.value;
+    auto transform = m_registry.try_get<Transform>(e);
+    if (transform) {
+        data.dir = transform->direction.value;
+        data.pos = transform->position.value;
     }
     auto info = m_registry.try_get<EntityInfo>(e);
     ASSERT(info);
     data.name = info->name;
+
+    if (auto* item = m_registry.try_get<ItemTag>(e)) {
+        data.item_count = item->count;
+    }
 
     return data;
 }
@@ -280,7 +366,7 @@ void ServerEntityManager::handle_task() {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {
         switch (pair.first) {
-        case Command::CREATE: {
+        case Command::CREATURE_CREATE: {
             auto* c = std::get_if<EntityCreateElement>(&pair.second);
             ASSERT(c);
             create_entity(c->name, c->pos);
@@ -303,6 +389,11 @@ void ServerEntityManager::handle_task() {
             ASSERT(c);
             unload_internal(*c);
         }; break;
+        case Command::ITEM_CREATE: {
+            auto* c = std::get_if<ItemEntityCreateElement>(&pair.second);
+            ASSERT(c);
+            create_item_entity(*c);
+        } break;
         }
     }
 }
@@ -314,8 +405,17 @@ void ServerEntityManager::add_creature(std::string_view name,
         return;
     }
 
-    m_tasks.emplace(Command::CREATE,
+    m_tasks.emplace(Command::CREATURE_CREATE,
                     EntityCreateElement{std::string(name), world_pos});
+}
+void ServerEntityManager::add_item_entity(std::string_view name,
+                                          const glm::vec3& world_pos,
+                                          const glm::vec3& initial_velocity,
+                                          size_t count) {
+    m_tasks.emplace(Command::ITEM_CREATE,
+                    ItemEntityCreateElement{std::string(name), world_pos,
+                                            initial_velocity,
+                                            static_cast<uint32_t>(count)});
 }
 
 void ServerEntityManager::destroy(EntityID id) {
@@ -345,19 +445,47 @@ size_t ServerEntityManager::creature_sum() const {
 size_t ServerEntityManager::entity_sum() const { return m_entity_sum.load(); }
 
 EntityID ServerEntityManager::get_next_value() const { return m_next; }
+void ServerEntityManager::push_item_count(entt::entity e, uint32_t count) {
+    m_item_count.emplace(e, count);
+}
 void ServerEntityManager::set_next_value(EntityID id) { m_next = id; }
-void ServerEntityManager::create_entity(std::string_view name,
+void ServerEntityManager::create_entity(const std::string& name,
                                         const glm::vec3& pos) {
     ASSERT(m_factories.contains(name));
-    auto e = m_factories[name](m_next++);
+    auto id = m_next++;
+    m_factories[name](id);
     acc c;
-    if (m_entities.find(c, e)) {
-        auto t = m_registry.try_get<BaseServerCreature>(c->second);
+    if (m_entities.find(c, id)) {
+        auto t = m_registry.try_get<Transform>(c->second);
         ASSERT(t);
-        t->transform.position.value = pos;
+        t->position.value = pos;
     }
 
-    handle_entity_create(e, name, pos);
+    handle_entity_create(id, name, pos);
+}
+
+void ServerEntityManager::create_item_entity(
+    const ItemEntityCreateElement& item) {
+
+    ASSERT(m_factories.contains(item.name));
+    auto id = m_next++;
+    m_factories[item.name](id);
+    acc c;
+    if (m_entities.find(c, id)) {
+        auto t = m_registry.try_get<Transform>(c->second);
+        ASSERT(t);
+        t->position.value = item.pos;
+
+        auto v = m_registry.try_get<TickVelocity>(c->second);
+        ASSERT(v);
+        v->value = item.initial_velocity;
+
+        auto* tag = m_registry.try_get<ItemTag>(c->second);
+        ASSERT(tag);
+        tag->count = item.count;
+    }
+
+    handle_entity_create(id, item.name, item.pos);
 }
 
 void ServerEntityManager::unload(EntityID id) {
@@ -365,15 +493,15 @@ void ServerEntityManager::unload(EntityID id) {
 }
 
 void ServerEntityManager::send_all_entities(std::shared_ptr<Session>& session) {
-    auto view = m_registry.view<Entity, EntityInfo, BaseServerCreature>();
+    auto view = m_registry.view<Entity, EntityInfo, Transform>();
     for (auto& entity : view) {
-        auto [e, info, base] =
-            view.get<Entity, EntityInfo, BaseServerCreature>(entity);
+        auto [e, info, transform] =
+            view.get<Entity, EntityInfo, Transform>(entity);
         Arena arena;
         auto* s2c = Arena::Create<protocol::S2CEntityCreate>(&arena);
         s2c->set_id(e.id);
         s2c->set_name(info.name);
-        tools::set_proto_pos(s2c, base.transform.position.value);
+        tools::set_proto_pos(s2c, transform.position.value);
         session->send(make_packet(*s2c));
     }
 }

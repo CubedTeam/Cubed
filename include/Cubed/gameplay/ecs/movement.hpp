@@ -31,4 +31,8 @@ struct Gravity {
     float value = DEFAULT_G;
 };
 
+struct StepUp {
+    float height = 1.0f;
+};
+
 } // namespace cubed
