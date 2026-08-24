@@ -17,7 +17,7 @@ public:
     ~TextureManager();
 
     void delete_texture();
-    const Texture* get_block_status_array() const;
+    const Texture* get_block_break_array() const;
     const Texture* get_texture_array() const;
     const Texture* get_cross_plane_array() const;
     const Texture* get_image_texture(const std::string& path,
@@ -36,7 +36,7 @@ public:
 private:
     bool m_need_reload = false;
     bool m_init = false;
-    std::unique_ptr<Texture> m_block_status_array;
+    std::unique_ptr<Texture> m_block_break_array;
     std::unique_ptr<Texture> m_texture_array;
     std::unique_ptr<Texture> m_cross_plane_array;
     std::unique_ptr<Texture> m_normal_texture_array;
@@ -47,7 +47,7 @@ private:
     Config& m_config;
     int m_aniso = 1;
 
-    void load_block_status(unsigned status_id);
+    void load_block_break(unsigned status_id);
     void load_block_texture(unsigned block_id);
     void init_item_texture();
     void load_cross_plane_texture(const BlockData& data);

@@ -108,6 +108,7 @@ void WorldRenderer::render(ClientWorld& world) {
         shadow_map_generate(world, map);
     }
     render_world(world);
+    render_break_overlay(world);
     render_outline(world);
     render_entity(world, map);
 
@@ -523,6 +524,46 @@ void WorldRenderer::render_underwater(ClientWorld& world) {
     glBindVertexArray(0);
 }
 
+void WorldRenderer::render_break_overlay(ClientWorld& world) {
+    const auto& block = world.get_look_block_pos();
+    if (!block) {
+        return;
+    }
+
+    float break_time = world.get_player().break_time();
+    if (break_time <= 0.0f) {
+        return;
+    }
+    const auto& shader = m_renderer.get_shader("block_break");
+    shader.use();
+    float progress =
+        glm::clamp(break_time / LocalPlayer::BREAK_TIME, 0.0f, 1.0f);
+
+    glm::mat4 model_matrix =
+        glm::translate(glm::mat4(1.0f), glm::vec3(block->pos));
+    int stage = std::min(static_cast<int>(progress * BREAK_STAGE_COUNT),
+                         BREAK_STAGE_COUNT - 1);
+    shader.set_loc("mv_matrix", view_matrix * model_matrix);
+    shader.set_loc("proj_matrix", m_renderer.p_mat());
+    shader.set_loc("breakStage", stage);
+
+    m_texture_manager.get_block_break_array()->bind(0);
+
+    m_renderer.vao()[5].bind();
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0f, -1.0f);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glDepthMask(GL_TRUE);
+}
+
 void WorldRenderer::render_normal_block(const glm::mat4& model_mat,
                                         const glm::mat4& mv_mat,
                                         const glm::mat4& norm_mat,
@@ -774,7 +815,7 @@ void WorldRenderer::render_transparent_block(const glm::mat4& mv_mat,
 void WorldRenderer::render_entity(ClientWorld& world,
                                   const InstanceDataMap& map) {
     ZoneScopedN("WorldRenderer::render_entity");
-
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     // shader.set_loc("renderDistance", m_world.rendering_distance());
     // shader.set_loc("skyColor", m_sky_uniform.sky_top);
     glEnable(GL_DEPTH_TEST);

@@ -344,4 +344,12 @@ struct Vertex2D {
     float layer = 0.0f;
 };
 
+struct BreakVertex {
+    float x;
+    float y;
+    float z;
+    float s;
+    float t;
+};
+
 } // namespace cubed

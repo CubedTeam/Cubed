@@ -137,6 +137,7 @@ private:
     void shadow_map_generate(ClientWorld& world, const InstanceDataMap& map);
 
     void render_underwater(ClientWorld& world);
+    void render_break_overlay(ClientWorld& world);
     void render_outline(ClientWorld& world);
     void shadow_entity(ClientWorld& world, const glm::mat4& light_matrix,
                        const InstanceDataMap& map);

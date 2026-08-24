@@ -8,7 +8,7 @@ constexpr int CHUNK_SIZE = 16;
 constexpr int SEA_LEVEL = 63;
 
 constexpr int MAX_UI_NUM = 1;
-constexpr int MAX_BLOCK_STATUS = 1;
+constexpr int BREAK_STAGE_COUNT = 4;
 constexpr int MAX_BIOME_SUM = 4;
 constexpr int MAX_CHARACTER = 128;
 

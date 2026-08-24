@@ -40,6 +40,8 @@ void ShaderManager::init() {
     register_shader("depth_model_instance",
                     "shaders/depth_model_instance_vert.glsl",
                     "shaders/depth_model_frag.glsl");
+    register_shader("block_break", "shaders/break_vert.glsl",
+                    "shaders/break_frag.glsl");
 }
 
 void ShaderManager::register_shader(const std::string& name,

@@ -31,6 +31,7 @@ Renderer::~Renderer() {
         m_sky_vbo.reset();
         m_ui_vbo.reset();
         m_player_vbo.reset();
+        m_break_vbo.reset();
         glBindVertexArray(0);
         m_vao.clear();
     }
@@ -105,6 +106,34 @@ void Renderer::init() {
                        (void*)offsetof(Vertex2D, s));
     m_vao[3].attribute(2, 1, GL_FLOAT, sizeof(Vertex2D),
                        (void*)offsetof(Vertex2D, layer));
+
+    m_break_vbo = std::make_unique<VertexBuffer>();
+
+    std::vector<BreakVertex> break_vertices;
+    break_vertices.reserve(36);
+
+    for (int face = 0; face < 6; ++face) {
+        for (int vertex = 0; vertex < 6; ++vertex) {
+            break_vertices.push_back({
+                VERTICES_POS[face][vertex][0],
+                VERTICES_POS[face][vertex][1],
+                VERTICES_POS[face][vertex][2],
+                TEX_COORDS[face][vertex][0],
+                TEX_COORDS[face][vertex][1],
+            });
+        }
+    }
+
+    m_vao[5].bind();
+
+    m_break_vbo->buffer_data(break_vertices.data(),
+                             break_vertices.size() * sizeof(BreakVertex));
+
+    m_vao[5].attribute(0, 3, GL_FLOAT, sizeof(BreakVertex),
+                       reinterpret_cast<void*>(offsetof(BreakVertex, x)));
+
+    m_vao[5].attribute(1, 2, GL_FLOAT, sizeof(BreakVertex),
+                       reinterpret_cast<void*>(offsetof(BreakVertex, s)));
 
     init_quad();
     init_text();

@@ -30,6 +30,7 @@ public:
     using Inventory = std::array<std::optional<ItemStack>, INVENTORY_SIZE>;
     static constexpr float WALK_SOUND_INTERVAL = 0.45f;
     static constexpr float RUN_SOUND_INTERVAL = 0.3f;
+    static constexpr float BREAK_TIME = 1.5f;
     using ChunkPosSet = std::unordered_set<ChunkPos, ChunkPos::Hash>;
     LocalPlayer(ClientWorld& world);
     ~LocalPlayer();
@@ -82,6 +83,8 @@ public:
                   float distance = 4.0f);
     bool is_underwater() const;
     void set_underwater(bool u);
+
+    void break_block(float dt);
     void place_block(float dt);
 
     int selected_hotbar() const;
@@ -109,6 +112,9 @@ public:
     void set_pitch(float pitch);
     float& roll();
     float& walk_time();
+
+    float break_time() const;
+
     Gait get_gait() const;
 
     std::optional<crypto::Ed25519KeyPair>& key_pair();
@@ -157,7 +163,7 @@ private:
     HitboxID m_hitbox = 0;
 
     float m_place_time = PLACE_BLOCK_INTERVAL;
-
+    float m_break_time = 0.0f;
     Inventory m_inventory;
     float m_sensitivity = 0.15f;
 
@@ -179,6 +185,7 @@ private:
     MouseState m_mouse_state{};
     GameMode m_game_mode = CREATIVE;
     std::optional<LookBlock> m_look_block = std::nullopt;
+    std::optional<glm::ivec3> m_break_block_pos;
     std::string m_name{};
     mutable std::shared_mutex m_uuid_mutex;
     Uuid m_uuid;

@@ -247,6 +247,7 @@ void LocalPlayer::update(float delta_time) {
     m_walk_pose = pos;
     update_move(delta_time);
     update_lookup_block();
+    break_block(delta_time);
     place_block(delta_time);
     std::shared_lock lock(m_player_pos_mutex);
     d_rep("player_pos", "x: {:.2f} y: {:.2f} z: {:.2f}", m_pos.value.x,
@@ -418,6 +419,32 @@ void LocalPlayer::update_lookup_block() {
         m_look_block = std::nullopt;
     }
 }
+
+void LocalPlayer::break_block(float dt) {
+    if (m_look_block == std::nullopt) {
+        m_break_time = 0.0f;
+        return;
+    }
+    if (m_break_block_pos != m_look_block->pos) {
+        m_break_time = 0.0f;
+        m_break_block_pos = m_look_block->pos;
+    }
+    if (m_mouse_state.left) {
+        if (m_world.is_solid(m_look_block->pos)) {
+            m_break_time += dt;
+            if (m_break_time > BREAK_TIME) {
+                m_world.report_block_change(m_look_block->pos, 0);
+                m_break_time = 0.0f;
+            }
+
+        } else {
+            m_break_time = 0.0f;
+        }
+    } else {
+        m_break_time = 0.0f;
+    }
+}
+
 void LocalPlayer::place_block(float dt) {
 
     if (m_look_block == std::nullopt) {
@@ -429,11 +456,7 @@ void LocalPlayer::place_block(float dt) {
         return;
     }
     m_place_time = 0.0f;
-    if (m_mouse_state.left) {
-        if (m_world.is_solid(m_look_block->pos)) {
-            m_world.report_block_change(m_look_block->pos, 0);
-        }
-    }
+
     if (m_mouse_state.right && m_inventory[m_held_hotbar]) {
         // item use;
         auto data = ItemManager::get(m_inventory[m_held_hotbar]->item);
@@ -1049,6 +1072,7 @@ void LocalPlayer::set_yaw(float yaw) { m_angle.yaw = yaw; }
 void LocalPlayer::set_pitch(float pitch) { m_angle.pitch = pitch; }
 float& LocalPlayer::roll() { return m_angle.roll; }
 float& LocalPlayer::walk_time() { return m_walk_pose.walk_time; }
+float LocalPlayer::break_time() const { return m_break_time; }
 Gait LocalPlayer::get_gait() const { return m_walk_pose.gait; }
 std::optional<crypto::Ed25519KeyPair>& LocalPlayer::key_pair() {
     return m_key_pair;

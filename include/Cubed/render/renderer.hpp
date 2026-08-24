@@ -110,6 +110,7 @@ private:
     std::unique_ptr<VertexBuffer> m_ui_vbo;
     std::unique_ptr<VertexBuffer> m_player_vbo;
     std::unique_ptr<VertexBuffer> m_quad_vbo;
+    std::unique_ptr<VertexBuffer> m_break_vbo;
 
     glm::mat4 m_ui_proj_matrix{0.0f};
     ShaderManager m_shaders;
@@ -120,6 +121,7 @@ private:
     2 - outline vao
     3 - ui vao (top-left)
     4 - text vao
+    5 - block break overlay vao
     */
     std::vector<VertexArray> m_vao;
     std::vector<Vertex2D> m_ui;

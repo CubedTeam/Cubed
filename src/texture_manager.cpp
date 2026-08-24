@@ -40,7 +40,7 @@ TextureManager::~TextureManager() { delete_texture(); }
 void TextureManager::delete_texture() {
     if (m_init) {
         m_texture_array.reset();
-        m_block_status_array.reset();
+        m_block_break_array.reset();
         m_cross_plane_array.reset();
         m_normal_texture_array.reset();
         m_item_textures.clear();
@@ -49,8 +49,8 @@ void TextureManager::delete_texture() {
     }
 }
 
-const Texture* TextureManager::get_block_status_array() const {
-    return m_block_status_array.get();
+const Texture* TextureManager::get_block_break_array() const {
+    return m_block_break_array.get();
 }
 
 const Texture* TextureManager::get_texture_array() const {
@@ -81,19 +81,20 @@ TextureManager::get_item_textures() const {
 
 const Texture* TextureManager::get_skin() const { return m_skin.get(); }
 
-void TextureManager::load_block_status(unsigned id) {
+void TextureManager::load_block_break(unsigned id) {
 
-    ASSERT_MSG(id < MAX_BLOCK_STATUS, "Exceed the max status sum limit");
+    ASSERT_MSG(id < BREAK_STAGE_COUNT, "Exceed the max status sum limit");
     fs::path root_path = ResourceLocation::get_assets_path_prefix(
         ResourceLocation::DEFAULT_NAMESPACE);
-    fs::path path =
-        root_path / "textures" / "status" / (std::to_string(id) + ".png");
+
+    fs::path path = root_path / "textures" / "ui" /
+                    ("break_" + std::to_string(id) + ".png");
 
     auto image_data = (tools::load_image_data(path));
 
-    m_block_status_array->tex_sub_image_3d(
-        TextureFormat::RGBA, GL_UNSIGNED_BYTE, image_data.data, 0, 0, id,
-        BLOCK_STATUS_SIZE, BLOCK_STATUS_SIZE);
+    m_block_break_array->tex_sub_image_3d(TextureFormat::RGBA, GL_UNSIGNED_BYTE,
+                                          image_data.data, 0, 0, id,
+                                          BLOCK_STATUS_SIZE, BLOCK_STATUS_SIZE);
 }
 
 void TextureManager::load_block_texture(unsigned id) {
@@ -288,17 +289,17 @@ void TextureManager::init_skin() {
 }
 
 void TextureManager::init_block_status() {
-    m_block_status_array =
+    m_block_break_array =
         std::make_unique<Texture>(TextureType::TEXTURE_2D_ARRAY);
-    m_block_status_array->tex_image_3d(
+    m_block_break_array->tex_image_3d(
         TextureFormat::RGBA, TextureFormat::RGBA, GL_UNSIGNED_BYTE, nullptr,
-        BLOCK_STATUS_SIZE, BLOCK_STATUS_SIZE, MAX_BLOCK_STATUS);
-    for (int i = 0; i < MAX_BLOCK_STATUS; i++) {
-        load_block_status(i);
+        BLOCK_STATUS_SIZE, BLOCK_STATUS_SIZE, BREAK_STAGE_COUNT);
+    for (int i = 0; i < BREAK_STAGE_COUNT; i++) {
+        load_block_break(i);
     }
 
-    m_block_status_array->set_nearest_and_minpmap();
-    m_block_status_array->set_aniso(m_aniso);
+    m_block_break_array->set_nearest_and_minpmap();
+    m_block_break_array->set_aniso(m_aniso);
 }
 void TextureManager::init_texture() {
     glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &m_max_aniso);
