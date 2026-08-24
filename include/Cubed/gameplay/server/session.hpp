@@ -11,6 +11,7 @@ namespace cubed {
 
 using asio::ip::tcp;
 class ServerWorld;
+class ServerPlayer;
 class Session : public std::enable_shared_from_this<Session> {
 
 public:
@@ -23,10 +24,14 @@ public:
 
     void close();
     const std::string& uuid() const;
+    std::optional<Uuid> player_uuid() const;
 
     crypto::Ed25519PublicKey& public_key();
     std::optional<std::pair<uint64_t, crypto::Ed25519::Challenge>>& challenge();
     void set_player_uuid(std::optional<Uuid> uuid);
+
+    std::weak_ptr<ServerPlayer> get_player() const;
+    void set_player(const std::shared_ptr<ServerPlayer>& player);
 
 private:
     struct Task {
@@ -58,6 +63,7 @@ private:
     crypto::Ed25519PublicKey m_public_key;
     std::optional<std::pair<uint64_t, crypto::Ed25519::Challenge>> m_challenge;
     std::optional<Uuid> m_player_uuid;
+    std::weak_ptr<ServerPlayer> m_player;
     ServerWorld& m_server_world;
     std::atomic<bool> m_closed{false};
 

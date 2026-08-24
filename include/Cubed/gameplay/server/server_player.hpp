@@ -68,7 +68,7 @@ public:
     void set_pitch(float pitch);
     float yaw() const;
     float pitch() const;
-
+    GameMode gamemode() const;
     Gait gait() const;
     void set_gait(Gait gait);
 
@@ -85,6 +85,8 @@ public:
     void drop(DropAction action);
     void move(MoveAction action);
     void handle_inventory_action(protocol::C2SInventoryAction& msg);
+
+    void change_mode(GameMode mode, bool send_msg = true);
 
     Inventory inventory_snapshot() const;
 

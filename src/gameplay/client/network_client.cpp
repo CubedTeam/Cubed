@@ -190,6 +190,13 @@ asio::awaitable<void> NetworkClient::read_loop() {
                     m_world.receive_player_inventory(*msg);
                 }
             } break;
+            case std::to_underlying(PacketEnum::S2C_PLAYER_MODE_CHANGE): {
+                auto* msg =
+                    Arena::Create<protocol::S2CPlayerModeChange>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_world.get_player().handle_mode_change(*msg);
+                }
+            }
             }
         }
     } catch (const asio::system_error& e) {

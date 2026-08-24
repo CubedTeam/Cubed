@@ -27,6 +27,7 @@ message S2CLoginRsp {
     common.Vec3 pos = 3;
     float yaw = 4;
     float pitch = 5;
+    uint32 mode = 6;
 
 }
 

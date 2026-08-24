@@ -121,7 +121,7 @@ std::string PlayerStorage::serialize(const PlayerStorageData& player) {
                   allocator);
     doc.AddMember("yaw", player.yaw, allocator);
     doc.AddMember("pitch", player.pitch, allocator);
-
+    doc.AddMember("gamemode", std::to_underlying(player.mode), allocator);
     rapidjson::Value inventory(rapidjson::kArrayType);
 
     for (const auto& stack : player.inventory) {
@@ -195,6 +195,12 @@ PlayerStorage::deserialize(std::string_view data) {
     }
     if (!tools::get_json_value(doc, "pitch", player.pitch)) {
         Logger::error("Parse player pitch fail");
+    }
+    int mode = 0;
+    if (tools::get_json_value(doc, "gamemode", mode)) {
+        player.mode = get_game_mode(mode);
+    } else {
+        Logger::error("Parse player gamemode fail");
     }
 
     if (doc.HasMember("inventory") && doc["inventory"].IsArray()) {

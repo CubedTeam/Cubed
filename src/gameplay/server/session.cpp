@@ -37,7 +37,7 @@ void Session::send(std::shared_ptr<std::vector<uint8_t>> packet, int priority) {
 }
 
 const std::string& Session::uuid() const { return m_uuid; }
-
+std::optional<Uuid> Session::player_uuid() const { return m_player_uuid; }
 crypto::Ed25519PublicKey& Session::public_key() { return m_public_key; }
 std::optional<std::pair<uint64_t, crypto::Ed25519::Challenge>>&
 Session::challenge() {
@@ -48,6 +48,11 @@ void Session::set_player_uuid(std::optional<Uuid> uuid) {
     asio::dispatch(m_strand, [self, uuid = std::move(uuid)]() mutable {
         self->m_player_uuid = std::move(uuid);
     });
+}
+
+std::weak_ptr<ServerPlayer> Session::get_player() const { return m_player; }
+void Session::set_player(const std::shared_ptr<ServerPlayer>& player) {
+    m_player = player;
 }
 asio::awaitable<void> Session::read_loop() {
     ZoneScopedN("Session::read_loop");
@@ -151,7 +156,8 @@ asio::awaitable<void> Session::read_loop() {
                 if (decode_packet(*msg, body_data, header)) {
                     if (m_player_uuid &&
                         m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
-                        m_server_world.handle_chat_message(*msg);
+                        m_server_world.handle_chat_message(*msg,
+                                                           shared_from_this());
                     }
                 }
             } break;

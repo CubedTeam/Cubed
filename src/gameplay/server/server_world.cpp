@@ -7,6 +7,7 @@
 #include "Cubed/tools/math_tools.hpp"
 #include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/system_time_utils.hpp"
+#include "Cubed/tools/text_tools.hpp"
 #include "Cubed/tools/threas_utils.hpp"
 #include "Cubed/tools/uuid.hpp"
 #include "Cubed/tools/world_name.hpp"
@@ -593,6 +594,7 @@ void ServerWorld::handle_login_proof(protocol::C2SLoginProof& msg,
         return;
     }
     session->set_player_uuid(uuid);
+    session->set_player(player);
     Arena arena;
 
     auto* rsp = Arena::Create<protocol::S2CLoginRsp>(&arena);
@@ -601,7 +603,7 @@ void ServerWorld::handle_login_proof(protocol::C2SLoginProof& msg,
     rsp->set_voice_chat(m_voice_chat);
     rsp->set_pitch(player->pitch());
     rsp->set_yaw(player->yaw());
-
+    rsp->set_mode(std::to_underlying(player->gamemode()));
     tools::set_proto_vec3(rsp->mutable_pos(), player->get_pos());
 
     session->send(make_packet(*rsp), 0);
@@ -659,13 +661,18 @@ void ServerWorld::handle_chunk_req(int task_id, const Uuid& uuid,
     });
 }
 
-void ServerWorld::handle_chat_message(protocol::ChatMsg& msg) {
+void ServerWorld::handle_chat_message(protocol::ChatMsg& msg,
+                                      std::shared_ptr<Session> session) {
 
     auto uuid = Uuid::from_proto_bytes(msg.uuid());
     if (!uuid) {
         return;
     }
     std::string message{msg.msg()};
+    if (message.starts_with("/")) {
+        handle_command(message, session);
+        return;
+    }
     auto pool = m_net_thread_pool.load();
     pool->enqueue([this, player = *uuid, m = std::move(message)]() {
         auto p = m_players_manager.find(player);
@@ -674,6 +681,29 @@ void ServerWorld::handle_chat_message(protocol::ChatMsg& msg) {
         }
         boardcast_message(p->get_name(), m);
     });
+}
+
+void ServerWorld::handle_command(std::string_view command,
+                                 std::shared_ptr<Session> session) {
+    auto commands = split_command(command);
+    if (commands.empty()) {
+        return;
+    }
+    if (commands[0] == "/g") {
+        if (commands.size() != 2) {
+            return;
+        }
+        auto w_player = session->get_player();
+        if (auto player = w_player.lock()) {
+            if (commands[1] == "0") {
+                player->change_mode(GameMode::CREATIVE);
+            } else if (commands[1] == "1") {
+                player->change_mode(GameMode::SURVIVAL);
+            } else if (commands[1] == "2") {
+                player->change_mode(GameMode::SPECTATOR);
+            }
+        }
+    }
 }
 
 void ServerWorld::handle_voice_message(protocol::VoiceMsg& msg) {

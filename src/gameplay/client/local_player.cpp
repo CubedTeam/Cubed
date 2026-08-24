@@ -207,7 +207,7 @@ bool LocalPlayer::ray_cast(const glm::vec3& start, const glm::vec3& front,
     return false;
 }
 
-void LocalPlayer::change_mode(GameMode mode) {
+void LocalPlayer::change_mode_internal(GameMode mode) {
     m_game_mode = mode;
     Logger::info("Change GameMode to {}", to_str(mode));
     if (mode == CREATIVE) {
@@ -220,6 +220,11 @@ void LocalPlayer::change_mode(GameMode mode) {
         m_walk_pose.gait = Gait::RUN;
         m_velocity.max =
             glm::vec3{m_max_run_speed, m_max_y_speed, m_max_run_speed};
+    } else if (mode == SURVIVAL) {
+        m_move_state.is_fly = false;
+        m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
+        m_velocity.max =
+            glm::vec3{m_max_walk_speed, m_max_y_speed, m_max_walk_speed};
     }
 }
 void LocalPlayer::reload_config() {
@@ -330,14 +335,6 @@ bool LocalPlayer::update_player_move_state(Key key, KeyAction action) {
         if (action == KeyAction::RELEASE) {
             m_sprinting = false;
         }*/
-    } else if (key == Key::F4) {
-        if (action == KeyAction::PRESS) {
-            if (m_game_mode == CREATIVE) {
-                change_mode(SPECTATOR);
-            } else {
-                change_mode(CREATIVE);
-            }
-        }
     } else if (key == Key::NUMPAD_1 || key == Key::DIGIT_1) {
         m_held_hotbar = 0;
     } else if (key == Key::NUMPAD_2 || key == Key::DIGIT_2) {
@@ -1022,6 +1019,20 @@ void LocalPlayer::move_item(size_t from, size_t to) {
     move->set_to(to);
 
     m_world.get_client()->send(make_packet(msg));
+}
+
+void LocalPlayer::handle_mode_change(protocol::S2CPlayerModeChange& msg) {
+    try {
+        auto mode = get_game_mode(msg.mode());
+        change_mode_internal(mode);
+
+    } catch (const std::exception& e) {
+        Logger::error("LocalPlayer: Can't change game mode, {}", e.what());
+    }
+}
+
+void LocalPlayer::handle_mode_change(GameMode mode) {
+    change_mode_internal(mode);
 }
 
 bool LocalPlayer::is_underwater() const { return m_underwater; }

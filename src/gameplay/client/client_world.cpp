@@ -529,6 +529,12 @@ void ClientWorld::receive_login_rsp(protocol::S2CLoginRsp& rsp) {
     player.set_pitch(rsp.pitch());
     player.set_player_pos(pos);
 
+    try {
+        player.handle_mode_change(get_game_mode(rsp.mode()));
+    } catch (const std::exception& e) {
+        Logger::error("Can't handle mode change, {}", e.what());
+    }
+
     start_client_thread();
 }
 

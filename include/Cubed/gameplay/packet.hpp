@@ -59,6 +59,7 @@ enum class PacketEnum : uint16_t {
     S2C_PLAYER_WATER_SOUND = 2003,
     C2S_INVENTORY_ACTION = 2004,
     S2C_INVENTORY_UPDATE = 2005,
+    S2C_PLAYER_MODE_CHANGE = 2006,
 
     C2S_CHUNK_DATA_REQ = 3001,
     S2C_CHUNK_DATA_RSP = 3002,
@@ -117,6 +118,9 @@ template <> constexpr uint16_t get_packet_id<protocol::C2SPlayerInfo>() {
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerInfoRsp>() {
     return std::to_underlying(PacketEnum::S2C_PLAYER_INFO_RSP);
+}
+template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerModeChange>() {
+    return std::to_underlying(PacketEnum::S2C_PLAYER_MODE_CHANGE);
 }
 template <> constexpr uint16_t get_packet_id<protocol::C2SChunkDataReq>() {
     return std::to_underlying(PacketEnum::C2S_CHUNK_DATA_REQ);

@@ -467,9 +467,9 @@ void DevPanel::show_player_tab_item() {
         if (ImGui::Combo("GameMode", &m_player_profile.game_mode, GAME_MODES,
                          IM_ARRAYSIZE(GAME_MODES))) {
             if (m_player_profile.game_mode == 0) {
-                m_player->change_mode(GameMode::CREATIVE);
+                // m_player->change_mode_internal(GameMode::CREATIVE);
             } else if (m_player_profile.game_mode == 1) {
-                m_player->change_mode(GameMode::SPECTATOR);
+                // m_player->change_mode_internal(GameMode::SPECTATOR);
             } else {
                 ASSERT_MSG(false, "Unknown GameMode");
             }
@@ -522,7 +522,7 @@ void DevPanel::show_player_tab_item() {
             m_player->acceleration() = DEFAULT_ACCELERATION;
             m_player->deceleration() = DEFAULT_DECELERATION;
             m_player->g() = DEFAULT_G;
-            m_player->change_mode(GameMode::CREATIVE);
+            // m_player->change_mode_internal(GameMode::CREATIVE);
             m_player->fly_y_speed() = 7.5f;
             m_player->set_gait(Gait::WALK);
             m_player_profile.game_mode = 0;

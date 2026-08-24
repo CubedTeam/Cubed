@@ -58,7 +58,7 @@ bool ServerPlayerManager::add(PlayerPtr player) {
             it->second->update_pos(data->pos.x, data->pos.y, data->pos.z);
             it->second->set_yaw(data->yaw);
             it->second->set_pitch(data->pitch);
-
+            it->second->change_mode(data->mode, false);
             for (const auto& stack : data->inventory) {
                 ItemStack s;
                 s.item = stack.item_id;
@@ -71,6 +71,7 @@ bool ServerPlayerManager::add(PlayerPtr player) {
             data->pos = it->second->get_pos();
             data->yaw = it->second->yaw();
             data->pitch = it->second->pitch();
+            data->mode = it->second->gamemode();
         }
         data->public_key = it->second->get_session()->public_key();
         data->uuid = it->second->get_uuid();
@@ -196,6 +197,7 @@ PlayerStorageData ServerPlayerManager::build_data(const ServerPlayer& player) {
     data.uuid = player.get_uuid();
     data.yaw = player.yaw();
     data.pitch = player.pitch();
+    data.mode = player.gamemode();
     auto inventory = player.inventory_snapshot();
 
     for (size_t i = 0; i < inventory.size(); ++i) {

@@ -15,6 +15,7 @@
 #include "Cubed/input/event.hpp"
 #include "Cubed/input/input.hpp"
 #include "player/inventory.pb.h"
+#include "player/player.pb.h"
 
 #include <glm/glm.hpp>
 #include <optional>
@@ -57,7 +58,6 @@ public:
     glm::vec3 get_player_pos() const;
     const MoveState& get_move_state() const;
 
-    void change_mode(GameMode mode);
     void reload_config();
     void set_player_pos(const glm::vec3& pos);
     void update(float delta_time);
@@ -116,6 +116,9 @@ public:
     void add_item(size_t position, ItemID item, size_t count);
     void drop_item(size_t position, size_t count);
     void move_item(size_t from, size_t to);
+
+    void handle_mode_change(protocol::S2CPlayerModeChange& msg);
+    void handle_mode_change(GameMode mode);
 
 private:
     using enum GameMode;
@@ -189,7 +192,7 @@ private:
 
     void init_identity();
     void create_identity(const std::filesystem::path& path);
-
+    void change_mode_internal(GameMode mode);
     void handle_task();
     void update_direction();
     void update_lookup_block();

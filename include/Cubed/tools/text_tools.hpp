@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <utf8cpp/utf8.h>
 #include <vector>
 namespace cubed {
@@ -64,6 +65,35 @@ inline std::vector<std::string> split_utf8(const std::string& str, int size) {
         }
     }
     return blocks;
+}
+
+inline std::vector<std::string_view> split_command(std::string_view str) {
+    std::vector<std::string_view> result;
+
+    std::size_t start = 0;
+
+    while (start < str.size()) {
+
+        while (start < str.size() && str[start] == ' ') {
+            ++start;
+        }
+
+        if (start == str.size()) {
+            break;
+        }
+
+        const auto END = str.find(' ', start);
+
+        if (END == std::string_view::npos) {
+            result.emplace_back(str.substr(start));
+            break;
+        }
+
+        result.emplace_back(str.substr(start, END - start));
+        start = END + 1;
+    }
+
+    return result;
 }
 
 } // namespace cubed

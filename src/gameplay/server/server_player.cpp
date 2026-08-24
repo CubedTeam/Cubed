@@ -262,6 +262,24 @@ void ServerPlayer::handle_inventory_action(protocol::C2SInventoryAction& msg) {
     }
 }
 
+void ServerPlayer::change_mode(GameMode mode, bool send_msg) {
+    m_mode = mode;
+    if (send_msg) {
+        Arena arena;
+        auto* msg = Arena::Create<protocol::S2CPlayerModeChange>(&arena);
+
+        msg->set_mode(std::to_underlying(mode));
+
+        auto session = get_session();
+        session->send(make_packet(msg));
+
+        m_world.boardcast_message("Server",
+                                  std::format("Player {} change gamemode to {}",
+                                              M_NAME, to_str(mode)),
+                                  Color::WHITE, true);
+    }
+}
+
 ServerPlayer::Inventory ServerPlayer::inventory_snapshot() const {
     std::shared_lock lock(m_inventory_mutex);
     return m_inventory;
@@ -270,6 +288,7 @@ void ServerPlayer::set_yaw(float yaw) { m_yaw = yaw; }
 void ServerPlayer::set_pitch(float pitch) { m_pitch = pitch; }
 float ServerPlayer::yaw() const { return m_yaw.load(); }
 float ServerPlayer::pitch() const { return m_pitch.load(); }
+GameMode ServerPlayer::gamemode() const { return m_mode; }
 Gait ServerPlayer::gait() const { return m_gait; }
 void ServerPlayer::set_gait(Gait gait) { m_gait = gait; }
 Uuid ServerPlayer::get_uuid() const { return M_UUID; }

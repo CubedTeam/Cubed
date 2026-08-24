@@ -1,5 +1,6 @@
 #pragma once
 #include "Cubed/crypto/ed25519.hpp"
+#include "Cubed/gameplay/game_mode.hpp"
 #include "Cubed/gameplay/item_stack.hpp"
 #include "Cubed/tools/uuid.hpp"
 #include "glm/ext/vector_float3.hpp"
@@ -17,6 +18,7 @@ struct PlayerStorageData {
     float yaw = 0.0f;
     float pitch = 0.0f;
     std::vector<StoredItemStack> inventory;
+    GameMode mode = GameMode::SPECTATOR;
 };
 
 class PlayerStorage {

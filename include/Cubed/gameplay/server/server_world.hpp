@@ -99,7 +99,10 @@ public:
     void handle_chunk_req(int task_id, const Uuid& uuid, ChunkPos pos);
     void handle_block_change(const protocol::C2SBlockChangeReq& req);
 
-    void handle_chat_message(protocol::ChatMsg& msg);
+    void handle_chat_message(protocol::ChatMsg& msg,
+                             std::shared_ptr<Session> session);
+    void handle_command(std::string_view command,
+                        std::shared_ptr<Session> session);
     void handle_voice_message(protocol::VoiceMsg& msg);
 
     void handle_entity_create(protocol::C2SEntityCreateReq& req);
@@ -119,6 +122,9 @@ public:
     size_t player_sum() const;
     RunMode get_runmode() const;
     bool is_chunk_active(glm::vec3 pos) const;
+
+    void boardcast_message(const std::string& name, const std::string& message,
+                           Color color = Color::WHITE, bool system_msg = false);
 
     int get_block(const glm::ivec3& block_pos) const override;
     bool is_solid(const glm::ivec3& block_pos) const override;
@@ -181,8 +187,6 @@ private:
         int threads);
     void send_server_stop();
 
-    void boardcast_message(const std::string& name, const std::string& message,
-                           Color color = Color::WHITE, bool system_msg = false);
     void player_exit(std::shared_ptr<ServerPlayer> expected_player);
 
     void load_metadata(std::optional<uint32_t> seed);
