@@ -82,6 +82,7 @@ public:
     void unsafe_add(AddAction action);
     // Return the number of successfully added items
     uint32_t atomic_add_item(ItemID id, uint32_t count);
+    bool atomic_remove_item(size_t pos, uint32_t count);
     void drop(DropAction action);
     void move(MoveAction action);
     void handle_inventory_action(protocol::C2SInventoryAction& msg);

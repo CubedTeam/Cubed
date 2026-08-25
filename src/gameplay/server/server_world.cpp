@@ -1,5 +1,6 @@
 #include "Cubed/gameplay/server/server_world.hpp"
 
+#include "Cubed/gameplay/block_manager.hpp"
 #include "Cubed/gameplay/packet.hpp"
 #include "Cubed/gameplay/server/session.hpp"
 #include "Cubed/tools/json_utils.hpp"
@@ -754,25 +755,101 @@ void ServerWorld::handle_voice_message(protocol::VoiceMsg& msg) {
     });
 }
 
-void ServerWorld::handle_block_change(const protocol::C2SBlockChangeReq& req) {
+void ServerWorld::handle_block_change(const protocol::C2SBlockChangeReq& req,
+                                      std::shared_ptr<Session> session) {
     ZoneScopedN("ServerWorld::handle_block_change");
-    float x = std::floor(req.pos().x());
-    float y = std::floor(req.pos().y());
-    float z = std::floor(req.pos().z());
-    if (!set_block(glm::ivec3(x, y, z), req.block())) {
+    auto to_block_coord = [](float value) -> std::optional<int> {
+        if (!std::isfinite(value)) {
+            return std::nullopt;
+        }
+
+        const double FLOORED = std::floor(static_cast<double>(value));
+        if (FLOORED < std::numeric_limits<int>::min() ||
+            FLOORED > std::numeric_limits<int>::max()) {
+            return std::nullopt;
+        }
+
+        return static_cast<int>(FLOORED);
+    };
+    auto x = to_block_coord(req.pos().x());
+    auto y = to_block_coord(req.pos().y());
+    auto z = to_block_coord(req.pos().z());
+
+    if (!x || !y || !z) {
         return;
+    }
+    if (*y < 0 || *y >= WORLD_SIZE_Y) {
+        return;
+    }
+    glm::ivec3 block_pos{*x, *y, *z};
+
+    auto block = req.block();
+    auto p = session->get_player();
+    auto player = p.lock();
+    if (!player) {
+        return;
+    }
+    if (player->gamemode() == GameMode::SPECTATOR) {
+        return;
+    }
+    auto stack_pos = req.stack_position();
+    if (stack_pos >= INVENTORY_SIZE) {
+        player->send_all_inventory();
+        return;
+    }
+    if (block != 0) {
+        auto inventory = player->inventory_snapshot();
+        if (!inventory[stack_pos]) {
+            player->send_all_inventory();
+            return;
+        }
+        auto item_data = ItemManager::try_get(inventory[stack_pos]->item);
+
+        if (!item_data || item_data->kind != ItemKind::BLOCK) {
+            return;
+        }
+        if (auto b = std::get_if<BlockType>(&item_data->property)) {
+            if (*b != block) {
+                return;
+            }
+        }
+    }
+
+    auto target = get_block(block_pos);
+    if (block == 0 && target == 0) {
+        return;
+    }
+    if (block != 0 && target != 0) {
+        return;
+    }
+    if (!set_block(block_pos, block)) {
+        return;
+    }
+    if (block == 0) {
+        if (player->gamemode() == GameMode::SURVIVAL) {
+            m_entity_manager.add_item_entity(
+                BlockManager::name_form_id(target).to_string(),
+                glm::vec3(*x + 0.5, *y + 0.5, *z + 0.5), glm::vec3{0.0f}, 1);
+        }
+    } else {
+        if (player->gamemode() == GameMode::SURVIVAL) {
+            if (!player->atomic_remove_item(stack_pos, 1)) {
+                set_block(block_pos, target);
+                return;
+            }
+        }
     }
 
     Arena arena;
     protocol::S2CBlockChangeRsp* rsp =
         Arena::Create<protocol::S2CBlockChangeRsp>(&arena);
     auto* pos = rsp->mutable_pos();
-    pos->set_x(x);
-    pos->set_y(y);
-    pos->set_z(z);
+    pos->set_x(*x);
+    pos->set_y(*y);
+    pos->set_z(*z);
     rsp->set_block(req.block());
     std::vector<std::shared_ptr<Session>> sessions;
-    auto chunk_pos = get_chunk_pos(x, z);
+    auto chunk_pos = get_chunk_pos(*x, *z);
 
     auto players = m_players_manager.snapshot();
 

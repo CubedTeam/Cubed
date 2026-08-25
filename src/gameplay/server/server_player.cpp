@@ -207,6 +207,30 @@ uint32_t ServerPlayer::atomic_add_item(ItemID id, uint32_t total_count) {
     return total_count - remain;
 }
 
+bool ServerPlayer::atomic_remove_item(size_t pos, uint32_t count) {
+
+    std::lock_guard lock(m_inventory_mutex);
+    if (pos >= INVENTORY_SIZE) {
+        send_all_inventory_internal(0);
+        return false;
+    }
+    if (!m_inventory[pos]) {
+        send_all_inventory_internal(0);
+        return false;
+    }
+    if (m_inventory[pos]->count < count) {
+        send_all_inventory_internal(0);
+        return false;
+    }
+    m_inventory[pos]->count -= count;
+    if (m_inventory[pos]->count == 0) {
+        m_inventory[pos].reset();
+    }
+    ++m_revision;
+    send_all_inventory_internal(0);
+    return true;
+}
+
 void ServerPlayer::drop(DropAction action) {
     m_task.emplace(Task::DROP_ITEM, std::move(action));
 }

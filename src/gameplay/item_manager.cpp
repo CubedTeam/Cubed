@@ -165,6 +165,16 @@ ItemData ItemManager::get_item_data(ItemID id) const {
     }
     return c->second;
 }
+
+std::optional<ItemData> ItemManager::safe_get_item_data(ItemID id) const {
+    cacc c;
+    if (!m_map.find(c, id)) {
+        Logger::error("Can't find item {} in map", id);
+        return std::nullopt;
+    }
+    return c->second;
+}
+
 bool ItemManager::contains(std::string_view key) const {
     IDMap::const_accessor acc;
     auto loaction = ResourceLocation::parse(key);
@@ -186,5 +196,8 @@ ItemData ItemManager::get(std::string_view key) {
     return instance().get_item_data(key);
 }
 ItemData ItemManager::get(ItemID id) { return instance().get_item_data(id); }
+std::optional<ItemData> ItemManager::try_get(ItemID id) {
+    return instance().safe_get_item_data(id);
+}
 ItemID ItemManager::size() { return instance().m_map.size(); }
 } // namespace cubed

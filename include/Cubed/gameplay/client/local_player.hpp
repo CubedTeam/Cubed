@@ -143,7 +143,7 @@ private:
     float m_max_run_speed = DEFAULT_MAX_RUN_SPEED;
     float m_max_y_speed = 7.5f;
     static constexpr float MAX_SPACE_ON_TIME = 0.3f;
-    static constexpr float PLACE_BLOCK_INTERVAL = 0.2f;
+    static constexpr float BLOCK_ACTION_INTERVAL = 0.2f;
 
     tbb::concurrent_queue<TaskPair> m_task;
     uint64_t m_revision = 0;
@@ -162,7 +162,8 @@ private:
     Direction m_direction;
     HitboxID m_hitbox = 0;
 
-    float m_place_time = PLACE_BLOCK_INTERVAL;
+    float m_place_time = BLOCK_ACTION_INTERVAL;
+    float m_creative_break_time = BLOCK_ACTION_INTERVAL;
     float m_break_time = 0.0f;
     Inventory m_inventory;
     float m_sensitivity = 0.15f;

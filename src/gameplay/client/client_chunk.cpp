@@ -103,7 +103,7 @@ ClientChunk::ClientChunk(ClientWorld& world) : m_world(world) {
     }
 }
 ClientChunk::~ClientChunk() {}
-
+/*
 ClientChunk::ClientChunk(ClientChunk&& other) noexcept
     : m_dirty(other.is_dirty()), m_need_upload(other.m_need_upload.load()),
       m_is_on_gen_vertex_data(other.m_is_on_gen_vertex_data.load()),
@@ -128,7 +128,7 @@ ClientChunk& ClientChunk::operator=(ClientChunk&& other) noexcept {
     m_seed = other.m_seed;
     return *this;
 }
-
+*/
 BiomeType ClientChunk::get_biome() const { return m_biome.load(); }
 
 ChunkPos ClientChunk::get_chunk_pos() const { return m_chunk_pos; }
@@ -140,21 +140,28 @@ const std::vector<BlockType>& ClientChunk::get_chunk_blocks() const {
 void ClientChunk::gen_vertex_data(
     const OptionalBlockVectorArray& neighbor_block) {
     ZoneScopedN("ClientChunk::gen_vertex_data");
-    if (m_is_on_gen_vertex_data.exchange(true)) {
+    if (m_rebuild_running.exchange(true)) {
         return;
     }
-    std::lock_guard lk(m_vertexs_data_mutex);
+    while (true) {
+        const auto REVISION = m_block_revision.load(std::memory_order_acquire);
+        auto blocks = block_snapshot();
+        std::lock_guard lk(m_vertexs_data_mutex);
 
-    for (auto& data : m_vertex_data) {
-        data.m_vertices.clear();
-    }
+        for (auto& data : m_vertex_data) {
+            data.m_vertices.clear();
+        }
 
-    gen_vertices(neighbor_block);
-    for (auto& data : m_vertex_data) {
-        data.update_sum();
+        gen_vertices(neighbor_block, blocks);
+        for (auto& data : m_vertex_data) {
+            data.update_sum();
+        }
+        if (m_block_revision.load(std::memory_order_acquire) == REVISION) {
+            break;
+        }
     }
+    m_rebuild_running = false;
     m_need_upload = true;
-    m_is_on_gen_vertex_data = false;
 }
 
 GLuint ClientChunk::get_normal_vao() const {
@@ -262,7 +269,11 @@ bool ClientChunk::is_need_upload() const { return m_need_upload.load(); }
 void ClientChunk::need_upload() { m_need_upload = true; }
 
 void ClientChunk::set_chunk_block(int index, unsigned id) {
-    m_blocks[index] = id;
+    {
+        std::lock_guard lock(m_blocks_mutex);
+        m_blocks[index] = id;
+        m_block_revision.fetch_add(1, std::memory_order_release);
+    }
 }
 BlockType ClientChunk::get_chunk_block(int index) { return m_blocks[index]; }
 ChunkPos ClientChunk::chunk_pos() const { return m_chunk_pos; }
@@ -272,6 +283,10 @@ BiomeType ClientChunk::biome() const { return m_biome; }
 void ClientChunk::biome(BiomeType b) { m_biome = b; }
 
 std::vector<BlockType>& ClientChunk::blocks() { return m_blocks; }
+std::vector<BlockType> ClientChunk::block_snapshot() const {
+    std::shared_lock lock(m_blocks_mutex);
+    return m_blocks;
+}
 ClientWorld& ClientChunk::world() { return m_world; }
 unsigned ClientChunk::seed() const {
     if (m_seed == 0) {
@@ -284,7 +299,8 @@ const ChunkRenderSnapshot* ClientChunk::get_render_snapshot() const {
     return &m_render_snapshot;
 }
 
-void ClientChunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
+void ClientChunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block,
+                               const std::vector<BlockType>& blocks) {
     ZoneScopedN("ClientChunk::gen_vertices");
 
     // SIZE_X=SIZE_Z=CHUNK_SIZE=16, SIZE_Y=WORLD_SIZE_Y=256
@@ -324,9 +340,9 @@ void ClientChunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
                         npos[u_axis] = ui;
                         npos[v_axis] = vi;
 
-                        BlockType cur_id = get_block_safe(
-                            lpos[0], lpos[1], lpos[2], m_chunk_pos, m_blocks,
-                            neighbor_block);
+                        BlockType cur_id =
+                            get_block_safe(lpos[0], lpos[1], lpos[2],
+                                           m_chunk_pos, blocks, neighbor_block);
 
                         // Air / cross plane are not involved in greedy meshing
                         if (cur_id == 0 ||
@@ -335,9 +351,9 @@ void ClientChunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
                             continue;
                         }
 
-                        BlockType nb_id = get_block_safe(
-                            npos[0], npos[1], npos[2], m_chunk_pos, m_blocks,
-                            neighbor_block);
+                        BlockType nb_id =
+                            get_block_safe(npos[0], npos[1], npos[2],
+                                           m_chunk_pos, blocks, neighbor_block);
 
                         if (is_face_culled(cur_id, nb_id)) {
                             mask[vi * u + ui] = {};
@@ -397,7 +413,7 @@ void ClientChunk::gen_vertices(const OptionalBlockVectorArray& neighbor_block) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int y = 0; y < WORLD_SIZE_Y; y++) {
             for (int z = 0; z < CHUNK_SIZE; z++) {
-                BlockType id = m_blocks[index(x, y, z)];
+                BlockType id = blocks[index(x, y, z)];
                 if (id != 0 && BlockManager::is_cross_plane(id)) {
                     int world_x = x + m_chunk_pos.x * CHUNK_SIZE;
                     int world_z = z + m_chunk_pos.z * CHUNK_SIZE;

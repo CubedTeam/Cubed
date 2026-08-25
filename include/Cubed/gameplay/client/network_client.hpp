@@ -51,6 +51,7 @@ private:
     std::vector<char> m_read_buffer;
 
     std::priority_queue<Task, std::vector<Task>, TaskCompare> m_write_queue;
+    bool m_write_in_progress = false;
 
     asio::strand<asio::io_context::executor_type> m_strand;
     std::atomic<bool> m_closed{false};

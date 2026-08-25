@@ -15,11 +15,12 @@ public:
 
     static ItemData get(std::string_view key);
     static ItemData get(ItemID id);
-
+    static std::optional<ItemData> try_get(ItemID id);
     static ItemID size();
 
     ItemData get_item_data(std::string_view key) const;
     ItemData get_item_data(ItemID id) const;
+    std::optional<ItemData> safe_get_item_data(ItemID id) const;
     bool contains(std::string_view key) const;
     std::vector<ItemID> all_keys() const;
 

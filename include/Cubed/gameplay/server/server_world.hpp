@@ -97,7 +97,8 @@ public:
                                  std::shared_ptr<Session> session);
     glm::vec3 get_player_pos(const Uuid& uuid) const;
     void handle_chunk_req(int task_id, const Uuid& uuid, ChunkPos pos);
-    void handle_block_change(const protocol::C2SBlockChangeReq& req);
+    void handle_block_change(const protocol::C2SBlockChangeReq& req,
+                             std::shared_ptr<Session> session);
 
     void handle_chat_message(protocol::ChatMsg& msg,
                              std::shared_ptr<Session> session);

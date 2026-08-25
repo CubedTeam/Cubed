@@ -27,10 +27,10 @@ void Session::start() {
 void Session::send(std::shared_ptr<std::vector<uint8_t>> packet, int priority) {
     asio::post(m_strand, [self = shared_from_this(), packet = std::move(packet),
                           priority]() mutable {
-        bool idle = self->m_write_queue.empty();
         self->m_write_queue.emplace(priority, self->m_sequence++,
                                     std::move(packet));
-        if (idle) {
+        if (!self->m_write_in_progress) {
+            self->m_write_in_progress = true;
             self->do_write();
         }
     });
@@ -118,7 +118,8 @@ asio::awaitable<void> Session::read_loop() {
                 if (decode_packet(*req, body_data, header)) {
                     if (m_player_uuid &&
                         m_player_uuid == Uuid::from_proto_bytes(req->uuid())) {
-                        m_server_world.handle_block_change(*req);
+                        m_server_world.handle_block_change(*req,
+                                                           shared_from_this());
                     }
                 }
             } break;
@@ -235,18 +236,22 @@ void Session::do_write() {
 
     auto self = shared_from_this();
     auto packet = std::move(m_write_queue.top().packet);
+    m_write_queue.pop();
     asio::async_write(
         m_socket, asio::buffer(*packet),
-        asio::bind_executor(m_strand, [self](std::error_code ec, size_t) {
+        asio::bind_executor(m_strand, [self, packet](std::error_code ec,
+                                                     size_t) {
             if (ec) {
                 std::string_view error = net_error_message(ec);
                 Logger::error("Server Error: {}, code {}", error, ec.value());
                 self->close();
                 return;
             }
-            self->m_write_queue.pop();
+
             if (!self->m_write_queue.empty()) {
                 self->do_write();
+            } else {
+                self->m_write_in_progress = false;
             }
         }));
 }

@@ -33,8 +33,8 @@ public:
     ~ClientChunk();
     ClientChunk(const ClientChunk&) = delete;
     ClientChunk& operator=(const ClientChunk&) = delete;
-    ClientChunk(ClientChunk&&) noexcept;
-    ClientChunk& operator=(ClientChunk&&) noexcept;
+    ClientChunk(ClientChunk&&) = delete;
+    ClientChunk& operator=(ClientChunk&&) = delete;
 
     BiomeType get_biome() const;
     ChunkPos get_chunk_pos() const;
@@ -72,6 +72,7 @@ public:
     BiomeType biome() const;
     void biome(BiomeType b);
     std::vector<BlockType>& blocks();
+    std::vector<BlockType> block_snapshot() const;
     ClientWorld& world();
     unsigned seed() const;
     const ChunkRenderSnapshot* get_render_snapshot() const;
@@ -95,8 +96,12 @@ private:
     static constexpr int VERTEX_DATA_SUM = 5;
     std::atomic<bool> m_dirty{false};
     std::atomic<bool> m_need_upload{true};
-    std::atomic<bool> m_is_on_gen_vertex_data{false};
     std::atomic<BiomeType> m_biome = BiomeType::PLAIN;
+
+    mutable std::shared_mutex m_blocks_mutex;
+    std::atomic<uint64_t> m_block_revision{0};
+    std::atomic<bool> m_rebuild_running{false};
+
     std::mutex m_vertexs_data_mutex;
     ChunkPos m_chunk_pos{0, 0};
     ClientWorld& m_world;
@@ -115,7 +120,8 @@ private:
 
     unsigned m_seed = 0;
     void clear_dirty();
-    void gen_vertices(const OptionalBlockVectorArray& neighbor_block);
+    void gen_vertices(const OptionalBlockVectorArray& neighbor_block,
+                      const std::vector<BlockType>& blocks);
     void gen_cross_plane_vertices(int world_x, int world_y, int world_z,
                                   BlockType id);
     void emit_quad(int axis, int face_dir, int layer, int i, int j, int w,

@@ -421,7 +421,7 @@ void LocalPlayer::update_lookup_block() {
 }
 
 void LocalPlayer::break_block(float dt) {
-    if (m_look_block == std::nullopt) {
+    if (m_look_block == std::nullopt || m_game_mode == SPECTATOR) {
         m_break_time = 0.0f;
         return;
     }
@@ -429,7 +429,21 @@ void LocalPlayer::break_block(float dt) {
         m_break_time = 0.0f;
         m_break_block_pos = m_look_block->pos;
     }
+
     if (m_mouse_state.left) {
+        if (m_game_mode == CREATIVE) {
+            m_creative_break_time += dt;
+            if (m_creative_break_time < BLOCK_ACTION_INTERVAL) {
+                return;
+            }
+            m_creative_break_time = 0.0f;
+            if (m_world.is_solid(m_look_block->pos)) {
+
+                m_world.report_block_change(m_look_block->pos, 0);
+            }
+            m_break_time = 0.0f;
+            return;
+        }
         if (m_world.is_solid(m_look_block->pos)) {
             m_break_time += dt;
             if (m_break_time > BREAK_TIME) {
@@ -447,11 +461,11 @@ void LocalPlayer::break_block(float dt) {
 
 void LocalPlayer::place_block(float dt) {
 
-    if (m_look_block == std::nullopt) {
+    if (m_look_block == std::nullopt || m_game_mode == SPECTATOR) {
         return;
     }
     m_place_time += dt;
-    if (m_place_time < PLACE_BLOCK_INTERVAL) {
+    if (m_place_time < BLOCK_ACTION_INTERVAL) {
 
         return;
     }
@@ -659,20 +673,21 @@ bool LocalPlayer::update_scroll(float yoffset) {
                 m_max_run_speed -= 1.0f;
             }
         }
+        return true;
     }
-    if (m_game_mode == CREATIVE) {
-        if (yoffset < 0) {
-            m_held_hotbar += 1;
-            if (m_held_hotbar >= 10) {
-                m_held_hotbar = 0;
-            }
-        } else {
-            m_held_hotbar -= 1;
-            if (m_held_hotbar < 0) {
-                m_held_hotbar = 0;
-            }
+
+    if (yoffset < 0) {
+        m_held_hotbar += 1;
+        if (m_held_hotbar >= 10) {
+            m_held_hotbar = 0;
+        }
+    } else {
+        m_held_hotbar -= 1;
+        if (m_held_hotbar < 0) {
+            m_held_hotbar = 0;
         }
     }
+
     return true;
 }
 
@@ -698,12 +713,12 @@ bool LocalPlayer::handle_mouse_button_event(const MouseButtonEvent& e) {
     if (e.action == KeyAction::PRESS) {
         if (e.key == MouseKey::LEFT_BUTTON) {
             m_mouse_state.left = true;
-            m_place_time = PLACE_BLOCK_INTERVAL;
+            m_creative_break_time = BLOCK_ACTION_INTERVAL;
             return true;
         }
         if (e.key == MouseKey::RIGHT_BUTTON) {
             m_mouse_state.right = true;
-            m_place_time = PLACE_BLOCK_INTERVAL;
+            m_place_time = BLOCK_ACTION_INTERVAL;
             return true;
         }
     }

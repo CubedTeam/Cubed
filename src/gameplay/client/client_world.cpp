@@ -321,10 +321,12 @@ void ClientWorld::report_block_change(const glm::ivec3& pos,
     auto* req = Arena::Create<protocol::C2SBlockChangeReq>(&arena);
     req->set_uuid(m_player_manager.get_local().get_uuid().to_proto_bytes());
     req->set_block(id);
+    req->set_stack_position(get_player().selected_hotbar());
     auto* p = req->mutable_pos();
     p->set_x(pos.x);
     p->set_y(pos.y);
     p->set_z(pos.z);
+
     m_client->send(make_packet(*req), 0);
 }
 

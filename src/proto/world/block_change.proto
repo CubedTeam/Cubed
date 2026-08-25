@@ -8,6 +8,7 @@ message C2SBlockChangeReq {
     bytes uuid = 1;
     common.Vec3 pos = 2;
     uint32 block = 3;
+    uint32 stack_position = 4;
 }
 
 message S2CBlockChangeRsp {

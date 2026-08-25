@@ -56,7 +56,10 @@ private:
     static constexpr uint32_t MAX_PACKET_SIZE = 4 * 1024 * 1024;
     tcp::socket m_socket;
     std::vector<char> m_read_buffer;
+
     std::priority_queue<Task, std::vector<Task>, TaskCompare> m_write_queue;
+    bool m_write_in_progress = false;
+
     asio::strand<asio::io_context::executor_type> m_strand;
     std::string m_uuid;
 

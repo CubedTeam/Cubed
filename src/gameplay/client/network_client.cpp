@@ -222,10 +222,10 @@ void NetworkClient::send(Packet packet, int priority) {
     }
     asio::post(m_strand, [self = shared_from_this(), packet = std::move(packet),
                           priority]() mutable {
-        bool idle = self->m_write_queue.empty();
         self->m_write_queue.emplace(priority, self->m_sequence++,
                                     std::move(packet));
-        if (idle) {
+        if (!self->m_write_in_progress) {
+            self->m_write_in_progress = true;
             self->do_write();
         }
     });
@@ -235,25 +235,28 @@ void NetworkClient::do_write() {
     if (m_closed.load()) {
         return;
     }
-
     auto self = shared_from_this();
     auto packet = std::move(m_write_queue.top().packet);
+    m_write_queue.pop();
     asio::async_write(
         m_socket, asio::buffer(*packet),
-        asio::bind_executor(m_strand, [self](std::error_code ec, size_t) {
-            if (ec) {
-                std::string_view error = net_error_message(ec);
-                Logger::error("Cleint Write Error: {}, code {}", error,
-                              ec.value());
-                self->set_error(error);
-                self->close();
-                return;
-            }
-            self->m_write_queue.pop();
-            if (!self->m_write_queue.empty()) {
-                self->do_write();
-            }
-        }));
+        asio::bind_executor(
+            m_strand, [self, packet](std::error_code ec, size_t) {
+                if (ec) {
+                    std::string_view error = net_error_message(ec);
+                    Logger::error("Cleint Write Error: {}, code {}", error,
+                                  ec.value());
+                    self->set_error(error);
+                    self->close();
+                    return;
+                }
+
+                if (!self->m_write_queue.empty()) {
+                    self->do_write();
+                } else {
+                    self->m_write_in_progress = false;
+                }
+            }));
 }
 
 void NetworkClient::close() {
