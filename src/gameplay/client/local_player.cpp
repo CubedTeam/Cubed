@@ -8,6 +8,7 @@
 #include "Cubed/gameplay/hitbox_manager.hpp"
 #include "Cubed/gameplay/item_manager.hpp"
 #include "Cubed/tools/json_utils.hpp"
+#include "Cubed/tools/proto_utils.hpp"
 #include "Cubed/tools/standard_paths.hpp"
 
 #include <filesystem>
@@ -495,7 +496,12 @@ void LocalPlayer::place_block(float dt) {
             ASSERT(name);
             glm::ivec3 near_pos = m_look_block->pos + m_look_block->normal;
             if (!m_world.is_solid(near_pos)) {
-                m_world.entity_manager().create(name->to_string(), near_pos);
+                Arena arena;
+                auto msg = Arena::Create<protocol::C2SUseItem>(&arena);
+                msg->set_location(m_held_hotbar);
+                msg->set_item(data.id);
+                tools::set_proto_vec3(msg->mutable_position(), near_pos);
+                m_world.get_client()->send(make_packet(msg));
             }
         }
     }

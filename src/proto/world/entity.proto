@@ -14,17 +14,6 @@ message S2CEntityDestroy {
     uint64 id = 1;
 }
 
-message C2SEntityDestroyReq {
-    bytes uuid = 1;
-    uint64 id = 2;
-}
-
-message C2SEntityCreateReq {
-    bytes uuid = 1;
-    string name = 2;
-    common.Vec3 pos = 3;
-}
-
 message S2CEntityUpdate {
     uint64 id = 1;
     common.Vec3 pos = 2;

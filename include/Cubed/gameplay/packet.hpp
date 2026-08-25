@@ -60,6 +60,7 @@ enum class PacketEnum : uint16_t {
     C2S_INVENTORY_ACTION = 2004,
     S2C_INVENTORY_UPDATE = 2005,
     S2C_PLAYER_MODE_CHANGE = 2006,
+    C2S_USE_ITEM = 2007,
 
     C2S_CHUNK_DATA_REQ = 3001,
     S2C_CHUNK_DATA_RSP = 3002,
@@ -69,10 +70,8 @@ enum class PacketEnum : uint16_t {
     S2C_UPDATE_TIME = 3006,
     S2C_ENTITY_CREATE = 3007,
     S2C_ENTITY_DESTROY = 3008,
-    C2S_ENTITY_CREATE_REQ = 3009,
-    C2S_ENTITY_DESTROY_REQ = 3010,
-    S2C_ENTITY_UPDATE = 3011,
-    S2C_ENTITY_UPDATE_BATCH = 3012,
+    S2C_ENTITY_UPDATE = 3009,
+    S2C_ENTITY_UPDATE_BATCH = 3010,
 
     CHAT_MSG = 4001,
     VOICE_MSG = 4002,
@@ -122,6 +121,9 @@ template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerInfoRsp>() {
 template <> constexpr uint16_t get_packet_id<protocol::S2CPlayerModeChange>() {
     return std::to_underlying(PacketEnum::S2C_PLAYER_MODE_CHANGE);
 }
+template <> constexpr uint16_t get_packet_id<protocol::C2SUseItem>() {
+    return std::to_underlying(PacketEnum::C2S_USE_ITEM);
+}
 template <> constexpr uint16_t get_packet_id<protocol::C2SChunkDataReq>() {
     return std::to_underlying(PacketEnum::C2S_CHUNK_DATA_REQ);
 }
@@ -142,12 +144,6 @@ template <> constexpr uint16_t get_packet_id<protocol::S2CEntityCreate>() {
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CEntityDestroy>() {
     return std::to_underlying(PacketEnum::S2C_ENTITY_DESTROY);
-}
-template <> constexpr uint16_t get_packet_id<protocol::C2SEntityCreateReq>() {
-    return std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQ);
-}
-template <> constexpr uint16_t get_packet_id<protocol::C2SEntityDestroyReq>() {
-    return std::to_underlying(PacketEnum::C2S_ENTITY_DESTROY_REQ);
 }
 template <> constexpr uint16_t get_packet_id<protocol::S2CUpdateTime>() {
     return std::to_underlying(PacketEnum::S2C_UPDATE_TIME);

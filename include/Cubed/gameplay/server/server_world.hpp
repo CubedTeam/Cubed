@@ -99,15 +99,13 @@ public:
     void handle_chunk_req(int task_id, const Uuid& uuid, ChunkPos pos);
     void handle_block_change(const protocol::C2SBlockChangeReq& req,
                              std::shared_ptr<Session> session);
-
+    void handle_item_use(protocol::C2SUseItem& msg,
+                         std::shared_ptr<Session> session);
     void handle_chat_message(protocol::ChatMsg& msg,
                              std::shared_ptr<Session> session);
     void handle_command(std::string_view command,
                         std::shared_ptr<Session> session);
     void handle_voice_message(protocol::VoiceMsg& msg);
-
-    void handle_entity_create(protocol::C2SEntityCreateReq& req);
-    void handle_entity_destroy(protocol::C2SEntityDestroyReq& req);
 
     int chunk_size() const;
 

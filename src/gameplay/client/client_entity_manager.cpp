@@ -246,24 +246,6 @@ void ClientEntityManager::receive_entity_update(
     }
 }
 
-void ClientEntityManager::destroy(EntityID id) {
-    auto client = m_world.get_client();
-    Arena arena;
-    auto* msg = Arena::Create<protocol::C2SEntityDestroyReq>(&arena);
-    msg->set_id(id);
-    msg->set_uuid(m_world.get_player().get_uuid().to_proto_bytes());
-    client->send(make_packet(*msg));
-}
-void ClientEntityManager::create(std::string_view name, const glm::vec3& pos) {
-    auto client = m_world.get_client();
-    Arena arena;
-    auto* msg = Arena::Create<protocol::C2SEntityCreateReq>(&arena);
-    msg->set_name(name);
-    msg->set_uuid(m_world.get_player().get_uuid().to_proto_bytes());
-    tools::set_proto_pos(msg, pos);
-    client->send(make_packet(msg));
-}
-
 void ClientEntityManager::handle_task(float dt) {
     TaskPair pair;
     while (m_tasks.try_pop(pair)) {

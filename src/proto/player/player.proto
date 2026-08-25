@@ -32,3 +32,9 @@ message S2CPlayerModeChange {
     uint32 mode = 1;
 }
 
+message C2SUseItem {
+    uint32 location = 1;
+    uint32 item = 2;
+    common.Vec3 position = 3;
+}
+

@@ -23,6 +23,23 @@ using namespace google::protobuf;
 using namespace rapidjson;
 namespace fs = std::filesystem;
 namespace cubed {
+
+namespace {
+std::optional<int> to_block_coord(float value) {
+    if (!std::isfinite(value)) {
+        return std::nullopt;
+    }
+
+    const double FLOORED = std::floor(static_cast<double>(value));
+    if (FLOORED < std::numeric_limits<int>::min() ||
+        FLOORED > std::numeric_limits<int>::max()) {
+        return std::nullopt;
+    }
+
+    return static_cast<int>(FLOORED);
+};
+} // namespace
+
 ServerWorld::ServerWorld(Config& config)
     : m_config(config), m_entity_manager(*this), m_players_manager(*this),
       m_chunk_system(*this) {}
@@ -873,12 +890,72 @@ void ServerWorld::handle_block_change(const protocol::C2SBlockChangeReq& req,
     }
 }
 
-void ServerWorld::handle_entity_create(protocol::C2SEntityCreateReq& req) {
+void ServerWorld::handle_item_use(protocol::C2SUseItem& msg,
+                                  std::shared_ptr<Session> session) {
+    auto pos = msg.location();
+    if (pos >= INVENTORY_SIZE) {
+        return;
+    }
+    auto p = session->get_player();
+    auto player = p.lock();
+    if (!player) {
+        return;
+    }
+    if (player->gamemode() == GameMode::SPECTATOR) {
+        return;
+    }
+    auto inventory = player->inventory_snapshot();
+    if (!inventory[pos]) {
+        player->send_all_inventory();
+        return;
+    }
+    auto item = inventory[pos]->item;
+    if (msg.item() != item) {
+        return;
+    }
+    auto data = ItemManager::try_get(item);
+    if (!data) {
+        return;
+    }
 
-    m_entity_manager.add_creature(req.name(), tools::get_proto_vec3(req.pos()));
-}
-void ServerWorld::handle_entity_destroy(protocol::C2SEntityDestroyReq& req) {
-    m_entity_manager.destroy(req.id());
+    switch (data->kind) {
+    case ItemKind::BLOCK: {
+        Logger::error("Block can't use, inventory pos {}", pos);
+        return;
+    } break;
+    case ItemKind::SPAWN_EGG: {
+
+        if (player->gamemode() == GameMode::SURVIVAL &&
+            !player->atomic_remove_item(pos, 1)) {
+            return;
+        }
+        auto p = std::get_if<ResourceLocation>(&data->property);
+        if (!p) {
+            Logger::error(
+                "Item {} is spawn egg, but it doesn't has ResourceLocation",
+                item);
+            ASSERT(false);
+            return;
+        }
+
+        auto x = to_block_coord(msg.position().x());
+        auto y = to_block_coord(msg.position().y());
+        auto z = to_block_coord(msg.position().z());
+
+        if (!x || !y || !z) {
+            return;
+        }
+        if (*y < 0 || *y >= WORLD_SIZE_Y) {
+            return;
+        }
+        glm::vec3 world_pos{*x, *y, *z};
+        m_entity_manager.add_creature(p->to_string(), world_pos);
+    } break;
+    case ItemKind::NONE: {
+        Logger::error("Item {} type is none", item);
+        return;
+    }
+    }
 }
 
 int ServerWorld::rendering_distance() const {

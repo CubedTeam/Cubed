@@ -171,25 +171,6 @@ asio::awaitable<void> Session::read_loop() {
                     }
                 }
             } break;
-            case std::to_underlying(PacketEnum::C2S_ENTITY_CREATE_REQ): {
-                auto* msg = Arena::Create<protocol::C2SEntityCreateReq>(&arena);
-                if (decode_packet(*msg, body_data, header)) {
-                    if (m_player_uuid &&
-                        m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
-                        m_server_world.handle_entity_create(*msg);
-                    }
-                }
-            } break;
-            case std::to_underlying(PacketEnum::C2S_ENTITY_DESTROY_REQ): {
-                auto* msg =
-                    Arena::Create<protocol::C2SEntityDestroyReq>(&arena);
-                if (decode_packet(*msg, body_data, header)) {
-                    if (m_player_uuid &&
-                        m_player_uuid == Uuid::from_proto_bytes(msg->uuid())) {
-                        m_server_world.handle_entity_destroy(*msg);
-                    }
-                }
-            } break;
             case std::to_underlying(PacketEnum::C2S_LOGIN_PROOF): {
                 auto* msg = Arena::Create<protocol::C2SLoginProof>(&arena);
                 if (decode_packet(*msg, body_data, header)) {
@@ -209,6 +190,12 @@ asio::awaitable<void> Session::read_loop() {
                         *msg, m_player_uuid.value());
                 }
             } break;
+            case std::to_underlying(PacketEnum::C2S_USE_ITEM): {
+                auto* msg = Arena::Create<protocol::C2SUseItem>(&arena);
+                if (decode_packet(*msg, body_data, header)) {
+                    m_server_world.handle_item_use(*msg, shared_from_this());
+                }
+            }
             }
         }
     } catch (const asio::system_error& e) {

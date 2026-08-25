@@ -23,8 +23,6 @@ public:
     void receive_entity_destroy(EntityID id);
     void receive_entity_update(const protocol::S2CEntityUpdate& msg);
     void receive_entity_update(protocol::S2CEntityUpdateBatch& msg);
-    void destroy(EntityID id);
-    void create(std::string_view name, const glm::vec3& pos);
 
     const entt::registry& get_registry() const;
 
