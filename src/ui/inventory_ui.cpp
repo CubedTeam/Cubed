@@ -113,8 +113,10 @@ void InventoryUI::init() {
         row.set_anchor(Anchor::BOTTOM_CENTER);
         row.set_offset({0, -150});
         row.layout();
+
         {
             auto& button = back->add_child<Button>();
+            m_change_inventory_button = &button;
             button.set_background_image("cubed/textures/ui/slot_button.png",
                                         texture_manager);
             button.set_height(ItemSlot::DEFAULT_HEIGHT)
@@ -129,21 +131,11 @@ void InventoryUI::init() {
             button.set_clicked([this]() {
                 if (m_current == 0) {
                     m_current = 1;
-                    if (m_backpack) {
-                        m_backpack->set_visible(true);
-                    }
-                    if (m_creative) {
-                        m_creative->set_visible(false);
-                    }
+
                 } else {
                     m_current = 0;
-                    if (m_backpack) {
-                        m_backpack->set_visible(false);
-                    }
-                    if (m_creative) {
-                        m_creative->set_visible(true);
-                    }
                 }
+                update_show_page();
             });
         }
     }
@@ -175,6 +167,15 @@ void InventoryUI::init() {
 }
 void InventoryUI::on_re_enter() {}
 void InventoryUI::update(float dt) {
+    auto& player = m_scene.client_world().get_player();
+    if (player.game_mode() != GameMode::CREATIVE) {
+        m_current = 1;
+        update_show_page();
+        m_change_inventory_button->set_visible(false);
+    } else {
+        m_change_inventory_button->set_visible(true);
+    }
+
     refresh_hotbar_and_backpack();
     UIManager::update(dt);
     update_item_info();
@@ -221,6 +222,25 @@ void InventoryUI::refresh_hotbar_and_backpack() {
             auto it = item_textures.find(backpack[i]->item);
             ASSERT(it != item_textures.end());
             m_backpack_slots[i]->set_item(backpack[i], it->second.get());
+        }
+    }
+}
+
+void InventoryUI::update_show_page() {
+    if (m_current == 1) {
+        if (m_backpack) {
+            m_backpack->set_visible(true);
+        }
+        if (m_creative) {
+            m_creative->set_visible(false);
+        }
+    } else if (m_current == 0) {
+
+        if (m_backpack) {
+            m_backpack->set_visible(false);
+        }
+        if (m_creative) {
+            m_creative->set_visible(true);
         }
     }
 }

@@ -105,6 +105,12 @@ void WorldUIManager::update(float dt) {
     }
 
     update_hotbar();
+    auto& player = m_scene.client_world().get_player();
+    if (player.game_mode() == GameMode::SPECTATOR) {
+        m_hotbar->set_visible(false);
+    } else {
+        m_hotbar->set_visible(true);
+    }
 }
 
 void WorldUIManager::set_chatting(bool chantting, bool send) {
